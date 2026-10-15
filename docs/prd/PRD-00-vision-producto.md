@@ -588,6 +588,8 @@ Reglas para todos los perfiles:
 
 **No hay fecha fija.** Cada fase empieza cuando la anterior cumple su criterio de salida. Las duraciones son estimaciones para un equipo pequeño y se ajustan al terminar cada fase.
 
+Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. Cada fase se parte en **entregas pequeñas**, con su propio alcance y criterio de salida, en el [Roadmap](../roadmap.md).
+
 | Fase | Duración estimada | Entregable | Criterio de salida |
 |------|-------------------|------------|--------------------|
 | **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría, nodo local, sincronización base | Un dispositivo registrado opera contra el nodo local sin internet y los datos llegan a la nube |
@@ -595,6 +597,7 @@ Reglas para todos los perfiles:
 | **2 · Inventario (6 sedes)** | 7 a 9 semanas | M4 completo con bodegas y reabastecimiento, productos que se pueden producir, costo de alimentos; despliegue en las 6 sedes | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes |
 | **3 · Domicilios y reservas** | 9 a 12 semanas, más el tiempo de aprobación de cada plataforma | M5: domicilio propio, captura manual de plataformas, conectores de Rappi y DiDi Food, menú por canal, conciliación. M9: reservas con cobro por transferencia (Nequi, Daviplata, Bre-B) verificado y política de cancelación | Los domicilios propios y de plataformas de al menos 1 sede entran al sistema sin digitarlos dos veces, con tiempos y comisiones medidos. Las reservas con anticipo se cobran y se abonan a la cuenta. |
 | **4 · Comercial** | 5 a 7 semanas | M6 avanzado (consolidado, ingeniería de menú, alertas), M7 | Un restaurante que no es del piloto se configura sin desarrollo a la medida |
+| **5 · Integraciones y canales** | Por estimar | Notificaciones por WhatsApp y correo, integración directa con datáfonos (ADR-007), pasarela de pagos para reservas (ADR-012), foto al marcar asistencia | Cada integración opera en al menos 1 sede |
 
 ## 12. Métricas de éxito del piloto
 

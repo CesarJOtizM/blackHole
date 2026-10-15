@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
+| Versión | 0.2 |
 | Fecha | 2026-10-14 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
 
@@ -24,6 +24,7 @@
 | Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Propuesta |
 | Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Propuesta |
 | Código | Monolito modular; arquitectura hexagonal solo en los módulos con reglas de negocio | Propuesta |
+| Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo; escalado automático; OpenTelemetry y Sentry. Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Propuesta |
 
 ## 2. Restricciones que guían el diseño
 
@@ -848,7 +849,7 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 | Lenguaje | TypeScript estricto | — | Un solo lenguaje; el dominio se comparte entre el nodo y la nube |
 | API (nube y nodo) | Node.js + Fastify | NestJS | Liviano; el mismo servidor corre en el nodo |
 | ORM / SQL | Drizzle | Kysely, Prisma | Soporta PostgreSQL y SQLite con el mismo esquema |
-| Base de datos de la nube | PostgreSQL gestionado (AWS RDS o Supabase) | — | Row Level Security, JSONB, madurez |
+| Base de datos de la nube | PostgreSQL gestionado (RDS, Cloud SQL o Azure Database for PostgreSQL), solo con extensiones disponibles en las tres | — | Row Level Security, JSONB, madurez; portable entre nubes |
 | Base de datos del nodo | SQLite (modo WAL) | — | Sin administración; suficiente para una sede |
 | Tiempo real | WebSocket (en el nodo) | Server-Sent Events | Comunicación en ambas direcciones con cocina, caja y mesero |
 | Frontend | React + Vite (PWA), Tailwind | — | Un solo stack para todas las apps |
@@ -856,8 +857,11 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 | Validación | Zod (esquemas compartidos) | — | Los contratos entre cliente, nodo y nube son el mismo código |
 | Workers en la nube | Colas en PostgreSQL (pg-boss) | SQS | Sin infraestructura extra al inicio |
 | Despliegue del nodo | Contenedor Docker con actualización automática controlada | Servicio de Windows | Instalación y actualización repetibles |
-| Nube | AWS (ECS Fargate + RDS) | Supabase + Fly.io | Ya hay experiencia en AWS (CloudWatch) |
-| Observabilidad | Logs estructurados + CloudWatch; los nodos envían su estado periódicamente | Grafana | Ver qué sedes están sin conexión o con la cola atrasada |
+| Nube | Contenedores gestionados en AWS (ECS Fargate), GCP (Cloud Run) o Azure (Container Apps), con módulos equivalentes desde el inicio | — | No quedar atados a un proveedor (TRD-01, sección 3) |
+| Infraestructura como código | Terraform | OpenTofu | Toda la nube se crea y se cambia desde el repositorio |
+| Despliegue continuo | Pipeline con staging automático y producción con aprobación y vuelta atrás automática | — | Desplegar seguido sin romper a los nodos de versiones anteriores (TRD-01, sección 5) |
+| Observabilidad | OpenTelemetry (logs, métricas y trazas) hacia Grafana Cloud; los nodos envían su estado periódicamente | Servicio nativo de cada nube | Un solo backend sin importar la nube; ver qué sedes están sin conexión o con la cola atrasada |
+| Errores | Sentry en la nube, los nodos y las PWA, con envío diferido sin internet | Sentry alojado | Saber qué error vive cada sede y qué despliegue lo introdujo |
 
 ## 14. Organización del código
 
@@ -879,6 +883,7 @@ packages/
   facturacion/       # Puerto + adaptadores del proveedor DIAN
   plataformas/       # Puerto ConectorPlataforma + adaptadores (Rappi, DiDi, integrador, manual)
   ui/                # Componentes compartidos
+infra/               # Terraform: módulos por nube y ambientes (TRD-01, sección 4)
 ```
 
 - **Monolito modular**: cada módulo (M0 a M7) es una carpeta con su dominio, sus casos de uso y sus adaptadores. Un módulo no importa el interior de otro.
@@ -934,6 +939,7 @@ packages/
 | Las API de las plataformas requieren un acuerdo comercial y una certificación que tardan | Alta | Iniciar el trámite en la Fase 0; adaptador Manual desde el primer día; evaluar un integrador (ADR-011) |
 | Una plataforma cambia su API o su formato | Media | Un adaptador por plataforma, pruebas de contrato con ejemplos reales, alertas de pedidos que no se pudieron normalizar |
 | El certificado HTTPS local vence en una sede sin internet | Media | Renovación en las ventanas de conexión con margen amplio; alerta de vencimiento |
+| Mantener la infraestructura en tres nubes cuesta más de lo que aporta | Media | Módulos con la misma interfaz, `terraform plan` en cada cambio y ensayo mensual en las nubes que no son de producción (TRD-01) |
 
 ## 18. ADRs pendientes
 
@@ -943,7 +949,7 @@ packages/
 | ADR-002 | Proveedor tecnológico DIAN: **Factus** (decidido). Factura electrónica de venta para todas las ventas, sin documento equivalente POS; emisión diferida sin internet, sin factura de papel. **Una bolsa de documentos por empresa**. Falta el precio por volumen y confirmar que la bolsa se comparte entre NIT | Fase 0 |
 | ADR-003 | HTTPS local para la PWA (certificado por sede y DNS local). La PWA ya está decidida; falta validar el mecanismo | Spike de la Fase 0 |
 | ADR-004 | Modo nube como respaldo cuando falla el nodo | Fase 0 |
-| ADR-005 | Proveedor de la nube: AWS frente a Supabase | Fase 0 |
+| ADR-005 | Nube: módulos para AWS, GCP y Azure desde el inicio (decidido); falta elegir cuál corre producción (TRD-01) | Fase 0 |
 | ADR-006 | Kit de hardware por sede: nodo, impresoras, UPS y **router dedicado del sistema** (por la red Wi-Fi compartida, 10.1.2) | Fase 0, con el piloto |
 | ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban) y QR de pagos, frente a solo registro | Después de la Fase 1 |
 | ADR-008 | Conectividad de respaldo (módem 4G) y política de ventanas de sincronización | Fase 0 |
@@ -951,6 +957,9 @@ packages/
 | ADR-010 | Bodega general con nodo propio en modo bodega (propuesto); operación desde la web como alternativa para clientes pequeños | Fase 2 |
 | ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |
 | ADR-012 | Cobro de reservas: **transferencia directa con verificación manual** (decidido para el piloto). Una pasarela con confirmación automática queda como mejora futura | Revisar después del piloto |
+| ADR-013 | Backend de observabilidad: Grafana Cloud (propuesto) frente al servicio nativo de cada nube o Grafana propio (TRD-01) | Fase 0 |
+| ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
+| ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
 ## 19. Plan de la Fase 0
 
 1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real.
