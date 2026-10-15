@@ -21,7 +21,7 @@
 | Traslado entre nodos | Dos mitades, un identificador. Sin recepción, queda en tránsito |
 | Alertas | Se evalúan en el nodo al cambiar el saldo, y la cobertura cada 15 minutos |
 | "Hoy no se repone" | Lo propone el sistema y lo confirma una persona. Hasta entonces no se retiran líneas |
-| Código | `packages/dominio/inventario`, `packages/aplicacion/inventario` |
+| Código | `contextos/inventario/dominio`, `contextos/inventario/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -75,7 +75,7 @@ El costo promedio cambia solo con una entrada a costo real. Una merma no modific
 
 **Impresión:** comprobante de traslado con el identificador en el QR.
 
-Los esquemas Zod viven en `packages/contratos`. La cantidad viaja en unidad de inventario, como entero escalado, no como punto flotante.
+Los esquemas Zod viven en `compartido/contratos`. La cantidad viaja en unidad de inventario, como entero escalado, no como punto flotante.
 
 ## 6. Persistencia
 

@@ -22,7 +22,7 @@
 | Propinas | M2 llama `ParticipantesDelPeriodo` |
 | Cierre | Un worker del nodo, a la hora configurada, agrega la salida y deja el turno por revisar |
 | Foto | No está. El puerto de archivos de esta fase solo guarda exportaciones |
-| Código | `packages/dominio/asistencia`, `packages/aplicacion/asistencia` |
+| Código | `contextos/asistencia/dominio`, `contextos/asistencia/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -64,7 +64,7 @@ La proyección no redondea a gusto del reporte: la hora queda en minutos del rel
 
 **Reloj:** el comando de marcar no trae timestamp del cliente. Si viene, se ignora.
 
-Los esquemas Zod viven en `packages/contratos`. El cuerpo de marcación es usuario, sede, dispositivo y tipo.
+Los esquemas Zod viven en `compartido/contratos`. El cuerpo de marcación es usuario, sede, dispositivo y tipo.
 
 ## 6. Persistencia
 

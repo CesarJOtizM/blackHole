@@ -48,7 +48,7 @@ flowchart LR
     REPO["<b>Persistencia y outbox</b><br/>[Drizzle + UnidadDeTrabajo]<br/>SQLite en el nodo, PostgreSQL en modo nube"]:::componente
     MENU["<b>CatalogoMenu</b><br/>[Adaptador]<br/>Copia del menú y precios de la sede"]:::componente
     RT["<b>Tiempo real</b><br/>[Gateway WebSocket]<br/>Comandas, avisos de listo, cuenta en caja"]:::componente
-    IMPR["<b>Impresora</b><br/>[packages/impresion]<br/>Comanda y precuenta"]:::componente
+    IMPR["<b>Impresora</b><br/>[compartido/impresion]<br/>Comanda y precuenta"]:::componente
     M4["<b>M4 Inventario</b><br/>[Puerto de entrada]<br/>Consumo, devolución, merma"]:::modulo
     M0["<b>M0 Plataforma</b><br/>[Puerto de entrada]<br/>Permiso, autorización, auditoría"]:::modulo
   end
@@ -157,9 +157,9 @@ En modo nube no hay canal hacia un nodo: el pedido QR lo aplica la misma API cen
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioPedidos`, `RepositorioMesas` | `persistencia-postgres` | `persistencia-sqlite` |
+| `RepositorioPedidos`, `RepositorioMesas` | `adaptadores/postgres` | `adaptadores/sqlite` |
 | `RepositorioIntencionesQr` | PostgreSQL | — (el nodo recibe la intención por el canal de la sede) |
-| `RepositorioMenu` | `persistencia-postgres`; dueña del menú, precios y horarios | — |
+| `RepositorioMenu` | `adaptadores/postgres`; dueña del menú, precios y horarios | — |
 | `CatalogoMenu` | Lectura directa del menú | Copia sincronizada desde la nube |
 | `Impresora` | Trabajo hacia el puente de la sede | Cola local ESC/POS |
 | `NotificadorTiempoReal` | Gateway WebSocket con `LISTEN/NOTIFY` entre instancias | Gateway WebSocket del nodo |

@@ -39,7 +39,7 @@ flowchart LR
   end
 
   subgraph Salida["Salidas"]
-    CON["<b>ConectorPlataforma</b><br/>[packages/plataformas]<br/>Rappi, DiDi, Integrador, Manual"]:::componente
+    CON["<b>ConectorPlataforma</b><br/>[contextos/domicilios/adaptadores]<br/>Rappi, DiDi, Integrador, Manual"]:::componente
     REPO["<b>Repositorios</b><br/>[Drizzle, PostgreSQL]<br/>Pedidos externos, mapeos,<br/>credenciales cifradas"]:::componente
     CAN["<b>Canal de la sede</b><br/>[M0, WSS]<br/>Pedido nuevo, cancelación"]:::modulo
   end
@@ -160,8 +160,8 @@ Cada adaptador declara qué operaciones soporta (TRD-00, 6.1). Lo que no soporta
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioPedidosExternos` | `persistencia-postgres` | Copia del pedido por aceptar |
-| `RepositorioDomicilios` | `persistencia-postgres` | `persistencia-sqlite` |
+| `RepositorioPedidosExternos` | `adaptadores/postgres` | Copia del pedido por aceptar |
+| `RepositorioDomicilios` | `adaptadores/postgres` | `adaptadores/sqlite` |
 | `Secretos` | Credenciales de cada tienda, cifradas | — |
 | `CanalSede` | Gateway WebSocket hacia el nodo | Cliente WebSocket saliente |
 

@@ -25,7 +25,7 @@ Los nombres de casos de uso y puertos de este documento son el contrato. El C4 l
 | Sincronización | Outbox e inbox. Clave de idempotencia `(dispositivo_id, secuencia)`. IDs UUIDv7 |
 | Auditoría | Solo inserción. Cadena de hash por dispositivo. La nube verifica la cadena |
 | Presencia | En híbrido, la PWA habla con el nodo en la red local. En nube, comprueba el puente antes de operar |
-| Código | `packages/dominio/plataforma`, `packages/aplicacion/plataforma` |
+| Código | `contextos/plataforma/dominio`, `contextos/plataforma/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -84,7 +84,7 @@ Puerto de entrada que usan M1, M2, M4, M5 y M9: `EvaluarPermiso`, `RegistrarEven
 
 ## 5. Contratos
 
-Los esquemas Zod entran en `packages/contratos` con la primera entrega que los use. Aquí quedan los nombres.
+Los esquemas Zod entran en `compartido/contratos` con la primera entrega que los use. Aquí quedan los nombres.
 
 **HTTP, nube**
 

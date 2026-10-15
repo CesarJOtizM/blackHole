@@ -42,7 +42,7 @@ flowchart LR
     REPO["<b>Persistencia y outbox</b><br/>[Drizzle + UnidadDeTrabajo]"]:::componente
     RT["<b>Cuentas en vivo</b><br/>[Gateway WebSocket]"]:::componente
     DAT["<b>Datafono</b><br/>[Adaptador manual en Fase 1]<br/>ADR-007"]:::componente
-    IMPR["<b>Impresora</b><br/>[packages/impresion]<br/>Factura, cierre, liquidación, cajón"]:::componente
+    IMPR["<b>Impresora</b><br/>[compartido/impresion]<br/>Factura, cierre, liquidación, cajón"]:::componente
     M1["<b>M1 Pedidos</b><br/>[Puerto de entrada]<br/>Cuenta y precuenta"]:::modulo
     M3["<b>M3 Facturación</b><br/>[Puerto de entrada]<br/>Documento de venta"]:::modulo
     M8["<b>M8 Asistencia</b><br/>[Puerto de entrada]<br/>Quién trabajó"]:::modulo
@@ -150,7 +150,7 @@ La pasarela aparece dos veces porque cumple dos papeles: la API recibe sus aviso
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioCaja` | `persistencia-postgres` | `persistencia-sqlite` |
+| `RepositorioCaja` | `adaptadores/postgres` | `adaptadores/sqlite` |
 | `PasarelaPagos` | Adaptador del proveedor elegido en ADR-016 | — (el nodo no habla con la pasarela) |
 | `Datafono` | Manual (registro de aprobación, franquicia, últimos 4) | Manual; integración directa por proveedor en ADR-007 |
 | `Impresora` | Trabajo hacia el puente | Cola local; comando de cajón solo a la impresora de caja |

@@ -21,7 +21,7 @@
 | Dinero | Montos en enteros. El reparto de propinas redondea de forma determinista y el residuo queda explícito |
 | Cierre | El turno cerrado no acepta comandos de edición. La corrección es otro movimiento |
 | Documento | Al cerrar la venta llama a M3 `CrearDocumentoVenta` y espera número, CUFE y QR, o el comprobante |
-| Código | `packages/dominio/caja`, `packages/aplicacion/caja` |
+| Código | `contextos/caja/dominio`, `contextos/caja/aplicacion` |
 
 ## 2. Modelo de dominio
 

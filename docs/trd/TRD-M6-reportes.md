@@ -21,7 +21,7 @@
 | Hora | La del nodo, ya guardada en el evento. El reporte no resta relojes |
 | Detectores | Workers en la nube. Avisan por el notificador de M0. No escriben en M1 ni en M2 |
 | Exportación | Archivo en el almacén de objetos. Excel para contador y para quien liquida nómina |
-| Código | `packages/dominio/reportes`, `packages/aplicacion/reportes` |
+| Código | `contextos/reportes/dominio`, `contextos/reportes/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -69,7 +69,7 @@ Familias y fuente: [C4 M6](../arquitectura/componentes/c4-m6-reportes.md).
 
 No hay puerto de entrada para que otro módulo "guarde un reporte". Los otros emiten sus eventos; el projector los lee del inbox.
 
-Los esquemas Zod de los filtros viven en `packages/contratos`. La definición numérica vive en el dominio, no en el SQL de un solo adaptador: el SQL la implementa.
+Los esquemas Zod de los filtros viven en `compartido/contratos`. La definición numérica vive en el dominio, no en el SQL de un solo adaptador: el SQL la implementa.
 
 ## 6. Persistencia
 

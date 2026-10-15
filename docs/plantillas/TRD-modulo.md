@@ -45,7 +45,7 @@
 
 ## 9. Pruebas
 
-Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Cada fila entra al código en vertical: una prueba en rojo, el mínimo para ponerla en verde, y la siguiente. No se listan aquí pasos de implementación.
+Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Cada fila entra al código en vertical: una prueba en rojo, el mínimo para ponerla en verde, y la siguiente. La prueba de unidad va en AAA; si la fila sale de un flujo, el nombre va en GWT. No se listan aquí pasos de implementación.
 
 | Comportamiento | Capa | Qué afirma la prueba |
 |----------------|------|----------------------|

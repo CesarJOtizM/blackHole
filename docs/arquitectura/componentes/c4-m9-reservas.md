@@ -141,8 +141,8 @@ Con internet, una reserva creada desde la caja sube y la nube valida la disponib
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioReservas` | `persistencia-postgres` | Copia de las reservas del día |
-| `RepositorioAtenciones` | Copia | `persistencia-sqlite` |
+| `RepositorioReservas` | `adaptadores/postgres` | Copia de las reservas del día |
+| `RepositorioAtenciones` | Copia | `adaptadores/sqlite` |
 | `AlmacenamientoArchivos` | Comprobantes de pago y de devolución | — |
 | `PasarelaPagos` | No se usa en el piloto. Una pasarela futura entra como otro adaptador (ADR-012) | — |
 

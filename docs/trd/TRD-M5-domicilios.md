@@ -15,13 +15,13 @@
 | Tema | Decisión |
 |------|----------|
 | Hub | Vive en la nube. Credenciales de cada tienda cifradas. El nodo no llama a Rappi ni a DiDi |
-| Conectores | Puerto `ConectorPlataforma` en `packages/plataformas`. Adaptadores: Rappi, DiDi Food, Integrador y Manual (ADR-011) |
+| Conectores | Puerto `ConectorPlataforma` en `contextos/domicilios/adaptadores`. Adaptadores: Rappi, DiDi Food, Integrador y Manual (ADR-011) |
 | Pedido externo | Dueña la nube hasta que la sede lo acepta. Después el pedido interno es del dueño de la operación |
 | Idempotencia | Clave plataforma + identificador externo |
 | Manual | La caja copia. El adaptador declara que no publica estados ni menú |
 | Domiciliario | Habla con la nube por datos móviles. En un corte, solo si está en el Wi-Fi de la sede |
 | Vigía | Si el nodo no responde, puede pausar la tienda para no aceptar pedidos que no entrarían a cocina |
-| Código | `packages/dominio/domicilios`, `packages/aplicacion/domicilios` |
+| Código | `contextos/domicilios/dominio`, `contextos/domicilios/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -73,7 +73,7 @@ Aceptar es el único camino hacia `CrearPedidoInterno`. Rechazar cierra el exter
 
 **HTTP del domiciliario:** pedidos asignados y confirmación. WebSocket para el aviso de uno nuevo.
 
-Los esquemas Zod del dominio viven en `packages/contratos`. El JSON de cada plataforma no sale del adaptador.
+Los esquemas Zod del dominio viven en `compartido/contratos`. El JSON de cada plataforma no sale del adaptador.
 
 ## 6. Persistencia
 

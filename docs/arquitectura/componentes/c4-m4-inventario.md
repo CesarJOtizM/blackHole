@@ -37,7 +37,7 @@ flowchart LR
     REPO["<b>Persistencia y outbox</b><br/>[Drizzle + UnidadDeTrabajo]<br/>SQLite en el nodo, PostgreSQL en modo nube"]:::componente
     M0["<b>M0 Plataforma</b><br/>[Puerto de entrada]<br/>Permiso para ajustes"]:::modulo
     D_TRA["<b>Traslado</b><br/>[Agregado]<br/>Dos mitades con un solo ID"]:::componente
-    IMPR["<b>Impresora</b><br/>[packages/impresion]<br/>Comprobante de traslado con QR"]:::componente
+    IMPR["<b>Impresora</b><br/>[compartido/impresion]<br/>Comprobante de traslado con QR"]:::componente
   end
 
   BOD --> HTTP
@@ -173,8 +173,8 @@ flowchart LR
 
 | Puerto | Nube | Nodo de sede o de bodega |
 |--------|------|--------------------------|
-| `RepositorioMovimientos`, `RepositorioSaldos` | `persistencia-postgres`; dueña solo de bodegas sin nodo | `persistencia-sqlite`; saldo en la misma transacción |
-| `RepositorioRecetas` | `persistencia-postgres`; dueña de insumos, recetas y niveles | — |
+| `RepositorioMovimientos`, `RepositorioSaldos` | `adaptadores/postgres`; dueña solo de bodegas sin nodo | `adaptadores/sqlite`; saldo en la misma transacción |
+| `RepositorioRecetas` | `adaptadores/postgres`; dueña de insumos, recetas y niveles | — |
 | `CatalogoRecetas` | Lectura directa | Copia sincronizada, con versión |
 | `RepositorioAlertas` | Vista consolidada | Alertas de sus ubicaciones |
 | `Notificador` | Web Push al gerente; WhatsApp o correo en una fase posterior | WebSocket a caja y cocina |

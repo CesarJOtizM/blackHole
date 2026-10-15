@@ -21,9 +21,9 @@
 | Envío cortado | Estado `incierto`. Se consulta por `reference_code` antes de reenviar |
 | Ritmo | 80 solicitudes por minuto por NIT, compartidas por todas las instancias. La emisión va antes que la consulta de adquirente |
 | Bolsa | Cada documento aceptado emite `DocumentoConsumido` a M7. Sin saldo, queda pendiente con ese motivo |
-| Impresión | `packages/impresion`. En híbrido, cola del nodo. En nube, el puente. ESC/POS por TCP 9100 o USB |
+| Impresión | `compartido/impresion`. En híbrido, cola del nodo. En nube, el puente. ESC/POS por TCP 9100 o USB |
 | Archivos | XML y PDF en el almacén de objetos de la nube. El nodo guarda el resultado que necesita imprimir |
-| Código | `packages/dominio/facturacion`, `packages/aplicacion/facturacion`, `packages/facturacion`, `packages/impresion` |
+| Código | `contextos/facturacion/dominio`, `contextos/facturacion/aplicacion`, `contextos/facturacion/adaptadores/factus`, `compartido/impresion` |
 
 ## 2. Modelo de dominio
 
@@ -78,7 +78,7 @@
 
 **Impresión:** comandos ESC/POS. El cajón solo sale en un trabajo de la caja.
 
-Los esquemas Zod del documento interno viven en `packages/contratos`. El XML de la DIAN lo arma el adaptador, no el dominio.
+Los esquemas Zod del documento interno viven en `compartido/contratos`. El XML de la DIAN lo arma el adaptador, no el dominio.
 
 ## 6. Persistencia
 

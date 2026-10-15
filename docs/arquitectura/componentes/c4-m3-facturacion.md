@@ -35,7 +35,7 @@ flowchart LR
 
   subgraph Salida["Salidas"]
     REPO["<b>Persistencia y outbox</b><br/>[Drizzle + UnidadDeTrabajo]<br/>El documento sube con prioridad máxima"]:::componente
-    COLA["<b>Cola de impresión</b><br/>[packages/impresion]<br/>Plantillas, reintentos, respaldo"]:::componente
+    COLA["<b>Cola de impresión</b><br/>[compartido/impresion]<br/>Plantillas, reintentos, respaldo"]:::componente
     M0["<b>M0 Plataforma</b><br/>[Puerto de entrada]<br/>Auditoría de reimpresiones"]:::modulo
   end
 
@@ -96,7 +96,7 @@ flowchart LR
 
   subgraph Salida["Salidas"]
     RIT["<b>Limitador por NIT</b><br/>[Adaptador PostgreSQL]<br/>80 por minuto, compartido"]:::componente
-    PROV["<b>ProveedorFacturacion</b><br/>[packages/facturacion]<br/>Adaptador Factus o simulado;<br/>token OAuth2 por contribuyente"]:::componente
+    PROV["<b>ProveedorFacturacion</b><br/>[contextos/facturacion/adaptadores/factus]<br/>Adaptador Factus o simulado;<br/>token OAuth2 por contribuyente"]:::componente
     REPO["<b>Repositorios y archivos</b><br/>[Drizzle + almacenamiento de objetos]<br/>Documentos, XML, PDF, clientes"]:::componente
     MSG["<b>Mensajería</b><br/>[Adaptador]<br/>Código de un solo uso"]:::componente
     CAN["<b>Canal de la sede</b><br/>[M0]<br/>Resultado de la emisión,<br/>datos recibidos"]:::modulo
@@ -155,7 +155,7 @@ La cola de emisión siempre va antes que las consultas de adquirente: las dos co
 |--------|------|------|
 | `ProveedorFacturacion` | Factus (sandbox o producción) y simulado para pruebas | — |
 | `LimitadorRitmo` | Contador por NIT en PostgreSQL, compartido por todas las instancias | — |
-| `RepositorioDocumentos` | `persistencia-postgres` | `persistencia-sqlite` |
+| `RepositorioDocumentos` | `adaptadores/postgres` | `adaptadores/sqlite` |
 | `RepositorioClientesFiscales` | PostgreSQL, por empresa | Copia de lectura de los clientes frecuentes de la sede |
 | `AlmacenamientoArchivos` | S3, Cloud Storage o Blob Storage | Disco local |
 | `Secretos` | Gestor de secretos de la nube | — (sin credenciales de Factus en la sede) |

@@ -20,9 +20,9 @@
 | Pedido QR | Nace en la nube como `IntencionPedidoQr`. El dueño de la operación lo aplica una vez |
 | Enrutamiento | Regla pura producto → estación → pantalla, impresora o ambas. La caja siempre recibe la cuenta |
 | Tiempo real | WebSocket. En la nube, `LISTEN/NOTIFY` entre instancias |
-| Impresión de comanda y precuenta | Puerto `Impresora` de `packages/impresion`. El QR de la precuenta lo firma la sede, también sin internet |
+| Impresión de comanda y precuenta | Puerto `Impresora` de `compartido/impresion`. El QR de la precuenta lo firma la sede, también sin internet |
 | Inventario | Al enviar llama al puerto de M4. No calcula recetas |
-| Código | `packages/dominio/pedidos`, `packages/aplicacion/pedidos` |
+| Código | `contextos/pedidos/dominio`, `contextos/pedidos/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -86,7 +86,7 @@ Al aplicar una intención que esperó un corte, se usa la disponibilidad de ese 
 
 **Desde M4:** evento `DisponibilidadCambiada` (disponible, pocas unidades, agotado, no se repone hoy).
 
-Los esquemas Zod viven en `packages/contratos` y se escriben con el primer caso de uso que los necesite. El token de portal lleva sede, mesa y propósito, y vence.
+Los esquemas Zod viven en `compartido/contratos` y se escriben con el primer caso de uso que los necesite. El token de portal lleva sede, mesa y propósito, y vence.
 
 ## 6. Persistencia
 

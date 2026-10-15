@@ -21,7 +21,7 @@
 | Política | Se copia dentro de la reserva al crearla |
 | Cupo | Lo valida la nube. Sin internet, la sede crea una provisional y la nube confirma o marca conflicto |
 | Anticipo | `AplicarAnticipo` lo entrega a M2. En la factura viaja como anticipo (`prepayment_details` en el documento de M3) |
-| Código | `packages/dominio/reservas`, `packages/aplicacion/reservas` |
+| Código | `contextos/reservas/dominio`, `contextos/reservas/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -75,7 +75,7 @@ Un conflicto de cupo no se resuelve solo. Lo cierra `ResolverConflicto`.
 
 **Archivos:** comprobante de pago y de devolución en el almacén de objetos.
 
-No hay webhook bancario. Los esquemas Zod viven en `packages/contratos`.
+No hay webhook bancario. Los esquemas Zod viven en `compartido/contratos`.
 
 ## 6. Persistencia
 

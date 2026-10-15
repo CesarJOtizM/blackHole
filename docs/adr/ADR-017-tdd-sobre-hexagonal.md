@@ -14,6 +14,8 @@ El mismo caso de uso corre en el nodo (SQLite) y en la nube (PostgreSQL), y las 
 
 Todo comportamiento de M0 a M9, y de las PWA, entra por una prueba que falla. El orden es de adentro hacia afuera: dominio, caso de uso con adaptadores en memoria, contrato del puerto en los dos dialectos, adaptador externo y, al final, la entrada HTTP o WebSocket. Se avanza de a un comportamiento. No se escriben todas las pruebas del módulo antes de la implementación.
 
+Cada prueba de unidad se escribe en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA). Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre de la prueba usa dado, cuando y entonces (GWT). Given es preparar, When es actuar y Then es comprobar: es la misma forma, con el vocabulario del escenario.
+
 Los dobles de lo nuestro son adaptadores en memoria del puerto real. Los de Factus, la pasarela, las plataformas y la impresora son otros adaptadores de ese mismo puerto. Drizzle no se simula. El dominio no depende de Nest.
 
 ## Consecuencias

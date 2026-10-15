@@ -104,7 +104,7 @@ flowchart LR
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioMarcaciones` | `persistencia-postgres` | `persistencia-sqlite` |
+| `RepositorioMarcaciones` | `adaptadores/postgres` | `adaptadores/sqlite` |
 | `Reloj` | Hora del servidor | Hora del nodo; el celular no la pone |
 | `PresenciaLocal` | Comprueba que el dispositivo llega al puente | La petición entra por la red del local |
 | `AlmacenamientoArchivos` | Exportaciones | — |

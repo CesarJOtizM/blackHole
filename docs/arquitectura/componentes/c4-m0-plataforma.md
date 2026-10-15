@@ -180,7 +180,7 @@ Orden de envío de la outbox: documentos DIAN y pagos QR confirmados, pedidos QR
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioOrganizacion`, `RepositorioIdentidad`, `RepositorioDispositivos` | `persistencia-postgres` con Row Level Security | `persistencia-sqlite`, copia de su sede |
+| `RepositorioOrganizacion`, `RepositorioIdentidad`, `RepositorioDispositivos` | `adaptadores/postgres` con Row Level Security | `adaptadores/sqlite`, copia de su sede |
 | `RepositorioAuditoria` | PostgreSQL, solo inserción | SQLite, solo inserción |
 | `UnidadDeTrabajo` | Transacción que fija el `tenant_id` | Transacción con escritura en la outbox |
 | `Outbox` / `Inbox` | Inbox con clave `(dispositivo_id, secuencia)` | Outbox y cursor de configuración |

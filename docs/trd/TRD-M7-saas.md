@@ -21,7 +21,7 @@
 | Sin saldo | M3 deja la factura pendiente. Al recargar, M7 llama a M3 para emitir las de motivo "sin saldo" |
 | Suscripción | Activa, en gracia, suspendida. El cobro va detrás de `PasarelaSuscripcion`, distinto de `PasarelaPagos` del QR |
 | Carga inicial | Archivos en el almacén de objetos. Los casos de uso de menú y recetas son los de M1 y M4 |
-| Código | `packages/dominio/saas`, `packages/aplicacion/saas` |
+| Código | `contextos/saas/dominio`, `contextos/saas/aplicacion` |
 
 ## 2. Modelo de dominio
 
@@ -75,7 +75,7 @@ Nada de esto baja al nodo, salvo el estado de suspensión, que M0 necesita para 
 
 `PasarelaSuscripcion` se nombra aquí y se elige en la entrega 4.3. No comparte adaptador con ADR-016.
 
-Los esquemas Zod viven en `packages/contratos`.
+Los esquemas Zod viven en `compartido/contratos`.
 
 ## 6. Persistencia
 

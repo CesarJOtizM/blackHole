@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.7 |
+| Versión | 0.8 |
 | Fecha | 2026-10-15 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
 
@@ -23,8 +23,9 @@
 | Impresión | ESC/POS por red o USB. En híbrido imprime el nodo. En nube imprime un **puente** (el mismo programa, sin guardar la operación) | Propuesta |
 | Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Propuesta |
 | Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Propuesta |
-| Código | Monolito modular con **arquitectura hexagonal en todos los módulos** e inyección de dependencias con NestJS (sección 14) | Decidido |
-| Construcción | **TDD por comportamiento**, de adentro hacia afuera, en M0 a M9 y en las PWA (sección 16) | Decidido |
+| Código | Monolito modular. Cada módulo es un **bounded context** y el monorepo lo muestra primero (**screaming architecture**). Dentro, hexagonal e inyección con NestJS (sección 14, [ADR-018](../adr/ADR-018-screaming-y-bounded-context.md)) | Decidido |
+| Diseño | **SoC, SOLID, DRY, KISS y YAGNI**, con lenguaje ubicuo por contexto. DRY no funde modelos de contextos distintos (sección 14.2) | Decidido |
+| Construcción | **TDD por comportamiento**, de adentro hacia afuera. Prueba de unidad en **AAA**; si sale de un flujo, el nombre va en **GWT** (sección 16) | Decidido |
 | Stack | NestJS sobre Fastify, Drizzle, React + Vite con TanStack (sección 13) | Decidido |
 | Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo; escalado automático; OpenTelemetry y Sentry. Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Propuesta |
 
@@ -878,7 +879,7 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 
 **Evaluación**
 
-- Una función pura en `packages/dominio`: `evaluar(usuario, accion, contexto) → Permitido | RequiereAutorizacion(permiso, tope_excedido) | Denegado(motivo)`. El contexto trae la sede, el valor de la acción y los acumulados del turno (por ejemplo, anulaciones ya hechas).
+- Una función pura en `contextos/plataforma/dominio`: `evaluar(usuario, accion, contexto) → Permitido | RequiereAutorizacion(permiso, tope_excedido) | Denegado(motivo)`. El contexto trae la sede, el valor de la acción y los acumulados del turno (por ejemplo, anulaciones ya hechas).
 - Resolución del alcance: una asignación en la empresa cubre sus marcas, sedes y bodegas; en una marca, sus sedes. Si el usuario tiene varias asignaciones aplicables, gana la más permisiva, y luego se aplica el `AjusteSede`.
 - **El mismo código corre en el nodo y en la nube.** El nodo evalúa las acciones de su sede sin internet, y la nube las de la administración web.
 - El nodo guarda una copia de los roles, las asignaciones y los ajustes de su sede (dueño: la nube, sección 5.1). Excepción: **desactivar un usuario o revocar un dispositivo** se puede hacer en el nodo sin internet; el cambio se aplica al instante y sube después.
@@ -941,7 +942,7 @@ Decidido el 2026-10-15. Sigue pendiente la nube de producción (ADR-005).
 | Monorepo | pnpm + Turborepo | Nx | Simple y rápido para un equipo pequeño |
 | Lenguaje y runtime | TypeScript estricto sobre Node.js 24 LTS | — | Un solo lenguaje; el dominio y los casos de uso se comparten entre el nodo y la nube |
 | API (nube, nodo y puente) | NestJS sobre Fastify (`@nestjs/platform-fastify`) | Fastify solo | La inyección de dependencias conecta los puertos con sus adaptadores en todos los módulos (sección 14). Fastify debajo mantiene el servidor liviano en el nodo |
-| Validación y contratos | Zod 4 en `packages/contratos`, integrado a Nest con `nestjs-zod` | `class-validator` | El mismo esquema valida en la PWA, el nodo y la nube |
+| Validación y contratos | Zod 4 en `compartido/contratos`, integrado a Nest con `nestjs-zod` | `class-validator` | El mismo esquema valida en la PWA, el nodo y la nube |
 | Acceso a datos | Drizzle, con un esquema para PostgreSQL y otro para SQLite | Prisma, Kysely | Políticas de Row Level Security en el esquema (`pgPolicy`), transacciones explícitas para la outbox y SQL con tipos. Drizzle **no** comparte un mismo esquema entre dialectos: cada base tiene sus tablas y migraciones, detrás de los mismos puertos |
 | Base de datos de la nube | PostgreSQL gestionado (RDS, Cloud SQL o Azure Database for PostgreSQL), solo con extensiones disponibles en las tres | — | Row Level Security, JSONB, madurez; portable entre nubes |
 | Base de datos del nodo | SQLite (modo WAL) con `better-sqlite3` | — | Sin administración; suficiente para una sede; un archivo fácil de respaldar y restaurar |
@@ -964,46 +965,101 @@ Decidido el 2026-10-15. Sigue pendiente la nube de producción (ADR-005).
 
 ## 14. Organización del código
 
+El monorepo se ordena por el negocio. Cada módulo M0 a M9 es un **bounded context**: su propio lenguaje y su propio modelo. La primera carpeta de cada uno lleva el nombre del negocio (`contextos/pedidos`, `contextos/caja`). Eso es screaming architecture: al abrir el repositorio se ven los casos de uso, y el framework queda en el borde. Por dentro, cada contexto sigue siendo hexagonal.
+
+Las apps son la raíz de composición. Eligen el modo (nube, nodo o puente) y enchufan adaptadores. Las reglas viven en el contexto.
+
 ```
-apps/
-  api-nube/          # API central + workers
-  nodo-local/        # Servidor de la sede (API, WebSocket, impresión, sincronización)
-  app-sede/          # PWA del personal: salón, punto de pedido, caja y cocina, con pantallas por rol
-  app-domicilios/    # PWA del domiciliario
-  web-admin/         # Administración y reportes
-  portal-clientes/   # Web pública: datos de facturación y consulta de facturas
-packages/
-  dominio/           # Entidades, objetos de valor y reglas puras, por módulo. Sin Nest ni base de datos
-  aplicacion/        # Casos de uso y puertos, por módulo. Los mismos en el nodo y en la nube
-  persistencia-postgres/  # Adaptadores de los puertos de repositorio para la nube (Drizzle + PostgreSQL)
-  persistencia-sqlite/    # Adaptadores de los puertos de repositorio para el nodo (Drizzle + SQLite)
-  contratos/         # Esquemas Zod, eventos y DTOs compartidos
-  sincronizacion/    # Outbox e inbox, cursores
-  impresion/         # Plantillas y driver ESC/POS
-  facturacion/       # Puerto + adaptadores del proveedor DIAN
-  plataformas/       # Puerto ConectorPlataforma + adaptadores (Rappi, DiDi, integrador, manual)
-  ui/                # Componentes compartidos
-infra/               # Terraform: módulos por nube y ambientes (TRD-01, sección 4)
+contextos/                 # el negocio. Una carpeta por bounded context
+  plataforma/              # M0. Aparece en la Fase 0, con su primera prueba en rojo
+    dominio/
+    aplicacion/
+      puerto-de-entrada.ts # lo único que otro contexto puede importar
+      <caso-de-uso>/       # un caso de uso por carpeta, con su prueba al lado
+    adaptadores/
+      memoria/
+      postgres/
+      sqlite/
+      http/
+  pedidos/                 # M1. El resto de contextos se crea igual, cuando les toca
+  caja/                    # M2
+  facturacion/             # M3. El adaptador de Factus vive en adaptadores/factus
+  inventario/              # M4
+  domicilios/              # M5. Rappi, DiDi, integrador y manual viven en adaptadores/
+  reportes/                # M6
+  saas/                    # M7
+  asistencia/              # M8
+  reservas/                # M9
+compartido/                # lenguaje publicado y capacidades técnicas, sin regla de negocio
+  contratos/               # esquemas Zod, eventos y DTOs. El mismo en la PWA, el nodo y la nube
+  sincronizacion/          # outbox, inbox y cursores
+  impresion/               # plantillas y driver ESC/POS. Varios contextos lo usan por el puerto Impresora
+  ui/                      # componentes visuales
+apps/                      # raíz de composición y pantallas
+  api-nube/                # enlaza los adaptadores postgres y los de la nube
+  nodo-local/              # enlaza los adaptadores sqlite; el perfil puente solo carga impresión
+  app-sede/                # pantallas agrupadas por contexto: pedidos, caja, cocina
+  app-domicilios/
+  web-admin/
+  portal-clientes/
+infra/                     # Terraform (TRD-01, sección 4)
 ```
 
-- **Monolito modular**: cada módulo (M0 a M9) tiene su dominio, sus casos de uso y sus adaptadores. Un módulo no importa el interior de otro; habla con él por su puerto de entrada o por eventos.
-- **Arquitectura hexagonal en todos los módulos**, también en catálogos y configuración. Un módulo sencillo tiene un dominio delgado, pero respeta las mismas capas.
-- **`app-sede` carga cada pantalla por separado**: el celular del mesero no descarga la caja ni la cocina hasta que alguien con ese rol las abre. Cada pantalla tiene su propia barrera de errores. Ocultar una pantalla no reemplaza el permiso: la decisión siempre es del servidor (sección 10.2).
+Una carpeta de contexto entra al repositorio con el primer comportamiento de ese módulo, en el ciclo de la sección 16. Un catálogo o una configuración también tienen dominio, aunque sea delgado, y respetan las mismas capas.
+
+### 14.1 Bounded context
+
+Dentro de un contexto, un término significa una sola cosa. El mismo término puede significar otra cosa en el contexto de al lado: la cuenta de pedidos, el turno de caja y el documento de facturación son modelos distintos. Se relacionan por un identificador y por lo que uno le entrega al otro.
+
+| Cruce | Cómo se hace en código |
+|-------|------------------------|
+| Otro módulo de blackHole | Llama al `puerto-de-entrada` de ese contexto, o reacciona a un evento de `compartido/contratos` |
+| Sistema externo (Factus, pasarela, Rappi, DiDi, impresora) | Un adaptador traduce su modelo al lenguaje del contexto. El dominio no ve el JSON ni el protocolo de afuera. Esa traducción es la capa anticorrupción |
+| Pantalla | Muestra y envía. La regla sigue en el servidor (sección 16.7) |
+
+Quién le entrega qué a quién está en [Flujos](../flujos/README.md). Si un diagrama y un TRD no coinciden, manda el TRD.
+
+- Un contexto importa de otro solo su `aplicacion/puerto-de-entrada.ts`, o un evento de `compartido/contratos`.
+- `compartido/contratos` es el lenguaje publicado. Ahí viven esquemas y eventos, y queda fuera el modelo de dominio de cada contexto.
+- `compartido/impresion` y `compartido/sincronizacion` implementan puertos técnicos. Una regla de salón, caja o factura que aparezca ahí se mueve a su contexto.
+
+### 14.2 Principios de diseño
+
+Estos principios se aplican dentro de la hexagonal y del TDD. Si uno empuja a saltarse una capa o a fundir dos contextos en un solo modelo, mandan el bounded context y la regla de dependencia.
+
+| Principio | Qué se hace aquí |
+|-----------|------------------|
+| **Separación de responsabilidades (SoC)** | Tres cortes: el contexto (qué negocio), la capa (dominio, aplicación, adaptador) y el proceso (nube, nodo, puente) |
+| **S — una sola razón de cambio** | Un caso de uso cambia cuando cambia esa operación. Un agregado cambia cuando cambia su invariante |
+| **O — abierto a la extensión** | Un adaptador nuevo (otra base, otro proveedor, otra plataforma) deja el caso de uso igual |
+| **L — sustituible** | Memoria, SQLite y PostgreSQL pasan la misma suite de contrato. Si uno no puede ocupar el lugar del otro, el puerto está mal |
+| **I — interfaces pequeñas** | Un puerto por agregado o por sistema externo. Cada puerto cubre una sola colaboración |
+| **D — depender de abstracciones** | El caso de uso pide la clase abstracta del puerto. Drizzle, HTTP y el SDK del proveedor se quedan en el adaptador |
+| **DRY** | Dentro del contexto, y en el lenguaje publicado, cada regla y cada esquema existen una sola vez: el contrato del puerto, el esquema Zod y el cálculo de impuestos. Cada contexto conserva su modelo, aunque un nombre coincida con el del vecino |
+| **KISS** | El camino más corto que respeta las capas. Un catálogo tiene poco dominio. Quedan fuera el event sourcing y un modelo de lectura por cada caso de uso |
+| **YAGNI** | El contexto, el puerto y el adaptador aparecen con la prueba que los pide. Los dos dialectos de base ya están decididos: el nodo y la nube los necesitan desde la Fase 0 |
+| **Lenguaje ubicuo** | Clases, casos de uso, errores y pruebas usan las palabras del módulo (`EnviarACocina`, `PedidoVacio`) |
+| **Regla de dependencia** | Adaptadores → aplicación → dominio. El dominio solo depende del lenguaje |
+| **Modelo con comportamiento** | La invariante la protege el agregado. El caso de uso coordina |
+| **Separación comando/consulta** | Un caso de uso cambia estado o responde una consulta. Las proyecciones de reportes siguen en la sección 11 |
+| **Raíz de composición** | Solo las apps conocen el adaptador concreto que se enlaza en cada proceso |
 
 **Capas y dependencias**
 
 | Capa | Dónde vive | Contiene | Puede depender de |
 |------|------------|----------|-------------------|
-| Dominio | `packages/dominio/<modulo>` | Entidades, objetos de valor, reglas puras (impuestos, permisos, totales) | Nada más que el lenguaje |
-| Aplicación | `packages/aplicacion/<modulo>` | Casos de uso, puertos de entrada y de salida (repositorios, `ProveedorFacturacion`, `Impresora`, `Reloj`, `Secretos`…) | Dominio y `@nestjs/common` (solo `@Injectable` e `@Inject`) |
-| Infraestructura | `packages/persistencia-*`, `packages/facturacion`, `packages/plataformas`, `packages/impresion` y los módulos Nest de cada app | Adaptadores de los puertos, controladores HTTP, gateways WebSocket, workers | Aplicación y dominio |
+| Dominio | `contextos/<contexto>/dominio` | Entidades, objetos de valor, reglas puras (impuestos, permisos, totales) | Nada más que el lenguaje |
+| Aplicación | `contextos/<contexto>/aplicacion` | Casos de uso y puertos de entrada y de salida (`RepositorioPedidos`, `ProveedorFacturacion`, `Impresora`, `Reloj`, `Secretos`…) | Su dominio y `@nestjs/common` (solo `@Injectable` e `@Inject`) |
+| Adaptadores | `contextos/<contexto>/adaptadores` y `compartido/impresion` | Persistencia, HTTP, WebSocket, workers, Factus, plataformas, impresora | Aplicación y dominio de su contexto |
+| Composición | `apps/*` | Módulos Nest que enlazan puertos con adaptadores, y las pantallas | El puerto de entrada, los adaptadores del dialecto de esa app, y `compartido` |
 
-- La dependencia va siempre hacia adentro: infraestructura → aplicación → dominio. dependency-cruiser lo verifica en la integración continua.
+- La dependencia va siempre hacia adentro: adaptadores → aplicación → dominio. dependency-cruiser lo verifica en la integración continua.
 - **Los puertos de salida son clases abstractas** y sirven de token de inyección de Nest. Ejemplo: `abstract class RepositorioPedidos`. El caso de uso pide `RepositorioPedidos`; no sabe si detrás hay PostgreSQL o SQLite.
-- **Cada app arma sus adaptadores** en sus módulos Nest. `api-nube` enlaza los puertos con `persistencia-postgres`; `nodo-local` los enlaza con `persistencia-sqlite`; el perfil `puente` solo carga el módulo de impresión. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
+- **Cada app arma sus adaptadores** en sus módulos Nest. `api-nube` enlaza los puertos con `adaptadores/postgres`; `nodo-local` los enlaza con `adaptadores/sqlite`; el perfil `puente` solo carga `compartido/impresion`. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
 - **El dominio no usa decoradores de Nest.** Así el motor de impuestos y la evaluación de permisos se prueban y se usan sin arrancar un contenedor de inyección.
 - **Transacciones**: un puerto `UnidadDeTrabajo` envuelve el cambio y su registro en la outbox en la misma transacción (sección 5.2). En la nube, también fija el `tenant_id` de Row Level Security al empezar.
 - **Cómo se escribe**: cada comportamiento entra por una prueba que falla, en el orden de la sección 16. Los casos de uso se prueban con adaptadores en memoria, sin Nest. Una misma suite de contrato por puerto corre contra la memoria, PostgreSQL y SQLite.
+- **`app-sede` carga cada pantalla por separado** y las agrupa por contexto. El celular del mesero no descarga la caja ni la cocina hasta que alguien con ese rol las abre. Cada pantalla tiene su propia barrera de errores. Ocultar una pantalla no reemplaza el permiso: la decisión siempre es del servidor (sección 10.2).
 
 ## 15. Requisitos no funcionales
 
@@ -1027,6 +1083,8 @@ La sección 14 dice **dónde** vive cada pieza. Esta sección dice **en qué ord
 ### 16.1 Un comportamiento a la vez
 
 No se escribe código de producción de un comportamiento sin una prueba que lo pida y falle antes. El ciclo es rojo, verde, refactorizar. Se avanza en vertical: una prueba, el mínimo para que pase, y la siguiente. No se escriben primero todas las pruebas del módulo y después toda la implementación.
+
+La prueba de unidad se parte en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA, sección 16.10). Si el comportamiento sale de un flujo o de un escenario del PRD, el nombre usa dado, cuando y entonces (GWT).
 
 Orden dentro de cada caso de uso, de adentro hacia afuera:
 
@@ -1065,12 +1123,12 @@ La lógica de negocio se prueba en el dominio. Si una regla solo se puede verifi
 Al lado del código que protegen. La suite de contrato vive junto al puerto; cada adaptador la importa y la corre, sin copiarla.
 
 ```
-packages/dominio/<modulo>/<agregado>.test.ts
-packages/aplicacion/<modulo>/<caso-de-uso>.test.ts
-packages/aplicacion/<modulo>/puertos/<puerto>.contrato.ts
-packages/persistencia-sqlite/<modulo>/<repositorio>.contrato.test.ts
-packages/persistencia-postgres/<modulo>/<repositorio>.contrato.test.ts
-packages/<adaptador-externo>/<adaptador>.contrato.test.ts
+contextos/<contexto>/dominio/<agregado>.test.ts
+contextos/<contexto>/aplicacion/<caso-de-uso>/<caso-de-uso>.test.ts
+contextos/<contexto>/aplicacion/puertos/<puerto>.contrato.ts
+contextos/<contexto>/adaptadores/sqlite/<repositorio>.contrato.test.ts
+contextos/<contexto>/adaptadores/postgres/<repositorio>.contrato.test.ts
+contextos/<contexto>/adaptadores/<externo>/<adaptador>.contrato.test.ts
 apps/<app>/test/          # entradas HTTP, WebSocket y recorridos de esa app
 ```
 
@@ -1080,10 +1138,10 @@ Quien define el puerto escribe el contrato. Quien agrega un adaptador lo hace pa
 
 dependency-cruiser falla el cambio si:
 
-- `packages/dominio` importa Nest, Drizzle, HTTP, un adaptador o una app.
-- `packages/aplicacion` importa un adaptador, Drizzle o una app. Solo puede usar `@nestjs/common` para `@Injectable` e `@Inject`.
-- Un módulo importa el interior de otro. El cruce permitido es su puerto de entrada o un evento de `packages/contratos`.
-- Una app importa el esquema Drizzle del otro dialecto (`api-nube` no importa SQLite; `nodo-local` no importa el esquema de PostgreSQL).
+- `contextos/<contexto>/dominio` importa Nest, Drizzle, HTTP, un adaptador o una app.
+- `contextos/<contexto>/aplicacion` importa un adaptador, Drizzle o una app. Solo puede usar `@nestjs/common` para `@Injectable` e `@Inject`.
+- Un contexto importa el dominio, los casos de uso internos o los adaptadores de otro. El cruce permitido es `aplicacion/puerto-de-entrada.ts` o un evento de `compartido/contratos`.
+- Una app importa el esquema Drizzle del otro dialecto (`api-nube` no importa `adaptadores/sqlite`; `nodo-local` no importa `adaptadores/postgres`).
 
 Otras pruebas de arquitectura, junto a las de la sección 10.2:
 
@@ -1103,16 +1161,16 @@ No se exige un porcentaje de líneas cubiertas. Se exige que cada invariante del
 | Entrada delgada | El controlador valida con Zod, llama un caso de uso y traduce el error de dominio a HTTP. No abre transacciones ni arma SQL |
 | Errores de dominio | El dominio lanza errores con nombre de negocio (`PedidoVacio`, `TopeExcedido`). El mapa a códigos HTTP existe una sola vez, en la entrada |
 | Idempotencia | Todo comando que puede reintentarse (sincronización, webhook, Factus, pago QR) tiene prueba de "la segunda vez no duplica" |
-| Contratos compartidos | El esquema Zod de `packages/contratos` es el mismo en la PWA, el nodo y la nube. No se duplica el DTO |
+| Contratos compartidos | El esquema Zod de `compartido/contratos` es el mismo en la PWA, el nodo y la nube. El DTO del lenguaje publicado existe una sola vez |
 | Sin adelantar complejidad | No hay event sourcing ni un modelo de lectura separado por caso de uso. Las proyecciones de reportes (sección 11) se agregan cuando el reporte existe |
 
 ### 16.7 La PWA no reimplementa las reglas
 
 Las pantallas muestran y envían. La decisión sigue en el servidor (sección 10.2).
 
-- Totales, impuestos, permisos y "agotado" salen de las funciones puras de `packages/dominio` cuando la pantalla necesita el mismo número que el servidor. Esas funciones ya tienen prueba; el componente no las vuelve a escribir.
+- Totales, impuestos, permisos y "agotado" salen de las funciones puras del dominio de su contexto cuando la pantalla necesita el mismo número que el servidor. Esas funciones ya tienen prueba; el componente las usa tal cual.
 - El estado del servidor vive en TanStack Query. El estado de interfaz (panel abierto, paso del asistente) vive en Zustand. No se mezclan.
-- Una pantalla no llama `fetch` a mano: usa el cliente tipado a partir de los esquemas de `packages/contratos`.
+- Una pantalla no llama `fetch` a mano: usa el cliente tipado a partir de los esquemas de `compartido/contratos`.
 - Cada pantalla carga aparte y tiene su propia barrera de errores (sección 14). Una prueba de recorrido comprueba que el mesero no descarga la caja.
 
 ### 16.8 Cuándo corre cada suite
@@ -1131,6 +1189,39 @@ Estas tres no se cubren solo con la prueba del dominio:
 - **Sincronización**: corte simulado, evento duplicado, eventos fuera de orden, reinicio del nodo y cambio de `dueno_operacion` a mitad de un lote.
 - **DIAN**: el simulador de Factus en el ciclo diario; el sandbox compartido solo con datos de prueba, para el cálculo de impuestos (sección 8.6) y el `reference_code` repetido.
 - **Impresión**: la plantilla se prueba contra una salida ESC/POS fijada en el repositorio; la impresora real queda en el ensayo del piloto.
+
+### 16.10 Forma de la prueba: AAA y GWT
+
+Toda prueba de unidad —dominio, caso de uso, contrato y entrada— tiene tres bloques y una línea en blanco entre ellos:
+
+1. **Preparar** (Arrange): el estado previo. Pedido, permisos, reloj fijo, adaptadores en memoria.
+2. **Actuar** (Act): una sola acción. La que nombra la prueba.
+3. **Comprobar** (Assert): el resultado, el evento o el error de negocio.
+
+```ts
+it("rechaza el envío si el pedido no tiene líneas", () => {
+  const pedido = Pedido.abrir({ mesaId, sedeId });
+
+  const enviar = () => pedido.enviarACocina();
+
+  expect(enviar).toThrow(PedidoVacio);
+});
+```
+
+Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre se escribe en **dado / cuando / entonces** (GWT). Given es preparar, When es actuar y Then es comprobar.
+
+```ts
+it("dado un pedido con líneas, cuando se envía a cocina, entonces cada producto queda en su estación", () => {
+  const pedido = Pedido.abrir({ mesaId, sedeId });
+  pedido.agregar(productoDeCocina);
+
+  pedido.enviarACocina();
+
+  expect(pedido.lineas[0].estacion).toBe("cocina");
+});
+```
+
+Playwright usa esa misma frase como título del recorrido. Una prueba cubre un comportamiento. Los `expect` de un mismo resultado pueden ir juntos en el bloque de comprobar.
 
 ## 17. Riesgos técnicos
 
@@ -1179,12 +1270,13 @@ Estas tres no se cubren solo con la prueba del dominio:
 | ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
 | ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
 | ADR-016 | Pasarela del pago QR en la mesa: proveedor, medios (Nequi, Daviplata, Bre-B, tarjeta) y webhook. Las reservas no entran aquí (ADR-012) | Antes de la entrega 1.13 |
-| ADR-017 | Construir con TDD sobre la hexagonal, en todos los módulos ([ADR-017](../adr/ADR-017-tdd-sobre-hexagonal.md), sección 16) | Decidido |
+| ADR-017 | Construir con TDD sobre la hexagonal, en AAA y GWT, en todos los módulos ([ADR-017](../adr/ADR-017-tdd-sobre-hexagonal.md), sección 16) | Decidido |
+| ADR-018 | Screaming architecture por bounded context, con SoC, SOLID, DRY, KISS y YAGNI ([ADR-018](../adr/ADR-018-screaming-y-bounded-context.md), sección 14) | Decidido |
 ## 19. Plan de la Fase 0
 
 1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real.
 2. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero.
-3. Esqueleto del monorepo con el arnés de la sección 16 (Vitest, dependency-cruiser, suite de contrato y adaptadores en memoria), la API del nodo, la API de la nube y la sincronización outbox/inbox. El primer caso de uso entra por una prueba que falla.
+3. Esqueleto del monorepo con la forma de la sección 14 (`contextos/plataforma` y `compartido`) y el arnés de la sección 16 (Vitest, dependency-cruiser, suite de contrato y adaptadores en memoria), la API del nodo, la API de la nube y la sincronización outbox/inbox. El primer caso de uso entra por una prueba que falla.
 4. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash.
 5. Prueba de los dos modos: una sede en nube opera de punta a punta sin nodo. Al activar híbrido, se crean pedidos en el nodo, se desconecta 2 h, se reconecta y no se pierde ni se duplica nada. Volver a nube exige outbox en cero.
 6. Prueba de intermitencia del portal: un pedido QR y un pago QR confirmado durante el corte se aplican una sola vez al reconectar.
