@@ -20,6 +20,8 @@ Plantillas para los documentos de módulo: [PRD de módulo](plantillas/PRD-modul
 
 Los flujos de cada funcionalidad, y cómo se pasan el trabajo entre sí, están diagramados en [Flujos](flujos/README.md).
 
+La estructura del sistema (diagramas C4 de contexto, contenedores y componentes por módulo) y la comunicación de la infraestructura (redes, protocolos, puertos y quién abre cada conexión) están en [Arquitectura](arquitectura/README.md).
+
 ## Mapa de módulos
 
 | ID | Módulo | Fase | PRD | TRD |

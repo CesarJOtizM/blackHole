@@ -589,7 +589,7 @@ Reglas:
 - **En modo híbrido, durante un corte espera en la nube**, y se aplica al reconectar: la factura electrónica, los pedidos y pagos hechos desde el QR de la mesa, los pedidos de plataformas, las reservas del enlace público, los cambios de menú hechos en la administración web y la vista de la sede desde fuera.
 - El celular del cliente usa sus propios datos. Por eso puede armar el pedido y pagar aunque la sede esté cortada. Cocina y caja lo ven cuando el nodo vuelve a hablar con la nube.
 - **La factura electrónica necesita internet.** En un corte, el cliente recibe un comprobante de venta con un QR (no es factura). La factura se emite sola al reconectar. No usamos factura de papel.
-- Un módem 4G en el nodo es un respaldo opcional para acortar el corte en una sede intermitente.
+- Se recomienda un módem 4G de respaldo en todas las sedes, para acortar los cortes: en el nodo si la sede es híbrida, o en el router en modo nube.
 - El sistema alerta cuando hay facturas, pedidos QR o pagos QR pendientes por más de un tiempo configurable.
 - La administración ve, para cada sede, la última sincronización y cuántos documentos y eventos están pendientes.
 
@@ -651,7 +651,7 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Cambios en la norma DIAN | El proveedor tecnológico absorbe los cambios del formato; nosotros mantenemos las reglas de negocio |
 | Alcance demasiado grande para un equipo pequeño | Fases cortas con criterio de salida; nada de la Fase N+1 entra en la Fase N |
 | Errores en impuestos por la variedad de regímenes | Motor de impuestos configurable, perfiles predefinidos validados por un contador y pruebas con casos reales de cada régimen |
-| Ventas hechas durante un corte que se facturan con retraso, porque no usamos factura de papel | Emisión automática al reconectar, alertas de pendientes y QR de consulta en el comprobante. Módem 4G opcional en sedes intermitentes |
+| Ventas hechas durante un corte que se facturan con retraso, porque no usamos factura de papel | Emisión automática al reconectar, alertas de pendientes y QR de consulta en el comprobante. Módem 4G de respaldo recomendado en todas las sedes |
 | Alguien fotografía el QR de la mesa y pide desde fuera del local | El pedido queda en esa mesa y el personal lo ve al instante. La sede puede exigir aceptación en caja antes de cocina. Anular sigue pidiendo permiso |
 | Un pago QR se confirma dos veces o el cliente paga un monto distinto | El monto lo fija la cuenta. La pasarela confirma una sola vez, con un identificador único. Sin esa confirmación el pago no existe |
 | Las plataformas tardan en dar acceso a su API, o no lo dan | Pedir el acceso desde la Fase 0; usar la captura manual mientras tanto; evaluar un integrador que ya esté conectado a las plataformas |
@@ -680,7 +680,7 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 - Lista de NIT, con su régimen y las sedes que factura cada uno.
 - Por cada NIT, para activarlo en Factus: Cámara de Comercio (menos de 30 días), cédula del representante legal, RUT, y acceso al usuario DIAN de la empresa para solicitar los rangos.
 - Rangos de numeración DIAN de cada NIT: uno electrónico por sede (sin rangos de papel).
-- Internet de cada sede: conectada o intermitente, y si conviene un módem 4G de respaldo.
+- Internet de cada sede: conectada o intermitente, y dónde va el módem 4G de respaldo.
 - Datáfonos por sede (Credibanco, Bold o Redeban).
 - Mínimos iniciales de los insumos principales, o permiso para que el sistema los sugiera después de unas semanas de operación.
 - Política de propinas y de reservas de cada sede.

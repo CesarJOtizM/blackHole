@@ -83,7 +83,7 @@ sequenceDiagram
   end
 ```
 
-La administración web entra con correo y contraseña en la nube. El celular del mesero solo habla con el nodo, dentro de la red del local, y no guarda datos del negocio.
+La administración web entra con correo y contraseña en la nube. En híbrido, el celular del mesero solo habla con el nodo, dentro de la red del local. En modo nube habla con la nube y antes de operar comprueba que llega al puente del local. En los dos casos no guarda datos del negocio.
 
 ## Registro y revocación de un celular
 

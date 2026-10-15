@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.5 |
+| Versión | 0.6 |
 | Fecha | 2026-10-15 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
 
@@ -235,7 +235,7 @@ Toda sede tiene internet (PRD-00, sección 9.1). La arquitectura es la misma en 
 | Modo | Cómo sincroniza | Hardware adicional |
 |------|-----------------|--------------------|
 | Conectada | De forma continua por el internet de la sede | Ninguno |
-| Intermitente | La misma sincronización, con reintentos y espera creciente. Al volver el enlace se reanuda desde el último evento confirmado | Opcional: módem 4G de respaldo en el nodo, para acortar el corte |
+| Intermitente | La misma sincronización, con reintentos y espera creciente. Al volver el enlace se reanuda desde el último evento confirmado | Módem 4G de respaldo, recomendado en todas las sedes (sección 8.3): en el nodo si la sede es híbrida, o en el router de la sede en modo nube |
 
 Detalles:
 
@@ -560,7 +560,7 @@ Como el `reference_code` es idempotente en Factus (si se repite, devuelve la fac
 - `429` repetidos de Factus.
 
 **Riesgo asumido**: la norma pide entregar la factura al momento de la venta. Al no usar contingencia, las ventas sin internet se facturan con retraso. Mitigaciones:
-- **Módem 4G de respaldo recomendado en todas las sedes**, para que el tiempo sin conexión sea mínimo.
+- **Módem 4G de respaldo recomendado en todas las sedes**, para que el tiempo sin conexión sea mínimo: en el nodo si la sede es híbrida, o en el router de la sede en modo nube.
 - Emisión inmediata y automática al reconectar.
 - Alerta al administrador si hay pendientes por más de un tiempo configurable (por ejemplo, 1 hora).
 
@@ -821,8 +821,8 @@ El nodo guarda una copia de los usuarios y los hashes de los PIN de su sede, par
 
 No controlamos esos celulares, así que la seguridad no puede depender de ellos.
 
-- **El celular solo funciona dentro del local**: la PWA del mesero habla únicamente con el nodo, por la red Wi-Fi de la sede. Desde la casa no puede tomar pedidos ni ver información.
-- **Registro del dispositivo**: el administrador autoriza cada celular escaneando un QR que muestra el nodo. El celular queda con una credencial propia, asociada al usuario y a la sede.
+- **El celular solo funciona dentro del local**. En híbrido, la PWA del mesero habla únicamente con el nodo, por la red Wi-Fi de la sede. En modo nube habla con la API central y, antes de operar, comprueba que llega al puente del local (sección 5.0). Desde la casa no puede tomar pedidos ni ver información. La única excepción es una sede en modo nube sin ningún equipo local: ahí un dispositivo registrado y con PIN opera desde donde tenga internet, hasta que se revoque.
+- **Registro del dispositivo**: el administrador autoriza cada celular escaneando un QR que muestra el nodo (en modo nube, lo muestra la web de administración). El celular queda con una credencial propia, asociada al usuario y a la sede.
 - **Revocación inmediata**: si un mesero deja de trabajar o pierde el celular, el administrador revoca el dispositivo y el usuario desde el nodo o desde la web.
 - **Nada sensible en el celular**: no se guardan ventas, reportes ni datos de clientes. Solo la sesión y la credencial del dispositivo.
 - **Sesión corta**: el PIN se pide al abrir la app y después de un tiempo de inactividad configurable.
@@ -907,8 +907,8 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 ### 10.4 Asistencia del personal
 
 - `Marcacion` es un evento que solo se agrega: `usuario_id`, `sede_id`, `dispositivo_id`, `tipo` (`ENTRADA`, `SALIDA`, `INICIO_PAUSA`, `FIN_PAUSA`) y la hora.
-- **La hora es la del nodo, no la del celular.** Así nadie marca adelantando el reloj de su teléfono.
-- Solo se marca contra el nodo de la sede, así que solo funciona dentro del local (sección 10.1.1). Funciona sin internet.
+- **La hora es la del nodo (en modo nube, la del servidor), no la del celular.** Así nadie marca adelantando el reloj de su teléfono.
+- Solo se marca dentro del local, con la misma regla de presencia de la sección 10.1.1. En híbrido se marca contra el nodo y funciona sin internet. En modo nube se marca contra la API central; durante un corte no se marca, igual que no se opera el salón.
 - **Correcciones**: el administrador crea una `CorreccionMarcacion` que apunta a la marcación original, con motivo. Nunca se edita la original.
 - **Cierre automático**: a una hora configurable, el nodo cierra los turnos que quedaron abiertos y los marca para revisión.
 - **Regla "sin entrada no opera"** (configurable por sede): la capa de autorización del nodo rechaza las acciones operativas de un usuario sin entrada marcada. Se exceptúan los roles administrativos.
@@ -1039,7 +1039,7 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | Cambios en el proveedor DIAN | Baja | Puerto y adaptador; adaptador simulado para pruebas |
 | Actualizar nodos en muchas sedes | Media | Actualizaciones por etapas, solo fuera de horario, con vuelta atrás automática |
 | Rendimiento de SQLite en horas pico | Baja | Modo WAL; volumen de una sede bajo; pruebas de carga en la Fase 0 |
-| Un corte largo acumula facturas, pedidos QR y pagos QR sin aplicar | Media | Reanudación desde el último evento, facturas y pagos QR primero en la cola, alertas de pendientes. Módem 4G opcional |
+| Un corte largo acumula facturas, pedidos QR y pagos QR sin aplicar | Media | Reanudación desde el último evento, facturas y pagos QR primero en la cola, alertas de pendientes. Módem 4G de respaldo recomendado |
 | Error en el cálculo de impuestos de un régimen | Media | Reglas como datos, casos de prueba por régimen validados por un contador, versión de la regla guardada en cada venta |
 | Ventas hechas durante un corte, facturadas con retraso y sin contingencia de papel | Media | Emisión automática al reconectar, alertas de pendientes, QR de consulta en el comprobante |
 | Costo por documento de Factus: cada venta consume un documento | Alta | Una bolsa por empresa con condiciones estándar para arrancar; negociar precio por volumen al crecer (8.4); incluir el costo en el precio de la suscripción |
@@ -1066,7 +1066,7 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | ADR-005 | Nube: módulos para AWS, GCP y Azure desde el inicio (decidido); falta elegir cuál corre producción (TRD-01) | Fase 0 |
 | ADR-006 | Kit de hardware por sede: nodo, impresoras, UPS y **router dedicado del sistema** (por la red Wi-Fi compartida, 10.1.2) | Fase 0, con el piloto |
 | ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban), frente a solo registro | Después de la Fase 1 |
-| ADR-008 | Reintentos de sincronización en sedes intermitentes y módem 4G opcional | Fase 0 |
+| ADR-008 | Reintentos de sincronización en sedes intermitentes y módem 4G de respaldo (recomendado en todas las sedes; falta elegir el equipo) | Fase 0 |
 | ADR-009 | Modelo del motor de impuestos y catálogo de perfiles predefinidos | Antes de la Fase 1, con el contador |
 | ADR-010 | Bodega general con nodo propio en modo bodega (propuesto); operación desde la web como alternativa para clientes pequeños | Fase 2 |
 | ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |

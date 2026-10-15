@@ -99,7 +99,7 @@ flowchart TB
 
 ## Dónde vive cada flujo
 
-Dentro del local, mesero, cocina, caja, inventario del punto, asistencia e impresión hablan con el **nodo**. La nube recibe copias, emite ante Factus, atiende el portal del cliente y recibe los pedidos de las plataformas. El detalle de dueños y de sincronización está en [M0](m0-plataforma.md).
+Dentro del local, mesero, cocina, caja, inventario del punto, asistencia e impresión hablan con el **nodo**. La nube recibe copias, emite ante Factus, atiende el portal del cliente y recibe los pedidos de las plataformas. El detalle de dueños y de sincronización está en [M0](m0-plataforma.md). Los componentes de cada módulo y los canales de red están en [Arquitectura](../arquitectura/README.md).
 
 ## Índice
 
