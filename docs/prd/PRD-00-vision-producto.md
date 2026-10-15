@@ -201,6 +201,7 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 - El pedido se ve en la caja en tiempo real.
 - Mover una mesa, unir mesas y transferir productos entre cuentas.
 - **Disponibilidad automática**: si no alcanza el inventario para un plato, se muestra como agotado en el menú del mesero (ver M4).
+- **No se repone hoy**: si ese plato no va a salir en este servicio, el mesero no puede enviarlo y, si ya está pedido y todavía no se entrega, recibe un aviso al momento para decírselo al cliente. El resto de la cuenta sigue.
 
 ### M2 · Caja
 
@@ -294,6 +295,17 @@ Avisa **antes** de que falte un producto, para reponerlo a tiempo.
 - **Ciclo de la alerta**: abierta, vista (por quién y cuándo) y resuelta. Se resuelve sola cuando el stock vuelve a subir del punto de reposición.
 - **Escalamiento**: si nadie atiende una alerta roja en un tiempo configurable, se avisa al siguiente nivel (del jefe de cocina al administrador, y de ahí al gerente).
 - Funciona **sin internet** dentro del local, porque se evalúa en el nodo de la sede.
+
+**No se repone hoy**
+
+Sirve para que un cliente no se quede esperando un plato que no va a salir. Es distinto de un faltante de conteo: aquí alguien confirma que en este servicio no hay reposición.
+
+- Lo marca el **jefe de cocina** o el **administrador**. El sistema lo propone cuando el punto no alcanza para una porción más, las bodegas que abastecen la sede tampoco, y no hay un traslado en camino. Hasta que alguien confirma "hoy no", no se les quitan platos a las mesas: un conteo mal hecho no cancela pedidos.
+- Mientras la marca está activa, el plato queda **agotado** en el menú del mesero y en las plataformas. No se puede enviar a cocina.
+- Los platos **ya enviados y que cocina todavía no empieza**, para los que ya no hay ingredientes, salen de la cola. El mesero de esa mesa recibe el aviso en el acto, por el mismo canal que "pedido listo" (sonido y pantalla). La línea no se cobra. Si cocina no empezó, el inventario se devuelve.
+- Lo que ya está **en preparación, listo o entregado** sigue su curso. Si cocina descubre en la estación que esa línea tampoco se puede terminar, la marca ahí y el aviso al mesero sale igual. Eso queda como merma.
+- El mesero confirma **cliente avisado**. Queda auditado quién marcó que no se repone, en qué mesas cayó y quién avisó.
+- La marca vale hasta el final del servicio o hasta que la quiten. Los demás platos de la cuenta no se tocan.
 
 ### M5 · Domicilios
 
@@ -554,6 +566,7 @@ Reglas para todos los perfiles:
 ## 10. Reglas de negocio iniciales (a validar con el piloto)
 
 1. **Una venta nunca se bloquea por inventario**. Si el stock no alcanza, la venta se registra igual, el inventario queda negativo y se genera una alerta. El sistema avisa, pero no frena la operación.
+   - Si el plato **no se repone hoy** (M4), ese plato no se envía y los que ya estaban en cola sin empezar se le avisan al mesero para que el cliente no espere. El resto de la cuenta y del servicio sigue.
 2. **El consumo se descuenta al enviar a cocina**, no al cobrar.
    - Si se anula antes de que la cocina empiece, se devuelve el inventario.
    - Si se anula después, se registra como merma con motivo.

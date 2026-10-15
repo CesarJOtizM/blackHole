@@ -16,6 +16,8 @@ Usamos un enfoque **híbrido**: dos documentos maestros que fijan las reglas com
 
 Plantillas para los documentos de módulo: [PRD de módulo](plantillas/PRD-modulo.md) y [TRD de módulo](plantillas/TRD-modulo.md).
 
+Los flujos de cada funcionalidad, y cómo se pasan el trabajo entre sí, están diagramados en [Flujos](flujos/README.md).
+
 ## Mapa de módulos
 
 | ID | Módulo | Fase | PRD | TRD |
