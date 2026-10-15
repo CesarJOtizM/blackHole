@@ -8,7 +8,7 @@
 | Módulo | M0 · Plataforma |
 | Fase | 0 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
-| Parte técnica | [TRD-00, sección 10.2](../trd/TRD-00-arquitectura-base.md) |
+| Parte técnica | [TRD-M0](../trd/TRD-M0-plataforma.md) · [TRD-00, sección 10.2](../trd/TRD-00-arquitectura-base.md) |
 
 ## 1. Resumen
 

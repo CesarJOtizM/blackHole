@@ -88,4 +88,4 @@ Dominio y salidas comparten columna: los casos de uso usan los dos. Todas las fl
 
 La dependencia va siempre hacia adentro. Los adaptadores implementan los puertos que declara la aplicación; los casos de uso no saben si detrás hay PostgreSQL o SQLite. Un módulo habla con otro solo por su **puerto de entrada** (llamada en proceso) o por **eventos**, nunca importando su interior.
 
-Los nombres de componentes y casos de uso son una **propuesta** para los TRD de cada módulo. Cuando se escriba el TRD del módulo, ese documento manda.
+Los nombres de componentes y casos de uso los adopta el TRD de cada módulo. Si el diagrama y el TRD no coinciden, manda el TRD.

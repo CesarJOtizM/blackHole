@@ -17,8 +17,8 @@ PRD-00 y TRD-00 son el **requerimiento general** y definen el **alcance mínimo*
 
 ### Ciclo de cada entrega
 
-1. **Definir**: un PRD con la [plantilla de módulo](plantillas/PRD-modulo.md), limitado al alcance de la entrega, y un TRD si hay decisiones técnicas nuevas.
-2. **Construir** lo que dice ese PRD.
+1. **Definir**: el corte de la entrega se toma del PRD y del TRD del módulo. Si la entrega enseña algo nuevo, primero se cambia el maestro y después el documento del módulo.
+2. **Construir** ese corte.
 3. **Validar** contra el criterio de salida, en la sede o con datos reales.
 4. **Ajustar**: lo aprendido se lleva a PRD-00 y TRD-00 (primero se cambia el maestro) y se revisan las entregas que siguen.
 

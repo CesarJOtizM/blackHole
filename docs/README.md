@@ -14,7 +14,7 @@ Usamos un enfoque **híbrido**: dos documentos maestros que fijan las reglas com
 | 0 | [TRD-00 Arquitectura base](trd/TRD-00-arquitectura-base.md) | Cómo se construye: hexagonal, TDD, cortes de internet, sincronización, seguridad, stack |
 | 0 | [Roadmap](roadmap.md) | En qué entregas pequeñas se parte cada fase y cuándo se da por cerrada cada una |
 | 1 | [TRD-01 Infraestructura y operación](trd/TRD-01-infraestructura-y-operacion.md) | Terraform en AWS, GCP y Azure, despliegue continuo, escalado, monitoreo y errores |
-| 1 | PRD-XX / TRD-XX por módulo | Detalle funcional y técnico de cada módulo, limitado al alcance de la entrega (se escriben al iniciar cada entrega) |
+| 1 | PRD y TRD por módulo | Detalle funcional y técnico de cada módulo. El alcance completo ya está escrito; cada entrega del roadmap implementa un corte |
 
 Plantillas para los documentos de módulo: [PRD de módulo](plantillas/PRD-modulo.md) y [TRD de módulo](plantillas/TRD-modulo.md).
 
@@ -26,16 +26,16 @@ La estructura del sistema (diagramas C4 de contexto, contenedores y componentes 
 
 | ID | Módulo | Fase | PRD | TRD |
 |----|--------|------|-----|-----|
-| M0 | Plataforma: organización, identidad, roles, auditoría, nodo local | 0 | [PRD-01 Roles y permisos](prd/PRD-01-roles-y-permisos.md) (resto pendiente) | Roles en TRD-00, 10.2 (resto pendiente) |
-| M1 | Pedidos y salón: mesas, pedidos del mesero y por QR, comandas, pantalla de cocina | 1 | Pendiente | Pendiente |
-| M2 | Caja: turnos, pagos, pago QR en la mesa, arqueos, propinas | 1 | Pendiente | Pendiente |
-| M3 | Facturación electrónica DIAN (Factus) e impresión | 1 | Pendiente | Pendiente |
-| M4 | Inventario, bodegas y recetas | 2 | Pendiente | Pendiente |
-| M5 | Domicilios propios y plataformas (Rappi, DiDi Food, otras) | 3 | Pendiente | Pendiente |
-| M6 | Reportes y analítica | 1 a 4 (incremental) | Pendiente | Pendiente |
-| M7 | SaaS comercial: planes, suscripciones, onboarding | 4 | Pendiente | Pendiente |
-| M8 | Asistencia del personal (entrada, salida, horas trabajadas) | 1 | Pendiente | Pendiente |
-| M9 | Reservas con cobro | 3 | Pendiente | Pendiente |
+| M0 | Plataforma: organización, identidad, roles, auditoría, nodo local | 0 | [PRD-M0](prd/PRD-M0-plataforma.md) y [PRD-01 Roles](prd/PRD-01-roles-y-permisos.md) | [TRD-M0](trd/TRD-M0-plataforma.md) |
+| M1 | Pedidos y salón: mesas, pedidos del mesero y por QR, comandas, pantalla de cocina | 1 | [PRD-M1](prd/PRD-M1-pedidos-y-salon.md) | [TRD-M1](trd/TRD-M1-pedidos-y-salon.md) |
+| M2 | Caja: turnos, pagos, pago QR en la mesa, arqueos, propinas | 1 | [PRD-M2](prd/PRD-M2-caja.md) | [TRD-M2](trd/TRD-M2-caja.md) |
+| M3 | Facturación electrónica DIAN (Factus) e impresión | 1 | [PRD-M3](prd/PRD-M3-facturacion.md) | [TRD-M3](trd/TRD-M3-facturacion.md) |
+| M4 | Inventario, bodegas y recetas | 2 | [PRD-M4](prd/PRD-M4-inventario.md) | [TRD-M4](trd/TRD-M4-inventario.md) |
+| M5 | Domicilios propios y plataformas (Rappi, DiDi Food, otras) | 3 | [PRD-M5](prd/PRD-M5-domicilios.md) | [TRD-M5](trd/TRD-M5-domicilios.md) |
+| M6 | Reportes y analítica | 1 a 4 (incremental) | [PRD-M6](prd/PRD-M6-reportes.md) | [TRD-M6](trd/TRD-M6-reportes.md) |
+| M7 | SaaS comercial: planes, suscripciones, onboarding | 4 | [PRD-M7](prd/PRD-M7-saas.md) | [TRD-M7](trd/TRD-M7-saas.md) |
+| M8 | Asistencia del personal (entrada, salida, horas trabajadas) | 1 | [PRD-M8](prd/PRD-M8-asistencia.md) | [TRD-M8](trd/TRD-M8-asistencia.md) |
+| M9 | Reservas con cobro | 3 | [PRD-M9](prd/PRD-M9-reservas.md) | [TRD-M9](trd/TRD-M9-reservas.md) |
 
 ## Reglas de los documentos
 
