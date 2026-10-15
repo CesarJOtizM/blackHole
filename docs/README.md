@@ -11,7 +11,7 @@ Usamos un enfoque **híbrido**: dos documentos maestros que fijan las reglas com
 | Nivel | Documento | Qué responde |
 |-------|-----------|--------------|
 | 0 | [PRD-00 Visión de producto](prd/PRD-00-vision-producto.md) | Qué construimos, para quién, en qué orden y cómo sabemos que funcionó |
-| 0 | [TRD-00 Arquitectura base](trd/TRD-00-arquitectura-base.md) | Cómo se construye: arquitectura, cortes de internet, sincronización, seguridad, stack |
+| 0 | [TRD-00 Arquitectura base](trd/TRD-00-arquitectura-base.md) | Cómo se construye: hexagonal, TDD, cortes de internet, sincronización, seguridad, stack |
 | 0 | [Roadmap](roadmap.md) | En qué entregas pequeñas se parte cada fase y cuándo se da por cerrada cada una |
 | 1 | [TRD-01 Infraestructura y operación](trd/TRD-01-infraestructura-y-operacion.md) | Terraform en AWS, GCP y Azure, despliegue continuo, escalado, monitoreo y errores |
 | 1 | PRD-XX / TRD-XX por módulo | Detalle funcional y técnico de cada módulo, limitado al alcance de la entrega (se escriben al iniciar cada entrega) |

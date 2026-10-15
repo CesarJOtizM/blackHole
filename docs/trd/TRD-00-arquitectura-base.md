@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.6 |
+| Versión | 0.7 |
 | Fecha | 2026-10-15 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
 
@@ -24,6 +24,7 @@
 | Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Propuesta |
 | Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Propuesta |
 | Código | Monolito modular con **arquitectura hexagonal en todos los módulos** e inyección de dependencias con NestJS (sección 14) | Decidido |
+| Construcción | **TDD por comportamiento**, de adentro hacia afuera, en M0 a M9 y en las PWA (sección 16) | Decidido |
 | Stack | NestJS sobre Fastify, Drizzle, React + Vite con TanStack (sección 13) | Decidido |
 | Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo; escalado automático; OpenTelemetry y Sentry. Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Propuesta |
 
@@ -1001,8 +1002,8 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 - **Los puertos de salida son clases abstractas** y sirven de token de inyección de Nest. Ejemplo: `abstract class RepositorioPedidos`. El caso de uso pide `RepositorioPedidos`; no sabe si detrás hay PostgreSQL o SQLite.
 - **Cada app arma sus adaptadores** en sus módulos Nest. `api-nube` enlaza los puertos con `persistencia-postgres`; `nodo-local` los enlaza con `persistencia-sqlite`; el perfil `puente` solo carga el módulo de impresión. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
 - **El dominio no usa decoradores de Nest.** Así el motor de impuestos y la evaluación de permisos se prueban y se usan sin arrancar un contenedor de inyección.
-- **Pruebas**: los casos de uso se prueban con adaptadores en memoria, sin Nest. Los adaptadores se prueban contra PostgreSQL y SQLite reales. Una misma suite de contrato por puerto corre contra los dos adaptadores de persistencia, para que se comporten igual.
 - **Transacciones**: un puerto `UnidadDeTrabajo` envuelve el cambio y su registro en la outbox en la misma transacción (sección 5.2). En la nube, también fija el `tenant_id` de Row Level Security al empezar.
+- **Cómo se escribe**: cada comportamiento entra por una prueba que falla, en el orden de la sección 16. Los casos de uso se prueban con adaptadores en memoria, sin Nest. Una misma suite de contrato por puerto corre contra la memoria, PostgreSQL y SQLite.
 
 ## 15. Requisitos no funcionales
 
@@ -1019,14 +1020,117 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | Recuperación del nodo | Menos de 30 minutos con equipo de repuesto |
 | Dispositivos de referencia | Android de gama media con 3 GB de RAM y Chrome actualizado; iPhone con iOS 16.4 o superior y Safari |
 
-## 16. Pruebas
+## 16. Construcción: TDD sobre hexagonal
 
-- **Dominio**: pruebas unitarias de las reglas (cálculo de totales, impuestos, propina, descuento por receta, unidades posibles, arqueo).
-- **Sincronización**: pruebas de cortes de internet simulados, eventos duplicados, desorden de eventos y reinicio del nodo.
-- **DIAN**: adaptador simulado y ambiente de habilitación del proveedor.
-- **Impresión**: plantillas probadas en las impresoras reales del piloto.
-- **E2E**: Playwright para los flujos de mesero, cocina y caja.
-- **Ensayo en sede**: un servicio con un corte de internet a mitad. El salón sigue. Al reconectar salen las facturas y entra un pedido y un pago QR que se hicieron durante el corte, sin duplicarse.
+La sección 14 dice **dónde** vive cada pieza. Esta sección dice **en qué orden** aparece y **qué se considera terminado**. Vale para M0 a M9, también para catálogos y configuración, y para las PWA. Un módulo delgado tiene poco dominio, pero entra al código por el mismo ciclo.
+
+### 16.1 Un comportamiento a la vez
+
+No se escribe código de producción de un comportamiento sin una prueba que lo pida y falle antes. El ciclo es rojo, verde, refactorizar. Se avanza en vertical: una prueba, el mínimo para que pase, y la siguiente. No se escriben primero todas las pruebas del módulo y después toda la implementación.
+
+Orden dentro de cada caso de uso, de adentro hacia afuera:
+
+1. **Dominio.** La prueba nombra la regla. Ejemplo: un pedido no se envía vacío y cada producto queda en su estación.
+2. **Caso de uso.** La prueba arma el caso con adaptadores en memoria. Ejemplo: guardar el pedido y el registro de la outbox en la misma unidad de trabajo, o rechazarlo si el permiso no alcanza.
+3. **Contrato del puerto.** La misma suite corre contra el adaptador en memoria, contra SQLite y contra PostgreSQL.
+4. **Adaptador externo**, si el caso sale del sistema (Factus, pasarela, plataforma). Primero el simulador; el sandbox queda en una suite aparte.
+5. **Entrada.** El controlador o el gateway solo se prueba cuando el caso de uso ya existe: cuerpo inválido no llega al caso de uso, cuerpo válido devuelve el resultado, y la ruta declara su permiso.
+6. **Recorrido.** Playwright cubre el flujo que el PRD da por cerrado, no cada regla.
+
+El controlador no se escribe antes del caso de uso, ni el caso de uso antes de la regla. Refactorizar solo con las pruebas en verde.
+
+### 16.2 Qué afirma cada prueba
+
+| Capa | Qué se ejercita | Doble de prueba | Qué tiene que afirmar |
+|------|-----------------|-----------------|------------------------|
+| Dominio | Entidad, objeto de valor o función pura | Ninguno | La invariante, el cálculo y el error de negocio. Nada de base de datos ni de Nest |
+| Aplicación | Un caso de uso por su puerto de entrada | Adaptadores en memoria | Qué se guarda, qué evento sale, qué queda fuera de la transacción si falla, y qué permiso se exige |
+| Puerto | Una suite de contrato, escrita una sola vez | Cada adaptador la ejecuta | El mismo resultado en memoria, SQLite y PostgreSQL: alta, lectura, idempotencia y el caso vacío |
+| Sistema externo | El adaptador del puerto (`ProveedorFacturacion`, `PasarelaPagos`, `ConectorPlataforma`, `Impresora`) | Simulador que implementa el mismo puerto; sandbox o impresora real aparte | Traducción, reintento seguro y el error del proveedor (`429`, corte, firma inválida) |
+| Entrada HTTP o WebSocket | Controlador o gateway | La app con los puertos en memoria | Validación Zod, código de respuesta, permiso declarado y que un tenant no lee a otro |
+| Recorrido | Playwright contra la app | Nodo o API con SQLite o Postgres de prueba y proveedores simulados | El flujo de la entrega: mesero, cocina, caja, corte y reconexión |
+| Arquitectura | dependency-cruiser en la integración continua | Ninguno | Las dependencias solo apuntan hacia adentro y un módulo no importa el interior de otro |
+
+La lógica de negocio se prueba en el dominio. Si una regla solo se puede verificar levantando Nest o mirando una tabla, está en la capa equivocada.
+
+### 16.3 Dobles de prueba
+
+- **Lo nuestro se sustituye con un adaptador en memoria** que implementa el puerto de verdad (repositorio, reloj, unidad de trabajo, outbox). No se simulan métodos internos, no se espía el dominio y no se usa el módulo de pruebas de Nest para un caso de uso.
+- **Lo ajeno se sustituye con otro adaptador del mismo puerto.** Factus, la pasarela, la plataforma y la impresora tienen simulador en las pruebas rápidas. El sandbox de Factus y la impresora del piloto no bloquean el ciclo rojo-verde.
+- **El tiempo, los identificadores y el azar son puertos** (`Reloj`, generador de UUIDv7, códigos de un solo uso). La prueba fija la hora y los ids. Así un corte, una sesión vencida o un `reference_code` repetido son deterministas.
+- **Drizzle no se simula.** El contrato del repositorio habla con SQLite y PostgreSQL reales. Si los dos no pasan la misma suite, el puerto no está listo: el nodo y la nube dejarían de comportarse igual.
+
+### 16.4 Dónde viven las pruebas
+
+Al lado del código que protegen. La suite de contrato vive junto al puerto; cada adaptador la importa y la corre, sin copiarla.
+
+```
+packages/dominio/<modulo>/<agregado>.test.ts
+packages/aplicacion/<modulo>/<caso-de-uso>.test.ts
+packages/aplicacion/<modulo>/puertos/<puerto>.contrato.ts
+packages/persistencia-sqlite/<modulo>/<repositorio>.contrato.test.ts
+packages/persistencia-postgres/<modulo>/<repositorio>.contrato.test.ts
+packages/<adaptador-externo>/<adaptador>.contrato.test.ts
+apps/<app>/test/          # entradas HTTP, WebSocket y recorridos de esa app
+```
+
+Quien define el puerto escribe el contrato. Quien agrega un adaptador lo hace pasar. Un tercer adaptador (otra nube, otro proveedor) no reescribe las pruebas: engancha la misma suite.
+
+### 16.5 Qué rechaza la integración continua
+
+dependency-cruiser falla el cambio si:
+
+- `packages/dominio` importa Nest, Drizzle, HTTP, un adaptador o una app.
+- `packages/aplicacion` importa un adaptador, Drizzle o una app. Solo puede usar `@nestjs/common` para `@Injectable` e `@Inject`.
+- Un módulo importa el interior de otro. El cruce permitido es su puerto de entrada o un evento de `packages/contratos`.
+- Una app importa el esquema Drizzle del otro dialecto (`api-nube` no importa SQLite; `nodo-local` no importa el esquema de PostgreSQL).
+
+Otras pruebas de arquitectura, junto a las de la sección 10.2:
+
+- Una ruta que modifica datos y no declara permiso.
+- Un puerto de salida sin suite de contrato, o un adaptador de persistencia que no la ejecuta.
+- El contrato pasa en un dialecto y falla en el otro.
+
+No se exige un porcentaje de líneas cubiertas. Se exige que cada invariante del dominio y cada caso de uso tengan la prueba que los hizo entrar al código.
+
+### 16.6 Reglas que valen en todos los módulos
+
+| Regla | Qué se hace |
+|-------|-------------|
+| Dominio con comportamiento | La entidad y los objetos de valor protegen sus invariantes. Un caso de uso coordina; no acumula la regla que pertenece al agregado |
+| Un repositorio por agregado | No hay un repositorio por tabla. Las tablas son detalle del adaptador |
+| Una transacción por agregado | El cambio y su outbox entran juntos. Entre agregados, la coherencia llega por eventos |
+| Entrada delgada | El controlador valida con Zod, llama un caso de uso y traduce el error de dominio a HTTP. No abre transacciones ni arma SQL |
+| Errores de dominio | El dominio lanza errores con nombre de negocio (`PedidoVacio`, `TopeExcedido`). El mapa a códigos HTTP existe una sola vez, en la entrada |
+| Idempotencia | Todo comando que puede reintentarse (sincronización, webhook, Factus, pago QR) tiene prueba de "la segunda vez no duplica" |
+| Contratos compartidos | El esquema Zod de `packages/contratos` es el mismo en la PWA, el nodo y la nube. No se duplica el DTO |
+| Sin adelantar complejidad | No hay event sourcing ni un modelo de lectura separado por caso de uso. Las proyecciones de reportes (sección 11) se agregan cuando el reporte existe |
+
+### 16.7 La PWA no reimplementa las reglas
+
+Las pantallas muestran y envían. La decisión sigue en el servidor (sección 10.2).
+
+- Totales, impuestos, permisos y "agotado" salen de las funciones puras de `packages/dominio` cuando la pantalla necesita el mismo número que el servidor. Esas funciones ya tienen prueba; el componente no las vuelve a escribir.
+- El estado del servidor vive en TanStack Query. El estado de interfaz (panel abierto, paso del asistente) vive en Zustand. No se mezclan.
+- Una pantalla no llama `fetch` a mano: usa el cliente tipado a partir de los esquemas de `packages/contratos`.
+- Cada pantalla carga aparte y tiene su propia barrera de errores (sección 14). Una prueba de recorrido comprueba que el mesero no descarga la caja.
+
+### 16.8 Cuándo corre cada suite
+
+| Momento | Qué corre |
+|---------|-----------|
+| Cada cambio, en la máquina | Dominio y casos de uso del módulo tocado. Tiene que tardar segundos |
+| Integración continua | Lo anterior, más contratos de SQLite y PostgreSQL, arquitectura, entradas HTTP y el recorrido de la entrega |
+| Antes de desplegar | Playwright de los flujos que esa entrega cierra |
+| Ensayo de fase | Corte de internet simulado, sandbox de Factus e impresora real del piloto. En sede: un servicio con un corte a mitad; al reconectar salen las facturas y entran el pedido y el pago QR del corte, sin duplicarse |
+
+### 16.9 Sincronización, DIAN e impresión
+
+Estas tres no se cubren solo con la prueba del dominio:
+
+- **Sincronización**: corte simulado, evento duplicado, eventos fuera de orden, reinicio del nodo y cambio de `dueno_operacion` a mitad de un lote.
+- **DIAN**: el simulador de Factus en el ciclo diario; el sandbox compartido solo con datos de prueba, para el cálculo de impuestos (sección 8.6) y el `reference_code` repetido.
+- **Impresión**: la plantilla se prueba contra una salida ESC/POS fijada en el repositorio; la impresora real queda en el ensayo del piloto.
 
 ## 17. Riesgos técnicos
 
@@ -1075,11 +1179,12 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
 | ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
 | ADR-016 | Pasarela del pago QR en la mesa: proveedor, medios (Nequi, Daviplata, Bre-B, tarjeta) y webhook. Las reservas no entran aquí (ADR-012) | Antes de la entrega 1.13 |
+| ADR-017 | Construir con TDD sobre la hexagonal, en todos los módulos ([ADR-017](../adr/ADR-017-tdd-sobre-hexagonal.md), sección 16) | Decidido |
 ## 19. Plan de la Fase 0
 
 1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real.
 2. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero.
-3. Esqueleto del monorepo, la API del nodo, la API de la nube y la sincronización outbox/inbox.
+3. Esqueleto del monorepo con el arnés de la sección 16 (Vitest, dependency-cruiser, suite de contrato y adaptadores en memoria), la API del nodo, la API de la nube y la sincronización outbox/inbox. El primer caso de uso entra por una prueba que falla.
 4. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash.
 5. Prueba de los dos modos: una sede en nube opera de punta a punta sin nodo. Al activar híbrido, se crean pedidos en el nodo, se desconecta 2 h, se reconecta y no se pierde ni se duplica nada. Volver a nube exige outbox en cero.
 6. Prueba de intermitencia del portal: un pedido QR y un pago QR confirmado durante el corte se aplican una sola vez al reconectar.

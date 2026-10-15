@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
+| Versión | 0.3 |
 | Fecha | 2026-10-15 |
 | Fuentes | [TRD-00](../trd/TRD-00-arquitectura-base.md), [TRD-01](../trd/TRD-01-infraestructura-y-operacion.md), [Flujos](../flujos/README.md) |
 
@@ -18,7 +18,7 @@ Vistas estructurales del sistema con el modelo [C4](https://c4model.com/): de lo
 | 3 · Componentes | Un archivo por módulo (abajo) | Qué entradas, casos de uso, dominio, puertos y adaptadores tiene cada módulo |
 | Despliegue | [Infraestructura y comunicación](infraestructura-y-comunicacion.md) | En qué máquinas y redes corre todo, qué protocolos y puertos usa y quién inicia cada conexión |
 
-El nivel 4 (código) no se dibuja: lo da la estructura del monorepo (TRD-00, sección 14).
+El nivel 4 (código) no se dibuja: lo da la estructura del monorepo (TRD-00, sección 14). El orden en que se escribe cada comportamiento está en TRD-00, sección 16: una prueba que falla, de adentro hacia afuera.
 
 ## Componentes por módulo
 

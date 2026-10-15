@@ -45,9 +45,21 @@
 
 ## 9. Pruebas
 
-- [ ] Unitarias del dominio
-- [ ] Sincronización: duplicados, desorden, corte de internet
-- [ ] E2E del flujo principal
+Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Cada fila entra al código en vertical: una prueba en rojo, el mínimo para ponerla en verde, y la siguiente. No se listan aquí pasos de implementación.
+
+| Comportamiento | Capa | Qué afirma la prueba |
+|----------------|------|----------------------|
+| <invariante del agregado> | Dominio | |
+| <caso de uso> | Aplicación, con adaptadores en memoria | |
+| <puerto de salida> | Contrato, en memoria, SQLite y PostgreSQL | |
+| <comando que se puede reintentar> | Aplicación o adaptador | La segunda vez no duplica |
+
+- [ ] Cada invariante de la sección 2 tiene prueba de dominio, sin Nest ni base de datos
+- [ ] Cada caso de uso de la sección 4 tiene prueba con adaptadores en memoria
+- [ ] Cada puerto de salida tiene una suite de contrato corrida por todos sus adaptadores
+- [ ] Rutas que modifican datos declaran permiso
+- [ ] Sincronización, si el módulo emite eventos: duplicado, desorden y corte
+- [ ] Un recorrido Playwright del flujo que esta entrega cierra
 
 ## 10. Riesgos y ADRs
 
