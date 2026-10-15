@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
+| Versión | 0.2 |
+| Fecha | 2026-10-15 |
 | Fuentes | [PRD-00](../prd/PRD-00-vision-producto.md), [PRD-01](../prd/PRD-01-roles-y-permisos.md), [TRD-00](../trd/TRD-00-arquitectura-base.md) |
 
 Diagramas de cada funcionalidad y de los puntos en los que una sección le entrega trabajo a otra. Describen el comportamiento ya acordado en los documentos maestros. Si un diagrama y un maestro no coinciden, manda el maestro.
@@ -21,10 +21,10 @@ Cada archivo trae tres piezas: el camino principal, la tabla de conexiones con o
 
 ```mermaid
 flowchart LR
-  A["Abrir mesa<br/>M1"] --> B["Enviar a cocina<br/>M1"]
+  A["Abrir mesa<br/>mesero o QR"] --> B["Enviar a cocina<br/>M1"]
   B --> C["Preparar y entregar<br/>M1"]
   C --> D["Precuenta<br/>M1 + portal"]
-  D --> E["Cobrar<br/>M2"]
+  D --> E["Cobrar<br/>caja o QR"]
   E --> F["Factura DIAN<br/>M3"]
   B -.-> G["Descuenta receta<br/>M4"]
   D -.-> H["Datos del cliente<br/>portal"]
@@ -61,6 +61,8 @@ flowchart TB
   M9 -->|"anticipo"| M2
   M1 -->|"cuenta por cobrar"| M2
   M2 -->|"venta cerrada"| M3
+  Portal -->|"pedido QR"| M1
+  Portal -->|"pago QR confirmado"| M2
   Portal -->|"datos de facturación"| M3
   M3 -->|"número, CUFE, QR"| M2
   M8 -->|"quién trabajó"| M2
@@ -88,6 +90,8 @@ flowchart TB
 | M1 | M2 | Cuenta visible en tiempo real | Desde que se abre la mesa |
 | M2 | M3 | Documento de venta | Al cerrar la venta |
 | M3 | M2 | Número, CUFE y QR, o comprobante si no hay internet | Al validar en Factus, o al dejar la factura pendiente |
+| Portal | M1 | Pedido de la mesa, canal QR mesa | Al enviar desde el celular del cliente. Si la sede está en un corte, al reconectar |
+| Portal | M2 | Pago confirmado por la pasarela, con propina | Cuando la pasarela avisa. Si la sede está en un corte, al reconectar |
 | Portal | M3 | Datos de facturación de esa cuenta | Antes de emitir; si llegan tarde y la factura ya salió, aplica la refacturación |
 | M8 | M2 | Personas que trabajaron en el periodo | Al liquidar propinas |
 | M1, M2, M4, M5, M8, M9 | M6 | Eventos con hora | En cada cambio de estado |
@@ -102,8 +106,8 @@ Dentro del local, mesero, cocina, caja, inventario del punto, asistencia e impre
 | Módulo | Archivo | Flujos que contiene |
 |--------|---------|---------------------|
 | M0 Plataforma | [m0-plataforma.md](m0-plataforma.md) | Ingreso, dispositivos, autorización, dueños de datos, sincronización |
-| M1 Pedidos y salón | [m1-pedidos-y-salon.md](m1-pedidos-y-salon.md) | Mesa, cocina, anulación, precuenta |
-| M2 Caja | [m2-caja.md](m2-caja.md) | Turno, cobro, arqueo, propinas |
+| M1 Pedidos y salón | [m1-pedidos-y-salon.md](m1-pedidos-y-salon.md) | Mesa, cocina, pedido por QR, anulación, precuenta |
+| M2 Caja | [m2-caja.md](m2-caja.md) | Turno, cobro, pago por QR, arqueo, propinas |
 | M3 Facturación | [m3-facturacion.md](m3-facturacion.md) | Emisión, portal, envío cortado, refacturación |
 | M4 Inventario | [m4-inventario.md](m4-inventario.md) | Receta, traslados, producción, alertas |
 | M5 Domicilios | [m5-domicilios.md](m5-domicilios.md) | Domicilio propio, plataformas, conciliación |

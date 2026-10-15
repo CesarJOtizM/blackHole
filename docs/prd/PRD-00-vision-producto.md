@@ -3,15 +3,15 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
+| Versión | 0.3 |
+| Fecha | 2026-10-15 |
 | Documento técnico asociado | [TRD-00 Arquitectura base](../trd/TRD-00-arquitectura-base.md) |
 
 ## 1. Resumen
 
 Construimos un software para restaurantes que se vende por suscripción mensual. Cubre toda la operación de un local: el mesero toma el pedido en su celular, el pedido llega a la cocina y a la caja, la venta descuenta ingredientes del inventario según la receta, se emite el documento electrónico ante la DIAN y se imprime en impresora térmica. Todo queda auditado para evitar robos en caja e inventario.
 
-El producto **debe seguir operando sin internet** dentro del local. El primer cliente es un grupo familiar con 6 restaurantes que mezcla sedes de la misma marca y de marcas distintas. Con ese piloto validamos el producto en operación real y conseguimos referidos para vender a otros restaurantes.
+Cada sede tiene internet y **nace operando 100 % en la nube**: el mesero, la cocina y la caja hablan con el servidor central. Si esa sede necesita seguir el servicio durante un corte, se **activa el modo híbrido** y aparece un equipo en el local. Durante el corte, el mesero toma el pedido, la cocina lo prepara, la caja cobra y se imprime. Al volver la conexión se emiten las facturas pendientes y entran los pedidos y pagos que el cliente hizo desde el QR de la mesa. Una sede que nunca tiene internet queda fuera de este producto. El primer cliente es un grupo familiar con 6 restaurantes que mezcla sedes de la misma marca y de marcas distintas. Con ese piloto validamos el producto en operación real y conseguimos referidos para vender a otros restaurantes.
 
 ## 2. Problema
 
@@ -22,7 +22,7 @@ El producto **debe seguir operando sin internet** dentro del local. El primer cl
 | Inventario desconectado de las ventas | No se sabe cuánto debería haber, robos y mermas invisibles, compras a ciegas |
 | Varias sedes y bodegas | Traslados sin registro, no hay una vista consolidada del grupo |
 | Obligación de facturación electrónica | Doble digitación o multas si no se emite el documento |
-| Internet inestable | Si el sistema depende de la nube, el restaurante se detiene |
+| Internet inestable | Si el sistema depende de la nube en cada acción, un corte a mitad del servicio detiene el salón |
 
 ## 3. Objetivos
 
@@ -33,7 +33,7 @@ El producto **debe seguir operando sin internet** dentro del local. El primer cl
 3. Saber **cuánto debería haber en inventario** (teórico) y compararlo con lo real.
 4. Saber **qué se puede producir hoy** con el inventario existente.
 5. Dar a la administración **métricas operativas** (tiempos, ticket promedio, márgenes) por sede y consolidadas.
-6. **Operar sin internet** en el local, sin perder datos.
+6. **Poder activar, por sede, seguir el servicio durante un corte de internet** y, al reconectar, emitir lo pendiente y aplicar los pedidos y pagos QR que quedaron en la nube. En modo nube (el predeterminado) un corte detiene el salón. No se diseña una sede sin conexión permanente.
 
 ### Objetivos de negocio
 
@@ -47,6 +47,7 @@ El producto **debe seguir operando sin internet** dentro del local. El primer cl
 - Contabilidad completa. Exportamos información para el software contable; no lo reemplazamos.
 - Programas de fidelización (se evalúan después de la Fase 4).
 - Ser proveedor tecnológico habilitado ante la DIAN. Nos integramos con **Factus**, que ya lo es.
+- Una sede que no tiene internet y no va a tenerlo. El modo nube necesita enlace. El modo híbrido cubre los cortes durante el servicio, no una sede siempre desconectada.
 
 ## 4. Usuarios
 
@@ -62,6 +63,7 @@ El producto **debe seguir operando sin internet** dentro del local. El primer cl
 | Anfitrión (puede ser el cajero o el administrador) | Entrada del local | Tablet, celular o caja | Registrar reservas, recibir a los clientes y asignarles mesa |
 | Todo el personal | Sede | Dispositivo fijo de la sede o su celular en la red del local | Marcar entrada y salida de su turno |
 | Contador | Externo | PC | Reportes fiscales y exportaciones |
+| Cliente en la mesa | Salón | Su celular, con sus datos o el Wi-Fi de invitados | Ver la carta, pedir y pagar desde el QR de su mesa, y dejar sus datos de facturación |
 | Soporte del SaaS (nosotros) | Plataforma | PC | Configurar clientes y diagnosticar problemas |
 
 ## 5. Modelo de la organización del cliente
@@ -97,6 +99,8 @@ Reglas:
 
 ### 6.1 Pedido en mesa (camino principal)
 
+El mesero puede tomar el pedido, y el cliente también puede pedirlo y pagarlo desde el QR de su mesa (6.1.2 y 6.1.3). Los dos caminos terminan en la misma cuenta, la misma cocina y la misma factura.
+
 1. El mesero abre la mesa en su celular e indica el número de comensales.
 2. Agrega los productos con sus modificadores (por ejemplo "sin cebolla", "término medio") y notas.
 3. Envía el pedido. **Cada producto llega a la estación de cocina que le corresponde** (pantalla, impresora o ambas), y el pedido queda visible en la caja.
@@ -122,6 +126,26 @@ Otros momentos en que el cliente puede dar sus datos:
 - **Después de pagar, si la factura ya salió a consumidor final**: puede pedir la factura a su nombre dentro de un plazo que configura la empresa. El sistema anula la anterior con una nota crédito y emite la nueva (sujeto a validación del contador; ver regla 10).
 - **Domicilios y reservas**: el enlace al portal se envía por WhatsApp con el pedido o la reserva.
 - **Cliente frecuente en la caja**: el cajero escribe la cédula o el NIT y el sistema trae los datos guardados, o los consulta en la DIAN.
+
+### 6.1.2 Pedido desde el QR de la mesa
+
+1. Cada mesa tiene un QR fijo. El cliente lo escanea y se abre el portal de esa mesa en su celular. No instala nada y no crea cuenta. Su celular usa sus datos móviles o el Wi-Fi de invitados: no entra a la red del personal.
+2. Ve el menú de esa sede, con precios, modificadores y lo que está agotado.
+3. Arma el pedido y lo envía. Si la mesa está libre, se abre. Si ya está ocupada, los productos se suman a la cuenta abierta.
+4. El pedido llega a la estación de cocina que corresponde y queda visible en la caja, marcado como canal **QR mesa**.
+5. El cliente no anula, no descuenta y no cambia precios. Eso lo hace el personal, con los mismos permisos.
+6. Por defecto el pedido sale directo a cocina. La sede puede exigir que la caja lo acepte antes.
+7. Con internet llega a cocina en el mismo tiempo que un pedido del mesero. Durante un corte queda en la nube y entra a cocina al reconectar. El mesero sigue tomando pedidos en el local mientras tanto.
+
+### 6.1.3 Pago desde el QR de la mesa
+
+1. Desde el mismo QR de la mesa, o desde el QR de la precuenta, el cliente ve el saldo de su cuenta.
+2. Puede dejar sus datos de facturación (6.1.1) y una propina. La propina sigue siendo voluntaria y va separada de la venta.
+3. Paga ese saldo con un QR o un enlace de cobro por el **valor exacto**: Nequi, Daviplata, Bre-B o tarjeta, según lo que ofrezca la pasarela. El cliente no escribe el monto. Si el cajero ya dividió la cuenta, cada parte se cobra por separado en el mismo portal.
+4. El pago se registra solo cuando la pasarela confirma que el dinero entró. Entonces se emite la factura y la mesa pasa a por limpiar.
+5. El efectivo y el datáfono se siguen cobrando en la caja. Un pago QR y un pago en caja pueden convivir en la misma cuenta.
+6. Si el internet de la sede está caído, el cliente igual puede pagar, porque su celular habla con la pasarela. La sede aplica el pago, imprime la factura y libera la mesa al reconectar.
+7. Ese dinero no entra al efectivo del arqueo. En el cierre, el total cobrado por QR se compara con el reporte de la pasarela.
 
 ### 6.2 Domicilio
 
@@ -192,7 +216,10 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 ### M1 · Pedidos y salón (mobile first)
 
 - Plano de mesas por zona, con su estado: libre, ocupada, cuenta pedida o por limpiar.
-- Toma de pedidos desde el **celular del mesero** o desde un punto de pedido fijo.
+- Toma de pedidos desde el **celular del mesero**, desde un punto de pedido fijo, o desde el **QR de la mesa** (6.1.2).
+- El QR de la mesa es fijo, abre el portal en el celular del cliente y no pide instalación ni cuenta.
+- Un pedido QR abre la mesa si está libre, o se suma a la cuenta si ya está ocupada. Llega a la misma cocina y a la misma caja, con canal **QR mesa**.
+- El cliente no anula, no descuenta y no cambia precios. La sede puede pedir aceptación en caja antes de cocina; por defecto el pedido sale directo.
 - Productos con variantes (tamaño), modificadores (con o sin costo), combos y notas.
 - Envío del pedido por tiempos (entradas primero, fuertes después) y reenvío de productos.
 - **Enrutamiento a cocina**: cada producto va a su estación (parrilla, fríos, bar…), en pantalla de cocina, impresora de comandas o ambas.
@@ -207,6 +234,7 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 
 - Turnos por cajero, con apertura, cierre parcial y cierre final.
 - **Todos los medios de pago**: efectivo, tarjeta débito y crédito (datáfono), transferencias y billeteras (Nequi, Daviplata, Bre-B / QR), bonos o vales, y crédito a cliente o cuenta corporativa.
+- **Pago con QR en la mesa** (6.1.3): el cliente paga el saldo desde su celular. El monto lo fija la cuenta. El pago entra solo cuando la pasarela confirma el dinero. En el arqueo, ese total se compara con el reporte de la pasarela y no se mezcla con el efectivo. La pasarela se elige en el ADR-016 antes de construir esta entrega.
 - **Datáfonos del piloto: Credibanco, Bold y Redeban.** Cada pago con tarjeta registra el datáfono, el número de aprobación, la franquicia y los últimos 4 dígitos.
   - En la Fase 1 el pago se **registra** en el sistema. La integración directa (que el monto viaje solo al datáfono) se evalúa después (TRD-00, ADR-007).
   - En el arqueo, el total de tarjetas de cada datáfono se compara con su reporte de cierre.
@@ -472,14 +500,14 @@ Todos estos tiempos se pueden ver por sede, estación, producto, mesero, domicil
 | Ticket promedio | Ventas netas ÷ número de cuentas pagadas |
 | Ticket por comensal | Ventas netas ÷ comensales |
 | Ventas por hora | Ventas por franja horaria, para planear el personal |
-| Ventas por canal | Mesa, mostrador, domicilio propio y cada plataforma (Rappi, DiDi Food…) |
+| Ventas por canal | Mesa atendida por mesero, mesa pedida por QR, mostrador, domicilio propio y cada plataforma (Rappi, DiDi Food…) |
 | Venta neta por plataforma | Venta menos comisiones y cargos de la plataforma |
 | Pedidos rechazados o cancelados por plataforma | Cantidad, motivo y valor |
 | Diferencias de liquidación | Lo que la plataforma debía pagar comparado con lo que pagó |
 | Ventas por mesero | Cuentas, ticket promedio y propinas |
 | Productos más y menos vendidos | En unidades y en valor |
 | Rotación de mesas | Cuentas por mesa por turno |
-| Medios de pago | Participación de cada medio de pago |
+| Medios de pago | Participación de cada medio de pago, con el pago QR de la mesa separado del efectivo |
 | Facturas a nombre del cliente | Porcentaje de facturas con datos del cliente, y cuántas se capturaron por el portal frente a la caja |
 | Refacturaciones | Facturas de consumidor final cambiadas a nombre del cliente (nota crédito + factura nueva), por sede |
 | Resumen mensual de facturas | Por contribuyente y sede: cantidad y valor de facturas, separando consumidor final de clientes identificados, con sus impuestos. Es un reporte para el contador, **no un documento fiscal** |
@@ -536,31 +564,33 @@ Todos estos tiempos se pueden ver por sede, estación, producto, mesero, domicil
 
 | Atributo | Requisito |
 |----------|-----------|
-| Operación sin internet | La sede vende, envía a cocina, cobra e imprime sin internet. Las facturas de esas ventas se emiten automáticamente cuando vuelve la conexión (sección 9.1) |
+| Corte de internet | En modo nube el salón se detiene hasta que vuelva el enlace. En modo híbrido, el mesero, la cocina, la caja y la impresión siguen en el local; al reconectar se emiten las facturas y se aplican los pedidos y pagos QR que quedaron en la nube (sección 9.1) |
 | Velocidad | El pedido llega a la cocina en menos de 2 segundos dentro del local |
 | Mobile first | Las pantallas del mesero y del domiciliario se diseñan primero para un celular de gama media, Android o iPhone |
 | Rapidez de uso | Tomar un pedido de 4 productos debe tomar menos de 30 segundos a un mesero entrenado |
-| Datos | Ninguna venta se pierde. Todo lo que se registró en la sede llega a la nube cuando vuelve la conexión |
+| Datos | Ninguna venta se pierde. En modo nube la venta ya está en la nube. En modo híbrido, lo que se registró en la sede llega a la nube cuando vuelve la conexión |
 | Seguridad | Los datos de un cliente nunca son visibles para otro |
 | Legal | Cumplimiento DIAN y Ley 1581 de protección de datos (datos de clientes de domicilio) |
 
-### 9.1 Perfiles de conectividad por sede
+### 9.1 Modo de la sede y conexión
 
-No todos los puntos necesitan internet permanente. Cada sede tiene uno de estos perfiles, y el sistema funciona igual en los tres. Lo único que cambia es cuándo llegan los datos a la nube.
+Toda sede tiene internet y nace en **modo nube**. El **híbrido** se activa sede por sede. Una sede que no va a tener conexión queda fuera. El mecanismo está en [TRD-00, sección 5.0](../trd/TRD-00-arquitectura-base.md).
 
-| Perfil | Situación | Cómo opera |
-|--------|-----------|------------|
-| **Conectada** | Internet estable | Sincroniza con la nube al instante. Si se cae el internet, sigue operando y las facturas quedan pendientes hasta que vuelva. |
-| **Intermitente** | Internet con caídas frecuentes | Igual que la conectada. Lo pendiente se envía cuando vuelve la conexión. |
-| **Sin internet fijo** | El punto no tiene internet contratado | Opera 100 % en el local. Sincroniza en ventanas, por datos móviles (módem 4G en el nodo o un celular compartido). |
+| Modo | Situación | Cómo opera |
+|------|-----------|------------|
+| **Nube** | Predeterminado. Hay internet, o se acepta parar si se corta | El salón trabaja contra la nube. La factura sale en el momento si el proveedor responde. La impresión, si hay impresora, pasa por un puente en el local. |
+| **Híbrido, conectada** | Se activó el híbrido y el internet es estable | El salón trabaja contra el nodo y la nube recibe cada evento al instante. El pedido y el pago desde el QR de la mesa llegan a cocina y a caja en ese momento. |
+| **Híbrido, intermitente** | Se activó el híbrido y el internet se corta a ratos | El mesero, la cocina, la caja, la impresión, el inventario del punto y los reportes del día siguen en el nodo. Al reconectar se vacía lo pendiente, en orden. |
 
-Reglas para todos los perfiles:
+Reglas:
 
-- **La operación nunca depende del internet**: tomar pedidos, cocina, caja, impresión, inventario del punto y reportes del día funcionan siempre.
-- **Lo que sí necesita internet**: enviar los documentos a la DIAN, ver la sede desde fuera del local, los reportes consolidados, recibir cambios de menú hechos desde la administración web, **recibir pedidos de plataformas** (Rappi, DiDi Food…) y las reservas hechas desde el enlace público. Sin internet, la plataforma tampoco puede enviar pedidos; en ese caso queda la captura manual desde la tablet de la plataforma.
-- Las reservas registradas en la sede y la marcación de asistencia funcionan sin internet.
-- **La factura electrónica sí necesita internet.** Sin conexión, el cliente recibe un comprobante de venta con un QR, y la factura se emite sola cuando vuelve la conexión. No usamos factura de papel. Por eso se recomienda un **módem 4G de respaldo en todas las sedes**, y es obligatorio en las que no tienen internet fijo.
-- El sistema alerta cuando hay facturas pendientes por más de un tiempo configurable.
+- **En modo nube, un corte detiene el salón.** No hay pedidos, cocina, caja ni impresión hasta que vuelva el enlace. Lo que el cliente alcanzó a dejar en el QR espera en la nube y entra al volver.
+- **En modo híbrido, durante un corte sigue el salón**: pedidos del mesero, cocina, caja, impresión, inventario del punto, asistencia y reservas registradas en la sede.
+- **En modo híbrido, durante un corte espera en la nube**, y se aplica al reconectar: la factura electrónica, los pedidos y pagos hechos desde el QR de la mesa, los pedidos de plataformas, las reservas del enlace público, los cambios de menú hechos en la administración web y la vista de la sede desde fuera.
+- El celular del cliente usa sus propios datos. Por eso puede armar el pedido y pagar aunque la sede esté cortada. Cocina y caja lo ven cuando el nodo vuelve a hablar con la nube.
+- **La factura electrónica necesita internet.** En un corte, el cliente recibe un comprobante de venta con un QR (no es factura). La factura se emite sola al reconectar. No usamos factura de papel.
+- Un módem 4G en el nodo es un respaldo opcional para acortar el corte en una sede intermitente.
+- El sistema alerta cuando hay facturas, pedidos QR o pagos QR pendientes por más de un tiempo configurable.
 - La administración ve, para cada sede, la última sincronización y cuántos documentos y eventos están pendientes.
 
 ## 10. Reglas de negocio iniciales (a validar con el piloto)
@@ -592,8 +622,8 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 
 | Fase | Duración estimada | Entregable | Criterio de salida |
 |------|-------------------|------------|--------------------|
-| **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría, nodo local, sincronización base | Un dispositivo registrado opera contra el nodo local sin internet y los datos llegan a la nube |
-| **1 · Operación de salón (piloto en 1 sede)** | 10 a 13 semanas | M1, M2, M3 con Factus, el motor de impuestos y el **portal de datos de facturación**, impresión térmica, M8 asistencia, reportes de ventas, caja, tiempos y horas trabajadas | Una sede opera 2 semanas seguidas solo con el sistema, con documentos DIAN aceptados y el personal marcando asistencia |
+| **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría, operación en la nube y, si se activa, nodo local con sincronización | Una sede en modo nube opera sin nodo. Al activar híbrido, un dispositivo sigue operando contra el nodo durante un corte y los datos llegan a la nube al reconectar |
+| **1 · Operación de salón (piloto en 1 sede)** | 10 a 13 semanas | M1, M2, M3 con Factus, el motor de impuestos, el portal del cliente (datos de facturación, **pedido por QR en la mesa** y **pago por QR en la mesa**), impresión térmica, M8 asistencia, reportes de ventas, caja, tiempos y horas trabajadas | Una sede opera 2 semanas seguidas solo con el sistema, con documentos DIAN aceptados, pedidos y pagos QR de mesa en un servicio real, y el personal marcando asistencia |
 | **2 · Inventario (6 sedes)** | 7 a 9 semanas | M4 completo con bodegas y reabastecimiento, productos que se pueden producir, costo de alimentos; despliegue en las 6 sedes | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes |
 | **3 · Domicilios y reservas** | 9 a 12 semanas, más el tiempo de aprobación de cada plataforma | M5: domicilio propio, captura manual de plataformas, conectores de Rappi y DiDi Food, menú por canal, conciliación. M9: reservas con cobro por transferencia (Nequi, Daviplata, Bre-B) verificado y política de cancelación | Los domicilios propios y de plataformas de al menos 1 sede entran al sistema sin digitarlos dos veces, con tiempos y comisiones medidos. Las reservas con anticipo se cobran y se abonan a la cuenta. |
 | **4 · Comercial** | 5 a 7 semanas | M6 avanzado (consolidado, ingeniería de menú, alertas), M7 | Un restaurante que no es del piloto se configura sin desarrollo a la medida |
@@ -608,7 +638,7 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Diferencia promedio de arqueo | Reducción medible frente a la línea base actual |
 | Diferencia entre inventario teórico y real | Medida y en descenso mes a mes |
 | Tiempo del pedido en llegar a cocina | Menos de 2 segundos (p90) |
-| Horas de operación perdidas por caída de internet | 0 |
+| Horas de operación perdidas por caída de internet | 0 en las sedes con híbrido activo. En modo nube el corte detiene el salón y no cuenta contra esta meta |
 | Satisfacción del personal (encuesta) | 8/10 o más |
 
 ## 13. Riesgos de producto
@@ -621,7 +651,9 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Cambios en la norma DIAN | El proveedor tecnológico absorbe los cambios del formato; nosotros mantenemos las reglas de negocio |
 | Alcance demasiado grande para un equipo pequeño | Fases cortas con criterio de salida; nada de la Fase N+1 entra en la Fase N |
 | Errores en impuestos por la variedad de regímenes | Motor de impuestos configurable, perfiles predefinidos validados por un contador y pruebas con casos reales de cada régimen |
-| Ventas sin internet que se facturan con retraso, porque no usamos factura de papel | Módem 4G de respaldo en cada sede, emisión automática al reconectar, alertas de pendientes y QR de consulta en el comprobante |
+| Ventas hechas durante un corte que se facturan con retraso, porque no usamos factura de papel | Emisión automática al reconectar, alertas de pendientes y QR de consulta en el comprobante. Módem 4G opcional en sedes intermitentes |
+| Alguien fotografía el QR de la mesa y pide desde fuera del local | El pedido queda en esa mesa y el personal lo ve al instante. La sede puede exigir aceptación en caja antes de cocina. Anular sigue pidiendo permiso |
+| Un pago QR se confirma dos veces o el cliente paga un monto distinto | El monto lo fija la cuenta. La pasarela confirma una sola vez, con un identificador único. Sin esa confirmación el pago no existe |
 | Las plataformas tardan en dar acceso a su API, o no lo dan | Pedir el acceso desde la Fase 0; usar la captura manual mientras tanto; evaluar un integrador que ya esté conectado a las plataformas |
 | Celulares personales: un mesero que se va sigue con acceso, o un celular viejo funciona mal | Revocación inmediata, uso solo dentro del local, y un punto de pedido fijo de la empresa como respaldo en cada sede |
 | Factus no emite documento equivalente POS | No lo necesitamos: toda venta es factura electrónica, que Factus confirma válida para POS y consumidor final. Si algún cliente futuro lo exige, el puerto de facturación permite agregar otro proveedor (TRD-00, sección 8) |
@@ -641,13 +673,14 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 |---|----------|---------|
 | 1 | Con Factus: si una bolsa la pueden consumir varios NIT y si la API muestra el saldo de documentos (TRD-00, sección 8.4) | No bloquea: se arranca con las condiciones estándar. El precio por volumen y la ampliación del límite se negocian al crecer, con señales medidas por el sistema |
 | 2 | ¿En qué plataformas está cada sede hoy, con cuántos pedidos al día y con qué comisión? ¿Tienen un gerente de cuenta en Rappi o DiDi? | Prioridad de los conectores y trámite de acceso a las API |
+| 3 | ¿Qué pasarela confirma el pago QR de la mesa (Nequi, Daviplata, Bre-B, tarjeta) y con qué comisión? | ADR-016, antes de la entrega 1.13. No bloquea el pedido por QR |
 
 **Datos para la configuración del piloto** (no cambian el diseño; se recogen antes de salir a producción)
 
 - Lista de NIT, con su régimen y las sedes que factura cada uno.
 - Por cada NIT, para activarlo en Factus: Cámara de Comercio (menos de 30 días), cédula del representante legal, RUT, y acceso al usuario DIAN de la empresa para solicitar los rangos.
 - Rangos de numeración DIAN de cada NIT: uno electrónico por sede (sin rangos de papel).
-- Internet de cada sede y si necesita módem 4G de respaldo.
+- Internet de cada sede: conectada o intermitente, y si conviene un módem 4G de respaldo.
 - Datáfonos por sede (Credibanco, Bold o Redeban).
 - Mínimos iniciales de los insumos principales, o permiso para que el sistema los sugiera después de unas semanas de operación.
 - Política de propinas y de reservas de cada sede.
@@ -661,7 +694,7 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Fecha objetivo del piloto | No hay fecha fija. Se avanza por criterio de salida de cada fase. |
 | Régimen tributario | Se soportan todos los regímenes de Colombia (sección 7.1). |
 | Inventario por sede | Un solo inventario por punto, más bodegas de la sede o generales para reabastecer (sección 5). |
-| Internet en las sedes | No es obligatorio. Hay perfiles de conectividad por sede (sección 9.1). |
+| Internet en las sedes | Toda sede tiene internet y nace en modo nube. El híbrido se activa por sede para seguir durante un corte. Una sede sin conexión permanente queda fuera (sección 9.1). |
 | NIT del piloto | Puede haber más de 2 NIT. Algunas sedes comparten NIT y otras no. El modelo soporta cualquier cantidad de contribuyentes por empresa (sección 5). |
 | Propinas | Fondo común repartido en partes iguales, con porcentaje ajustable por persona o rol (M2). |
 | Datáfonos | Credibanco, Bold y Redeban. Registro del pago en la Fase 1; integración directa evaluada después (M2, ADR-007). |
@@ -683,3 +716,4 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Bolsa de documentos de Factus | Una bolsa por empresa cliente, compartida por sus NIT (por confirmar con Factus), con alerta de saldo (M7). |
 | Red Wi-Fi del personal | Probablemente las sedes **no** tienen red separada. El diseño asume que el personal y los clientes comparten la red (TRD-00, sección 10.1.2). |
 | Cobro de reservas | Por transferencia directa a Nequi, Daviplata o Bre-B, con verificación manual. Sin pasarela por ahora (M9). |
+| Pedido y pago en la mesa por QR | El cliente pide y paga desde el QR de su mesa (6.1.2 y 6.1.3). El pago lo confirma una pasarela; el proveedor se elige en ADR-016. |

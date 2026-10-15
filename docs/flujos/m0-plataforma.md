@@ -3,11 +3,11 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
+| Versión | 0.2 |
 | Fecha | 2026-10-14 |
 | Fuentes | [PRD-01](../prd/PRD-01-roles-y-permisos.md), [TRD-00 §5 y §10](../trd/TRD-00-arquitectura-base.md) |
 
-M0 es la base que los demás módulos usan: quién entra, en qué dispositivo, qué puede hacer y qué queda registrado. También define quién es el dueño de cada dato, para que la sede opere sin internet.
+M0 es la base que los demás módulos usan: quién entra, en qué dispositivo, qué puede hacer y qué queda registrado. También define el modo de cada sede y quién es el dueño de cada dato.
 
 ## Cómo se conecta
 
@@ -15,18 +15,29 @@ M0 es la base que los demás módulos usan: quién entra, en qué dispositivo, q
 |-----|----------|
 | Todos | Cada acción pasa por el permiso. Las sensibles dejan auditoría. |
 | M8 | Si la sede lo configura, sin entrada marcada no hay acciones operativas. |
-| Nube | La configuración (empresa, roles, menú) baja al nodo. La operación sube. |
+| Nube | En modo nube, la nube es la operación. En híbrido, la configuración (empresa, roles, menú) baja al nodo y la operación sube. |
+
+## Modo de la sede
+
+Cada sede nace en **nube**. Un administrador puede **activar el híbrido** para esa sede. El detalle del emparejamiento, la vuelta a nube y el puente de impresión está en [TRD-00, sección 5.0](../trd/TRD-00-arquitectura-base.md).
+
+| Modo | La PWA del salón habla con | Un corte de internet |
+|------|----------------------------|----------------------|
+| Nube | La API central | Detiene el salón |
+| Híbrido | El nodo, dentro de la red del local | El salón sigue. Al reconectar se sincroniza |
+
+Solo hay un dueño de la operación a la vez. Activar o apagar el híbrido cambia ese dueño y sube un número de generación. El sitio anterior deja de aceptar escrituras nuevas.
 
 ## Dueños de los datos
 
-Solo el dueño crea o modifica el dato. El otro lado recibe una copia.
+Solo el dueño crea o modifica el dato. El otro lado recibe una copia. El diagrama de abajo es el **modo híbrido**. En modo nube, lo que aquí es del nodo es de la nube y no hay copia.
 
 ```mermaid
 flowchart LR
   subgraph Nube["Dueño: nube"]
     CFG["Empresa, marcas, sedes, roles"]
     MENU["Menú, recetas, precios"]
-    PORTAL["Datos de facturación del cliente"]
+    PORTAL["Datos de facturación, pedido QR y pago QR"]
     EXT["Pedido externo de plataforma"]
     RES["Reserva y su cobro"]
   end
@@ -136,4 +147,4 @@ flowchart LR
   H["Cambios de configuración en la nube"] --> I["El nodo los baja desde su último cursor"]
 ```
 
-La operación del local no espera a la nube. Lo que sí espera conexión: emitir ante la DIAN, ver la sede desde afuera, reportes consolidados, cambios de menú hechos en la web, pedidos de plataformas y reservas hechas en el enlace público.
+En modo híbrido, la operación del local no espera a la nube. Lo que sí espera conexión: emitir ante la DIAN, ver la sede desde afuera, reportes consolidados, cambios de menú hechos en la web, pedidos de plataformas y reservas hechas en el enlace público. En modo nube, todo el salón espera conexión.

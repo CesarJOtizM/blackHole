@@ -37,7 +37,7 @@
 Criterios de aceptación:
 
 - [ ] Dado <contexto>, cuando <acción>, entonces <resultado>.
-- [ ] Funciona sin internet: <sí/no y cómo>.
+- [ ] Durante un corte de internet: <en modo nube se detiene / en híbrido sigue en el nodo / espera en la nube y se aplica al reconectar>.
 - [ ] Queda auditado: <qué evento>.
 
 ## 5. Reglas de negocio

@@ -121,7 +121,7 @@ La nota se emite primero. La factura nueva reutiliza su referencia si hay que re
 
 ```mermaid
 flowchart LR
-  App["PWA de caja, cocina o salón"] --> Nodo
+  App["PWA de la sede (caja, cocina o salón)"] --> Nodo
   Nodo --> Cola["Cola de impresión"]
   Cola --> T["Térmica 80 mm o 58 mm"]
   T --> Cajon["Cajón, solo con el comando de la caja"]

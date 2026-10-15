@@ -11,7 +11,7 @@ Usamos un enfoque **híbrido**: dos documentos maestros que fijan las reglas com
 | Nivel | Documento | Qué responde |
 |-------|-----------|--------------|
 | 0 | [PRD-00 Visión de producto](prd/PRD-00-vision-producto.md) | Qué construimos, para quién, en qué orden y cómo sabemos que funcionó |
-| 0 | [TRD-00 Arquitectura base](trd/TRD-00-arquitectura-base.md) | Cómo se construye: arquitectura, offline, sincronización, seguridad, stack |
+| 0 | [TRD-00 Arquitectura base](trd/TRD-00-arquitectura-base.md) | Cómo se construye: arquitectura, cortes de internet, sincronización, seguridad, stack |
 | 0 | [Roadmap](roadmap.md) | En qué entregas pequeñas se parte cada fase y cuándo se da por cerrada cada una |
 | 1 | [TRD-01 Infraestructura y operación](trd/TRD-01-infraestructura-y-operacion.md) | Terraform en AWS, GCP y Azure, despliegue continuo, escalado, monitoreo y errores |
 | 1 | PRD-XX / TRD-XX por módulo | Detalle funcional y técnico de cada módulo, limitado al alcance de la entrega (se escriben al iniciar cada entrega) |
@@ -25,8 +25,8 @@ Los flujos de cada funcionalidad, y cómo se pasan el trabajo entre sí, están 
 | ID | Módulo | Fase | PRD | TRD |
 |----|--------|------|-----|-----|
 | M0 | Plataforma: organización, identidad, roles, auditoría, nodo local | 0 | [PRD-01 Roles y permisos](prd/PRD-01-roles-y-permisos.md) (resto pendiente) | Roles en TRD-00, 10.2 (resto pendiente) |
-| M1 | Pedidos y salón: mesas, pedidos, comandas, pantalla de cocina | 1 | Pendiente | Pendiente |
-| M2 | Caja: turnos, pagos, arqueos, propinas | 1 | Pendiente | Pendiente |
+| M1 | Pedidos y salón: mesas, pedidos del mesero y por QR, comandas, pantalla de cocina | 1 | Pendiente | Pendiente |
+| M2 | Caja: turnos, pagos, pago QR en la mesa, arqueos, propinas | 1 | Pendiente | Pendiente |
 | M3 | Facturación electrónica DIAN (Factus) e impresión | 1 | Pendiente | Pendiente |
 | M4 | Inventario, bodegas y recetas | 2 | Pendiente | Pendiente |
 | M5 | Domicilios propios y plataformas (Rappi, DiDi Food, otras) | 3 | Pendiente | Pendiente |

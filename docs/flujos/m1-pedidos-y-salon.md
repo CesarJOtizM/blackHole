@@ -3,11 +3,11 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
+| Versión | 0.2 |
+| Fecha | 2026-10-15 |
 | Fuentes | [PRD-00 §6.1 y M1](../prd/PRD-00-vision-producto.md), [TRD-00 §6](../trd/TRD-00-arquitectura-base.md) |
 
-El mesero toma el pedido en el celular. El nodo lo guarda, lo reparte por estación de cocina, lo muestra en la caja y descuenta la receta. Todo eso ocurre dentro del local.
+El mesero toma el pedido en el celular, o el cliente lo envía desde el QR de su mesa. El nodo lo guarda, lo reparte por estación de cocina, lo muestra en la caja y descuenta la receta. El pedido del mesero ocurre dentro del local. El del QR nace en la nube y el nodo lo aplica al instante, o al reconectar si hay un corte.
 
 ## Cómo se conecta
 
@@ -17,6 +17,7 @@ El mesero toma el pedido en el celular. El nodo lo guarda, lo reparte por estaci
 | M4 | Al enviar a cocina descuenta la receta. M4 le devuelve si el plato está agotado. |
 | M2 | La cuenta se ve en la caja desde que existe. Pedir la cuenta abre el cobro. |
 | M3 | La precuenta lleva el QR del portal de facturación. |
+| Portal | El QR fijo de la mesa crea o amplía la cuenta. El canal es QR mesa. |
 | M5 | Un domicilio o un pedido de plataforma, una vez aceptado, entra como pedido de esta sección. |
 | M8 | Sin entrada marcada no se opera, si la sede lo exige. |
 | M9 | La reserva bloquea la mesa y, al llegar el cliente, se asocia a la cuenta. |
@@ -46,6 +47,32 @@ sequenceDiagram
 ```
 
 Si la impresora de comandas falla, la comanda sigue en la pantalla y se avisa a la caja. Un pedido puede enviarse por tiempos: primero entradas, después fuertes. Reenviar un producto vuelve a enrutar solo ese producto.
+
+## Pedido desde el QR de la mesa
+
+```mermaid
+sequenceDiagram
+  actor Cliente
+  participant Portal as Portal
+  participant Nodo
+  participant Cocina as Cocina
+  participant Caja
+
+  Cliente->>Portal: Escanea el QR fijo de su mesa
+  Portal-->>Cliente: Carta de esa sede
+  Cliente->>Portal: Productos, modificadores y notas
+  Portal->>Portal: Intención de pedido, una sola vez
+  alt La sede tiene enlace
+    Portal-->>Nodo: Aplicar ahora
+  else Hay un corte
+    Portal-->>Nodo: Aplicar al reconectar
+  end
+  Nodo->>Nodo: Abre la mesa o suma a la cuenta
+  Nodo-->>Cocina: Comanda, canal QR mesa
+  Nodo-->>Caja: Cuenta actualizada
+```
+
+El cliente no anula, no descuenta y no cambia precios. Por defecto la comanda sale directo. Si la sede configuró aceptación en caja, la cocina la ve después de que la caja acepta. Al aplicar un pedido que esperó durante un corte, el nodo usa la disponibilidad de ese momento: si el plato ya no se puede enviar, no entra a cocina.
 
 ## A dónde va cada producto
 

@@ -3,32 +3,33 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-14 |
+| Versión | 0.5 |
+| Fecha | 2026-10-15 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
 
 ## 1. Resumen de decisiones
 
 | Tema | Decisión | Estado |
 |------|----------|--------|
-| Topología | **Nube central + un nodo local por sede** (un mini PC en el local) | Propuesta |
-| Operación sin internet | La sede opera completa contra su nodo local; la nube recibe los datos al sincronizar. El internet no es obligatorio (perfiles de conectividad) | Decidido (PRD-00) |
-| Clientes | Apps web instalables (PWA) mobile first para mesero, caja, cocina y domiciliario; web para la administración. Los meseros usan su celular personal, Android o iPhone | Decidido; el spike de ADR-003 valida HTTPS local |
+| Topología | **Nube por defecto.** Cada sede puede **activar el híbrido**: entonces sí hay un nodo local. Misma API y mismas reglas en los dos modos | Decidido (sección 5.0) |
+| Conexión de la sede | Toda sede tiene internet. En modo nube un corte detiene el salón. En modo híbrido el salón sigue contra el nodo; al reconectar se emiten facturas y se aplican pedidos y pagos QR. Una sede sin conexión permanente queda fuera | Decidido (PRD-00, 9.1) |
+| Clientes | Apps web instalables (PWA) mobile first: **una sola app de la sede** para salón, caja y cocina, con pantallas por rol, y otra para el domiciliario; web para la administración. Los meseros usan su celular personal, Android o iPhone | Decidido; el spike de ADR-003 valida HTTPS local |
 | Sincronización | Cada dato tiene **un solo dueño** (nodo o nube). Se envían eventos que solo se agregan, nunca se editan | Propuesta |
 | Separación de clientes | Una base de datos compartida, con `tenant_id` y Row Level Security en PostgreSQL | Propuesta |
 | Lenguaje | TypeScript de punta a punta, en un monorepo | Propuesta |
 | Base de datos | PostgreSQL en la nube; SQLite en el nodo local | Propuesta |
 | DIAN | **Factus**, detrás del puerto `ProveedorFacturacion`. Toda venta es **factura electrónica de venta** (a consumidor final si no hay datos). Sin internet: comprobante con QR y **emisión diferida** al reconectar; sin factura de papel | Decidido |
 | Impuestos | Motor de impuestos basado en reglas como datos, con vigencias; corre en el nodo y en la nube | Decidido (PRD-00) |
-| Impresión | El nodo local imprime en ESC/POS por red o USB | Propuesta |
+| Impresión | ESC/POS por red o USB. En híbrido imprime el nodo. En nube imprime un **puente** (el mismo programa, sin guardar la operación) | Propuesta |
 | Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Propuesta |
 | Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Propuesta |
-| Código | Monolito modular; arquitectura hexagonal solo en los módulos con reglas de negocio | Propuesta |
+| Código | Monolito modular con **arquitectura hexagonal en todos los módulos** e inyección de dependencias con NestJS (sección 14) | Decidido |
+| Stack | NestJS sobre Fastify, Drizzle, React + Vite con TanStack (sección 13) | Decidido |
 | Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo; escalado automático; OpenTelemetry y Sentry. Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Propuesta |
 
 ## 2. Restricciones que guían el diseño
 
-1. **Sin internet, la sede sigue operando.** El celular del mesero tiene que llegar a la cocina y a la caja aunque se caiga el internet. Por eso necesitamos un nodo dentro del local, conectado por la red Wi-Fi.
+1. **La sede nace en la nube.** Un corte de internet detiene esa sede, y eso se acepta. Si el local necesita seguir el servicio durante un corte, se **activa el híbrido** y aparece el nodo. El producto no cubre una sede que nunca tiene internet.
 2. **Mobile first.** El mesero usa un celular de gama media. Las pantallas se diseñan para eso.
 3. **Equipo pequeño.** Un solo lenguaje, un solo repositorio y poca infraestructura que operar.
 4. **Muchos clientes.** Desde el primer día el modelo de datos soporta varias empresas.
@@ -63,22 +64,20 @@ flowchart LR
     DIAN[Factus<br/>proveedor tecnológico DIAN]
     D[Domiciliario<br/>PWA con datos móviles]
 
-    N <-->|Sincronización cuando hay internet| API
+    N <-->|Sincronización cuando hay internet<br/>solo si la sede está en híbrido| API
     W -->|Envío de documentos| DIAN
     D <--> API
-    CL[Celular del cliente<br/>portal de facturación] <-->|QR de precuenta o factura| API
+    CL[Celular del cliente<br/>carta, pedido, pago y factura] <-->|QR de la mesa, precuenta o factura| API
 ```
 
 ### Componentes
 
 | Componente | Responsabilidad | Dónde corre |
 |------------|-----------------|-------------|
-| **Nodo local** | API de la sede, tiempo real (WebSocket), base local, cola de impresión, cola DIAN, sincronización con la nube | Mini PC en la sede (o el PC de la caja) |
-| **PWA de salón** | Mesero, punto de pedido fijo, mesas | Celulares y tablets |
-| **PWA de caja** | Cobro, turnos, arqueos, propinas | PC o tablet de la caja |
-| **Pantalla de cocina** | Cola por estación, cambios de estado y tiempos | Tablet o TV con navegador |
+| **Nodo local** | Solo si la sede activó el híbrido. API de la sede, tiempo real (WebSocket), base local, cola de impresión, cola DIAN, sincronización con la nube. En modo nube el mismo programa puede quedar en perfil puente: solo imprime | Mini PC en la sede, o el PC de la caja |
+| **PWA de la sede** | Una sola app con pantallas por rol. **Salón**: mesero, punto de pedido fijo, mesas. **Caja**: cobro, turnos, arqueos, propinas. **Cocina**: cola por estación, cambios de estado y tiempos. El PIN define qué pantallas ve cada persona; un equipo fijo de cocina abre siempre su estación | Celulares, tablets, PC de la caja y TV con navegador |
 | **PWA de domiciliario** | Pedidos asignados y confirmación de entrega | Celular con datos móviles (habla con la nube) |
-| **Portal de clientes** | Datos de facturación del cliente y consulta de facturas, desde un QR o un enlace (8.5) | Nube, web pública |
+| **Portal de clientes** | Carta de la mesa, pedido QR, pago QR, datos de facturación y consulta de facturas (6.4 y 8.5) | Nube, web pública |
 | **Web de administración** | Configuración, menú, recetas, inventario, reportes y usuarios | Navegador (nube) |
 | **API central** | Configuración de la organización, consolidación de datos, reportes y SaaS | Nube |
 | **Workers** | Procesar la sincronización, proyecciones de reportes, reintentos DIAN, alertas | Nube |
@@ -97,7 +96,7 @@ erDiagram
     MARCA ||--o{ MENU : define
     MENU ||--o{ PRODUCTO : contiene
     PRODUCTO ||--o{ RECETA : "se prepara con"
-    SEDE ||--|| NODO_LOCAL : opera
+    SEDE ||--o| NODO_LOCAL : "si es híbrida"
     SEDE ||--o{ ESTACION_COCINA : tiene
     SEDE ||--o{ CAJA : tiene
     SEDE ||--|| UBICACION_INVENTARIO : "punto (1)"
@@ -113,17 +112,63 @@ erDiagram
 - `EstacionCocina` (parrilla, fríos, bar…) solo define **a dónde se enruta** cada producto. No tiene inventario.
 - `PrecioSede` permite que una sede ajuste el precio y la disponibilidad del menú de su marca.
 
-## 5. Operación sin internet y sincronización
+## 5. Modo de operación, corte y sincronización
+
+El diagrama de la sección 3 muestra una sede **en híbrido**. En modo nube no está el nodo: las PWA del salón hablan con la API central, y la impresora, si existe, recibe trabajos por el puente.
+
+### 5.0 Modo de la sede
+
+Cada sede nace en **modo nube**. El híbrido no se instala solo: un administrador lo **activa** en esa sede cuando quiere que el salón siga durante un corte de internet.
+
+| | Nube (predeterminado) | Híbrido (se activa) |
+|--|------------------------|---------------------|
+| Quién opera el salón | La API central | El nodo local |
+| Dueño de pedidos, caja, inventario del punto, asistencia y auditoría del salón | Nube | Nodo |
+| Dueño de empresa, menú, portal, plataformas y reservas | Nube | Nube |
+| Corte de internet | El salón se detiene. Al volver, se sigue donde quedó | El salón sigue. Al reconectar se sincroniza |
+| Hardware en el local | Ninguno obligatorio. Con impresora térmica, un puente en el PC de caja | Nodo (mini PC o ese mismo PC) y UPS recomendado |
+| A quién habla la PWA del salón | API central | Nodo. La administración web sigue en la nube |
+
+Un solo programa y los mismos casos de uso. Cambia dónde corren, no las reglas. La PWA pregunta el modo de la sede y usa esa dirección. El dispositivo no elige el modo.
+
+**Puente de impresión.** En modo nube el navegador sigue sin poder hablar ESC/POS con la impresora. El puente es el mismo programa del nodo, en perfil `puente`: no guarda pedidos ni aguanta un corte. Recibe trabajos de la nube y los manda a la impresora. Si está apagado, el trabajo espera en la nube y la pantalla avisa que no se imprimió. Al activar híbrido, ese equipo pasa a perfil `nodo` y la cola queda en el local.
+
+**Un solo dueño a la vez.** La sede guarda `dueno_operacion` (`nube` o `nodo`) y un número de generación. Cada escritura lleva esa generación. Cuando la generación cambia, el dueño anterior rechaza escrituras nuevas. Así no hay dos sitios creando la misma venta.
+
+**Activar híbrido**
+
+1. El administrador activa el modo en la web.
+2. La nube entrega un código de emparejamiento de un solo uso.
+3. Se instala el programa en el equipo del local y se empareja.
+4. El nodo descarga la foto de la sede: configuración, cuentas abiertas y la operación que todavía no está cerrada.
+5. La nube pasa `dueno_operacion` a `nodo` y sube la generación. Desde ese momento deja de aceptar pedidos, cobros y movimientos escritos directo por las PWA de esa sede.
+6. Los dispositivos del salón pasan a hablar con el nodo.
+7. El portal, las plataformas y las reservas siguen naciendo en la nube y bajan al nodo, como en la sección 5.1.
+
+**Volver a nube**
+
+1. El nodo envía todo lo pendiente. La outbox queda en cero.
+2. El administrador confirma la vuelta. Si quedara algo sin subir, tiene que aceptarlo de forma explícita.
+3. `dueno_operacion` pasa a `nube` y sube la generación.
+4. Los dispositivos vuelven a la API central.
+5. El equipo local puede quedar como puente de impresión o apagarse.
+
+**Si el nodo de una sede híbrida falla** (ADR-004). No se salta solo a la nube: el nodo puede tener ventas que todavía no subieron. El relevo lo confirma un administrador, o ocurre solo cuando el nodo alcanzó a decir que no tenía nada pendiente. Al volver el equipo, lo que no había subido se concilia contra la generación nueva y no se aplica por segunda vez.
+
+**Presencia en el local.** En híbrido el celular del mesero solo habla con el nodo, dentro de la red. En nube, la misma regla se apoya en el puente: la PWA comprueba que llega al puente antes de operar. Una sede sin ningún equipo local acepta que un dispositivo registrado y con PIN pueda operar desde donde tenga internet, hasta que se revoque.
 
 ### 5.1 Cada dato tiene un solo dueño
 
 Evitamos los conflictos definiendo quién es el dueño de cada dato. Solo el dueño lo crea o lo modifica; los demás reciben copias.
 
+La tabla describe el **modo híbrido**. En **modo nube** no hay copia de la operación: las filas cuyo dueño es el nodo pasan a ser de la nube. Configuración, portal, plataformas y reservas siguen siendo de la nube en los dos modos.
+
 | Dato | Dueño | Dirección de la copia |
 |------|-------|-----------------------|
 | Empresa, marcas, sedes, usuarios, roles | Nube | Nube → nodo |
 | Menú, productos, recetas, precios | Nube (web de administración) | Nube → nodo |
-| Pedidos, comandas, estados de cocina | Nodo de la sede | Nodo → nube |
+| Pedidos del mesero, comandas, estados de cocina | Nodo de la sede | Nodo → nube |
+| Intención de pedido QR y pago QR confirmado por la pasarela | Nube, hasta que el nodo los aplica (6.4) | Nube → nodo. Al aplicarse, el pedido y el pago pasan a ser del nodo |
 | Pagos, turnos, arqueos, propinas | Nodo de la sede | Nodo → nube |
 | Documentos DIAN (numeración por caja) | Nodo de la sede | Nodo → nube |
 | Movimientos del punto y de las bodegas de la sede | Nodo de la sede | Nodo → nube |
@@ -152,11 +197,13 @@ Traslados según quién es dueño de cada lado:
 
 ### 5.3 Si el nodo local falla
 
-El nodo es un punto único de falla dentro de la sede. Mitigaciones para la Fase 1:
+Esto aplica solo en modo híbrido. En modo nube no hay nodo que falle: si cae el internet de la sede, el salón se detiene hasta que vuelva.
+
+En híbrido el nodo es un punto único de falla dentro de la sede. Mitigaciones:
 
 1. Equipo dedicado con UPS y reinicio automático del servicio.
 2. Respaldo continuo a la nube (la outbox) y una restauración documentada en menos de 30 minutos con un equipo de repuesto.
-3. Si hay internet, los dispositivos pueden operar en **modo nube** como respaldo. La viabilidad se evalúa en la Fase 0 (ADR-004).
+3. Relevo a la nube solo con la outbox vacía o con confirmación del administrador (sección 5.0, ADR-004). No es un salto automático mientras el nodo pueda tener ventas sin subir.
 
 Un segundo nodo en espera queda fuera de alcance hasta tener datos reales de fallas.
 
@@ -179,28 +226,27 @@ Qué hay que tener en cuenta con iPhone (Safari):
 - Safari no permite vibrar desde la web. Los avisos al mesero en iPhone usan sonido y una señal visual.
 - iOS puede borrar los datos de una PWA que no se usa. Por eso **el celular del mesero no guarda datos de negocio**: es un cliente liviano del nodo, y todo vive en el nodo.
 
-Si la sede no tiene internet, la opción A también necesita que el certificado se renueve en una ventana de conexión, antes de vencer. Lo resuelve la sincronización por ventanas de la sección 5.5, pero el spike debe probarlo.
+El certificado se renueva cada vez que el nodo tiene enlace, con margen antes de vencer. El spike debe probar esa renovación. Una sede caída durante semanas, hasta que el certificado expire, queda fuera del escenario de producto.
 
-### 5.5 Perfiles de conectividad
+### 5.5 Conexión de la sede
 
-El internet no es obligatorio en la sede (PRD-00, sección 9.1). La arquitectura es la misma en todos los perfiles. Solo cambia el **transporte de la sincronización**.
+Toda sede tiene internet (PRD-00, sección 9.1). La arquitectura es la misma en los dos modos. Cambia cuánto dura el enlace, no el diseño.
 
-| Perfil | Cómo sincroniza | Hardware adicional |
-|--------|-----------------|--------------------|
+| Modo | Cómo sincroniza | Hardware adicional |
+|------|-----------------|--------------------|
 | Conectada | De forma continua por el internet de la sede | Ninguno |
-| Intermitente | Continua, con reintentos y espera creciente entre intentos | Opcional: módem 4G de respaldo en el nodo |
-| Sin internet fijo | Por **módem 4G** en el nodo. Como no hay factura de papel, la conexión 4G debe estar activa durante el servicio para facturar al instante; el resto de la sincronización puede ir por ventanas | Módem 4G en el nodo (obligatorio en este perfil) |
+| Intermitente | La misma sincronización, con reintentos y espera creciente. Al volver el enlace se reanuda desde el último evento confirmado | Opcional: módem 4G de respaldo en el nodo, para acortar el corte |
 
 Detalles:
 
 - La sincronización envía lotes **comprimidos y reanudables**: si la conexión se corta a mitad de un lote, continúa desde el último evento confirmado.
-- **Prioridad de envío**: primero los documentos DIAN, luego la auditoría, luego ventas y caja, luego inventario, y por último la telemetría.
-- El nodo envía una señal de vida cada vez que se conecta. La nube alerta si una sede pasa demasiado tiempo sin sincronizar o si tiene facturas pendientes de emisión.
-- **Traslados que llegan a una sede sin internet**: el comprobante impreso del despacho lleva un QR con el detalle del traslado. El punto destino lo escanea y registra la recepción aunque todavía no lo haya recibido por la sincronización.
+- **Prioridad de envío**: primero los documentos DIAN y los pagos QR confirmados, luego los pedidos QR, luego la auditoría, luego ventas y caja, luego inventario, y por último la telemetría.
+- El nodo envía una señal de vida cada vez que se conecta. La nube alerta si una sede pasa demasiado tiempo sin sincronizar o si tiene facturas, pedidos QR o pagos QR pendientes.
+- **Traslados que llegan durante un corte**: el comprobante impreso del despacho lleva un QR con el detalle del traslado. El punto destino lo escanea y registra la recepción aunque todavía no lo haya recibido por la sincronización.
 - **Bodega general**: en el piloto tiene internet y personal propio. Lleva **su propio nodo en modo bodega**: es el mismo software del nodo de sede, con los módulos de inventario, recepción, despacho e impresión de comprobantes, y sin salón ni caja. Puede correr en un equipo pequeño.
-  - Así la bodega sigue operando si se le cae el internet, con la misma regla que las sedes.
+  - Así la bodega sigue operando si se le corta el internet, con la misma regla que las sedes.
   - Para un cliente con una bodega pequeña y poco movimiento, existe la alternativa de operarla desde la web de administración, sin nodo. En ese caso, sin internet no puede registrar movimientos.
-- **Domiciliario en una sede sin internet**: la asignación y el despacho se registran en el nodo. La app del domiciliario guarda la confirmación de entrega y el cobro en el celular, y los sincroniza cuando vuelve a la red Wi-Fi de la sede.
+- **Domiciliario durante un corte**: la asignación y el despacho se registran en el nodo. La app del domiciliario guarda la confirmación de entrega y el cobro en el celular, y los sincroniza cuando vuelve a la red Wi-Fi de la sede.
 
 ## 6. Flujo del pedido
 
@@ -340,10 +386,52 @@ Las reservas se pueden crear desde fuera del local (enlace público, pago en lí
   4. Queda **cerrada e inmutable**. Una corrección es una liquidación de ajuste.
 - La regla usada se guarda en la liquidación, así un cambio posterior de la regla no altera liquidaciones pasadas.
 
+### 6.4 Pedido y pago desde el QR de la mesa
+
+El celular del cliente habla con el portal en la nube (8.5). No se registra como dispositivo de la sede y no entra a la red del personal. El QR de la mesa es fijo: identifica sede y mesa, y no lleva datos de una cuenta.
+
+**Pedido**
+
+1. El portal muestra la copia del menú de esa sede que ya bajó al nodo (precios, modificadores, agotados).
+2. El cliente envía el pedido. La nube guarda una `IntencionPedidoQr` con UUID, idempotente.
+3. Si el nodo está en línea, la recibe al instante, abre la mesa o suma las líneas a la cuenta abierta, enruta a cocina y pasa a ser dueño del `Pedido`. El canal es `qr_mesa`.
+4. Si la sede está en un corte, la intención espera en la nube. Al reconectar, el nodo la aplica una sola vez. En ese momento usa la disponibilidad actual: si el plato ya no se puede enviar, no entra a cocina y el portal se lo muestra al cliente.
+5. El cliente no anula, no descuenta y no cambia precios. Esas acciones siguen en el nodo, con permiso.
+6. `aceptacion_qr` por sede: `directo` (defecto, sale a cocina) o `caja` (la caja acepta antes).
+
+**Pago**
+
+El puerto `PasarelaPagos` cobra el saldo que fija la cuenta. El cliente no escribe el monto. Medios previstos: Nequi, Daviplata, Bre-B y tarjeta, según lo que ofrezca el adaptador. El proveedor se elige en ADR-016. Las reservas siguen con transferencia y verificación manual (6.2, ADR-012): no usan este cobro.
+
+1. El portal pide a la pasarela un cobro por el saldo más la propina elegida, con un `referencia` único de esa cuenta.
+2. La pasarela avisa por webhook firmado. Sin ese aviso el pago no existe. Un segundo aviso con la misma referencia no crea otro pago.
+3. La nube guarda el `PagoQrConfirmado`. El nodo lo aplica al turno de caja abierto, emite la factura (o la deja pendiente si en ese instante no hay enlace hacia Factus) y pasa la mesa a por limpiar.
+4. Si el cliente pagó durante un corte de la sede, el pago igual queda confirmado en la nube. El nodo lo aplica al reconectar: imprime y libera la mesa.
+5. En el arqueo, el total QR se compara con el reporte de la pasarela. No entra al efectivo.
+
+```mermaid
+sequenceDiagram
+    participant Cli as Celular del cliente
+    participant Portal as Portal (nube)
+    participant Pasarela
+    participant Nodo as Nodo de la sede
+    participant Cocina as Cocina
+
+    Cli->>Portal: Escanea el QR de la mesa y envía el pedido
+    Portal->>Portal: IntencionPedidoQr
+    Portal-->>Nodo: Aplicar pedido (al instante, o al reconectar)
+    Nodo-->>Cocina: Comanda, canal qr_mesa
+    Cli->>Portal: Paga el saldo y la propina
+    Portal->>Pasarela: Cobro por el monto exacto
+    Pasarela-->>Portal: Webhook de confirmación
+    Portal-->>Nodo: PagoQrConfirmado
+    Nodo->>Nodo: Registra el pago, emite o deja pendiente la factura, libera la mesa
+```
+
 ## 7. Impresión térmica
 
-- Protocolo **ESC/POS**. Impresoras de red (TCP 9100) o USB conectadas al nodo. Papel de 80 mm y 58 mm.
-- La impresión siempre sale del **nodo**, porque los navegadores no pueden enviar ESC/POS directamente a la impresora.
+- Protocolo **ESC/POS**. Impresoras de red (TCP 9100) o USB. Papel de 80 mm y 58 mm.
+- El navegador no envía ESC/POS. En híbrido imprime el **nodo**. En nube imprime el **puente** (sección 5.0): si el puente está apagado, el trabajo espera en la nube.
 - Cola de impresión con reintentos, estado de cada impresora y reimpresión auditada.
 - Plantillas: comanda, precuenta, documento DIAN (con QR y CUDE/CUFE), cierre de caja, traslado y comprobante de propinas.
 - El comando para abrir el cajón monedero va a la impresora de la caja. Toda apertura queda auditada.
@@ -528,7 +616,7 @@ Estas métricas salen en el panel de soporte (M7) y generan una alerta interna c
 
 ### 8.5 Portal de datos de facturación
 
-Página web pública donde **el cliente registra sus datos de facturación desde su celular**, para que nadie los digite en la caja (PRD-00, sección 6.1.1).
+Página web pública del celular del cliente. Desde el QR de la mesa pide y paga (6.4). Desde la precuenta, el comprobante o un enlace registra sus datos de facturación, para que nadie los digite en la caja (PRD-00, sección 6.1.1).
 
 **Dónde vive**
 
@@ -539,6 +627,7 @@ Página web pública donde **el cliente registra sus datos de facturación desde
 
 | Entrada | URL | Atada a | Vence |
 |---------|-----|---------|-------|
+| QR fijo de la mesa | `/m/<token-mesa>` | La sede y la mesa | No vence. Rota solo si el administrador lo reimprime |
 | QR de la precuenta | `/d/<token>` | La cuenta abierta | Cuando se emite la factura, o a las 24 h |
 | QR del comprobante o de la factura | `/f/<reference_code>` | El documento de venta | Si está pendiente: hasta que se emite. Si ya se emitió: al terminar el plazo de refacturación (PRD-00, regla 10) |
 | Enlace por WhatsApp (domicilio, reserva) | `/d/<token>` | El pedido o la reserva | Igual que la precuenta |
@@ -723,6 +812,7 @@ ingrediente_limitante     = el que da el mínimo
 | Administración web | Correo y contraseña, con segundo factor opcional; sesión en la nube |
 | Dispositivo de sede | **Registro del dispositivo** con un código de un solo uso; queda con su propia credencial |
 | Usuario en un dispositivo compartido | **PIN personal** validado por el nodo, con sesión corta y cierre por inactividad |
+| Equipo fijo de cocina | Se registra en **modo fijo** con su estación: la PWA de la sede abre siempre la cola de esa estación y no pide PIN para verla. Marcar estados pide PIN solo si la sede lo configura |
 | Autorización de supervisor | PIN del supervisor para esa acción puntual; queda en la auditoría |
 
 El nodo guarda una copia de los usuarios y los hashes de los PIN de su sede, para validar sin internet.
@@ -841,20 +931,28 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 - Los datos personales de los clientes de domicilio se tratan según la Ley 1581: finalidad, consentimiento y eliminación a solicitud.
 - Respaldos diarios de la nube con restauración probada.
 
-## 13. Stack propuesto
+## 13. Stack
 
-| Capa | Propuesta | Alternativa | Por qué |
-|------|-----------|-------------|---------|
+Decidido el 2026-10-15. Sigue pendiente la nube de producción (ADR-005).
+
+| Capa | Decisión | Alternativa descartada | Por qué |
+|------|----------|------------------------|---------|
 | Monorepo | pnpm + Turborepo | Nx | Simple y rápido para un equipo pequeño |
-| Lenguaje | TypeScript estricto | — | Un solo lenguaje; el dominio se comparte entre el nodo y la nube |
-| API (nube y nodo) | Node.js + Fastify | NestJS | Liviano; el mismo servidor corre en el nodo |
-| ORM / SQL | Drizzle | Kysely, Prisma | Soporta PostgreSQL y SQLite con el mismo esquema |
+| Lenguaje y runtime | TypeScript estricto sobre Node.js 24 LTS | — | Un solo lenguaje; el dominio y los casos de uso se comparten entre el nodo y la nube |
+| API (nube, nodo y puente) | NestJS sobre Fastify (`@nestjs/platform-fastify`) | Fastify solo | La inyección de dependencias conecta los puertos con sus adaptadores en todos los módulos (sección 14). Fastify debajo mantiene el servidor liviano en el nodo |
+| Validación y contratos | Zod 4 en `packages/contratos`, integrado a Nest con `nestjs-zod` | `class-validator` | El mismo esquema valida en la PWA, el nodo y la nube |
+| Acceso a datos | Drizzle, con un esquema para PostgreSQL y otro para SQLite | Prisma, Kysely | Políticas de Row Level Security en el esquema (`pgPolicy`), transacciones explícitas para la outbox y SQL con tipos. Drizzle **no** comparte un mismo esquema entre dialectos: cada base tiene sus tablas y migraciones, detrás de los mismos puertos |
 | Base de datos de la nube | PostgreSQL gestionado (RDS, Cloud SQL o Azure Database for PostgreSQL), solo con extensiones disponibles en las tres | — | Row Level Security, JSONB, madurez; portable entre nubes |
-| Base de datos del nodo | SQLite (modo WAL) | — | Sin administración; suficiente para una sede |
-| Tiempo real | WebSocket (en el nodo) | Server-Sent Events | Comunicación en ambas direcciones con cocina, caja y mesero |
-| Frontend | React + Vite (PWA), Tailwind | — | Un solo stack para todas las apps |
-| Estado y datos en el cliente | TanStack Query + Zustand | — | Caché y estado local simples |
-| Validación | Zod (esquemas compartidos) | — | Los contratos entre cliente, nodo y nube son el mismo código |
+| Base de datos del nodo | SQLite (modo WAL) con `better-sqlite3` | — | Sin administración; suficiente para una sede; un archivo fácil de respaldar y restaurar |
+| Tiempo real | WebSocket con los gateways de Nest (`@nestjs/platform-ws`). En la nube, `LISTEN/NOTIFY` de PostgreSQL reparte los mensajes entre instancias | Server-Sent Events | Comunicación en ambas direcciones con cocina, caja y mesero, en el nodo y en la nube |
+| Frontend | React 19 + Vite + `vite-plugin-pwa`, Tailwind 4, shadcn/ui | Next.js | Las PWA las sirve la nube o el nodo como archivos estáticos y funcionan sin internet. No hace falta renderizado en servidor ni SEO |
+| Rutas, estado y datos en el cliente | TanStack Router + TanStack Query + Zustand 5 | — | Rutas con tipos; caché, reintentos y reconexión ante un Wi-Fi débil |
+| Autenticación de la administración | Better Auth, con segundo factor, sobre la misma PostgreSQL | Servicio gestionado de una nube | No ata la identidad a un proveedor de nube |
+| Dispositivos y PIN | Propio: llave ECDSA P-256 no exportable por dispositivo (WebCrypto) que firma cada petición; PIN con hash argon2id | — | Funciona sin internet contra el nodo (sección 10.1) |
+| Dinero e impuestos | Montos en enteros; `decimal.js` en el motor de impuestos | Números de punto flotante | Redondeo bancario exacto, igual que Factus (sección 8.6) |
+| Fechas | Zona horaria `America/Bogota` explícita, con `date-fns-tz` | — | Los reportes y la factura no dependen de la zona del servidor |
+| Avisos push | Web Push (VAPID) desde la nube | — | Funciona en Android y en iPhone con la PWA instalada |
+| Calidad de código | Biome (lint y formato), Vitest, Playwright, dependency-cruiser | ESLint + Prettier | dependency-cruiser hace fallar la integración si una capa importa a otra que no debe (sección 14) |
 | Workers en la nube | Colas en PostgreSQL (pg-boss) | SQS | Sin infraestructura extra al inicio |
 | Despliegue del nodo | Contenedor Docker con actualización automática controlada | Servicio de Windows | Instalación y actualización repetibles |
 | Nube | Contenedores gestionados en AWS (ECS Fargate), GCP (Cloud Run) o Azure (Container Apps), con módulos equivalentes desde el inicio | — | No quedar atados a un proveedor (TRD-01, sección 3) |
@@ -869,14 +967,15 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 apps/
   api-nube/          # API central + workers
   nodo-local/        # Servidor de la sede (API, WebSocket, impresión, sincronización)
-  app-salon/         # PWA de mesero y punto de pedido
-  app-caja/          # PWA de caja
-  app-cocina/        # Pantalla de cocina
+  app-sede/          # PWA del personal: salón, punto de pedido, caja y cocina, con pantallas por rol
   app-domicilios/    # PWA del domiciliario
   web-admin/         # Administración y reportes
   portal-clientes/   # Web pública: datos de facturación y consulta de facturas
 packages/
-  dominio/           # Reglas de negocio puras (pedidos, caja, inventario, facturación)
+  dominio/           # Entidades, objetos de valor y reglas puras, por módulo. Sin Nest ni base de datos
+  aplicacion/        # Casos de uso y puertos, por módulo. Los mismos en el nodo y en la nube
+  persistencia-postgres/  # Adaptadores de los puertos de repositorio para la nube (Drizzle + PostgreSQL)
+  persistencia-sqlite/    # Adaptadores de los puertos de repositorio para el nodo (Drizzle + SQLite)
   contratos/         # Esquemas Zod, eventos y DTOs compartidos
   sincronizacion/    # Outbox e inbox, cursores
   impresion/         # Plantillas y driver ESC/POS
@@ -886,9 +985,24 @@ packages/
 infra/               # Terraform: módulos por nube y ambientes (TRD-01, sección 4)
 ```
 
-- **Monolito modular**: cada módulo (M0 a M7) es una carpeta con su dominio, sus casos de uso y sus adaptadores. Un módulo no importa el interior de otro.
-- **Arquitectura hexagonal solo donde hay reglas**: pedidos, caja, inventario y facturación. Los catálogos y la configuración pueden ser CRUD simple.
-- El paquete `dominio` no depende de la base de datos ni de HTTP, porque corre igual en el nodo y en la nube.
+- **Monolito modular**: cada módulo (M0 a M9) tiene su dominio, sus casos de uso y sus adaptadores. Un módulo no importa el interior de otro; habla con él por su puerto de entrada o por eventos.
+- **Arquitectura hexagonal en todos los módulos**, también en catálogos y configuración. Un módulo sencillo tiene un dominio delgado, pero respeta las mismas capas.
+- **`app-sede` carga cada pantalla por separado**: el celular del mesero no descarga la caja ni la cocina hasta que alguien con ese rol las abre. Cada pantalla tiene su propia barrera de errores. Ocultar una pantalla no reemplaza el permiso: la decisión siempre es del servidor (sección 10.2).
+
+**Capas y dependencias**
+
+| Capa | Dónde vive | Contiene | Puede depender de |
+|------|------------|----------|-------------------|
+| Dominio | `packages/dominio/<modulo>` | Entidades, objetos de valor, reglas puras (impuestos, permisos, totales) | Nada más que el lenguaje |
+| Aplicación | `packages/aplicacion/<modulo>` | Casos de uso, puertos de entrada y de salida (repositorios, `ProveedorFacturacion`, `Impresora`, `Reloj`, `Secretos`…) | Dominio y `@nestjs/common` (solo `@Injectable` e `@Inject`) |
+| Infraestructura | `packages/persistencia-*`, `packages/facturacion`, `packages/plataformas`, `packages/impresion` y los módulos Nest de cada app | Adaptadores de los puertos, controladores HTTP, gateways WebSocket, workers | Aplicación y dominio |
+
+- La dependencia va siempre hacia adentro: infraestructura → aplicación → dominio. dependency-cruiser lo verifica en la integración continua.
+- **Los puertos de salida son clases abstractas** y sirven de token de inyección de Nest. Ejemplo: `abstract class RepositorioPedidos`. El caso de uso pide `RepositorioPedidos`; no sabe si detrás hay PostgreSQL o SQLite.
+- **Cada app arma sus adaptadores** en sus módulos Nest. `api-nube` enlaza los puertos con `persistencia-postgres`; `nodo-local` los enlaza con `persistencia-sqlite`; el perfil `puente` solo carga el módulo de impresión. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
+- **El dominio no usa decoradores de Nest.** Así el motor de impuestos y la evaluación de permisos se prueban y se usan sin arrancar un contenedor de inyección.
+- **Pruebas**: los casos de uso se prueban con adaptadores en memoria, sin Nest. Los adaptadores se prueban contra PostgreSQL y SQLite reales. Una misma suite de contrato por puerto corre contra los dos adaptadores de persistencia, para que se comporten igual.
+- **Transacciones**: un puerto `UnidadDeTrabajo` envuelve el cambio y su registro en la outbox en la misma transacción (sección 5.2). En la nube, también fija el `tenant_id` de Row Level Security al empezar.
 
 ## 15. Requisitos no funcionales
 
@@ -912,7 +1026,7 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 - **DIAN**: adaptador simulado y ambiente de habilitación del proveedor.
 - **Impresión**: plantillas probadas en las impresoras reales del piloto.
 - **E2E**: Playwright para los flujos de mesero, cocina y caja.
-- **Ensayo en sede**: un servicio completo con internet desconectado antes de salir a producción.
+- **Ensayo en sede**: un servicio con un corte de internet a mitad. El salón sigue. Al reconectar salen las facturas y entra un pedido y un pago QR que se hicieron durante el corte, sin duplicarse.
 
 ## 17. Riesgos técnicos
 
@@ -925,9 +1039,9 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | Cambios en el proveedor DIAN | Baja | Puerto y adaptador; adaptador simulado para pruebas |
 | Actualizar nodos en muchas sedes | Media | Actualizaciones por etapas, solo fuera de horario, con vuelta atrás automática |
 | Rendimiento de SQLite en horas pico | Baja | Modo WAL; volumen de una sede bajo; pruebas de carga en la Fase 0 |
-| Una sede pasa mucho tiempo sin internet y acumula facturas sin emitir | Media | Módem 4G de respaldo, facturas primero en la cola, alertas de pendientes por antigüedad |
+| Un corte largo acumula facturas, pedidos QR y pagos QR sin aplicar | Media | Reanudación desde el último evento, facturas y pagos QR primero en la cola, alertas de pendientes. Módem 4G opcional |
 | Error en el cálculo de impuestos de un régimen | Media | Reglas como datos, casos de prueba por régimen validados por un contador, versión de la regla guardada en cada venta |
-| Ventas sin internet facturadas con retraso, sin contingencia de papel | Media | Módem 4G de respaldo en cada sede, emisión automática al reconectar, alertas de pendientes, QR de consulta en el comprobante |
+| Ventas hechas durante un corte, facturadas con retraso y sin contingencia de papel | Media | Emisión automática al reconectar, alertas de pendientes, QR de consulta en el comprobante |
 | Costo por documento de Factus: cada venta consume un documento | Alta | Una bolsa por empresa con condiciones estándar para arrancar; negociar precio por volumen al crecer (8.4); incluir el costo en el precio de la suscripción |
 | La bolsa de una empresa se agota y sus sedes no pueden facturar | Media | Alerta temprana de saldo por días de cobertura; la venta sigue y la factura queda pendiente hasta la recarga (8.2) |
 | Límite de 80 solicitudes por minuto por NIT en hora pico | Media | Cola con control de ritmo por NIT; pedir ampliación a Factus para NIT con varias sedes |
@@ -938,21 +1052,21 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | Comprobantes de transferencia falsos o reusados | Media | Verificación en la cuenta del banco antes de confirmar; número de transacción único |
 | Las API de las plataformas requieren un acuerdo comercial y una certificación que tardan | Alta | Iniciar el trámite en la Fase 0; adaptador Manual desde el primer día; evaluar un integrador (ADR-011) |
 | Una plataforma cambia su API o su formato | Media | Un adaptador por plataforma, pruebas de contrato con ejemplos reales, alertas de pedidos que no se pudieron normalizar |
-| El certificado HTTPS local vence en una sede sin internet | Media | Renovación en las ventanas de conexión con margen amplio; alerta de vencimiento |
+| El certificado HTTPS local vence si una sede pasa semanas caída | Baja | Renovación en cada conexión, con margen; alerta de vencimiento. Semanas sin enlace quedan fuera del producto |
 | Mantener la infraestructura en tres nubes cuesta más de lo que aporta | Media | Módulos con la misma interfaz, `terraform plan` en cada cambio y ensayo mensual en las nubes que no son de producción (TRD-01) |
 
 ## 18. ADRs pendientes
 
 | ADR | Tema | Se decide en |
 |-----|------|--------------|
-| ADR-001 | Nodo local por sede frente a solo nube | Fase 0 (este documento lo propone) |
+| ADR-001 | Modo por sede: **nube por defecto, híbrido si se activa** (decidido, sección 5.0) | Fase 0 |
 | ADR-002 | Proveedor tecnológico DIAN: **Factus** (decidido). Factura electrónica de venta para todas las ventas, sin documento equivalente POS; emisión diferida sin internet, sin factura de papel. **Una bolsa de documentos por empresa**. Falta el precio por volumen y confirmar que la bolsa se comparte entre NIT | Fase 0 |
 | ADR-003 | HTTPS local para la PWA (certificado por sede y DNS local). La PWA ya está decidida; falta validar el mecanismo | Spike de la Fase 0 |
-| ADR-004 | Modo nube como respaldo cuando falla el nodo | Fase 0 |
+| ADR-004 | Relevo a la nube cuando falla el nodo híbrido: solo con outbox vacía o con confirmación del administrador (sección 5.0) | Fase 0 |
 | ADR-005 | Nube: módulos para AWS, GCP y Azure desde el inicio (decidido); falta elegir cuál corre producción (TRD-01) | Fase 0 |
 | ADR-006 | Kit de hardware por sede: nodo, impresoras, UPS y **router dedicado del sistema** (por la red Wi-Fi compartida, 10.1.2) | Fase 0, con el piloto |
-| ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban) y QR de pagos, frente a solo registro | Después de la Fase 1 |
-| ADR-008 | Conectividad de respaldo (módem 4G) y política de ventanas de sincronización | Fase 0 |
+| ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban), frente a solo registro | Después de la Fase 1 |
+| ADR-008 | Reintentos de sincronización en sedes intermitentes y módem 4G opcional | Fase 0 |
 | ADR-009 | Modelo del motor de impuestos y catálogo de perfiles predefinidos | Antes de la Fase 1, con el contador |
 | ADR-010 | Bodega general con nodo propio en modo bodega (propuesto); operación desde la web como alternativa para clientes pequeños | Fase 2 |
 | ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |
@@ -960,14 +1074,15 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | ADR-013 | Backend de observabilidad: Grafana Cloud (propuesto) frente al servicio nativo de cada nube o Grafana propio (TRD-01) | Fase 0 |
 | ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
 | ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
+| ADR-016 | Pasarela del pago QR en la mesa: proveedor, medios (Nequi, Daviplata, Bre-B, tarjeta) y webhook. Las reservas no entran aquí (ADR-012) | Antes de la entrega 1.13 |
 ## 19. Plan de la Fase 0
 
 1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real.
 2. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero.
 3. Esqueleto del monorepo, la API del nodo, la API de la nube y la sincronización outbox/inbox.
 4. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash.
-5. Prueba sin internet: crear pedidos, desconectar 2 h, reconectar y verificar que no se pierde nada.
-6. Prueba del perfil "sin internet fijo": operar varios días y sincronizar solo por una ventana con módem 4G.
+5. Prueba de los dos modos: una sede en nube opera de punta a punta sin nodo. Al activar híbrido, se crean pedidos en el nodo, se desconecta 2 h, se reconecta y no se pierde ni se duplica nada. Volver a nube exige outbox en cero.
+6. Prueba de intermitencia del portal: un pedido QR y un pago QR confirmado durante el corte se aplican una sola vez al reconectar.
 7. **Factus**: obtener credenciales del sandbox compartido, emitir un documento de prueba desde el adaptador y resolver las preguntas de la sección 8.4.
 8. **Trámite con las plataformas**: solicitar el acceso a las API de integración de Rappi y DiDi Food, y cotizar al menos un integrador. No es desarrollo, pero tarda y define la Fase 3.
 
