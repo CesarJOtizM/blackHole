@@ -1071,7 +1071,7 @@ infra/               # Terraform: módulos por nube y ambientes (TRD-01, secció
 | ADR-010 | Bodega general con nodo propio en modo bodega (propuesto); operación desde la web como alternativa para clientes pequeños | Fase 2 |
 | ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |
 | ADR-012 | Cobro de reservas: **transferencia directa con verificación manual** (decidido para el piloto). Una pasarela con confirmación automática queda como mejora futura | Revisar después del piloto |
-| ADR-013 | Backend de observabilidad: Grafana Cloud (propuesto) frente al servicio nativo de cada nube o Grafana propio (TRD-01) | Fase 0 |
+| ADR-013 | Backend de observabilidad: **Grafana Cloud** (decidido, TRD-01 sección 7). Descartados el servicio nativo de cada nube y Grafana alojado por nosotros | Fase 0 |
 | ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
 | ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
 | ADR-016 | Pasarela del pago QR en la mesa: proveedor, medios (Nequi, Daviplata, Bre-B, tarjeta) y webhook. Las reservas no entran aquí (ADR-012) | Antes de la entrega 1.13 |
