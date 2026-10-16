@@ -1,0 +1,31 @@
+---
+description: All code and naming in this repository must be English
+alwaysApply: true
+---
+
+# English code and naming
+
+Code and names are English. This covers folders, files, packages, types, functions, variables, tests, scripts, comments, and error names.
+
+Product documents under `docs/` may stay in Spanish. Do not copy Spanish ubiquitous-language terms into identifiers.
+
+```text
+contexts/platform/domain/index.ts
+shared/contracts
+apps/api-cloud
+apps/local-node
+createApplication()
+ApplicationModule
+pnpm architecture
+```
+
+```text
+contextos/plataforma
+crearAplicacion()
+ModuloAplicacion
+pnpm arquitectura
+```
+
+- Test names use Given / When / Then.
+- A new bounded context uses English layer names: `domain`, `application`, `adapters`.
+- Rename an existing Spanish identifier when you touch that code. Do not add a Spanish alias beside the English name.
