@@ -39,7 +39,7 @@ New context `contexts/reporting` holds pure metric definitions shared by node an
 | `contexts/reporting/adapters` (sqlite, postgres) | New | Day queries and fact tables |
 | `apps/local-node` | Modified | Read-only day endpoints |
 | `apps/api-cloud` | Modified | Projection workers, history endpoints |
-| `apps/site-app`, `apps/web-admin` | Modified | Day and history screens |
+| `apps/venue-app`, `apps/admin-web` | Modified | Day and history screens |
 | `shared/contracts` | Modified | Filter schemas |
 
 ## Risks
@@ -57,6 +57,7 @@ Reports are read-only: disabling endpoints or screens has no effect on operation
 ## Dependencies
 
 - p1-02, p1-03, p1-05, p1-08, p1-09, p1-10, p0-02, p0-05.
+- Unusual-behavior thresholds start at the PRD-01 examples and each venue can change them (D-31).
 
 ## Success Criteria
 

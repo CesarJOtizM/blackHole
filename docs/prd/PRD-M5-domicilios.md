@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.4 |
+| Fecha | 2026-10-17 |
 | Fase | 3 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M5](../trd/TRD-M5-domicilios.md) |
@@ -23,7 +23,7 @@ M5 mete en la misma cocina el domicilio propio y los pedidos de Rappi, DiDi Food
 - Hub de plataformas: recibir, aceptar o rechazar, estados, menú y precio por canal, disponibilidad, pausa de tienda y cancelaciones.
 - Conectores de Rappi y DiDi Food, un integrador si hace falta, y el adaptador manual desde el primer día de esta fase.
 - Comisiones, importación de liquidaciones, diferencias y rentabilidad por canal.
-- Impuesto de bolsas cuando el pedido sale del local.
+- Impuesto de bolsas cuando el pedido sale del local, si la sede lo tiene encendido (D-29).
 - Tiempos por etapa, canal y domiciliario.
 
 **No incluye**
@@ -37,7 +37,8 @@ M5 mete en la misma cocina el domicilio propio y los pedidos de Rappi, DiDi Food
 
 | Rol | Qué puede hacer | Requiere autorización de supervisor |
 |-----|-----------------|-------------------------------------|
-| Cajero o supervisor | Aceptar o rechazar, captura manual, despachar | No, según PRD-01, 6.4 |
+| Cajero | Aceptar o rechazar, captura manual, despachar | No, según PRD-01, 6.4 |
+| Supervisor | Lo mismo que el cajero, y pausar una plataforma | No, según PRD-01, 6.4 |
 | Administrador | Pausar una plataforma, precios por canal, comisiones | No |
 | Domiciliario | Ver sus pedidos, confirmar entrega y el cobro contra entrega | No ve otras sedes ni costos |
 | Jefe de cocina | Ver el pedido ya aceptado en su estación | No acepta plataformas |
@@ -99,8 +100,9 @@ Criterios de aceptación:
 | 4 | Si el punto agota un plato, se agota en los canales. Si la sede se satura, se puede pausar una plataforma | La pausa es manual, además del vigía |
 | 5 | El pago de plataforma es saldo por cobrar, no efectivo | La comisión, porcentaje y cargos fijos |
 | 6 | Cancelar después de que cocina empezó es merma | No |
-| 7 | El domicilio a consumidor final lleva dirección de entrega y, si aplica, la bolsa plástica como línea | No |
+| 7 | El domicilio a consumidor final lleva dirección de entrega. La bolsa plástica va como línea solo si la sede tiene el impuesto encendido (D-29) | El impuesto de bolsas, por sede |
 | 8 | Lo que el conector no sepa hacer se hace en el portal de la plataforma | Lo declara cada adaptador |
+| 9 | La factura de la comida la emite el restaurante, al cliente o a consumidor final. La comisión de la plataforma no se carga. La conciliación muestra venta bruta, comisión, retenciones y neto (D-13) | La comisión, porcentaje y cargos fijos |
 
 ## 6. Pantallas y flujos
 
@@ -128,7 +130,5 @@ Cada etapa guarda la hora. M6 calcula los tiempos de plataforma y de domicilio d
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | ¿En qué plataformas está cada sede, con cuántos pedidos y qué comisión? | Piloto, [PRD-00, sección 14](PRD-00-vision-producto.md) |
-| 2 | Conector directo o integrador | ADR-011, trámite desde la Fase 0, decisión antes de la Fase 3 |
+- PA-28: acceso a las API de Rappi y DiDi Food, o integrador (ADR-011). Ver [registro](../preguntas-abiertas.md).
+- Al inicio no hay plataformas ni comisiones del piloto. Se construye con adaptadores y datos de prueba (D-35).

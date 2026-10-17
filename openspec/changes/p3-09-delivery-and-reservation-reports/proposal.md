@@ -38,7 +38,7 @@ Pure metric definitions in `contexts/reporting/domain` reused by node (SQLite) a
 | `contexts/delivery`, `contexts/reservations` | Modified | Event fields needed by projections |
 | `shared/contracts` | Modified | Report filter schemas |
 | `apps/local-node`, `apps/api-cloud` | Modified | Day and history endpoints |
-| `apps/site-app`, `apps/web-admin` | Modified | Report screens |
+| `apps/venue-app`, `apps/admin-web` | Modified | Report screens |
 
 ## Risks
 

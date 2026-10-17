@@ -16,7 +16,7 @@ The system MUST provide templates for kitchen ticket, pre-bill, invoice with QR 
 - THEN number, CUFE and a scannable QR are printed without truncation
 
 #### Scenario: Offline receipt
-- GIVEN a sale whose document is `pending_emission`
+- GIVEN a sale whose document is `pending_issuance`
 - WHEN the cashier prints
 - THEN the receipt reads "not an invoice" and carries a QR
 

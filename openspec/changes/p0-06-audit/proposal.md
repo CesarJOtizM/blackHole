@@ -11,13 +11,13 @@ Voids, discounts and authorizations are only trustworthy if nobody, not even the
 - Append-only storage in SQLite (node) and PostgreSQL (cloud); no edit or delete path.
 - Hash chain per device.
 - Cloud chain verification on batch receipt; findings for altered, deleted or reordered events.
-- `RegisterEvent` on the platform entry port for other contexts.
+- `RecordAuditEvent` on the platform entry port for other contexts.
 - Scoped read access (auditor, site administrator).
 
 ### Out of Scope
 - Control reports and unusual-behavior detectors → 1.7 / 1.11.
 - Audit viewer in the support panel → 4.5.
-- Long-term archive and retention policy → open question.
+- Long-term archive and retention policy → PA-41.
 
 ## Capabilities
 
@@ -29,14 +29,14 @@ None
 
 ## Approach
 
-`AuditEvent` entity with chain linking in `contexts/platform/domain`; `RegisterEvent` and `VerifyChain` use cases; an `AuditRepository` contract suite proving insert-only on memory, SQLite and PostgreSQL (TRD-M0 9). Chain verification runs in a cloud worker when batches arrive. Owner of audit data: the node in hybrid mode, the cloud in cloud mode.
+`AuditEvent` entity with chain linking in `contexts/platform/domain`; `RecordAuditEvent` and `VerifyChain` use cases; an `AuditRepository` contract suite proving insert-only on memory, SQLite and PostgreSQL (TRD-M0 9). Chain verification runs in a cloud worker when batches arrive. Owner of audit data: the node in hybrid mode, the cloud in cloud mode.
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
 | `contexts/platform/domain` | Modified | `AuditEvent`, chain rules |
-| `contexts/platform/application` | Modified | `RegisterEvent`, `VerifyChain`, entry port |
+| `contexts/platform/application` | Modified | `RecordAuditEvent`, `VerifyChain`, entry port |
 | `contexts/platform/adapters/{sqlite,postgres,memory}` | Modified | Insert-only stores and contract suite |
 | `shared/contracts` | Modified | Audit event schema |
 | `apps/api-cloud` | Modified | Verification worker, findings |

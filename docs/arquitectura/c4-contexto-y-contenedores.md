@@ -3,9 +3,10 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fuentes | [TRD-00 §3, §5, §13 y §14](../trd/TRD-00-arquitectura-base.md), [TRD-01 §3](../trd/TRD-01-infraestructura-y-operacion.md) |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
 
 ## Nivel 1 · Contexto
 
@@ -34,7 +35,7 @@ flowchart TB
   PAS["<b>Pasarela de pagos</b><br/>[Sistema externo, ADR-016]<br/>Nequi, Daviplata, Bre-B, tarjeta"]:::externo
   PLAT["<b>Plataformas de domicilio</b><br/>[Sistema externo]<br/>Rappi, DiDi Food, integrador"]:::externo
   PUSH["<b>Servicios Web Push</b><br/>[Sistema externo]<br/>FCM, APNs, Mozilla"]:::externo
-  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir]<br/>Códigos de un solo uso"]:::externo
+  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir: PA-37]<br/>Códigos de un solo uso"]:::externo
   IMP["<b>Impresoras térmicas y cajón</b><br/>[Dispositivo]<br/>ESC/POS por red o USB"]:::externo
   BANCO["<b>App del banco</b><br/>[Fuera del sistema]<br/>Verificación manual de anticipos"]:::externo
 
@@ -58,7 +59,7 @@ flowchart TB
   BH -- "avisos" --> PUSH
   BH -- "códigos y avisos" --> MSG
   BH -- "comandas, facturas, cierres, apertura de cajón" --> IMP
-  ADM -. "quien tiene reserva.verificar_pago<br/>revisa la transferencia" .-> BANCO
+  ADM -. "quien tiene reservation.verify_payment<br/>revisa la transferencia" .-> BANCO
 
   classDef persona fill:#08427b,stroke:#052e56,color:#fff
   classDef sistema fill:#1168bd,stroke:#0b4884,color:#fff
@@ -82,19 +83,21 @@ Un contenedor es algo que se despliega por separado. Hay dos vistas, una por mod
 
 | Contenedor | Carpeta | Tecnología | Dónde corre |
 |------------|---------|------------|-------------|
-| API central | `apps/api-nube` | NestJS sobre Fastify, Node.js 24 | Contenedores gestionados en la nube (TRD-01, 3.1) |
-| Workers | `apps/api-nube` (mismo código, otro proceso) | NestJS + pg-boss | Contenedores gestionados en la nube |
+| API central | `apps/api-cloud` | NestJS sobre Fastify, Node.js 24 | Contenedores gestionados en la nube (TRD-01, 3.1) |
+| Workers | `apps/api-cloud` (mismo código, otro proceso) | NestJS + pg-boss | Contenedores gestionados en la nube |
 | PostgreSQL | — | PostgreSQL gestionado con Row Level Security | Nube, red privada |
 | Almacenamiento de archivos | — | S3, Cloud Storage o Blob Storage | Nube |
 | Secretos | — | Secrets Manager, Secret Manager o Key Vault | Nube |
 | Colector OpenTelemetry | — | OpenTelemetry Collector | Nube, red privada |
-| Nodo local | `apps/nodo-local` | NestJS sobre Fastify + SQLite (WAL), Docker | Mini PC o PC de la caja, en la sede |
-| App de la sede | `apps/app-sede` | PWA React 19 + Vite | Celulares, tablets, PC de caja y TV de cocina |
-| App del domiciliario | `apps/app-domicilios` | PWA React 19 + Vite | Celular del domiciliario |
-| Web de administración | `apps/web-admin` | React 19 + Vite | Navegador |
-| Portal de clientes | `apps/portal-clientes` | React 19 + Vite, liviano | Celular del cliente |
+| Nodo local | `apps/local-node` | NestJS sobre Fastify + SQLite (WAL), Docker | Mini PC o PC de la caja, en la sede |
+| App de la sede | `apps/venue-app` | PWA React 19 + Vite | Celulares, tablets, PC de caja y TV de cocina |
+| App del domiciliario | `apps/delivery-app` | PWA React 19 + Vite | Celular del domiciliario |
+| Web de administración | `apps/admin-web` | React 19 + Vite. Incluye el panel de soporte como una vista con permisos de soporte (D-05) | Navegador |
+| Portal de clientes | `apps/customer-portal` | React 19 + Vite, liviano | Celular del cliente |
 
-El nodo tiene tres perfiles con el mismo programa: **nodo** (sede híbrida), **puente** (solo imprime, sede en modo nube) y **bodega** (inventario sin salón ni caja, TRD-00 5.5).
+Hoy existen `apps/api-cloud` y `apps/local-node` como esqueleto (entrega 0.2). Las demás carpetas aparecen con su primera entrega.
+
+El nodo tiene tres perfiles con el mismo programa: **nodo** (`node`, sede híbrida), **puente** (`bridge`, solo imprime, sede en modo nube) y **bodega** (`warehouse`, inventario sin salón ni caja, TRD-00 5.5).
 
 Las apps web se publican desde la nube (la app de la sede, también desde el nodo en híbrido), pero **corren en el navegador** del dispositivo. Por eso los diagramas las dibujan donde corren, no donde se publican. El colector OpenTelemetry, Grafana Cloud y Sentry se ven en [Infraestructura y comunicación](infraestructura-y-comunicacion.md#8-observabilidad).
 
@@ -111,7 +114,7 @@ flowchart LR
 
   subgraph Sede["Sede en modo nube"]
     APPS["<b>App de la sede</b><br/>[Contenedor: PWA React]<br/>Salón, caja y cocina con pantallas por rol"]:::contenedor
-    PUE["<b>Puente de impresión</b><br/>[Contenedor: nodo-local, perfil puente]<br/>Recibe trabajos y los imprime.<br/>No guarda la operación"]:::contenedor
+    PUE["<b>Puente de impresión</b><br/>[Contenedor: local-node, perfil bridge]<br/>Recibe trabajos y los imprime.<br/>No guarda la operación"]:::contenedor
     IMP["<b>Impresoras</b><br/>[Dispositivo ESC/POS]"]:::externo
   end
 
@@ -133,7 +136,7 @@ flowchart LR
   PAS["<b>Pasarela</b><br/>[Sistema externo]"]:::externo
   PLAT["<b>Plataformas</b><br/>[Sistema externo]"]:::externo
   PUSH["<b>Web Push</b><br/>[Sistema externo]"]:::externo
-  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir]"]:::externo
+  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir: PA-37]"]:::externo
 
   MES --> APPS
   ADM --> WADM
@@ -211,7 +214,7 @@ flowchart LR
   CLI --> PORT
   DOM --> APPD
 
-  APPS -- "HTTPS + WSS en la red local<br/>sede-xxx.local.dominio" --> NODO
+  APPS -- "HTTPS + WSS en la red local<br/>venue-xxx.local.&lt;dominio&gt;" --> NODO
   NODO --> SQL
   NODO -- "TCP 9100, USB o cable" --> IMP
   NODO -- "Lotes de la outbox, HTTPS<br/>comprimidos y reanudables" --> API
@@ -252,7 +255,7 @@ Diferencias que se ven en el diagrama:
 
 ### Bodega general
 
-La bodega general usa el mismo contenedor del nodo en **perfil bodega**: inventario, recepción, despacho e impresión de comprobantes, sin salón ni caja. Se conecta a la nube igual que una sede híbrida. Una bodega pequeña puede operar solo desde la web de administración, sin nodo, y entonces no registra movimientos sin internet (ADR-010).
+La bodega general usa el mismo contenedor del nodo en **perfil bodega** (`warehouse`): inventario, recepción, despacho e impresión de comprobantes, sin salón ni caja. Se conecta a la nube igual que una sede híbrida. Así opera la bodega general del piloto (D-04). Que una bodega pequeña opere solo desde la web de administración, sin nodo y sin registrar movimientos sin internet, sigue abierto para clientes pequeños: PA-44 (ADR-010).
 
 ```mermaid
 flowchart LR
@@ -286,10 +289,10 @@ La columna "Nodo local" describe una sede en híbrido. **En modo nube, todo lo d
 | M0 Plataforma | Organización, roles, sesión de administración, modo de la sede, recepción de lotes, verificación de la cadena de auditoría | PIN, dispositivos, permisos, outbox, auditoría de la sede | Todas |
 | M1 Pedidos y salón | Menú y catálogo, intención de pedido QR | Salón, cocina y enrutamiento | App de la sede, web admin, portal |
 | M2 Caja | Cobro y webhook del pago QR | Turnos, cobros, arqueos, propinas | App de la sede, portal |
-| M3 Facturación | Emisión ante Factus, portal de datos, refacturación | Documento de venta, motor de impuestos, impresión | App de la sede, portal |
-| M4 Inventario | Insumos y recetas, consolidado, niveles sugeridos, bodega sin nodo | Movimientos del punto y bodegas, alertas, unidades posibles | App de la sede, web admin |
+| M3 Facturación | Emisión ante Factus, portal de datos, refacturación | Documento de venta, motor de impuestos, impresión de la factura y el comprobante. Cada módulo imprime lo suyo con las plantillas de `shared/printing` (TRD-00, 7) | App de la sede, portal |
+| M4 Inventario | Insumos y recetas, consolidado, niveles sugeridos; bodega sin nodo si se decide (PA-44) | Movimientos del punto y bodegas, alertas, unidades posibles | App de la sede, web admin |
 | M5 Domicilios | Hub de integraciones, liquidaciones, app del domiciliario | Domicilio propio, aceptación de pedidos externos | App de la sede, app del domiciliario |
 | M6 Reportes | Proyecciones, consolidado, detectores | Reportes del día | Web admin, app de la sede |
-| M7 SaaS | Todo | — | Web admin. Falta definir si el panel de plataforma y soporte (entrega 4.5) es una vista de la web admin o una app aparte |
+| M7 SaaS | Todo | — | Web admin. El panel de soporte (entrega 4.5) es una vista de `apps/admin-web` con permisos de soporte (D-05). Si el backoffice de la plataforma también lo es sigue abierto: PA-47 |
 | M8 Asistencia | Horas consolidadas, exportación | Marcación con la hora del nodo, cierre automático | App de la sede |
 | M9 Reservas | Reserva, cobro, políticas | Llegada, mesa, no llegada, reserva provisional | App de la sede, web admin, portal |

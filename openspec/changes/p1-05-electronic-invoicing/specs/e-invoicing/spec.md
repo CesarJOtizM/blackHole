@@ -50,7 +50,7 @@ Documents MUST use the site range, or the cash register range when configured, w
 
 ### Requirement: Deferred Emission
 
-Without a cloud link the document MUST be `pending_emission` and the sale MUST complete. On reconnection pending documents MUST be emitted in sale order, before other data, within 80 requests per minute per NIT. Hybrid: the node holds them; cloud mode: they wait until the site link returns.
+Without a cloud link the document MUST be `pending_issuance` and the sale MUST complete. On reconnection pending documents MUST be emitted in sale order, before other data, within 80 requests per minute per NIT. Hybrid: the node holds them; cloud mode: they wait until the site link returns.
 
 #### Scenario: Hybrid cut
 - GIVEN a hybrid site offline
@@ -61,6 +61,21 @@ Without a cloud link the document MUST be `pending_emission` and the sale MUST c
 - GIVEN 120 pending documents of one NIT
 - WHEN emission resumes
 - THEN at most 80 requests per minute are sent for that NIT
+
+### Requirement: Queue Drain Time
+
+On reconnection, all pending documents of a site MUST be issued in under 10 minutes for 200 documents, within the Factus limit (TRD-00 15).
+
+#### Scenario: 200 pending invoices
+- GIVEN a site that reconnects with 200 documents `pending_issuance`
+- WHEN issuance resumes with Factus responding normally
+- THEN all 200 are resolved in under 10 minutes
+- AND no minute exceeds 80 requests for any NIT
+
+#### Scenario: Drain slower than target
+- GIVEN a reconnection drain of 200 documents still running after 10 minutes
+- WHEN the drain time is measured
+- THEN it is reported as a drain-time breach for that site
 
 ### Requirement: Uncertain Send Verification
 

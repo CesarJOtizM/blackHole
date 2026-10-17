@@ -61,5 +61,6 @@ Criterios de aceptación:
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
+Las preguntas viven en el [registro de preguntas abiertas](../preguntas-abiertas.md). Aquí solo se citan sus códigos; una pregunta nueva se agrega primero al registro. En el texto del documento, un punto pendiente se marca así: "Pendiente: PA-xx ([registro](../preguntas-abiertas.md))".
+
+- **PA-xx**: <resumen de una línea de lo que falta y qué entrega bloquea>.

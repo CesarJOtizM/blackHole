@@ -3,29 +3,30 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 0 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | PRD asociado | [PRD-M0](../prd/PRD-M0-plataforma.md) · [PRD-01](../prd/PRD-01-roles-y-permisos.md) |
 | Diagramas | [C4 M0](../arquitectura/componentes/c4-m0-plataforma.md) |
+| Nombres | [Glosario de código](../glosario-codigo.md) |
 
-Los nombres de casos de uso y puertos de este documento son el contrato. El C4 los dibuja.
+Los nombres de casos de uso y puertos de este documento son el contrato. El C4 los dibuja. Los que cruzan módulos vienen del [glosario](../glosario-codigo.md).
 
 ## 1. Resumen de decisiones
 
 | Tema | Decisión |
 |------|----------|
-| Dónde corre | Los mismos casos de uso en `api-nube` y en `nodo-local`. El perfil `puente` no carga organización ni operación |
+| Dónde corre | Los mismos casos de uso en `apps/api-cloud` y en `apps/local-node`. El perfil `bridge` (puente) no carga organización ni operación |
 | Organización | Dueña la nube. El nodo guarda la copia de su sede |
 | Identidad de administración | Better Auth, correo, contraseña y segundo factor, solo en la nube |
 | Identidad operativa | PIN con argon2id. Cada dispositivo firma con ECDSA P-256 no exportable (WebCrypto) |
-| Permisos | Función pura `evaluar(usuario, accion, contexto)`. El servidor decide. Detalle en TRD-00, 10.2 |
-| Dueño de la operación | `dueno_operacion` (`nube` o `nodo`) más generación. Una escritura de generación vieja se rechaza |
-| Sincronización | Outbox e inbox. Clave de idempotencia `(dispositivo_id, secuencia)`. IDs UUIDv7 |
+| Permisos | Función pura `evaluate(user, action, context)`. El servidor decide. Detalle en TRD-00, 10.2 |
+| Dueño de la operación | `operation_owner` (`cloud` o `node`) más generación. Una escritura de generación vieja se rechaza |
+| Sincronización | Outbox e inbox. Clave de idempotencia `(device_id, sequence)`. IDs UUIDv7 |
 | Auditoría | Solo inserción. Cadena de hash por dispositivo. La nube verifica la cadena |
 | Presencia | En híbrido, la PWA habla con el nodo en la red local. En nube, comprueba el puente antes de operar |
-| Código | `contextos/plataforma/dominio`, `contextos/plataforma/aplicacion` |
+| Código | `contexts/platform/domain`, `contexts/platform/application`, `contexts/platform/adapters` |
 
 ## 2. Modelo de dominio
 
@@ -33,22 +34,22 @@ Agregados y entidades. Las invariantes se prueban sin Nest ni base de datos.
 
 | Tipo | Nombre | Invariantes |
 |------|--------|-------------|
-| Entidad | `Empresa` | Tiene al menos un propietario activo |
-| Entidad | `Contribuyente` | Un NIT por empresa. Lleva perfil fiscal (TRD-00, 8.6) |
-| Entidad | `Marca` | Pertenece a una empresa |
-| Entidad | `Sede` | Factura por exactamente un contribuyente. Un punto de inventario. Modo `nube` o `hibrido`. Generación monótona |
-| Entidad | `EstacionCocina` | Enruta. No tiene stock |
-| Entidad | `Caja` | Pertenece a una sede |
-| Entidad | `UbicacionInventario` | `PUNTO` (uno por sede) o `BODEGA` (de sede o general) |
-| Entidad | `Usuario` | Activo o revocado. Puede tener varias asignaciones |
-| Entidad | `Rol` | Predefinido (no se edita) o copia de la empresa |
-| Entidad | `AsignacionRol` | Alcance empresa, marca, sede, bodega o contribuyente. Puede tener vigencia |
-| Entidad | `Dispositivo` | Credencial de una sede. Registrado o revocado |
-| Función | `evaluar` | Devuelve permitido, pide autorización o denegado. No escala privilegios. Nadie se autoriza a sí mismo, salvo autoautorización del turno |
-| Entidad | `EventoAuditoria` | Solo se agrega. Incluye el hash del evento anterior del mismo dispositivo |
-| Entidad | `GeneracionSede` | El dueño anterior rechaza escrituras nuevas |
+| Entidad | `Company` | Tiene al menos un propietario activo |
+| Entidad | `Taxpayer` | Un NIT por empresa. Lleva perfil fiscal, `TaxProfile` (TRD-00, 8.6) |
+| Entidad | `Brand` | Pertenece a una empresa |
+| Entidad | `Venue` | Factura por exactamente un contribuyente. Un punto de inventario. Modo `cloud` o `hybrid`. Generación monótona |
+| Entidad | `KitchenStation` | Enruta. No tiene stock |
+| Entidad | `CashRegister` | Pertenece a una sede |
+| Entidad | `InventoryLocation` | `point` (uno por sede) o `warehouse` (de sede o general) |
+| Entidad | `User` | Activo o revocado. Puede tener varias asignaciones |
+| Entidad | `Role` | Predefinido (no se edita) o copia de la empresa |
+| Entidad | `RoleAssignment` | Alcance empresa, marca, sede, bodega o contribuyente. Puede tener vigencia |
+| Entidad | `Device` | Credencial de una sede. Registrado o revocado |
+| Función | `evaluate` | Devuelve `Allowed`, `RequiresAuthorization` o `Denied`. No escala privilegios. Nadie se autoriza a sí mismo, salvo autoautorización del turno |
+| Entidad | `AuditEvent` | Solo se agrega. Incluye el hash del evento anterior del mismo dispositivo |
+| Entidad | `VenueGeneration` | El dueño anterior rechaza escrituras nuevas |
 
-`SolicitudAutorizacion` pide motivo, vence si nadie responde, y exige que quien autoriza sea otra persona.
+`AuthorizationRequest` pide motivo, vence si nadie responde, y exige que quien autoriza sea otra persona.
 
 ## 3. Propiedad de datos y sincronización
 
@@ -56,35 +57,36 @@ M0 es dueño del mecanismo. La tabla de dueños de cada módulo está en TRD-00,
 
 | Dato | Dueño (nodo / nube) | Eventos que emite |
 |------|---------------------|-------------------|
-| Empresa, marcas, sedes, usuarios, roles, dispositivos | Nube | `OrganizacionCambiada`, `RolAsignado`, `DispositivoRevocado` hacia el nodo |
-| Generación y dueño de la operación | Nube, al cambiar el modo | `DuenoCambiado` |
+| Empresa, marcas, sedes, usuarios, roles, dispositivos | Nube | `OrganizationChanged`, `RoleAssigned`, `DeviceRevoked` hacia el nodo |
+| Generación y dueño de la operación | Nube, al cambiar el modo | `OwnerChanged` |
 | PIN y hashes de la sede | Nube, copia en el nodo | — |
-| Auditoría generada en la sede | Nodo en híbrido; nube en modo nube | `EventoAuditoria` hacia la nube |
-| Outbox, inbox, cursores | Cada lado el suyo | Lote aplicado, sin reprocesar `(dispositivo_id, secuencia)` |
+| Auditoría generada en la sede | Nodo en híbrido; nube en modo nube | `AuditEvent` hacia la nube |
+| Outbox, inbox, cursores | Cada lado el suyo | Lote aplicado, sin reprocesar `(device_id, sequence)` |
 
 Orden de la outbox (TRD-00, 5.5): documentos DIAN y pagos QR confirmados, pedidos QR, auditoría, ventas y caja, inventario, telemetría.
 
-Prioridad de este módulo al enviar: la auditoría va después de facturas y pagos QR, y antes de la telemetría.
+Prioridad de este módulo al enviar: la auditoría va después de los documentos DIAN, los pagos QR y los pedidos QR, y antes de las ventas, la caja, el inventario y la telemetría.
 
 ## 4. Casos de uso
 
 | Caso de uso | Entrada | Reglas | Eventos | Corre en |
 |-------------|---------|--------|---------|----------|
-| `Estructura` | Alta o cambio de empresa, NIT, marca, sede, estación, caja, bodega | Una sede, un contribuyente, un punto | `OrganizacionCambiada` | Nube |
-| `CopiarRol`, `AsignarRol`, `AjustarTopeSede` | Actor y asignación | Sin escalar. Tope de sede solo hacia abajo. Queda un propietario | `RolAsignado` | Nube |
-| `IniciarSesionAdmin` | Correo, contraseña, segundo factor | Solo administración | Sesión | Nube |
-| `IniciarSesionPin`, `CerrarPorInactividad` | PIN, dispositivo | Dispositivo registrado y usuario activo. Si la sede lo exige, M8 confirma entrada abierta | Sesión corta | Nodo o nube, según el modo |
-| `GenerarCodigoRegistro`, `RegistrarDispositivo`, `RevocarDispositivo` | QR de un solo uso | El QR se usa dentro del local. Revocar corta la sesión | `DispositivoRevocado` | Nodo o nube |
-| `EvaluarPermiso`, `SolicitarAutorizacion`, `ResolverAutorizacion` | Acción, contexto, PIN del supervisor | PRD-01 | `EventoAuditoria` | Donde corre la acción |
-| `RegistrarEvento`, `VerificarCadena` | Evento del dispositivo | Solo inserción. La nube detecta un corte de cadena | Hallazgo si la cadena no cierra | Registrar en el dueño; verificar en la nube |
-| `ActivarHibrido`, `EmparejarNodo`, `VolverANube`, `RelevarNodo` | Código de un solo uso, confirmación | Foto de la sede al emparejar. Volver a nube con outbox en cero o aceptación explícita. Relevo solo con outbox vacía o confirmación (ADR-004) | `DuenoCambiado` | Nube, con el instalador del nodo |
-| `AplicarLote` | Lote de la outbox | Idempotente por dispositivo y secuencia. Rechaza generación vieja | Cursor avanzado | Nube |
+| `UpdateStructure` | Alta o cambio de empresa, NIT, marca, sede, estación, caja, bodega | Una sede, un contribuyente, un punto | `OrganizationChanged` | Nube |
+| `CreateOrganization` | Empresa, contribuyentes, sedes y propietario, desde M7 | Queda un propietario activo | `OrganizationChanged` | Nube |
+| `CopyRole`, `AssignRole`, `AdjustVenueLimit` | Actor y asignación | Sin escalar. Tope de sede solo hacia abajo. Queda un propietario | `RoleAssigned` | Nube |
+| `AdminSignIn` | Correo, contraseña, segundo factor | Solo administración | Sesión | Nube |
+| `PinSignIn`, `LockOnInactivity` | PIN, dispositivo | Dispositivo registrado y usuario activo. Si la sede lo exige, M8 confirma entrada abierta con `HasOpenClockIn` | Sesión corta | Nodo o nube, según el modo |
+| `GenerateRegistrationCode`, `RegisterDevice`, `RevokeDevice`, `DeactivateUser` | QR de un solo uso, dispositivo o usuario | El QR se usa dentro del local. Revocar o desactivar corta la sesión | `DeviceRevoked` | Nodo o nube |
+| `EvaluatePermission`, `RequestAuthorization`, `ResolveAuthorization` | Acción, contexto, PIN del supervisor | PRD-01 | `AuditEvent` | Donde corre la acción |
+| `RecordAuditEvent`, `VerifyChain` | Evento del dispositivo | Solo inserción. La nube detecta un corte de cadena | Hallazgo si la cadena no cierra | Registrar en el dueño; verificar en la nube |
+| `ActivateHybrid`, `PairNode`, `ReturnToCloud`, `FailOverToCloud` | Código de un solo uso, confirmación | Foto de la sede al emparejar. `ReturnToCloud` exige la outbox vacía, o la aceptación explícita del administrador de lo que quede sin subir, que queda auditada (D-02). Relevo solo con outbox vacía o confirmación (ADR-004) | `OwnerChanged` | Nube, con el instalador del nodo |
+| `ApplyBatch` | Lote de la outbox | Idempotente por dispositivo y secuencia. Rechaza generación vieja | Cursor avanzado | Nube |
 
-Puerto de entrada que usan M1, M2, M4, M5 y M9: `EvaluarPermiso`, `RegistrarEvento`. M7 llama `CrearOrganizacion` al dar de alta. M0 llama a M8 `TieneEntradaAbierta` si la regla está activa.
+Puerto de entrada (`entry-port.ts`) que usan M1, M2, M4, M5 y M9: `EvaluatePermission`, `RecordAuditEvent`. M7 llama `CreateOrganization` al dar de alta. M0 llama a M8 `HasOpenClockIn` si la regla está activa.
 
 ## 5. Contratos
 
-Los esquemas Zod entran en `compartido/contratos` con la primera entrega que los use. Aquí quedan los nombres.
+Los esquemas Zod entran en `shared/contracts` con la primera entrega que los use. Aquí quedan los nombres.
 
 **HTTP, nube**
 
@@ -100,13 +102,13 @@ Los esquemas Zod entran en `compartido/contratos` con la primera entrega que los
 
 **WebSocket**
 
-- Canal de la sede, abierto por el nodo: bajan configuración, pedidos QR, pagos QR, pedidos externos, reservas y el certificado de `sede-xxx`.
+- Canal de la sede, abierto por el nodo: bajan configuración, pedidos QR, pagos QR, pedidos externos, reservas y el certificado de `venue-xxx`.
 - Autorizaciones: solicitud al supervisor y respuesta.
 - En la nube, el aviso al supervisor también puede salir por Web Push.
 
 **Eventos de lote**
 
-`tenant_id`, `sede_id`, `dispositivo_id`, `secuencia`, `ocurrido_en` (reloj del dispositivo), `recibido_en` (reloj del nodo).
+`tenant_id`, `venue_id`, `device_id`, `sequence`, `occurred_at` (reloj del dispositivo), `received_at` (reloj del nodo).
 
 ## 6. Persistencia
 
@@ -115,8 +117,8 @@ Tablas de organización, identidad, dispositivos, asignaciones, eventos de audit
 - En PostgreSQL cada tabla de cliente lleva `tenant_id` y Row Level Security.
 - La auditoría y la outbox solo aceptan inserción.
 - El nodo guarda en SQLite la copia de su sede, no la de otras.
-- `UnidadDeTrabajo` escribe el cambio y la outbox en la misma transacción. En la nube fija el `tenant_id` al empezar.
-- Secretos: gestor de la nube, o archivo cifrado en el nodo. El certificado de la sede lo emite un worker por DNS-01 y baja por el canal.
+- `UnitOfWork` escribe el cambio y la outbox en la misma transacción. En la nube fija el `tenant_id` al empezar.
+- `Secrets`: gestor de la nube, o archivo cifrado en el nodo. El certificado de la sede lo emite un worker por DNS-01 y baja por el canal.
 
 ## 7. Operación sin internet
 
@@ -125,7 +127,7 @@ Tablas de organización, identidad, dispositivos, asignaciones, eventos de audit
 | Nube | Nada del salón. El puente, si está apagado, deja los trabajos de impresión en la nube | Toda la operación, hasta que vuelva el enlace |
 | Híbrido | PIN, permisos, dispositivos y auditoría en el nodo. La copia de configuración ya bajada se usa | Cambios de la web, y la subida de la outbox |
 
-Activar el híbrido no se hace durante un corte: el emparejamiento necesita la nube. Volver a nube tampoco, salvo el caso de relevo ya definido.
+Activar el híbrido no se hace durante un corte: el emparejamiento necesita la nube. Volver a nube tampoco, salvo el caso de relevo ya definido. Si al volver queda algo en la outbox, `ReturnToCloud` no avanza sin la aceptación explícita del administrador (D-02).
 
 ## 8. Seguridad y auditoría
 
@@ -134,8 +136,8 @@ Permisos nuevos: ninguno fuera de [PRD-01](../prd/PRD-01-roles-y-permisos.md). E
 - La credencial del nodo solo sincroniza su sede.
 - El PIN no viaja en claro en los eventos. Se guarda el hash argon2id.
 - La llave del dispositivo no se exporta.
-- Intentos fallidos de PIN, revocaciones, cambios de rol y cambios de modo quedan en la cadena.
-- Soporte entra con un token de M7 que lleva `tenant_id` y vencimiento. Sin ese token no ve la operación.
+- Intentos fallidos de PIN, revocaciones, cambios de rol, cambios de modo y la aceptación de pendientes al volver a nube quedan en la cadena.
+- Soporte entra con un token de M7 (`SupportAccess`) que lleva `tenant_id` y vencimiento. Sin ese token no ve la operación.
 
 ## 9. Pruebas
 
@@ -145,15 +147,16 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 |----------------|------|----------------------|
 | Una sede no tiene dos contribuyentes de facturación | Dominio | La segunda asignación reemplaza solo con un comando explícito, y deja uno |
 | Quitar el último propietario | Dominio | Se rechaza |
-| `evaluar` no escala privilegios ni se autoautoriza | Dominio | Denegado, salvo la excepción de turno marcada |
+| `evaluate` no escala privilegios ni se autoautoriza | Dominio | `Denied`, salvo la excepción de turno marcada |
 | Tope de sede por encima del de la empresa | Dominio | Se rechaza |
 | Cadena de hash | Dominio | Alterar un evento rompe la verificación |
-| `IniciarSesionPin` sin dispositivo registrado | Aplicación, adaptadores en memoria | Denegado |
-| `IniciarSesionPin` sin entrada, con la regla activa | Aplicación | Denegado, tras consultar el puerto de M8 |
-| `AplicarLote` repetido | Aplicación | La segunda vez no duplica |
+| `PinSignIn` sin dispositivo registrado | Aplicación, adaptadores en memoria | `Denied` |
+| `PinSignIn` sin entrada, con la regla activa | Aplicación | `Denied`, tras consultar `HasOpenClockIn` de M8 |
+| `ApplyBatch` repetido | Aplicación | La segunda vez no duplica |
 | Escritura con generación vieja | Aplicación | Rechazada en los dos lados |
-| `RepositorioAuditoria` | Contrato, memoria, SQLite y PostgreSQL | Solo inserta; la lectura respeta el alcance |
-| `ActivarHibrido` | Aplicación | La nube deja de aceptar la operación de esa sede |
+| `ReturnToCloud` con outbox pendiente | Aplicación | Sin aceptación explícita se rechaza; con aceptación avanza y deja auditado lo que no subió |
+| `AuditRepository` | Contrato (`audit-repository.contract.ts`), memoria, SQLite y PostgreSQL | Solo inserta; la lectura respeta el alcance |
+| `ActivateHybrid` | Aplicación | La nube deja de aceptar la operación de esa sede |
 
 - [ ] Cada invariante de la sección 2 tiene prueba de dominio, sin Nest ni base de datos
 - [ ] Cada caso de uso de la sección 4 tiene prueba con adaptadores en memoria
@@ -167,8 +170,8 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 | Riesgo / ADR | Mitigación / Estado |
 |--------------|---------------------|
 | ADR-001 Modo por sede | Decidido. Este TRD lo implementa |
-| ADR-003 HTTPS local | Spike de la Fase 0. Sin eso la PWA no opera sin internet |
+| ADR-003 HTTPS local | Spike de la Fase 0 (PA-29). Sin eso la PWA no opera sin internet |
 | ADR-004 Relevo del nodo | Solo con outbox vacía o confirmación del administrador |
-| ADR-006 Router dedicado | Recomendado. El diseño asume Wi-Fi compartida (TRD-00, 10.1.2) |
-| ADR-008 Módem 4G | Recomendado. No cambia los casos de uso |
+| ADR-006 Router dedicado | Recomendado. Lo compra el dueño (D-36). El diseño asume Wi-Fi compartida (TRD-00, 10.1.2) |
+| ADR-008 Módem 4G | Recomendado. Lo compra el dueño (D-36). No cambia los casos de uso |
 | Relojes distintos | El nodo es la referencia. Los reportes usan su hora |

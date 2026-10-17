@@ -3,11 +3,13 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
-| Fuentes | [PRD-00](../prd/PRD-00-vision-producto.md), [PRD-01](../prd/PRD-01-roles-y-permisos.md), [TRD-00](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-00](../prd/PRD-00-vision-producto.md), [PRD-01](../prd/PRD-01-roles-y-permisos.md), [TRD-00](../trd/TRD-00-arquitectura-base.md), [Glosario de código](../glosario-codigo.md) |
 
-Diagramas de cada funcionalidad y de los puntos en los que una sección le entrega trabajo a otra. Describen el comportamiento ya acordado en los documentos maestros. Si un diagrama y un maestro no coinciden, manda el maestro.
+Diagramas de cada funcionalidad y de los puntos en los que una sección le entrega trabajo a otra. Describen el comportamiento ya acordado en los documentos maestros y en los TRD de cada módulo. Si un diagrama y un maestro no coinciden, manda el maestro. Si un diagrama y el TRD del módulo no coinciden, manda el TRD.
+
+Los nombres de código que aparecen en los diagramas (casos de uso, eventos, estados) son los del [glosario](../glosario-codigo.md) y de cada TRD, en inglés. Las preguntas sin respuesta viven en el [registro de preguntas abiertas](../preguntas-abiertas.md).
 
 ## Cómo leerlos
 
@@ -60,7 +62,7 @@ flowchart TB
   M9 -->|"mesa bloqueada"| M1
   M9 -->|"anticipo"| M2
   M1 -->|"cuenta por cobrar"| M2
-  M2 -->|"venta cerrada"| M3
+  M2 -->|"venta cerrada, sin impuestos"| M3
   Portal -->|"pedido QR"| M1
   Portal -->|"pago QR confirmado"| M2
   Portal -->|"datos de facturación"| M3
@@ -77,25 +79,27 @@ flowchart TB
 
 | De | A | Qué entrega | En qué momento |
 |----|---|-------------|----------------|
-| M0 | Operación | Permiso, alcance y evento de auditoría | En cada acción, y siempre en las sensibles |
-| M8 | M0 | Entrada marcada | Antes de operar, si la sede activó la regla |
-| M1 | M4 | Consumo según receta, en el inventario del punto | Al enviar el producto a cocina |
-| M1 | M4 | Devolución del consumo | Si se anula antes de que cocina empiece |
-| M1 | M4 | Merma con motivo | Si se anula después de empezar, o si una plataforma cancela un pedido ya empezado |
-| M4 | M1 | Disponible, pocas unidades o agotado. Si confirman que hoy no se repone, aviso al mesero de cada mesa que ya lo pidió | Cuando cambia el stock del punto, y al marcar que no hay reposición en el servicio |
+| M0 | Operación | Permiso, alcance y evento de auditoría (`EvaluatePermission`, `RecordAuditEvent`) | En cada acción, y siempre en las sensibles |
+| M8 | M0 | Entrada marcada (`HasOpenClockIn`) | Antes de operar, si la sede activó la regla |
+| M1 | M4 | Consumo según receta, en el inventario del punto (`RegisterSaleConsumption`) | Al enviar el producto a cocina |
+| M1 | M4 | Devolución del consumo (`ReturnStock`) | Si se anula antes de que cocina empiece |
+| M1 | M4 | Merma con motivo (`RecordWaste`) | Si se anula después de empezar, o si una plataforma cancela un pedido ya empezado |
+| M4 | M1 | Disponible, pocas unidades o agotado (`AvailabilityChanged`). Si confirman que hoy no se repone, aviso al mesero de cada mesa que ya lo pidió | Cuando cambia el stock del punto, y al marcar que no hay reposición en el servicio |
 | M4 | M5 | Agotado o disponible en cada plataforma | El mismo cambio de stock, a través del hub |
-| M5 | M1 | Pedido interno | Al crear un domicilio propio o al aceptar uno de plataforma |
-| M9 | M1 | Mesa bloqueada; al llegar, mesa y cuenta asociadas | El día de la reserva |
-| M9 | M2 | Anticipo como medio de pago | Al cobrar la cuenta |
-| M1 | M2 | Cuenta visible en tiempo real | Desde que se abre la mesa |
-| M2 | M3 | Documento de venta | Al cerrar la venta |
-| M3 | M2 | Número, CUFE y QR, o comprobante si no hay internet | Al validar en Factus, o al dejar la factura pendiente |
-| Portal | M1 | Pedido de la mesa, canal QR mesa | Al enviar desde el celular del cliente. Si la sede está en un corte, al reconectar |
-| Portal | M2 | Pago confirmado por la pasarela, con propina | Cuando la pasarela avisa. Si la sede está en un corte, al reconectar |
-| Portal | M3 | Datos de facturación de esa cuenta | Antes de emitir; si llegan tarde y la factura ya salió, aplica la refacturación |
-| M8 | M2 | Personas que trabajaron en el periodo | Al liquidar propinas |
+| M5 | M1 | Pedido interno (`CreateInternalOrder`) | Al crear un domicilio propio o al aceptar uno de plataforma |
+| M9 | M1 | Mesa bloqueada; al llegar, mesa y cuenta asociadas (`AttachReservation`) | El día de la reserva |
+| M9 | M2 | Anticipo como medio de pago (`ApplyDeposit`) | Al cobrar la cuenta |
+| M1 | M2 | Cuenta visible en tiempo real (`GetCheck`) | Desde que se abre la mesa |
+| M2 | M3 | Venta cerrada: ítems con su clasificación tributaria, propina, pagos, anticipos y adquirente (`CreateSalesDocument`). M3 calcula los impuestos | Al cerrar la venta |
+| M3 | M2 | Número, CUFE y QR, o comprobante si no hay internet (`IssuanceResolved`). M3 imprime la factura o el comprobante | Al validar en Factus, o al dejar la factura pendiente |
+| Portal | M1 | Pedido de la mesa, canal QR mesa (`QrOrderPendingApply`) | Al enviar desde el celular del cliente. Si la sede está en un corte, al reconectar |
+| Portal | M2 | Pago confirmado por la pasarela, con propina (`QrPaymentPendingApply`) | Cuando la pasarela avisa. Si la sede está en un corte, al reconectar |
+| Portal | M3 | Datos de facturación de esa cuenta | Antes de emitir; si llegan tarde y la factura ya salió, aplica la refacturación (`Reinvoice`) |
+| M8 | M2 | Personas que trabajaron en el periodo (`ParticipantsForPeriod`) | Al liquidar propinas |
 | M1, M2, M4, M5, M8, M9 | M6 | Eventos con hora | En cada cambio de estado |
 | M7 | M3 | Saldo de la bolsa de documentos | Al emitir; si se agota, la venta sigue y la factura queda pendiente |
+
+**Impresión.** Cada módulo dispara lo suyo: M1 la comanda y la precuenta; M2 el cierre, la liquidación de propinas y el cajón; M3 la factura y el comprobante; M4 el comprobante de traslado. Las plantillas, la cola y el controlador viven en `shared/printing`.
 
 ## Dónde vive cada flujo
 
@@ -105,7 +109,7 @@ Dentro del local, mesero, cocina, caja, inventario del punto, asistencia e impre
 
 | Módulo | Archivo | Flujos que contiene |
 |--------|---------|---------------------|
-| M0 Plataforma | [m0-plataforma.md](m0-plataforma.md) | Ingreso, dispositivos, autorización, dueños de datos, sincronización |
+| M0 Plataforma | [m0-plataforma.md](m0-plataforma.md) | Ingreso, dispositivos, autorización, vuelta a nube, dueños de datos, sincronización |
 | M1 Pedidos y salón | [m1-pedidos-y-salon.md](m1-pedidos-y-salon.md) | Mesa, cocina, pedido por QR, anulación, precuenta |
 | M2 Caja | [m2-caja.md](m2-caja.md) | Turno, cobro, pago por QR, arqueo, propinas |
 | M3 Facturación | [m3-facturacion.md](m3-facturacion.md) | Emisión, portal, envío cortado, refacturación |

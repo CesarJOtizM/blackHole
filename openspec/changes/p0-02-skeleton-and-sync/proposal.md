@@ -4,6 +4,10 @@
 
 Every module needs one API that runs in the cloud by default and, when a site activates hybrid mode, on a site node that keeps working offline and syncs later without duplicates (PRD-00 9.1, TRD-00 5.0–5.5, TRD-M0 3). The monorepo skeleton exists; operating mode and sync do not.
 
+### Status
+
+The skeleton part of 0.2 is done: `contexts/platform` (layer markers), `shared/contracts`, `apps/api-cloud`, `apps/local-node` (empty Nest hosts with bootstrap tests), `tools/cruiser`, `tools/skeleton` and the architecture rules (`pnpm architecture`). Still pending in 0.2: the first use case, the port contract suite and the memory, PostgreSQL and SQLite adapters, plus operating mode and sync. The change stays open until the whole delivery meets its exit criterion.
+
 ## Scope
 
 ### In Scope
@@ -49,8 +53,6 @@ Inside-out TDD (ADR-017): generation and ownership in `contexts/platform/domain`
 |------|------------|------------|
 | Contract drift between SQLite and PostgreSQL | Med | Same contract suite on both dialects |
 | Ownership change mid-batch | Med | Generation check on every write; test from TRD-00 16.9 |
-| TRD paths in Spanish (`contextos/`, `compartido/`) vs repo English | Low | Repo rule wins; docs updated by owner |
-
 ## Rollback Plan
 
 No site uses hybrid mode yet. Revert the change commits; sites stay in cloud mode. Migrations are additive and corrected forward.
@@ -63,4 +65,6 @@ No site uses hybrid mode yet. Revert the change commits; sites stay in cloud mod
 
 - [ ] A site in cloud mode operates without a node.
 - [ ] With hybrid activated, an event created without internet reaches the cloud after 2 h disconnected, not duplicated and in order.
-- [ ] Every port has one contract suite passing on memory, SQLite and PostgreSQL.
+- [ ] Every port has one contract suite (`<port>.contract.ts`, run by `<adapter>.contract.test.ts`) passing on memory, SQLite and PostgreSQL.
+- [ ] With internet, sync delay stays at p95 < 1 min (TRD-00 15).
+- [x] Skeleton: workspace, `contexts/platform`, `shared/contracts`, both hosts, `tools/cruiser`, `tools/skeleton` and architecture rules.

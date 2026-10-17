@@ -76,6 +76,20 @@ The API MUST scale horizontally with at least 2 production instances; workers MU
 - WHEN scaling reaches the maximum
 - THEN no more instances start
 
+### Requirement: Cloud Availability
+
+The cloud API MUST be sized and deployed for 99.5% monthly availability at launch (TRD-00 15); production MUST keep at least 2 API instances for it (TRD-01 6).
+
+#### Scenario: One instance lost
+- GIVEN production with 2 API instances
+- WHEN one instance fails
+- THEN the other keeps serving and a replacement starts
+
+#### Scenario: Gradual rollout
+- GIVEN a production release rolling out gradually
+- WHEN part of the instances are being replaced
+- THEN the API keeps answering requests during the rollout
+
 ### Requirement: Cross-Cloud Backup
 
 A daily encrypted copy of the production database MUST be exported to a different cloud, and restoring it MUST be proven monthly.

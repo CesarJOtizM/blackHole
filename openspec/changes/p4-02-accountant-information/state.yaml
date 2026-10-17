@@ -4,7 +4,7 @@ roadmap_title: "Accountant information"
 phase: 4
 modules: [M6, M3]
 bounded_contexts: [reporting, invoicing, contracts]
-apps: [api-cloud, web-admin]
+apps: [api-cloud, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p1-04-tax-engine, p1-05-electronic-invoicing, p1-08-invoicing-portal, p1-11-site-reports, p4-01-consolidated-reports]

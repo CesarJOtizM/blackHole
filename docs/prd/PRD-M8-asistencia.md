@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.4 |
+| Fecha | 2026-10-17 |
 | Fase | 1 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M8](../trd/TRD-M8-asistencia.md) |
@@ -19,7 +19,7 @@ M8 registra quién entró, quién salió y cuánto tiempo estuvo. No liquida sal
 **Incluye**
 
 - Marcación de entrada, salida y pausas con el PIN personal.
-- Solo dentro del local, en un dispositivo de la sede o en el celular del trabajador en la red del local.
+- Solo dentro del local. Sin equipo local, la marcación cuenta si la ubicación del dispositivo coincide con la del local. Si no coincide, queda sospechosa y no habilita la operación (D-43).
 - Dos modos por trabajador: solo horas, o con horario programado (tardanza, ausencia, salida anticipada, horas por fuera).
 - Regla opcional por sede: sin entrada marcada no se opera.
 - Cierre automático de turnos abiertos, marcados para revisión.
@@ -95,13 +95,13 @@ Criterios de aceptación:
 |---|-------|--------------|
 | 1 | No es nómina. No hay salario | No |
 | 2 | La hora la pone el nodo, o el servidor en modo nube | No |
-| 3 | Solo se marca dentro del local | No |
+| 3 | Solo se marca dentro del local. Sin equipo local, cuenta si la ubicación del dispositivo coincide con la del local. Si no, queda sospechosa y no habilita la operación (D-43) | No |
 | 4 | Conviven solo horas y horario programado, por trabajador | Sí, por persona |
-| 5 | Sin entrada no opera es opcional y exceptúa roles administrativos | Sí, por sede |
+| 5 | El servicio no empieza sin al menos un cajero con entrada marcada. El cajero permanece en caja (D-33). Sin entrada no opera sigue siendo opcional para el resto y exceptúa roles administrativos | Sí, por sede |
 | 6 | La corrección no edita la marcación. La proyección lee las dos | No |
 | 7 | El cierre automático deja el turno por revisar | La hora de cierre, por sede |
 | 8 | Las pausas se restan de las horas | No |
-| 9 | La tolerancia de tardanza es de la sede | Sí |
+| 9 | La tolerancia de tardanza es de la sede (D-33) | Sí |
 
 ## 6. Pantallas y flujos
 
@@ -128,8 +128,4 @@ Recorrido: [Flujo M8](../flujos/m8-asistencia.md).
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | ¿Qué sedes arrancan con "sin entrada no opera"? | Administrador, al configurar |
-| 2 | Tolerancia de tardanza del piloto | Administrador de cada sede |
-| 3 | Foto al marcar | Fase 5, fuera de este documento |
+- El arranque con cajero marcado y la tolerancia de tardanza quedaron decididos (D-33). La presencia sin equipo local quedó decidida (D-43). Ver [registro](../preguntas-abiertas.md).

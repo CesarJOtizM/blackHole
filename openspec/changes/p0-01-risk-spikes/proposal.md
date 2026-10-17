@@ -2,23 +2,23 @@
 
 ## Intent
 
-Five technical unknowns can invalidate the hybrid design before any feature is built: local HTTPS for the site PWA (ADR-003, TRD-00 5.4), the per-site hardware kit and dedicated router (ADR-006, TRD-00 10.1.2), waiter alerts on a locked phone without internet (TRD-M1 risks), ESC/POS printing with cash drawer (TRD-00 7) and SQLite at peak hour (TRD-00 17). This change runs disposable experiments and produces one decision report.
+The cloud MVP (D-37) needs one spike before the salon prints: ESC/POS with cash drawer, sent through the cloud print bridge (TRD-00 §7). The dedicated router and 4G modem are a recommendation the owner buys (D-36). This change runs that disposable experiment and produces one decision report.
+
+Local HTTPS (PA-29, ADR-003), locked-phone alerts without internet (PA-30) and SQLite at peak hour stay in the product. They are specified below as deferred and start in the hybrid phase, after the cloud product operates.
 
 ## Scope
 
 ### In Scope
-- Local HTTPS spike on an Android mid-range phone, an iPhone (iOS 16.4+), a mini PC and a real site router, including certificate renewal.
-- Locked-phone, no-internet alert spike on both platforms.
-- ESC/POS spike on the pilot printers, 80 and 58 mm, network and USB, with cash drawer kick.
-- SQLite WAL peak-hour load test of a minimal node API.
-- Decision report; ADR-003 and ADR-006 written as decided.
+- ESC/POS spike on the pilot printers, 80 and 58 mm, network and USB, with cash drawer kick, from the bridge profile.
+- Decision report for that spike. ADR-006 and ADR-008 are already decided (D-36).
 
 ### Out of Scope
-- Production node, sync and outbox → 0.2.
-- Device registration and node protection → 0.4.
+- Local HTTPS, locked-phone offline alerts and SQLite peak load → hybrid phase (D-37, PA-29, PA-30).
+- Production node, sync and outbox → hybrid phase.
+- Device registration and node protection → 0.4 for devices; node protection is hybrid phase.
 - Print templates, queue and backup printer → 1.6.
 - "Ready" alerts as a feature → 1.2.
-- 4G modem choice (ADR-008) → 0.7.
+- Buying the recommended router and 4G modem: the owner does it (D-36).
 
 ## Capabilities
 
@@ -30,23 +30,22 @@ None
 
 ## Approach
 
-Throwaway prototypes outside the bounded contexts, each with a written hypothesis, setup, measurement and decision. Option A of ADR-003 is tested first; options B/C only if A fails. Results feed TRD-00 and module docs before 0.2 starts (roadmap cycle: master first).
+Throwaway prototype outside the bounded contexts, with a written hypothesis, setup, measurement and decision. The printing result feeds TRD-00 and the printing docs before 1.6 starts (roadmap cycle: master first). ADR-003 is not decided here.
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
 | `tools/spikes/` (planned) | New | Disposable prototypes; never imported by `contexts/` or `apps/` |
-| `docs/adr/ADR-003-*.md`, `docs/adr/ADR-006-*.md` | New (by owner) | Decisions written after the report |
-| `apps/local-node` | None | Not modified; prototypes only borrow its stack |
+| `docs/adr/ADR-003-*.md` | None in this change | Written in the hybrid phase (PA-29). ADR-006 and ADR-008 are already D-36 |
+| `apps/local-node` | None | Not modified; the prototype only borrows the bridge profile |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Option A fails on iPhone or pilot routers | Med | Pre-agreed fallback B/C; report lists impacted docs |
-| No offline push on locked iPhone: Web Push needs FCM/APNs | High | Report must define an accepted fallback |
-| Pilot printers unavailable for the test | Med | Schedule with technical visit |
+| Pilot printers unavailable for the test | Med | Schedule with the technical visit |
+| The bridge cannot reach a network printer | Med | Record USB as the fallback and name the documents to update |
 
 ## Rollback Plan
 
@@ -54,10 +53,10 @@ Spike code is deleted or left unreferenced under `tools/spikes/`; no production 
 
 ## Dependencies
 
-- Access to one pilot site, its router and printers; Android and iPhone devices; a Cloudflare zone for DNS-01.
+- Access to one pilot site, its router and printers.
 
 ## Success Criteria
 
-- [ ] A report with the decisions of ADR-003 and ADR-006, and the solution for alerts with the phone locked.
-- [ ] ESC/POS printing and drawer opening proven on every pilot printer model.
-- [ ] SQLite peak-hour result recorded against node API p95 < 200 ms.
+- [ ] ESC/POS printing and drawer opening proven on every pilot printer model, from a cloud job through the bridge.
+- [ ] The report records whether an unregistered device on the shared Wi-Fi can reach the printer port (D-36).
+- [ ] ADR-003, locked-phone alerts and the SQLite peak test stay out of this change.

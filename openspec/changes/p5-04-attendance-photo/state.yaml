@@ -4,7 +4,7 @@ roadmap_title: "Attendance photo"
 phase: 5
 modules: [M8, M0]
 bounded_contexts: [attendance, platform, sync, contracts]
-apps: [local-node, api-cloud, site-app, web-admin]
+apps: [local-node, api-cloud, venue-app, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p1-09-attendance, p0-02-skeleton-and-sync, p0-08-infrastructure-and-delivery]

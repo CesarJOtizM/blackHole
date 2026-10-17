@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.4 |
+| Fecha | 2026-10-17 |
 | Fase | 2 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M4](../trd/TRD-M4-inventario.md) |
@@ -22,9 +22,10 @@ M4 sabe qué se gastó, qué hay y qué se puede volver a preparar. El stock viv
 - Recetas por producto y variante, sub-recetas, rendimiento, modificadores y versiones. Importación desde Excel.
 - Compras, recepción a costo real, costo promedio, proveedores.
 - Documento soporte y carga de facturas de proveedores, por Factus.
-- Producción de preparaciones intermedias.
-- Traslados: solicitado, despachado, en tránsito, recibido, recibido con diferencias. Incluye bodega general y traslados entre sedes.
-- Mermas, conteos y ajustes contra el teórico.
+- Producción de preparaciones intermedias. El costo es configurable: promedio de los insumos consumidos, o costo estándar (D-26).
+- Traslados: solicitado, despachado, en tránsito, recibido, recibido con diferencias. Incluye bodega general y traslados entre sedes. El costo del origen viaja tal cual (D-27). M4 dispara la impresión del comprobante de traslado; las plantillas y el controlador son compartidos (`shared/printing`).
+- Bodega general del piloto con su propio nodo en modo bodega, con internet y personal propio (D-04).
+- Mermas, conteos y ajustes contra el teórico. Un ajuste por encima del tope pide aprobación; el tope es configurable y parte de $1.000 (D-28).
 - Unidades posibles, ingrediente limitante y disponibilidad en el menú del mesero.
 - Alerta temprana por niveles y por cobertura, con reposición u orden de compra en un toque.
 - Marca "hoy no se repone", confirmada por una persona.
@@ -36,6 +37,7 @@ M4 sabe qué se gastó, qué hay y qué se puede volver a preparar. El stock viv
 - Contabilidad de la compra. Se exporta información; no se reemplaza el software contable.
 - WhatsApp o correo de la alerta (Fase 5). En esta fase avisa en caja, cocina y celular dentro del sistema.
 - La pantalla del mesero: [PRD-M1](PRD-M1-pedidos-y-salon.md) muestra agotado y el aviso.
+- Operar una bodega general desde la web de administración, sin nodo. Queda abierto para clientes pequeños después del piloto (ADR-010, PA-44).
 
 ## 3. Usuarios y permisos
 
@@ -45,8 +47,8 @@ La matriz está en [PRD-01, 6.3](PRD-01-roles-y-permisos.md).
 |-----|-----------------|-------------------------------------|
 | Jefe de cocina | Ver recetas, merma dentro del tope, conteo, pedir reabastecimiento, confirmar que hoy no se repone | Merma por encima del tope |
 | Bodeguero | Recibir compras, despachar y recibir traslados, conteos de su bodega | Recibir con diferencias; ajuste |
-| Compras | Proveedores, órdenes, documento soporte, costos | No |
-| Administrador de sede | Niveles, aprobar conteo dentro del tope, ver costos | Ajuste de inventario |
+| Compras | Proveedores, órdenes, recepción y costos | No |
+| Administrador de sede | Niveles, aprobar un ajuste de conteo por encima del tope (D-28), ver costos | Ajuste de inventario |
 | Gerente y propietario | Recetas, costos y margen de su alcance | No |
 | Mesero | Ver agotado o pocas unidades. No ve costos | No |
 
@@ -118,12 +120,15 @@ Criterios de aceptación:
 | 3 | Anulación antes de empezar devuelve; después es merma | No |
 | 4 | El stock es la suma de movimientos. No se edita el saldo a mano | No |
 | 5 | El costo de la recepción es el real. El promedio se recalcula con esa entrada | No |
-| 6 | Un traslado entre dos dueños son dos mitades con el mismo identificador | No |
+| 6 | Un traslado entre dos dueños son dos mitades con el mismo identificador. La bodega general del piloto es un dueño aparte, con su propio nodo (D-04) | No |
 | 7 | La disponibilidad del menú usa solo el inventario del punto | No |
 | 8 | "Hoy no se repone" exige confirmación de una persona | No |
 | 9 | Niveles: máximo, punto de reposición, mínimo y agotado, por insumo y ubicación | Sí |
-| 10 | La cobertura usa el consumo promedio de ese día de la semana | El sistema sugiere niveles; el administrador los ajusta |
+| 10 | La cobertura usa el consumo promedio de ese día de la semana. El sistema sugiere mínimo, punto de reposición y máximo, y la sede puede aceptarlos o escribirlos (D-32) | El sistema sugiere niveles; el administrador los ajusta |
 | 11 | Una alerta roja sin atender escala de cocina a administrador y de ahí al gerente | El tiempo, por sede |
+| 12 | El costo de lo producido es el promedio de los insumos consumidos o un costo estándar (D-26) | Sí, por empresa |
+| 13 | El traslado mueve el costo del origen tal cual, sin sumarle nada (D-27) | No |
+| 14 | Un ajuste por conteo por encima del tope pide aprobación. El predeterminado es $1.000 (D-28) | El tope, por empresa; la sede lo puede bajar |
 
 ## 6. Pantallas y flujos
 
@@ -152,8 +157,5 @@ M6 calcula [PRD-00, 8.3](PRD-00-vision-producto.md): costo de alimentos, teóric
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Mínimos iniciales de los insumos principales, o permiso para sugerirlos tras unas semanas | Piloto, antes de la Fase 2 |
-| 2 | Bodega general con nodo propio o desde la web | ADR-010 |
-| 3 | Recepción de facturas de proveedores por Factus | Se evalúa al empezar la Fase 2, con el contador |
+- PA-42: ¿el conteo de inventario es a ciegas, como el arqueo? Ver [registro](../preguntas-abiertas.md).
+- PA-44: bodega general operada desde la web para clientes pequeños, después del piloto. Ver [registro](../preguntas-abiertas.md).

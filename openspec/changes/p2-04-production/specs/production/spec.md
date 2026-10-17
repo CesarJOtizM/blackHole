@@ -55,12 +55,17 @@ The user MUST enter actual output. Consumption MUST follow the recipe for the in
 
 ### Requirement: Output Cost
 
-Output unit cost MUST equal consumed average cost divided by actual output, and MUST update the preparation's average cost as a real-cost entry.
+The company MUST configure the output cost as either the average of consumed inputs or a standard cost (D-26). A run with output MUST value it with the rule in force and MUST update the preparation's average cost as a real-cost entry.
 
-#### Scenario: Cost computed
-- GIVEN consumed cost 24000 COP
+#### Scenario: Average of consumed inputs
+- GIVEN the rule is average of consumed inputs and consumed cost is 24000 COP
 - WHEN actual output is 4000 g
 - THEN output cost is 6 COP/g
+
+#### Scenario: Standard cost
+- GIVEN the rule is standard cost at 5 COP/g
+- WHEN actual output is 4000 g
+- THEN output cost is 5 COP/g
 
 #### Scenario: Ingredient goes negative
 - GIVEN tomato below the required quantity

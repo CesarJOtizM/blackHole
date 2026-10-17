@@ -20,18 +20,23 @@ A site MAY have site warehouses, owned by the site's owner; a company MAY have g
 - WHEN site A requests from it
 - THEN the request is rejected
 
-### Requirement: General Warehouse Options
+### Requirement: General Warehouse Node
 
-A general warehouse MUST run on a warehouse-profile node (inventory, receiving, dispatch, vouchers; no dining room or cash), which operates offline, or web-only, which MUST NOT record movements offline.
+A general warehouse MUST run on its own node in warehouse mode (inventory, receiving, dispatch, vouchers; no dining room or cash), which operates offline (D-04). Operating a general warehouse from the web without a node is out of scope (PA-44).
 
 #### Scenario: Warehouse node offline
 - GIVEN "Central" on an offline warehouse node
 - WHEN a dispatch is registered
 - THEN it is stored locally and synced later
 
-#### Scenario: Web-only offline
-- GIVEN an offline web-only warehouse
-- WHEN a dispatch is attempted
+#### Scenario: No dining room on the warehouse node
+- GIVEN "Central" on a warehouse-mode node
+- WHEN a device tries to open a table or a cash-register shift on it
+- THEN the request is rejected
+
+#### Scenario: General warehouse without node
+- GIVEN a general warehouse with no paired node
+- WHEN a dispatch is attempted from the web
 - THEN it cannot be recorded
 
 ### Requirement: Transfer Lifecycle
@@ -92,7 +97,7 @@ Quantities differing from dispatch MUST set received with differences, requiring
 
 ### Requirement: Transfer Cost
 
-Both halves MUST carry the origin's average cost at dispatch; transfer-in MUST update the destination average.
+Both halves MUST carry the origin's average cost at dispatch, with nothing added (D-27). Transfer-in MUST update the destination average using that cost.
 
 #### Scenario: Cost travels
 - GIVEN origin cost 12 COP/g and destination 1000 g at 10 COP/g

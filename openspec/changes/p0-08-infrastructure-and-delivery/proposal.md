@@ -17,7 +17,7 @@ A small team must deploy often without breaking older nodes and without being lo
 ### Out of Scope
 - Dashboards, alarms and Sentry content → 0.9.
 - Staged node rollout mechanics → 0.7.
-- Choosing the production cloud (ADR-005) and pipeline service (ADR-015) → decisions, not code.
+- The first trial cloud is AWS or GCP (D-39). The pipeline is GitHub Actions (D-45).
 - Factus per-NIT rate limiter → 1.5 (load-tested in 0.9).
 
 ## Capabilities
@@ -49,7 +49,8 @@ Per TRD-01 4.1, in English names: `infra/modules/{aws,gcp,azure,common}` and `in
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Three-cloud upkeep too costly | Med | Same interfaces, plan on every change, monthly rehearsal; revisit ADR-005 |
-| ADR-015 undecided blocks pipeline | Med | Decide before tasks phase |
+| Pipeline service | Low | GitHub Actions (D-45). First trial cloud is AWS or GCP (D-39) |
+| How PWAs are served | Low | Cloud static files, installed from the browser (D-40). The node does not serve them in the MVP |
 | Existing bootstrap test forbids health routes | Low | Test updated when health is added on purpose |
 
 ## Rollback Plan
@@ -65,3 +66,4 @@ Application rollback is returning to the previous image, without touching the da
 - [ ] Staging is built from scratch with Terraform in the three clouds and passes the smoke tests.
 - [ ] A change on the main branch reaches staging with no manual steps, and one with an injected error returns to the previous version on its own.
 - [ ] `terraform plan` passes for the three clouds on every `infra/` change.
+- [ ] Production is deployed for 99.5% cloud availability at launch, with at least 2 API instances (TRD-00 15, TRD-01 6).

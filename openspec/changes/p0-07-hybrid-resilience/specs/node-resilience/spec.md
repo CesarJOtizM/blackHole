@@ -77,3 +77,28 @@ The release MUST pass a drill in which a hybrid site runs 2 hours without intern
 - GIVEN 5 unsent events
 - WHEN return to cloud is requested without acceptance
 - THEN it is refused
+
+#### Scenario: Return with accepted remainder
+- GIVEN 5 unsent events
+- WHEN the administrator explicitly accepts leaving them unsent and confirms the return
+- THEN the owner becomes `cloud` and the generation increases
+- AND the acceptance is audited with the 5 unsent events
+
+#### Scenario: Return with empty outbox
+- GIVEN a hybrid site whose outbox is empty after the drill
+- WHEN the administrator confirms the return
+- THEN the return proceeds without any acceptance step
+
+### Requirement: Local Capacity
+
+The node MUST keep at least 90 days of the site's operation stored locally, without depending on the cloud to serve it (TRD-00 15).
+
+#### Scenario: Ninety days on the node
+- GIVEN a hybrid site with 90 days of operation at its expected volume
+- WHEN the cloud is unreachable
+- THEN the node still serves those 90 days of data from SQLite
+
+#### Scenario: Storage near limit
+- GIVEN a node whose free storage would not hold 90 days at the current volume
+- WHEN the node checks its capacity
+- THEN it reports the shortfall to support before data is at risk

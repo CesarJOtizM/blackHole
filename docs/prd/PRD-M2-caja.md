@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 1 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M2](../trd/TRD-M2-caja.md) |
@@ -28,9 +28,9 @@ M2 cobra la cuenta que armó el salón, registra cada medio de pago y cierra el 
 **No incluye**
 
 - Armar la cuenta y la precuenta: [PRD-M1](PRD-M1-pedidos-y-salon.md).
-- Emitir la factura: [PRD-M3](PRD-M3-facturacion.md). Aquí se dispara al cerrar la venta.
+- Emitir e imprimir la factura o el comprobante: [PRD-M3](PRD-M3-facturacion.md). Aquí se pide al cerrar la venta, con los ítems y su clasificación tributaria; M3 calcula los impuestos.
 - Integración directa con el datáfono (el monto viaja solo): Fase 5, ADR-007. En la Fase 1 el pago con tarjeta se registra.
-- Elegir la pasarela del QR: ADR-016, antes de la entrega 1.13. Hasta entonces el contrato del pago queda definido y el adaptador no.
+- Varias pasarelas detrás del mismo contrato. Bold es una. La sede activa la que contrató. La comisión es la de ese contrato (D-46).
 - Nómina. El reparto de propinas no calcula salario.
 
 ## 3. Usuarios y permisos
@@ -68,7 +68,7 @@ Criterios de aceptación:
 
 - [ ] Dado una cuenta con precuenta, cuando cobra, entonces elige los datos de facturación si llegaron por dos vías, registra los medios, pregunta la propina y pide el documento a M3.
 - [ ] Si hay anticipo de reserva, se abona y no entra al efectivo del arqueo.
-- [ ] Durante un corte: el cobro queda en el nodo y se imprime el comprobante, que no es factura.
+- [ ] Durante un corte: el cobro queda en el nodo y M3 imprime el comprobante, que no es factura.
 - [ ] Queda auditado: cajón sin venta, cambio de medio posterior y reapertura de una cuenta pagada.
 
 ### HU-M2-03 · Pagar desde el QR de la mesa
@@ -99,7 +99,7 @@ Criterios de aceptación:
 |---|-------|--------------|
 | 1 | Un turno cerrado no se modifica. La corrección es un movimiento nuevo | No |
 | 2 | El arqueo es ciego para cajero y supervisor | No |
-| 3 | La propina es voluntaria, se pregunta siempre, va separada de la venta y no es ingreso del restaurante | El periodo y la regla de reparto, por sede |
+| 3 | La propina es voluntaria, se pregunta siempre, va separada de la venta y no es ingreso del restaurante. Cada sede elige partes iguales o porcentaje por empleado (D-24) | El periodo y la regla de reparto, por sede |
 | 4 | Los porcentajes de reparto suman 100 % | Sí, dentro de esa suma |
 | 5 | El pago QR no existe sin confirmación de la pasarela, y el monto lo fija la cuenta | No |
 | 6 | Efectivo, datáfono y QR pueden convivir si la cuenta está dividida | No |
@@ -138,8 +138,6 @@ M6 usa los cierres y los pagos para [PRD-00, 8.2](PRD-00-vision-producto.md) (ti
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | ¿Qué pasarela confirma el pago QR, con qué medios y qué comisión? | ADR-016, antes de la entrega 1.13 |
-| 2 | Política de propinas de cada sede del piloto | Administrador, al configurar |
-| 3 | Integración directa con Credibanco, Bold y Redeban | ADR-007, después de la Fase 1 |
+- Con el cobro QR activo se puede pagar con el turno cerrado. Ese pago no modifica el turno cerrado (D-44). El domicilio puede seguir con su QR aunque el salón cierre.
+- Varias pasarelas; Bold es una (D-46).
+- PA-43: integración directa con cada datáfono. Ver [registro](../preguntas-abiertas.md).

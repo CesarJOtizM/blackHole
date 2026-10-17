@@ -94,7 +94,8 @@ testing:
 rules:
   proposal:
     - Include rollback plan for risky changes
-    - Name the affected bounded context(s) and apps (api-cloud, local-node)
+    - Name the affected bounded context(s) and apps (api-cloud, local-node, venue-app, delivery-app, admin-web, customer-portal), using docs/glosario-codigo.md names
+    - Cite open questions by register code (PA-xx) and decisions by D-xx (docs/preguntas-abiertas.md); do not restate them
     - Reference the relevant PRD/TRD module under docs/ (M0-M9)
   specs:
     - Use Given/When/Then for scenarios

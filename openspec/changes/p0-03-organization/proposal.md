@@ -21,7 +21,7 @@ Sales, invoicing and inventory need the customer structure first: company, taxpa
 - DIAN numbering ranges → 1.5.
 - Menus per brand → 1.1.
 - Guided onboarding (M7 `CreateOrganization`) → 4.4.
-- General warehouse node (ADR-010) → 2.5.
+- General warehouse node (ADR-010, D-04) → 2.5.
 
 ## Capabilities
 
@@ -50,7 +50,7 @@ Thin domain in `contexts/platform/domain` (one taxpayer per site, one point per 
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Tax profile model unknown until ADR-009 | Med | Store a profile reference; engine in 1.4 |
+| Tax profile is selected per taxpayer (D-09, ADR-009) | Med | Store a profile reference; engine in 1.4 |
 | Pilot data incomplete (NITs, warehouses) | Med | Load script validated with owner |
 | Node gets other sites' data | Low | Per-site stream; contract test |
 

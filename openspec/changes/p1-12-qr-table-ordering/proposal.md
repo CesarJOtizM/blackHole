@@ -41,7 +41,7 @@ The portal (`apps/customer-portal`, from 1.8) runs in api-cloud and never talks 
 | `contexts/orders/adapters` (postgres, sqlite) | Modified | Intent store with unique key |
 | `apps/customer-portal` | Modified | Menu and cart under table token |
 | `apps/api-cloud`, `apps/local-node` | Modified | Intent endpoints; apply on owner |
-| `apps/site-app` | Modified | Acceptance queue, QR badge |
+| `apps/venue-app` | Modified | Acceptance queue, QR badge |
 | `shared/contracts`, `shared/sync` | Modified | Intent schema, high-priority downstream event |
 
 ## Risks
@@ -50,7 +50,7 @@ The portal (`apps/customer-portal`, from 1.8) runs in api-cloud and never talks 
 |------|------------|------------|
 | Photo of the QR used from outside | Med | Order stays on that table, staff see it, acceptance mode available (PRD-00 sec. 13) |
 | Duplicate application after reconnection | Med | Unique intent key, contract tests on both dialects |
-| Cloud-mode outage semantics: TRD-M1 says intents wait, yet the cloud owns the operation | Low | Spec holds routing until site devices reconnect; design confirms |
+| Cloud-mode outage semantics: TRD-M1 says intents wait, yet the cloud owns the operation | Low | Spec holds routing until site devices reconnect; design confirms (PA-52) |
 
 ## Rollback Plan
 
@@ -59,7 +59,7 @@ A per-site flag disables the table token; the portal shows "ask your waiter". Pe
 ## Dependencies
 
 - p1-01, p1-02, p1-08, p0-02, p0-07.
-- Pilot decision on cash acceptance (PRD-M1 Q2).
+- Cash-register acceptance of a QR order is built and starts off in the pilot (D-23).
 
 ## Success Criteria
 

@@ -3,8 +3,9 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Decidido |
-| Fecha | 2026-10-15 |
-| Relación | [TRD-00, secciones 14 y 16](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.2 |
+| Fecha | 2026-10-17 |
+| Relación | [TRD-00, secciones 14 y 16](../trd/TRD-00-arquitectura-base.md), [Glosario de código](../glosario-codigo.md) |
 
 ## Contexto
 
@@ -14,13 +15,15 @@ El mismo caso de uso corre en el nodo (SQLite) y en la nube (PostgreSQL), y las 
 
 Todo comportamiento de M0 a M9, y de las PWA, entra por una prueba que falla. El orden es de adentro hacia afuera: dominio, caso de uso con adaptadores en memoria, contrato del puerto en los dos dialectos, adaptador externo y, al final, la entrada HTTP o WebSocket. Se avanza de a un comportamiento. No se escriben todas las pruebas del módulo antes de la implementación.
 
-Cada prueba de unidad se escribe en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA). Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre de la prueba usa dado, cuando y entonces (GWT). Given es preparar, When es actuar y Then es comprobar: es la misma forma, con el vocabulario del escenario.
+Cada prueba de unidad se escribe en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA). Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre de la prueba usa Given / When / Then (GWT), en inglés como el resto del código. Given es preparar, When es actuar y Then es comprobar: es la misma forma, con el vocabulario del escenario.
 
-Los dobles de lo nuestro son adaptadores en memoria del puerto real. Los de Factus, la pasarela, las plataformas y la impresora son otros adaptadores de ese mismo puerto. Drizzle no se simula. El dominio no depende de Nest.
+Los dobles de lo nuestro son adaptadores en memoria del puerto real (`adapters/memory`). Los de Factus, la pasarela, las plataformas y la impresora son otros adaptadores de ese mismo puerto. Drizzle no se simula. El dominio no depende de Nest.
+
+La suite de contrato de un puerto vive en `application/ports/<port>.contract.ts`, y cada adaptador la corre desde su `<adapter>.contract.test.ts`, sin copiarla.
 
 ## Consecuencias
 
-- El esqueleto de la Fase 0 incluye Vitest, dependency-cruiser, la suite de contrato y el primer caso de uso nacido de una prueba en rojo.
+- El esqueleto de la Fase 0 incluye Vitest, dependency-cruiser, la suite de contrato y el primer caso de uso nacido de una prueba en rojo. Hoy existen el esqueleto (`contexts/platform`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`), la regla de dependency-cruiser con su fixture en `tools/cruiser` y las pruebas de `tools/skeleton`. **Siguen pendientes dentro de la entrega 0.2**: el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `memory`, `postgres` y `sqlite` que la corren.
 - Cada TRD de módulo lista los comportamientos a probar, con la plantilla de la sección 9, antes de describir tablas o rutas nuevas.
 - La integración continua rechaza un dominio que importa infraestructura, un puerto sin contrato y un contrato que pasa en un solo dialecto.
 - No se exige un porcentaje de líneas. Una regla sin prueba no se considera hecha.

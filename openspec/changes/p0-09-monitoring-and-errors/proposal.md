@@ -37,7 +37,7 @@ OpenTelemetry SDK in `apps/api-cloud` and `apps/local-node`; node telemetry as a
 |------|--------|-------------|
 | `apps/api-cloud`, `apps/local-node` | Modified | OTel and Sentry SDKs, metric emitters |
 | `shared/sync` | Modified | Telemetry event class, bounded buffer |
-| `apps/site-app`, `apps/admin-web` (planned) | Modified | Sentry with offline queue |
+| `apps/venue-app`, `apps/admin-web` (planned) | Modified | Sentry with offline queue |
 | `infra/modules/common` | Modified | Collector, dashboards, alarms, Sentry projects |
 | `tools/load/` (planned) | New | Worker scaling load test with Factus simulator |
 
@@ -48,7 +48,7 @@ OpenTelemetry SDK in `apps/api-cloud` and `apps/local-node`; node telemetry as a
 | Invoice metrics before invoicing exists | High | Factus simulator and synthetic pending documents; re-verify in 1.5 |
 | Telemetry saturates weak site links | Med | Lowest priority, bounded buffer |
 | Personal data leaks into logs or Sentry | Med | Scrubbing in SDK and collector; pattern test |
-| ADR-014 (Sentry SaaS vs self-hosted) open | Low | SaaS assumed; DSN is configuration |
+| Sentry hosting | Low | SaaS free plan at the start (D-41). DSN is configuration |
 
 ## Rollback Plan
 
@@ -62,3 +62,4 @@ Telemetry and Sentry are toggled by configuration; disabling them leaves operati
 
 - [ ] A disconnected node appears in Grafana and triggers its alarm; an invoice pending for more than 30 minutes also does; an error in a PWA without internet reaches Sentry on reconnect, with no personal data; in a load test the workers scale up and down without exceeding Factus' per-NIT limit.
 - [ ] Every metric in the catalog has a dashboard panel.
+- [ ] Alarms fire when cloud availability falls below 99.5% in the month and when sync delay p95 exceeds 1 minute at a connected site (TRD-00 15).

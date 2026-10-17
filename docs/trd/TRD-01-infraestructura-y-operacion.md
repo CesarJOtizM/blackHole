@@ -3,24 +3,26 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
+| Versión | 0.5 |
+| Fecha | 2026-10-17 |
 | Fase | 0 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | Entregas | [Roadmap](../roadmap.md) 0.8 y 0.9 |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
+| Preguntas abiertas | Ninguna de este documento |
 
 ## 1. Resumen de decisiones
 
 | Tema | Decisión | Estado |
 |------|----------|--------|
-| Infraestructura como código | **Terraform**. Nada de la nube se crea a mano | Propuesta |
-| Nubes | **AWS, GCP y Azure** con módulos de Terraform equivalentes desde el inicio. Una sola nube corre producción; las otras se prueban en staging | Propuesta (ADR-005) |
-| Cómputo | Contenedores sin servidores que administrar: ECS Fargate, Cloud Run o Container Apps. Sin Kubernetes al inicio | Propuesta |
-| Base de datos | PostgreSQL gestionado, solo con funciones y extensiones disponibles en las tres nubes | Propuesta |
-| Despliegue continuo | Cada cambio en la rama principal llega a staging solo; a producción, con una aprobación | Propuesta |
+| Infraestructura como código | **Terraform**. Nada de la nube se crea a mano | Decidido (TRD-00, sección 13) |
+| Nubes | **AWS, GCP y Azure** con módulos de Terraform equivalentes desde el inicio. El primer ensayo corre en AWS o en GCP (D-39). Azure no arranca ese ensayo | Decidido (D-39) |
+| Cómputo | Contenedores sin servidores que administrar: ECS Fargate, Cloud Run o Container Apps. Sin Kubernetes al inicio | Decidido (TRD-00, sección 13) |
+| Base de datos | PostgreSQL gestionado, solo con funciones y extensiones disponibles en las tres nubes | Decidido (TRD-00, sección 13) |
+| Despliegue continuo | GitHub Actions (D-45). Cada cambio en la rama principal llega a staging solo; a producción, con una aprobación | Decidido (D-45) |
 | Escalado | La API y los workers suben y bajan de instancias solos; los workers según la cola de trabajos | Propuesta |
 | Métricas, logs y trazas | **OpenTelemetry** hacia **Grafana Cloud**. Un solo lugar para las tres nubes (ADR-013) | Decidido |
-| Errores | **Sentry** en la nube, en los nodos y en las PWA, con envío diferido sin internet (ADR-014) | Propuesta |
+| Errores | **Sentry como servicio, plan gratuito al inicio** (D-41), en la nube y las PWA. El envío diferido sin internet queda en la fase híbrida | Decidido (D-41) |
 | Tableros y alarmas | En Grafana, definidos como código con Terraform, junto con la infraestructura | Decidido |
 
 ## 2. Restricciones que guían el diseño
@@ -60,8 +62,8 @@ Lo que **no** depende de la nube y se comparte entre las tres:
 
 | Puerto | Para qué | Adaptadores |
 |--------|----------|-------------|
-| `AlmacenamientoArchivos` | Guardar y leer archivos; enlaces firmados con vencimiento | S3, Cloud Storage, Blob Storage, disco local (desarrollo y nodo) |
-| `Secretos` | Leer credenciales y certificados al arrancar y al rotarlos | Secrets Manager, Secret Manager, Key Vault, archivo cifrado (nodo) |
+| `FileStorage` | Guardar y leer archivos; enlaces firmados con vencimiento | S3, Cloud Storage, Blob Storage, disco local (desarrollo y nodo) |
+| `Secrets` | Leer credenciales y certificados al arrancar y al rotarlos | Secrets Manager, Secret Manager, Key Vault, archivo cifrado (nodo) |
 
 La configuración llega por variables de entorno. Ningún módulo del dominio sabe en qué nube corre.
 
@@ -82,16 +84,16 @@ Además de los respaldos diarios del proveedor (TRD-00, sección 12), se exporta
 
 ```
 infra/
-  modulos/
-    aws/              # red, postgres, servicio, almacenamiento, secretos, registro
+  modules/
+    aws/              # network, postgres, service, storage, secrets, registry
     gcp/              # los mismos módulos, mismas variables y salidas
     azure/            # los mismos módulos, mismas variables y salidas
-    comun/            # Cloudflare (DNS), Grafana (tableros y alarmas), Sentry (proyectos y alertas)
-  ambientes/
+    common/           # Cloudflare (DNS), Grafana (tableros y alarmas), Sentry (proyectos y alertas)
+  environments/
     staging-aws/
     staging-gcp/
     staging-azure/
-    produccion-<nube>/
+    production-<cloud>/
 ```
 
 - Cada ambiente tiene su propio estado remoto, cifrado y con bloqueo, guardado en la nube de ese ambiente.
@@ -174,7 +176,7 @@ Para que los módulos de las otras dos nubes no se queden viejos:
 
 ## 7. Métricas, logs y trazas
 
-Grafana Cloud es donde se mira la operación, en cualquiera de las tres nubes. La aplicación no habla con Grafana: habla OpenTelemetry, y un colector entrega métricas, logs y trazas. Los tableros y las alarmas viven en `infra/modulos/comun/` y se aplican con Terraform. Un servicio nuevo no queda desplegado si no trae su tablero.
+Grafana Cloud es donde se mira la operación, en cualquiera de las tres nubes. La aplicación no habla con Grafana: habla OpenTelemetry, y un colector entrega métricas, logs y trazas. Los tableros y las alarmas viven en `infra/modules/common/` y se aplican con Terraform. Un servicio nuevo no queda desplegado si no trae su tablero.
 
 Grafana no reemplaza los reportes del restaurante (ventas, tiempos de cocina, márgenes). Esos salen de los eventos y se ven en el producto (M6). Tampoco reemplaza a Sentry: Grafana dice que algo se degradó; Sentry dice qué excepción fue y qué versión la introdujo.
 
@@ -191,11 +193,11 @@ Alojar Grafana nosotros queda descartado: el equipo es pequeño y no hay Kuberne
 
 La API, los workers y el nodo usan el SDK de OpenTelemetry. En la nube, un colector (un contenedor más, la misma imagen en las tres nubes) recibe todo y lo envía por OTLP a Grafana Cloud. Cambiar de backend es cambiar la configuración del colector, no el código.
 
-- **Logs** estructurados en JSON, con `tenant_id`, sede, dispositivo y el identificador de la traza.
+- **Logs** estructurados en JSON, con `tenant_id`, `venue_id`, `device_id` y el identificador de la traza.
 - **Trazas** de punta a punta: la PWA, el nodo, la sincronización, la nube y la llamada a Factus.
 - **Métricas** del catálogo de la sección 7.3. Cada una responde una de cuatro preguntas: si la sede puede atender, si las facturas salen, si la nube aguanta y si el último despliegue rompió algo. Una métrica que no responde ninguna no se agrega.
-- Las métricas solo llevan etiquetas de baja cardinalidad: `servicio`, `ambiente`, `tenant_id`, `sede_id`, `nit`, `tipo_trabajo`, `estado`. Cada una usa solo las que necesita: la API de la nube no se etiqueta por sede. El dispositivo, el usuario y el pedido van en logs y trazas.
-- Nunca se registran datos personales (cédulas, nombres, direcciones, teléfonos), secretos ni tokens (Ley 1581). El nombre de la sede se resuelve en el tablero a partir de `sede_id`.
+- Las métricas solo llevan etiquetas de baja cardinalidad: `service`, `environment`, `tenant_id`, `venue_id`, `tax_id` (NIT), `job_type`, `status`. Cada una usa solo las que necesita: la API de la nube no se etiqueta por sede. El dispositivo, el usuario y el pedido van en logs y trazas.
+- Nunca se registran datos personales (cédulas, nombres, direcciones, teléfonos), secretos ni tokens (Ley 1581). El nombre de la sede se resuelve en el tablero a partir de `venue_id`.
 
 ### 7.2 Telemetría de los nodos
 
@@ -209,27 +211,27 @@ La API, los workers y el nodo usan el SDK de OpenTelemetry. En la nube, un colec
 
 | Métrica | Qué mide |
 |---------|----------|
-| `nodo.conectado` | 1 si el nodo reportó en el último minuto; 0 si no |
-| `nodo.sin_conexion_segundos` | Cuánto lleva la sede sin reportar, en horario de operación |
-| `sync.retraso_segundos` | Edad del evento más viejo que una sede conectada aún no entregó |
-| `sync.eventos_pendientes` | Eventos en la outbox del nodo |
-| `nodo.disco_libre_ratio` | Espacio libre sobre el total |
-| `nodo.impresora_disponible` | 1 por impresora que responde; 0 si no |
+| `node.connected` | 1 si el nodo reportó en el último minuto; 0 si no |
+| `node.offline_seconds` | Cuánto lleva la sede sin reportar, en horario de operación |
+| `sync.lag_seconds` | Edad del evento más viejo que una sede conectada aún no entregó |
+| `sync.pending_events` | Eventos en la outbox del nodo |
+| `node.disk_free_ratio` | Espacio libre sobre el total |
+| `node.printer_available` | 1 por impresora que responde; 0 si no |
 | `http.server.request.duration` del nodo | p95 de la API local. Objetivo: menos de 200 ms (TRD-00, sección 15) |
 
 **¿Las facturas salen?**
 
 | Métrica | Qué mide |
 |---------|----------|
-| `facturas.pendientes` | Documentos en `pendiente_emision` o `incierto`, por sede y estado |
-| `facturas.antiguedad_maxima_segundos` | Edad de la factura pendiente más vieja de una sede conectada |
-| `factus.solicitudes` | Solicitudes por minuto de un NIT, contra el límite de 80 |
-| `factus.respuestas` | Por código: `429`, rechazo y error del servidor |
-| `factus.cola_vaciado_segundos` | Desde que la sede reconecta hasta que no quedan facturas pendientes |
-| `factus.bolsa_saldo` | Documentos restantes de la bolsa de la empresa |
-| `factus.bolsa_dias_cobertura` | Saldo dividido por el consumo diario reciente |
+| `invoices.pending` | Documentos en `pending_issuance` o `uncertain`, por sede y estado |
+| `invoices.max_age_seconds` | Edad de la factura pendiente más vieja de una sede conectada |
+| `factus.requests` | Solicitudes por minuto de un NIT, contra el límite de 80 |
+| `factus.responses` | Por código: `429`, rechazo y error del servidor |
+| `factus.queue_drain_seconds` | Desde que la sede reconecta hasta que no quedan facturas pendientes |
+| `factus.wallet_balance` | Documentos restantes de la bolsa de la empresa |
+| `factus.wallet_coverage_days` | Saldo dividido por el consumo diario reciente |
 
-`factus.respuestas`, `factus.solicitudes` y `factus.cola_vaciado_segundos` son las señales para volver a negociar con Factus (TRD-00, sección 8.4).
+`factus.responses`, `factus.requests` y `factus.queue_drain_seconds` son las señales para volver a negociar con Factus (TRD-00, sección 8.4).
 
 **¿La nube aguanta?**
 
@@ -237,20 +239,20 @@ La API, los workers y el nodo usan el SDK de OpenTelemetry. En la nube, un colec
 |---------|----------|
 | `http.server.request.duration` de la API | p95 por servicio |
 | `http.server.requests` | Tasa de solicitudes y porcentaje de respuestas 5xx |
-| `servicio.instancias` | Instancias activas, contra el mínimo y el máximo de la sección 6 |
-| `postgres.conexiones_en_uso` | Conexiones abiertas contra el límite |
-| `pgboss.trabajos_esperando` | Profundidad de la cola por tipo de trabajo. También alimenta el escalado (sección 6) |
-| `pgboss.trabajo_mas_viejo_segundos` | Antigüedad del trabajo que más lleva esperando |
-| `pgboss.trabajos_fallidos` | Fallos y reintentos por tipo de trabajo |
+| `service.instances` | Instancias activas, contra el mínimo y el máximo de la sección 6 |
+| `postgres.connections_in_use` | Conexiones abiertas contra el límite |
+| `pgboss.jobs_waiting` | Profundidad de la cola por tipo de trabajo. También alimenta el escalado (sección 6) |
+| `pgboss.oldest_job_seconds` | Antigüedad del trabajo que más lleva esperando |
+| `pgboss.jobs_failed` | Fallos y reintentos por tipo de trabajo |
 
 **¿El último despliegue lo rompió?**
 
 | Métrica | Qué mide |
 |---------|----------|
-| `despliegue.info` | Versión que corre en cada servicio y ambiente |
+| `deployment.info` | Versión que corre en cada servicio y ambiente |
 | Tasa de errores y p95 | Comparadas con la versión anterior durante el despliegue gradual (sección 5.2) |
 
-En la Fase 3 se agregan `plataformas.pedidos` (recibidos por conector) y `plataformas.pedidos_rechazados` (los que no se pudieron normalizar). Hasta entonces ese tablero no existe.
+En la Fase 3 se agregan `platforms.orders` (recibidos por conector) y `platforms.orders_rejected` (los que no se pudieron normalizar). Hasta entonces ese tablero no existe.
 
 ### 7.4 Tableros
 
@@ -274,15 +276,15 @@ Son reglas de Grafana, en el mismo Terraform que los tableros. Cada una tiene du
 |--------|---------|----------------|
 | Disponibilidad de la API de la nube | `http.server.requests` | Por debajo del objetivo de 99,5 % en el mes, o más de 5 minutos sin responder |
 | Latencia de la API del nodo | `http.server.request.duration` del nodo | p95 por encima de 200 ms (TRD-00, sección 15) |
-| Retraso de la sincronización | `sync.retraso_segundos` | p95 por encima de 1 minuto con la sede conectada |
-| Facturas pendientes | `facturas.antiguedad_maxima_segundos` | Una factura con más de 30 minutos pendiente en una sede conectada |
-| Rechazos de Factus | `factus.respuestas` | Más de 3 rechazos en 10 minutos para un mismo NIT |
-| Bolsa por agotarse | `factus.bolsa_dias_cobertura` | Menos de 7 días al ritmo reciente |
-| Nodo sin conexión | `nodo.sin_conexion_segundos` | Más de 15 minutos en horario de operación |
+| Retraso de la sincronización | `sync.lag_seconds` | p95 por encima de 1 minuto con la sede conectada |
+| Facturas pendientes | `invoices.max_age_seconds` | Una factura con más de 30 minutos pendiente en una sede conectada |
+| Rechazos de Factus | `factus.responses` | Más de 3 rechazos en 10 minutos para un mismo NIT |
+| Bolsa por agotarse | `factus.wallet_coverage_days` | Menos de 7 días al ritmo reciente |
+| Nodo sin conexión | `node.offline_seconds` | Más de 15 minutos en horario de operación |
 | Errores nuevos | Sentry | Un error que Sentry no había visto, en producción |
 | Presupuesto | Factura de la nube | 80 % del presupuesto mensual |
 
-Las alarmas de la nube avisan al equipo. Las que tocan la operación de un cliente (facturas pendientes, saldo de la bolsa) también llegan al panel de soporte (entrega 4.5).
+Las alarmas de la nube avisan al equipo. Las que tocan la operación de un cliente (facturas pendientes, saldo de la bolsa) también llegan al panel de soporte (entrega 4.5), que es una vista de `apps/admin-web` (D-05).
 
 ## 8. Errores con Sentry
 
@@ -296,7 +298,7 @@ Las alarmas de la nube avisan al equipo. Las que tocan la operación de un clien
 - **Sin internet**, el SDK guarda los errores en el dispositivo o en el nodo y los envía al reconectar, con un tamaño máximo.
 - Cada error lleva empresa, sede, rol y versión; **no lleva** datos personales. Los nombres, cédulas, teléfonos y direcciones se limpian en el SDK antes de enviar.
 - Cada versión desplegada se registra en Sentry para saber qué despliegue introdujo un error.
-- Sentry se usa como servicio al inicio; alojarlo en una nube propia queda como alternativa si la ley o un cliente lo exige (ADR-014).
+- Sentry se usa como servicio, en el plan gratuito, al inicio (D-41). No se aloja en nuestra nube.
 
 ## 9. Seguridad
 
@@ -324,7 +326,8 @@ Las alarmas de la nube avisan al equipo. Las que tocan la operación de un clien
 | Costo de la nube sin control | Máximo de instancias, staging en cero sin uso, alarma de presupuesto |
 | La telemetría satura el internet de una sede | Prioridad baja en la sincronización y tamaño máximo en el nodo |
 | Datos personales en logs o en Sentry | Limpieza en el SDK y en el colector; prueba automática que busca patrones de cédula y teléfono |
-| ADR-005 | Nube de producción y portabilidad. Pendiente: cuál de las tres arranca en producción |
+| ADR-005 | Nube de producción y portabilidad. Módulos para las tres nubes. El primer ensayo corre en AWS o en GCP (D-39) |
 | ADR-013 | Backend de observabilidad: **Grafana Cloud** (decidido, sección 7). Descartados el servicio nativo de cada nube y Grafana alojado por nosotros |
-| ADR-014 | Sentry como servicio (propuesto) frente a alojado. Pendiente, Fase 0 |
-| ADR-015 | Servicio del pipeline: depende de dónde quede el repositorio. Pendiente, Fase 0 |
+| ADR-014 | Sentry como servicio, plan gratuito al inicio (D-41) |
+| ADR-015 | Pipeline: GitHub Actions (D-45) |
+| PWA estáticas | En el MVP se publican como archivos estáticos en la nube y el navegador las instala (D-40). El nodo no las sirve |

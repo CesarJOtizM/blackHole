@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 3 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M9](../trd/TRD-M9-reservas.md) |
@@ -12,7 +12,7 @@
 
 ## 1. Resumen
 
-M9 reserva una mesa y, si la sede lo pide, cobra por reservarla. El cobro del piloto es una transferencia a Nequi, Daviplata o Bre-B que alguien verifica en la cuenta. El anticipo se abona cuando el cliente consume. La política de devolución queda guardada en la reserva, así un cambio posterior no la reescribe.
+M9 reserva una mesa y, si la sede lo pide, cobra por reservarla. El medio de cobro depende de cómo entra la reserva (D-01): por enlace, llamada o chat, solo transferencia a Nequi, Daviplata o Bre-B que alguien verifica en la cuenta; en persona en la sede, transferencia verificada o efectivo, que se registra en el turno de caja. El anticipo se abona cuando el cliente consume. La política de devolución queda guardada en la reserva, así un cambio posterior no la reescribe.
 
 ## 2. Alcance
 
@@ -22,24 +22,27 @@ M9 reserva una mesa y, si la sede lo pide, cobra por reservarla. El cobro del pi
 - Canales: el personal (teléfono, WhatsApp, en persona) y, en la entrega 3.8, un enlace público por sede.
 - Disponibilidad por franja, duración estimada y mesas reservables.
 - La mesa se bloquea en el plano un tiempo antes de la hora.
-- Estados: pendiente de pago, confirmada, cliente llegó, no llegó, cancelada.
+- Estados: pendiente de pago, confirmada, cliente llegó, no llegó, cancelada, provisional y en conflicto.
 - Cobro desde $0 hasta una tarifa, por sede, franja o tamaño de grupo. Anticipo que se abona, o tarifa que no se abona.
 - Valor fijo, por persona o porcentaje de un consumo mínimo.
-- Transferencia con comprobante, verificación en la cuenta y devolución por tramos.
+- Medio de cobro según el canal (D-01): por enlace, llamada o chat, solo transferencia con comprobante y verificación en la cuenta; en persona en la sede, transferencia verificada o efectivo recibido en la caja.
+- Devolución por tramos.
 - Reserva provisional si la sede la crea sin internet, y conflicto si al subir no hay cupo.
 
 **No incluye**
 
-- Pasarela con confirmación automática (ADR-012, Fase 5). No se usa la pasarela del pago QR de la mesa.
+- Pasarela con confirmación automática (ADR-012, entrega 5.3, PA-45). No se usa la pasarela del pago QR de la mesa.
 - Confirmación y recordatorio por WhatsApp, SMS o correo (Fase 5).
 - El cobro de la cuenta del restaurante: al llegar, la mesa y la cuenta son de M1, y el anticipo entra en M2.
-- Un pantallazo como prueba suficiente. Confirmar exige que alguien verifique el dinero en la cuenta.
+- Un pantallazo como prueba suficiente. Confirmar una transferencia exige que alguien verifique el dinero en la cuenta.
+- Efectivo para una reserva hecha por enlace, llamada o chat.
 
 ## 3. Usuarios y permisos
 
 | Rol | Qué puede hacer | Requiere autorización de supervisor |
 |-----|-----------------|-------------------------------------|
 | Anfitrión, cajero | Crear, recibir, marcar llegó o no llegó, verificar el pago | No para verificar (PRD-01 lo permite) |
+| Cajero | Recibir el anticipo en efectivo de una reserva hecha en persona, con su turno abierto | No |
 | Administrador | Políticas, cuentas de recaudo, aprobar devoluciones | La devolución, si el rol del cajero no la tiene |
 | Supervisor | Verificar pagos. Aprobar devolución solo con autorización si su matriz lo marca | Según PRD-01, 6.4 |
 | Cliente en el enlace | Crear la reserva y ver la política vigente | No confirma el pago él solo |
@@ -49,15 +52,16 @@ M9 reserva una mesa y, si la sede lo pide, cobra por reservarla. El cobro del pi
 
 ### HU-M9-01 · Reservar y cobrar
 
-**Como** anfitrión, **quiero** registrar la reserva y el cobro por transferencia, **para** confirmarla solo cuando el dinero esté en la cuenta.
+**Como** anfitrión, **quiero** registrar la reserva y su cobro, **para** confirmarla solo cuando el dinero esté en la cuenta o en la caja.
 
 Criterios de aceptación:
 
 - [ ] Dado fecha, hora y personas, cuando hay cupo, entonces la reserva queda pendiente de pago si la franja cobra, o confirmada si el valor es $0.
-- [ ] El mensaje al cliente lleva valor, datos de Nequi, Daviplata o Bre-B y la referencia de la reserva.
-- [ ] Pasa a confirmada cuando alguien con permiso marca el pago verificado. El comprobante queda adjunto. Quién verificó y cuándo queda registrado.
+- [ ] Si la reserva entra por llamada o chat, el único medio es la transferencia. El mensaje al cliente lleva valor, datos de Nequi, Daviplata o Bre-B y la referencia de la reserva.
+- [ ] Una transferencia pasa a confirmada cuando alguien con permiso marca el pago verificado. El comprobante queda adjunto. Quién verificó y cuándo queda registrado.
+- [ ] Si el cliente reserva en persona en la sede, puede pagar por transferencia verificada o en efectivo. El efectivo lo recibe la caja, queda registrado en el turno abierto y confirma la reserva. Sin turno abierto no se recibe efectivo.
 - [ ] Durante un corte: una reserva creada en la sede queda provisional y sube al reconectar. La verificación hecha sin internet también sube.
-- [ ] Queda auditado: la verificación y un rechazo del comprobante.
+- [ ] Queda auditado: la verificación, el cobro en efectivo y un rechazo del comprobante.
 
 ### HU-M9-02 · Llegar a la mesa
 
@@ -66,7 +70,7 @@ Criterios de aceptación:
 Criterios de aceptación:
 
 - [ ] Dado el día de la reserva, cuando falta el tiempo configurado, entonces la mesa aparece bloqueada.
-- [ ] Al marcar que llegó, se abre la mesa y la cuenta en M1. Al cobrar, el anticipo se abona y no entra al efectivo.
+- [ ] Al marcar que llegó, se abre la mesa y la cuenta en M1. Al cobrar, el anticipo se abona. Si fue por transferencia, no entra al efectivo; si fue en efectivo, ya se arqueó en el turno que lo recibió y no se cuenta otra vez.
 - [ ] Si no llega, se aplica la política guardada en la reserva.
 - [ ] Durante un corte: llegada y no llegada se registran en el nodo y suben después.
 
@@ -89,26 +93,28 @@ Criterios de aceptación:
 
 - [ ] Dado el enlace, cuando elige franja y personas, entonces ve la política y el valor antes de confirmar.
 - [ ] Si no hay cupo, no se crea.
-- [ ] El pago sigue siendo transferencia verificada por el personal.
+- [ ] El pago solo puede ser transferencia verificada por el personal. El enlace no ofrece efectivo.
 - [ ] Queda auditado: la reserva nace con el canal enlace público.
 
 ## 5. Reglas de negocio
 
 | # | Regla | Configurable |
 |---|-------|--------------|
-| 1 | El cobro puede ser $0, un anticipo que se abona, o una tarifa que no se abona | Por sede, franja y tamaño de grupo |
+| 1 | El cobro puede ser $0, un anticipo que se abona y retiene un porcentaje si cancelan, o una tarifa no reembolsable (D-34) | Por sede, franja y tamaño de grupo |
 | 2 | El valor es fijo, por persona o un porcentaje de un consumo mínimo | Sí |
-| 3 | La reserva de pago no se confirma con el pantallazo. Alguien verifica el dinero en la cuenta | No |
+| 3 | La reserva pagada por transferencia no se confirma con el pantallazo. Alguien verifica el dinero en la cuenta | No |
 | 4 | El número de transacción es único por cuenta de recaudo | No |
 | 5 | La política de devolución se copia en la reserva | Tramos y porcentajes, por sede |
 | 6 | La mesa se bloquea un tiempo antes. Al llegar se asocia a una cuenta | El tiempo, por sede |
-| 7 | El anticipo viaja en la factura como anticipo y no entra al efectivo del arqueo | No |
-| 8 | Una reserva provisional que choca con otra cupo queda en conflicto para que el administrador decida | No |
+| 7 | El anticipo viaja en la factura como anticipo. El de transferencia no entra al efectivo del arqueo; el de efectivo se arquea solo en el turno que lo recibió | No |
+| 8 | Una reserva provisional que choca con otra por el cupo queda en conflicto para que el administrador decida | No |
 | 9 | Una pendiente de pago sin verificar se libera al vencer el plazo | El plazo |
+| 10 | Por enlace, llamada o chat, solo transferencia verificada. En persona en la sede, transferencia verificada o efectivo (D-01) | No |
+| 11 | El efectivo de una reserva se registra en el turno de caja abierto que lo recibe | No |
 
 ## 6. Pantallas y flujos
 
-Web y caja: agenda del día, plano con mesas bloqueadas, verificación, llegada, no llegada y devoluciones.
+Web y caja: agenda del día, plano con mesas bloqueadas, verificación, cobro en efectivo en la caja, llegada, no llegada, conflictos y devoluciones.
 
 Enlace público, mobile first: disponibilidad, política visible y datos para transferir.
 
@@ -126,13 +132,11 @@ Recorrido: [Flujo M9](../flujos/m9-reservas.md).
 |---------|------|
 | Una semana de reservas de una sede | Manejadas en el sistema |
 | Anticipo | Cobrado, verificado y abonado a la cuenta |
+| Anticipo en efectivo | Registrado en el turno que lo recibió y abonado sin contarse dos veces |
 | Cancelación | Una devolución parcial según el tramo |
 | Enlace público | Reservas reales creadas por clientes |
 | Comprobante falso | No confirma la reserva |
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Política y cuentas de recaudo de cada sede del piloto | Administrador, antes de la Fase 3 |
-| 2 | Pasarela con confirmación automática | ADR-012, Fase 5. No bloquea este módulo |
+- PA-45: pasarela automática para reservas (ADR-012), en la entrega 5.3. No bloquea este módulo. Ver [registro](../preguntas-abiertas.md).

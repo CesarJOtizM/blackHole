@@ -44,7 +44,7 @@ New bounded context `cash-register` (TRD-M2 sec. 1-2): `CashShift` aggregate, `C
 | `contexts/cash-register/adapters/{postgres,sqlite,http,manual-terminal}` | New | Persistence, HTTP, manual terminal |
 | `contexts/orders/application/entry-port.ts` | Modified | Read account, split, mark paid |
 | `shared/contracts` | Modified | `ShiftClosed`, `PaymentRecorded`, sale-closed handoff |
-| `apps/local-node`, `apps/api-cloud`, `apps/site-app` | Modified/New | Hosts and cash screens |
+| `apps/local-node`, `apps/api-cloud`, `apps/venue-app` | Modified/New | Hosts and cash screens |
 
 ## Risks
 

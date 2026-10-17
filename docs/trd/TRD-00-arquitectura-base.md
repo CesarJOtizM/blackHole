@@ -3,31 +3,35 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.8 |
-| Fecha | 2026-10-15 |
+| Versión | 0.19 |
+| Fecha | 2026-10-17 |
 | Documento de producto asociado | [PRD-00 Visión de producto](../prd/PRD-00-vision-producto.md) |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
+| Preguntas abiertas | [Registro](../preguntas-abiertas.md) |
 
 ## 1. Resumen de decisiones
 
 | Tema | Decisión | Estado |
 |------|----------|--------|
 | Topología | **Nube por defecto.** Cada sede puede **activar el híbrido**: entonces sí hay un nodo local. Misma API y mismas reglas en los dos modos | Decidido (sección 5.0) |
+| Orden de construcción | El MVP es 100 % nube (D-37). El híbrido, la sincronización y la operación durante un corte se construyen después de que la nube opere. La impresión del MVP usa el puente | Decidido (D-37) |
 | Conexión de la sede | Toda sede tiene internet. En modo nube un corte detiene el salón. En modo híbrido el salón sigue contra el nodo; al reconectar se emiten facturas y se aplican pedidos y pagos QR. Una sede sin conexión permanente queda fuera | Decidido (PRD-00, 9.1) |
-| Clientes | Apps web instalables (PWA) mobile first: **una sola app de la sede** para salón, caja y cocina, con pantallas por rol, y otra para el domiciliario; web para la administración. Los meseros usan su celular personal, Android o iPhone | Decidido; el spike de ADR-003 valida HTTPS local |
-| Sincronización | Cada dato tiene **un solo dueño** (nodo o nube). Se envían eventos que solo se agregan, nunca se editan | Propuesta |
-| Separación de clientes | Una base de datos compartida, con `tenant_id` y Row Level Security en PostgreSQL | Propuesta |
-| Lenguaje | TypeScript de punta a punta, en un monorepo | Propuesta |
-| Base de datos | PostgreSQL en la nube; SQLite en el nodo local | Propuesta |
-| DIAN | **Factus**, detrás del puerto `ProveedorFacturacion`. Toda venta es **factura electrónica de venta** (a consumidor final si no hay datos). Sin internet: comprobante con QR y **emisión diferida** al reconectar; sin factura de papel | Decidido |
+| Clientes | Apps web instalables (PWA) mobile first: **una sola app de la sede** para salón, caja y cocina, con pantallas por rol, y otra para el domiciliario; web para la administración. Los meseros usan su celular personal, Android o iPhone | Decidido. En el MVP hablan con la nube por HTTPS público. El HTTPS local (ADR-003, PA-29) es de la fase híbrida |
+| Sincronización | Cada dato tiene **un solo dueño** (nodo o nube). Se envían eventos que solo se agregan, nunca se editan | Decidido (sección 5) |
+| Separación de clientes | Una base de datos compartida, con `tenant_id` y Row Level Security en PostgreSQL | Decidido |
+| Lenguaje | TypeScript de punta a punta, en un monorepo | Decidido (sección 13) |
+| Base de datos | PostgreSQL en la nube; SQLite en el nodo local | Decidido (sección 13) |
+| DIAN | **Factus**, detrás del puerto `InvoicingProvider`. Toda venta es **factura electrónica de venta** (a consumidor final si no hay datos). Sin internet: comprobante con QR y **emisión diferida** al reconectar; sin factura de papel. Eso se construye en la fase híbrida (D-10, D-37). En el MVP la sede está en línea y la factura sale en el momento | Decidido |
 | Impuestos | Motor de impuestos basado en reglas como datos, con vigencias; corre en el nodo y en la nube | Decidido (PRD-00) |
-| Impresión | ESC/POS por red o USB. En híbrido imprime el nodo. En nube imprime un **puente** (el mismo programa, sin guardar la operación) | Propuesta |
-| Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Propuesta |
-| Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Propuesta |
+| Impresión | ESC/POS por red o USB. En híbrido imprime el nodo. En nube imprime un **puente** (el mismo programa, sin guardar la operación) | Decidido (sección 7) |
+| Inventario | Un inventario por punto + bodegas. Libro de movimientos que solo se agrega; el stock es un cálculo derivado | Decidido (sección 9) |
+| Auditoría | Eventos encadenados por hash por dispositivo, que no se pueden modificar | Decidido (sección 10.3) |
 | Código | Monolito modular. Cada módulo es un **bounded context** y el monorepo lo muestra primero (**screaming architecture**). Dentro, hexagonal e inyección con NestJS (sección 14, [ADR-018](../adr/ADR-018-screaming-y-bounded-context.md)) | Decidido |
 | Diseño | **SoC, SOLID, DRY, KISS y YAGNI**, con lenguaje ubicuo por contexto. DRY no funde modelos de contextos distintos (sección 14.2) | Decidido |
 | Construcción | **TDD por comportamiento**, de adentro hacia afuera. Prueba de unidad en **AAA**; si sale de un flujo, el nombre va en **GWT** (sección 16) | Decidido |
 | Stack | NestJS sobre Fastify, Drizzle, React + Vite con TanStack (sección 13) | Decidido |
-| Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo; escalado automático; OpenTelemetry y Sentry. Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Propuesta |
+| Infraestructura y operación | Terraform con módulos para AWS, GCP y Azure; despliegue continuo con GitHub Actions (D-45); escalado automático. El primer ensayo corre en AWS o en GCP (D-39). Detalle en [TRD-01](TRD-01-infraestructura-y-operacion.md) | Decidido (sección 13, D-45) |
+| Observabilidad y errores | OpenTelemetry hacia **Grafana Cloud** (ADR-013) y **Sentry como servicio, plan gratuito al inicio** (D-41), en la nube y las PWA | Decidido (sección 13) |
 
 ## 2. Restricciones que guían el diseño
 
@@ -36,6 +40,7 @@
 3. **Equipo pequeño.** Un solo lenguaje, un solo repositorio y poca infraestructura que operar.
 4. **Muchos clientes.** Desde el primer día el modelo de datos soporta varias empresas.
 5. **La DIAN no es nuestro núcleo.** Nos integramos con un proveedor habilitado.
+6. **El MVP es solo nube (D-37).** El híbrido no se diseña ni se construye hasta que el producto en la nube opera. Un corte detiene la sede. En ese MVP no se implementa la cola de reconexión, la emisión diferida ni el nodo de operación. La impresión sí: el puente manda el trabajo a la impresora.
 
 ## 3. Vista general
 
@@ -76,7 +81,7 @@ flowchart LR
 
 | Componente | Responsabilidad | Dónde corre |
 |------------|-----------------|-------------|
-| **Nodo local** | Solo si la sede activó el híbrido. API de la sede, tiempo real (WebSocket), base local, cola de impresión, cola DIAN, sincronización con la nube. En modo nube el mismo programa puede quedar en perfil puente: solo imprime | Mini PC en la sede, o el PC de la caja |
+| **Nodo local** | Solo si la sede activó el híbrido. API de la sede, tiempo real (WebSocket), base local, cola de impresión, cola DIAN, sincronización con la nube. En modo nube el mismo programa puede quedar en perfil puente (`bridge`): solo imprime | Mini PC en la sede, o el PC de la caja |
 | **PWA de la sede** | Una sola app con pantallas por rol. **Salón**: mesero, punto de pedido fijo, mesas. **Caja**: cobro, turnos, arqueos, propinas. **Cocina**: cola por estación, cambios de estado y tiempos. El PIN define qué pantallas ve cada persona; un equipo fijo de cocina abre siempre su estación | Celulares, tablets, PC de la caja y TV con navegador |
 | **PWA de domiciliario** | Pedidos asignados y confirmación de entrega | Celular con datos móviles (habla con la nube) |
 | **Portal de clientes** | Carta de la mesa, pedido QR, pago QR, datos de facturación y consulta de facturas (6.4 y 8.5) | Nube, web pública |
@@ -89,30 +94,30 @@ flowchart LR
 
 ```mermaid
 erDiagram
-    EMPRESA ||--o{ CONTRIBUYENTE : tiene
-    EMPRESA ||--o{ MARCA : tiene
-    EMPRESA ||--o{ UBICACION_INVENTARIO : "bodega general"
-    CONTRIBUYENTE ||--o{ SEDE : "factura por"
-    CONTRIBUYENTE ||--o{ RESOLUCION_DIAN : tiene
-    MARCA ||--o{ SEDE : tiene
-    MARCA ||--o{ MENU : define
-    MENU ||--o{ PRODUCTO : contiene
-    PRODUCTO ||--o{ RECETA : "se prepara con"
-    SEDE ||--o| NODO_LOCAL : "si es híbrida"
-    SEDE ||--o{ ESTACION_COCINA : tiene
-    SEDE ||--o{ CAJA : tiene
-    SEDE ||--|| UBICACION_INVENTARIO : "punto (1)"
-    SEDE ||--o{ UBICACION_INVENTARIO : "bodega de sede (0..n)"
-    SEDE ||--o{ DISPOSITIVO : registra
-    SEDE ||--o{ PRECIO_SEDE : ajusta
+    COMPANY ||--o{ TAXPAYER : tiene
+    COMPANY ||--o{ BRAND : tiene
+    COMPANY ||--o{ INVENTORY_LOCATION : "bodega general"
+    TAXPAYER ||--o{ VENUE : "factura por"
+    TAXPAYER ||--o{ DIAN_RESOLUTION : tiene
+    BRAND ||--o{ VENUE : tiene
+    BRAND ||--o{ MENU : define
+    MENU ||--o{ PRODUCT : contiene
+    PRODUCT ||--o{ RECIPE : "se prepara con"
+    VENUE ||--o| LOCAL_NODE : "si es híbrida"
+    VENUE ||--o{ KITCHEN_STATION : tiene
+    VENUE ||--o{ CASH_REGISTER : tiene
+    VENUE ||--|| INVENTORY_LOCATION : "punto (1)"
+    VENUE ||--o{ INVENTORY_LOCATION : "bodega de sede (0..n)"
+    VENUE ||--o{ DEVICE : registra
+    VENUE ||--o{ VENUE_PRICE : ajusta
 ```
 
-- `Contribuyente` es la razón social con NIT, perfil fiscal (sección 8.6) y resoluciones DIAN. Una empresa puede tener varios. Cada sede factura por exactamente uno.
-- `UbicacionInventario` es donde vive el stock. Hay dos tipos:
-  - `PUNTO`: **exactamente uno por sede**. Todas las ventas de la sede, de cocina o de barra, descuentan de aquí.
-  - `BODEGA`: de reabastecimiento. Puede pertenecer a una sede (por ejemplo, en el segundo piso del local) o a la empresa (bodega general que abastece a varias sedes).
-- `EstacionCocina` (parrilla, fríos, bar…) solo define **a dónde se enruta** cada producto. No tiene inventario.
-- `PrecioSede` permite que una sede ajuste el precio y la disponibilidad del menú de su marca.
+- `Taxpayer` (contribuyente) es la razón social con NIT, perfil fiscal (sección 8.6) y resoluciones DIAN. Una empresa (`Company`) puede tener varios. Cada sede (`Venue`) factura por exactamente uno.
+- `InventoryLocation` es donde vive el stock. Hay dos tipos:
+  - `point`: el inventario del punto, **exactamente uno por sede**. Todas las ventas de la sede, de cocina o de barra, descuentan de aquí.
+  - `warehouse`: bodega de reabastecimiento. Puede pertenecer a una sede (por ejemplo, en el segundo piso del local) o a la empresa (bodega general que abastece a varias sedes).
+- `KitchenStation` (parrilla, fríos, bar…) solo define **a dónde se enruta** cada producto. No tiene inventario.
+- `VenuePrice` permite que una sede ajuste el precio y la disponibilidad del menú de su marca.
 
 ## 5. Modo de operación, corte y sincronización
 
@@ -133,29 +138,29 @@ Cada sede nace en **modo nube**. El híbrido no se instala solo: un administrado
 
 Un solo programa y los mismos casos de uso. Cambia dónde corren, no las reglas. La PWA pregunta el modo de la sede y usa esa dirección. El dispositivo no elige el modo.
 
-**Puente de impresión.** En modo nube el navegador sigue sin poder hablar ESC/POS con la impresora. El puente es el mismo programa del nodo, en perfil `puente`: no guarda pedidos ni aguanta un corte. Recibe trabajos de la nube y los manda a la impresora. Si está apagado, el trabajo espera en la nube y la pantalla avisa que no se imprimió. Al activar híbrido, ese equipo pasa a perfil `nodo` y la cola queda en el local.
+**Puente de impresión.** En modo nube el navegador sigue sin poder hablar ESC/POS con la impresora. El puente es el mismo programa del nodo, en perfil `bridge`: no guarda pedidos ni aguanta un corte. Recibe trabajos de la nube y los manda a la impresora. Si está apagado, el trabajo espera en la nube y la pantalla avisa que no se imprimió. Al activar híbrido, ese equipo pasa a perfil `node` y la cola queda en el local.
 
-**Un solo dueño a la vez.** La sede guarda `dueno_operacion` (`nube` o `nodo`) y un número de generación. Cada escritura lleva esa generación. Cuando la generación cambia, el dueño anterior rechaza escrituras nuevas. Así no hay dos sitios creando la misma venta.
+**Un solo dueño a la vez.** La sede guarda `operation_owner` (`cloud` o `node`) y un número de generación. Cada escritura lleva esa generación. Cuando la generación cambia, el dueño anterior rechaza escrituras nuevas. Así no hay dos sitios creando la misma venta.
 
-**Activar híbrido**
+**Activar híbrido** (`ActivateHybrid`, `PairNode`)
 
 1. El administrador activa el modo en la web.
 2. La nube entrega un código de emparejamiento de un solo uso.
 3. Se instala el programa en el equipo del local y se empareja.
 4. El nodo descarga la foto de la sede: configuración, cuentas abiertas y la operación que todavía no está cerrada.
-5. La nube pasa `dueno_operacion` a `nodo` y sube la generación. Desde ese momento deja de aceptar pedidos, cobros y movimientos escritos directo por las PWA de esa sede.
+5. La nube pasa `operation_owner` a `node` y sube la generación. Desde ese momento deja de aceptar pedidos, cobros y movimientos escritos directo por las PWA de esa sede.
 6. Los dispositivos del salón pasan a hablar con el nodo.
 7. El portal, las plataformas y las reservas siguen naciendo en la nube y bajan al nodo, como en la sección 5.1.
 
-**Volver a nube**
+**Volver a nube** (`ReturnToCloud`, decisión D-02 del [registro](../preguntas-abiertas.md))
 
-1. El nodo envía todo lo pendiente. La outbox queda en cero.
-2. El administrador confirma la vuelta. Si quedara algo sin subir, tiene que aceptarlo de forma explícita.
-3. `dueno_operacion` pasa a `nube` y sube la generación.
+1. El nodo envía todo lo pendiente.
+2. Si la outbox quedó vacía, el administrador confirma la vuelta. Si queda algo sin subir, la vuelta no avanza hasta que el administrador acepte de forma explícita lo que no subió. La aceptación y la lista de lo que quedó pendiente van a la auditoría.
+3. `operation_owner` pasa a `cloud` y sube la generación.
 4. Los dispositivos vuelven a la API central.
 5. El equipo local puede quedar como puente de impresión o apagarse.
 
-**Si el nodo de una sede híbrida falla** (ADR-004). No se salta solo a la nube: el nodo puede tener ventas que todavía no subieron. El relevo lo confirma un administrador, o ocurre solo cuando el nodo alcanzó a decir que no tenía nada pendiente. Al volver el equipo, lo que no había subido se concilia contra la generación nueva y no se aplica por segunda vez.
+**Si el nodo de una sede híbrida falla** (`FailOverToCloud`, ADR-004). No se salta solo a la nube: el nodo puede tener ventas que todavía no subieron. El relevo lo confirma un administrador, o ocurre solo cuando el nodo alcanzó a decir que no tenía nada pendiente. Al volver el equipo, lo que no había subido se concilia contra la generación nueva y no se aplica por segunda vez.
 
 **Presencia en el local.** En híbrido el celular del mesero solo habla con el nodo, dentro de la red. En nube, la misma regla se apoya en el puente: la PWA comprueba que llega al puente antes de operar. Una sede sin ningún equipo local acepta que un dispositivo registrado y con PIN pueda operar desde donde tenga internet, hasta que se revoque.
 
@@ -192,8 +197,8 @@ Traslados según quién es dueño de cada lado:
 - Los IDs son **UUIDv7**: se generan en cualquier dispositivo sin coordinar y se ordenan por tiempo.
 - Los cambios se escriben en la base local junto con un registro en una tabla **outbox**, en la misma transacción.
 - El nodo envía los eventos de la outbox a la nube en lotes. La nube responde con el último número de secuencia recibido.
-- Cada evento lleva `tenant_id`, `sede_id`, `dispositivo_id`, `secuencia`, `ocurrido_en` (reloj del dispositivo) y `recibido_en` (reloj del nodo).
-- Al recibir, la nube no procesa dos veces el mismo evento: la clave es `(dispositivo_id, secuencia)`.
+- Cada evento lleva `tenant_id`, `venue_id`, `device_id`, `sequence`, `occurred_at` (reloj del dispositivo) y `received_at` (reloj del nodo).
+- Al recibir, la nube no procesa dos veces el mismo evento: la clave es `(device_id, sequence)`. El caso de uso que aplica un lote es `ApplyBatch`; los puertos son `Outbox`, `Inbox`, `SyncCursor` y `SyncBatch`.
 - La nube publica los cambios de configuración en un flujo por sede. El nodo los descarga desde su último cursor.
 - **Los relojes**: el nodo es la referencia de hora de la sede. Los dispositivos ajustan su desfase al conectarse. Los reportes de tiempos usan la hora del nodo.
 
@@ -211,11 +216,11 @@ Un segundo nodo en espera queda fuera de alcance hasta tener datos reales de fal
 
 ### 5.4 Riesgo técnico clave: HTTPS dentro del local
 
-Una PWA necesita un contexto seguro (HTTPS) para instalarse y funcionar sin internet. Dentro de la red local sin internet, eso no es trivial. Opciones a validar en el **spike de la Fase 0** (ADR-003):
+Una PWA necesita un contexto seguro (HTTPS) para instalarse y funcionar sin internet. Dentro de la red local sin internet, eso no es trivial. Opciones a validar en el **spike de la Fase 0** (ADR-003). Pendiente: PA-29 ([registro](../preguntas-abiertas.md)).
 
 | Opción | Cómo funciona | Pros | Contras |
 |--------|---------------|------|---------|
-| A. Certificado real para un subdominio por sede | `sede-xxx.local.dominio.com` apunta a la IP local. La nube emite el certificado por DNS-01 y lo instala en el nodo. El nodo o el router resuelven ese nombre localmente | La PWA funciona en cualquier navegador | Requiere controlar el DNS local (router o DNS del nodo) |
+| A. Certificado real para un subdominio por sede | `venue-xxx.local.<dominio>` apunta a la IP local. La nube emite el certificado por DNS-01 y lo instala en el nodo. El nodo o el router resuelven ese nombre localmente | La PWA funciona en cualquier navegador | Requiere controlar el DNS local (router o DNS del nodo) |
 | B. App nativa ligera (Capacitor) para Android | La app se comunica con el nodo por la red local sin depender del navegador | Más control: impresión, notificaciones, kiosko | Hay que publicarla en las tiendas; iOS es más complejo |
 | C. Híbrido | PWA para la administración y la cocina, app nativa para el mesero y la caja | Lo mejor de cada opción | Dos formas de distribuir |
 
@@ -247,7 +252,7 @@ Detalles:
 - **Traslados que llegan durante un corte**: el comprobante impreso del despacho lleva un QR con el detalle del traslado. El punto destino lo escanea y registra la recepción aunque todavía no lo haya recibido por la sincronización.
 - **Bodega general**: en el piloto tiene internet y personal propio. Lleva **su propio nodo en modo bodega**: es el mismo software del nodo de sede, con los módulos de inventario, recepción, despacho e impresión de comprobantes, y sin salón ni caja. Puede correr en un equipo pequeño.
   - Así la bodega sigue operando si se le corta el internet, con la misma regla que las sedes.
-  - Para un cliente con una bodega pequeña y poco movimiento, existe la alternativa de operarla desde la web de administración, sin nodo. En ese caso, sin internet no puede registrar movimientos.
+  - Decidido para el piloto (D-04). Para un cliente con una bodega pequeña y poco movimiento queda abierta la alternativa de operarla desde la web de administración, sin nodo; en ese caso, sin internet no puede registrar movimientos. Pendiente: PA-44 ([registro](../preguntas-abiertas.md)).
 - **Domiciliario durante un corte**: la asignación y el despacho se registran en el nodo. La app del domiciliario guarda la confirmación de entrega y el cobro en el celular, y los sincroniza cuando vuelve a la red Wi-Fi de la sede.
 
 ## 6. Flujo del pedido
@@ -260,7 +265,7 @@ sequenceDiagram
     participant Caja as Caja
     participant Nube
 
-    Mesero->>Nodo: EnviarPedido(mesa, productos)
+    Mesero->>Nodo: SendToKitchen(table, products)
     Nodo->>Nodo: Validar permisos, guardar pedido + outbox
     Nodo->>Nodo: Enrutar cada producto a su estación
     Nodo-->>Cocina: comanda (WebSocket / ESC/POS)
@@ -273,7 +278,7 @@ sequenceDiagram
 ```
 
 - El enrutamiento sale de la configuración: un producto pertenece a una estación, y la estación tiene sus pantallas e impresoras.
-- Cada cambio de estado (`enviado`, `en_preparacion`, `listo`, `entregado`) guarda su hora. Con eso se calculan los reportes de tiempos del PRD-00, sección 8.1.
+- Cada cambio de estado de la línea (`sent`, `in_preparation`, `ready`, `delivered`) guarda su hora y emite `LineStateChanged`. Con eso se calculan los reportes de tiempos del PRD-00, sección 8.1.
 - Si una impresora de comandas falla, la comanda sigue en la pantalla de cocina y se avisa a la caja.
 
 ### 6.1 Pedidos de plataformas de domicilio
@@ -289,49 +294,49 @@ sequenceDiagram
     participant Cocina as Cocina
 
     Plat->>Hub: Pedido nuevo (webhook o consulta periódica)
-    Hub->>Hub: Verificar firma, evitar duplicados, normalizar a PedidoExterno
+    Hub->>Hub: Verificar firma, evitar duplicados, normalizar a ExternalOrder
     Hub->>Hub: Identificar la sede por el ID de tienda; mapear productos
-    Hub-->>Nodo: PedidoExterno (canal en tiempo real nube → nodo)
+    Hub-->>Nodo: ExternalOrder (canal en tiempo real nube → nodo)
     Nodo-->>Caja: Alerta: aceptar o rechazar
     Caja->>Nodo: Aceptar
-    Nodo->>Nodo: Crear Pedido interno (canal = plataforma)
+    Nodo->>Nodo: CreateInternalOrder (canal = plataforma)
     Nodo-->>Cocina: Comanda
     Nodo--)Hub: Estado: aceptado, en preparación, listo
     Hub->>Plat: Actualizar estado
 ```
 
-**Puerto `ConectorPlataforma`**
+**Puerto `PlatformConnector`**
 
 | Operación | Para qué |
 |-----------|----------|
-| `normalizarPedido(payload)` | Convertir el formato de la plataforma a nuestro `PedidoExterno` |
-| `aceptar` / `rechazar(motivo)` | Responder a la plataforma |
-| `actualizarEstado(estado)` | En preparación, listo para recoger |
-| `publicarMenu(menuCanal)` | Enviar el menú, los precios y los modificadores del canal |
-| `actualizarDisponibilidad(productos)` | Marcar como agotado o disponible |
-| `pausarTienda` / `reanudarTienda` | Dejar de recibir pedidos por saturación o porque la sede perdió conexión |
-| `obtenerLiquidacion(periodo)` | Traer lo que la plataforma va a pagar, para conciliar |
+| `normalizeOrder(payload)` | Convertir el formato de la plataforma a nuestro `ExternalOrder` |
+| `accept` / `reject(reason)` | Responder a la plataforma |
+| `updateStatus(status)` | En preparación, listo para recoger |
+| `publishMenu(channelMenu)` | Enviar el menú, los precios y los modificadores del canal |
+| `updateAvailability(products)` | Marcar como agotado o disponible |
+| `pauseStore` / `resumeStore` | Dejar de recibir pedidos por saturación o porque la sede perdió conexión |
+| `fetchSettlement(period)` | Traer lo que la plataforma va a pagar, para conciliar |
 
 - Cada conector declara **qué operaciones soporta**, porque no todas las plataformas ofrecen todo. Lo que no soporta se resuelve a mano. Por ejemplo, si la plataforma no permite publicar el menú por API, se publica en su portal y solo se mapean los productos.
-- Adaptadores previstos: **Rappi**, **DiDi Food**, **Integrador** (un tercero que ya está conectado a varias plataformas, ver ADR-011) y **Manual**.
+- Adaptadores previstos: **Rappi**, **DiDi Food**, **Integrador** (un tercero que ya está conectado a varias plataformas, ver ADR-011 y PA-28) y **Manual**.
 - **El adaptador Manual** usa el mismo flujo: la caja captura el pedido desde la tablet de la plataforma, con el canal y el código. Funciona sin internet y es el respaldo de cualquier conector.
 
 **Mapeo de productos**
 
-- `ProductoCanal` relaciona el producto interno con su ID en cada plataforma, con el precio del canal y el mapeo de modificadores.
+- `ChannelProduct` relaciona el producto interno con su ID en cada plataforma, con el precio del canal y el mapeo de modificadores.
 - Si llega un producto **sin mapear**, el pedido no se pierde: entra con una alerta y la caja lo asocia a mano antes de aceptarlo. Ese mapeo queda guardado para la próxima vez.
 
 **Reglas técnicas**
 
-- **No duplicar pedidos**: la clave única es `(plataforma, id_pedido_externo)`.
+- **No duplicar pedidos**: la clave única es `(platform, external_order_id)`.
 - **Seguridad**: se verifica la firma de cada webhook. Las credenciales de cada tienda en cada plataforma se guardan cifradas en la nube.
-- **Dueño de los datos**: el `PedidoExterno` pertenece a la nube. Al aceptarlo, el nodo crea el `Pedido` interno y pasa a ser su dueño, igual que cualquier pedido de la sede (sección 5.1).
+- **Dueño de los datos**: el `ExternalOrder` pertenece a la nube. Al aceptarlo, el nodo crea el `Order` interno con `CreateInternalOrder` y pasa a ser su dueño, igual que cualquier pedido de la sede (sección 5.1).
 - **Canal en tiempo real**: el nodo mantiene una conexión WebSocket saliente con la nube. Como sale desde el local, no hay que abrir puertos en el router.
 - **Si la sede pierde conexión**: después de un tiempo configurable, el hub **pausa la tienda en las plataformas** que lo permiten, para no recibir pedidos que nadie va a ver. La reanuda cuando el nodo vuelve.
 - **Tiempo límite de aceptación**: si se acerca el límite de la plataforma, el nodo sube la alerta en la caja. Si la sede tiene aceptación automática, el nodo acepta solo.
-- **Disponibilidad**: cuando cambia `unidades_posibles_punto` (sección 9.3) a agotado o disponible, el nodo emite el evento y el hub lo propaga a todas las plataformas de la sede.
-- **Pago**: el medio de pago es la plataforma y queda como cuenta por cobrar. Un worker importa las liquidaciones (por API o archivo), calcula lo esperado con la comisión configurada y marca las diferencias.
-- **A validar con el contador**: quién emite el documento DIAN al consumidor final en los pedidos de plataforma, y cómo se registra la factura de comisión que emite la plataforma al restaurante.
+- **Disponibilidad**: cuando cambia `units_possible_at_point` (sección 9.3) a agotado o disponible, el nodo emite `AvailabilityChanged` y el hub lo propaga a todas las plataformas de la sede.
+- **Pago**: el medio de pago es la plataforma y queda como cuenta por cobrar. Un worker importa las liquidaciones (por API o archivo), calcula lo esperado con la comisión configurada y marca las diferencias. La conciliación muestra venta bruta, comisión, retenciones y neto.
+- **Documento DIAN** (D-13): el restaurante emite la factura de la comida, al cliente o a consumidor final, con la dirección de entrega. La comisión la factura la plataforma al restaurante y no se carga en este sistema.
 
 ### 6.2 Reservas
 
@@ -339,20 +344,22 @@ Las reservas se pueden crear desde fuera del local (enlace público, pago en lí
 
 | Entidad | Dueño | Contenido |
 |---------|-------|-----------|
-| `Reserva` | Nube | Cliente, fecha, hora, personas, zona o mesa, estado, política aplicada |
-| `CobroReserva` | Nube | Tipo (anticipo o tarifa), valor, cuenta de recaudo, número de transacción, comprobante, quién verificó, estado, devoluciones |
-| `AtencionReserva` | Nodo | Llegada, mesa asignada, no llegada, cuenta asociada |
+| `Reservation` | Nube | Cliente, fecha, hora, personas, zona o mesa, estado, política aplicada |
+| `ReservationPayment` | Nube | Tipo (anticipo o tarifa), valor, medio (transferencia o efectivo), cuenta de recaudo, número de transacción, comprobante, quién verificó, estado, devoluciones |
+| `ReservationSeating` | Nodo | Llegada, mesa asignada, no llegada, cuenta asociada |
 
 **Flujo**
 
 1. El personal crea la reserva desde la caja o la web. Con internet, el nodo la envía a la nube y la nube valida la disponibilidad.
-2. Si hay cobro, el sistema arma el mensaje para el cliente con el valor, la **referencia de la reserva** y las cuentas de recaudo de la sede (Nequi, Daviplata, llave Bre-B o QR). El personal lo envía por WhatsApp. La reserva queda `pendiente_pago` con una fecha límite; si se vence, se libera.
-   - El cliente envía el comprobante; se adjunta a la reserva y el cobro pasa a `comprobante_recibido`.
-   - Alguien con el permiso `reserva.verificar_pago` revisa en la app del banco que el dinero llegó y lo marca `verificado`. Solo entonces la reserva queda `confirmada`. Se guarda quién verificó, cuándo y el número de la transacción.
-   - Por ahora no hay confirmación automática: Nequi, Daviplata y Bre-B no ofrecen de forma general una API de notificación para comercios pequeños. Si más adelante se usa una pasarela, entra como otro adaptador del puerto `PasarelaPagos` (ADR-012).
-3. Las reservas del día bajan al nodo y aparecen en el plano de mesas.
-4. Cuando el cliente llega, el nodo registra la `AtencionReserva` y asocia la mesa y la cuenta.
-5. Al cobrar, el anticipo se aplica como un medio de pago especial (**anticipo de reserva**). No entra al arqueo de efectivo, porque no pasó por la caja. Se informa en el documento DIAN como anticipo (`prepayment_details` en Factus).
+2. Si hay cobro, el medio depende de cómo entra la reserva (D-01 del [registro](../preguntas-abiertas.md)):
+   - **Por enlace, llamada o chat**: solo transferencia verificada. El sistema arma el mensaje para el cliente con el valor, la **referencia de la reserva** y las cuentas de recaudo de la sede (Nequi, Daviplata, llave Bre-B o QR). El personal lo envía por WhatsApp. La reserva queda `pending_payment` con una fecha límite; si se vence, se libera.
+   - **En persona, en la sede**: transferencia verificada o efectivo. El efectivo lo recibe la caja de la sede; cómo entra al turno lo fijan TRD-M9 y TRD-M2.
+   - El cliente envía el comprobante; se adjunta a la reserva y el cobro pasa a `receipt_received`.
+   - Alguien con el permiso `reservation.verify_payment` revisa en la app del banco que el dinero llegó y lo marca `verified`. Solo entonces la reserva queda `confirmed`. Se guarda quién verificó, cuándo y el número de la transacción.
+   - Por ahora no hay confirmación automática: Nequi, Daviplata y Bre-B no ofrecen de forma general una API de notificación para comercios pequeños. Si más adelante se usa una pasarela, entra por el puerto `ReservationGateway`, propio de M9 y distinto de `PaymentGateway` del pago QR (ADR-012, PA-45).
+3. Las reservas del día (`DayReservations`) bajan al nodo y aparecen en el plano de mesas.
+4. Cuando el cliente llega, el nodo registra la `ReservationSeating` y asocia la mesa y la cuenta (`AttachReservation`).
+5. Al cobrar, el anticipo se aplica como un medio de pago especial (**anticipo de reserva**, `ApplyDeposit`). El anticipo por transferencia no entra al arqueo de efectivo, porque no pasó por la caja. El anticipo en efectivo no se cuenta dos veces: se arquea en el turno que lo recibió. Se informa en el documento DIAN como anticipo (`prepayment_details` en Factus).
 6. Si el cliente no llega, el nodo marca la no llegada y la nube aplica la política: retiene el cobro o calcula la devolución, que el personal hace por transferencia y registra con su comprobante.
 
 **Sin internet**
@@ -365,7 +372,7 @@ Las reservas se pueden crear desde fuera del local (enlace público, pago en lí
 - **No duplicar pagos**: el número de transacción del banco es único por cuenta de recaudo. Si alguien intenta verificar dos reservas con el mismo número, el sistema lo bloquea y alerta. Esto frena el reuso de un mismo comprobante.
 - Los comprobantes adjuntos se guardan en almacenamiento de objetos en la nube, asociados a la reserva.
 - Los cambios de estado de un cobro (pagado, retenido, devuelto) son eventos que solo se agregan y quedan en la auditoría.
-- `PoliticaReserva` por sede: tipo de cobro (ninguno, anticipo, tarifa), cálculo del valor (fijo, por persona, porcentaje de un consumo mínimo) y **tramos de devolución** `(horas_de_anticipación_mínimas, porcentaje_devolución)` de 0 % a 100 %.
+- `ReservationPolicy` por sede: tipo de cobro (ninguno, anticipo, tarifa), cálculo del valor (fijo, por persona, porcentaje de un consumo mínimo) y **tramos de devolución** `(min_hours_notice, refund_percentage)` de 0 % a 100 %. El anticipo que se abona a la cuenta viaja en la factura del servicio. El monto retenido, si se factura, usa la clasificación configurada para ese concepto y no la del menú (D-12).
 - Al crear la reserva se guarda una **copia de la política vigente** en la reserva. La devolución se calcula siempre con esa copia.
 - Devolución = cobro × porcentaje del tramo que corresponde a la hora de cancelación. Se hace por transferencia y se registra con su comprobante.
 
@@ -375,15 +382,15 @@ Las reservas se pueden crear desde fuera del local (enlace público, pago en lí
 
 - Fase 1: **registro** del pago con tarjeta en la caja (datáfono, número de aprobación, franquicia, últimos 4 dígitos). Nada de datos completos de la tarjeta: así no entramos al alcance de PCI DSS.
 - En el arqueo, el total por datáfono se compara con el reporte de cierre del datáfono, que se ingresa o se fotografía.
-- Integración directa (el monto viaja solo al datáfono y vuelve la aprobación): se evalúa por proveedor en ADR-007, según lo que ofrezca cada uno. Queda detrás de un puerto `Datafono`, con un adaptador por proveedor y uno manual.
+- Integración directa (el monto viaja solo al datáfono y vuelve la aprobación): se evalúa por proveedor en ADR-007, según lo que ofrezca cada uno. Queda detrás de un puerto `CardTerminal`, con un adaptador por proveedor y uno manual. Pendiente: PA-43 ([registro](../preguntas-abiertas.md)).
 
 **Reparto de propinas**
 
-- `Propina` se registra por pago, con su medio de pago. Va separada de la venta y fuera de la base gravable.
-- `ReglaReparto` por sede: periodo (turno, día, semana), modo (`EQUITATIVO`, `PORCENTAJE`, `POR_HORAS`) y porcentajes por rol o persona, que deben sumar 100 %.
-- `LiquidacionPropinas` por periodo:
+- `Tip` se registra por pago, con su medio de pago. Va separada de la venta y fuera de la base gravable.
+- `TipDistributionRule` por sede: periodo (turno, día, semana), modo (`equal`, `percentage`, `by_hours`) y porcentajes por rol o persona, que deben sumar 100 %.
+- `TipSettlement` por periodo:
   1. Suma el fondo común del periodo.
-  2. Toma como participantes a quienes tienen marcación de asistencia en el periodo (10.4), y el administrador puede ajustar la lista con un motivo.
+  2. Toma como participantes a quienes tienen marcación de asistencia en el periodo (`ParticipantsForPeriod` de M8, sección 10.4), y el administrador puede ajustar la lista con un motivo.
   3. Aplica la regla y reparte. El redondeo al peso se asigna de forma determinista, para que el total cuadre exacto.
   4. Queda **cerrada e inmutable**. Una corrección es una liquidación de ajuste.
 - La regla usada se guarda en la liquidación, así un cambio posterior de la regla no altera liquidaciones pasadas.
@@ -395,19 +402,19 @@ El celular del cliente habla con el portal en la nube (8.5). No se registra como
 **Pedido**
 
 1. El portal muestra la copia del menú de esa sede que ya bajó al nodo (precios, modificadores, agotados).
-2. El cliente envía el pedido. La nube guarda una `IntencionPedidoQr` con UUID, idempotente.
-3. Si el nodo está en línea, la recibe al instante, abre la mesa o suma las líneas a la cuenta abierta, enruta a cocina y pasa a ser dueño del `Pedido`. El canal es `qr_mesa`.
+2. El cliente envía el pedido. La nube guarda una `QrOrderIntent` con UUID, idempotente.
+3. Si el nodo está en línea, la recibe al instante y la aplica con `ApplyQrOrder`: abre la mesa o suma las líneas a la cuenta abierta, enruta a cocina y pasa a ser dueño del `Order`. El canal es `table_qr`.
 4. Si la sede está en un corte, la intención espera en la nube. Al reconectar, el nodo la aplica una sola vez. En ese momento usa la disponibilidad actual: si el plato ya no se puede enviar, no entra a cocina y el portal se lo muestra al cliente.
 5. El cliente no anula, no descuenta y no cambia precios. Esas acciones siguen en el nodo, con permiso.
-6. `aceptacion_qr` por sede: `directo` (defecto, sale a cocina) o `caja` (la caja acepta antes).
+6. `qr_acceptance` por sede: `direct` (defecto, sale a cocina) o `cash_register` (la caja acepta antes).
 
 **Pago**
 
-El puerto `PasarelaPagos` cobra el saldo que fija la cuenta. El cliente no escribe el monto. Medios previstos: Nequi, Daviplata, Bre-B y tarjeta, según lo que ofrezca el adaptador. El proveedor se elige en ADR-016. Las reservas siguen con transferencia y verificación manual (6.2, ADR-012): no usan este cobro.
+El puerto `PaymentGateway` cobra el saldo que fija la cuenta. El cliente no escribe el monto. Hay varios adaptadores; Bold es uno (D-46). La sede activa la pasarela que contrató. Medios: Nequi, Daviplata, Bre-B y tarjeta, según lo que ofrezca ese adaptador. La comisión es la del contrato y se ve en la conciliación. Con el cobro QR activo se puede pagar aunque el turno de caja esté cerrado; ese pago no modifica el turno cerrado (D-44). Las reservas siguen con transferencia y verificación manual (6.2, ADR-012): no usan este cobro.
 
-1. El portal pide a la pasarela un cobro por el saldo más la propina elegida, con un `referencia` único de esa cuenta.
+1. El portal pide a la pasarela un cobro por el saldo más la propina elegida, con una `reference` única de esa cuenta.
 2. La pasarela avisa por webhook firmado. Sin ese aviso el pago no existe. Un segundo aviso con la misma referencia no crea otro pago.
-3. La nube guarda el `PagoQrConfirmado`. El nodo lo aplica al turno de caja abierto, emite la factura (o la deja pendiente si en ese instante no hay enlace hacia Factus) y pasa la mesa a por limpiar.
+3. La nube guarda el `QrPaymentConfirmed`. El nodo lo aplica con `ApplyQrPayment` al turno de caja abierto, emite la factura (o la deja pendiente si en ese instante no hay enlace hacia Factus) y pasa la mesa a por limpiar.
 4. Si el cliente pagó durante un corte de la sede, el pago igual queda confirmado en la nube. El nodo lo aplica al reconectar: imprime y libera la mesa.
 5. En el arqueo, el total QR se compara con el reporte de la pasarela. No entra al efectivo.
 
@@ -420,13 +427,13 @@ sequenceDiagram
     participant Cocina as Cocina
 
     Cli->>Portal: Escanea el QR de la mesa y envía el pedido
-    Portal->>Portal: IntencionPedidoQr
-    Portal-->>Nodo: Aplicar pedido (al instante, o al reconectar)
-    Nodo-->>Cocina: Comanda, canal qr_mesa
+    Portal->>Portal: QrOrderIntent
+    Portal-->>Nodo: ApplyQrOrder (al instante, o al reconectar)
+    Nodo-->>Cocina: Comanda, canal table_qr
     Cli->>Portal: Paga el saldo y la propina
     Portal->>Pasarela: Cobro por el monto exacto
     Pasarela-->>Portal: Webhook de confirmación
-    Portal-->>Nodo: PagoQrConfirmado
+    Portal-->>Nodo: QrPaymentConfirmed
     Nodo->>Nodo: Registra el pago, emite o deja pendiente la factura, libera la mesa
 ```
 
@@ -436,6 +443,7 @@ sequenceDiagram
 - El navegador no envía ESC/POS. En híbrido imprime el **nodo**. En nube imprime el **puente** (sección 5.0): si el puente está apagado, el trabajo espera en la nube.
 - Cola de impresión con reintentos, estado de cada impresora y reimpresión auditada.
 - Plantillas: comanda, precuenta, documento DIAN (con QR y CUDE/CUFE), cierre de caja, traslado y comprobante de propinas.
+- **Cada contexto dispara su propia impresión** por el puerto `Printer`: M1 las comandas y la precuenta; M3 la factura y el comprobante de venta; M2 el cierre de caja y la liquidación de propinas; M4 el comprobante de traslado. Las plantillas, la cola y el driver ESC/POS viven en `shared/printing`, sin regla de negocio (sección 14.1).
 - El comando para abrir el cajón monedero va a la impresora de la caja. Toda apertura queda auditada.
 - Una impresora de red puede tener una impresora de respaldo configurada.
 
@@ -446,7 +454,7 @@ sequenceDiagram
 **Proveedor elegido: [Factus](https://www.factus.com.co/)** (ADR-002).
 
 ```
-Dominio de facturación  ──usa──▶  Puerto ProveedorFacturacion
+Dominio de facturación  ──usa──▶  Puerto InvoicingProvider
                                         ▲
                        ┌────────────────┼────────────────┐
                Adaptador Factus    Adaptador simulado    (otro proveedor, si hiciera falta)
@@ -466,7 +474,7 @@ Dominio de facturación  ──usa──▶  Puerto ProveedorFacturacion
 
 Fuente: [documentación de Factus API v2](https://developers.factus.com.co/coleccion) y sus [preguntas frecuentes](https://developers.factus.com.co/buenas-practicas/preguntas-frecuentes/), revisadas el 2026-10-14.
 
-**Decisión clave: toda venta se emite como factura electrónica de venta.** Factus **no emite el documento equivalente electrónico POS** (confirmado de nuevo en sus preguntas frecuentes el 2026-10-14), y el negocio decidió no usarlo. Para puntos de venta, Factus indica usar la **factura electrónica de venta** (`document: "01"`), que es válida ante la DIAN y se puede emitir a **consumidor final** (cédula `13`, número `222222222222`, nombre "Consumidor Final"). Si el cliente pide factura a su nombre o NIT, se envían sus datos. **Pendiente: que el contador confirme este enfoque** (8.4).
+**Decisión clave: toda venta se emite como factura electrónica de venta** (D-07). Factus **no emite el documento equivalente electrónico POS** (confirmado de nuevo en sus preguntas frecuentes el 2026-10-14), y el negocio decidió no usarlo. Para puntos de venta, Factus indica usar la **factura electrónica de venta** (`document: "01"`), que es válida ante la DIAN y se puede emitir a **consumidor final** (cédula `13`, número `222222222222`, nombre "Consumidor Final"). Si el cliente pide factura a su nombre o NIT, se envían sus datos.
 
 | Tema | Lo que dice Factus | Cómo lo usamos |
 |------|--------------------|----------------|
@@ -474,23 +482,23 @@ Fuente: [documentación de Factus API v2](https://developers.factus.com.co/colec
 | URL base | Sandbox `https://api-sandbox.factus.com.co/`; producción `https://api.factus.com.co/` | Configuración por ambiente |
 | Emisión | `POST /v2/bills/validate`: crea y envía a la DIAN en la misma llamada. Respuesta en unos **2,5 segundos** para pocos ítems | Llamada síncrona desde la nube; la respuesta vuelve al nodo para imprimir |
 | No duplicar | `reference_code` único por factura. Si se repite, Factus devuelve la factura existente. Un `409` indica una factura sin validar que hay que eliminar por su referencia antes de reintentar | `reference_code` = ID (UUIDv7) de nuestro documento. Reintentos seguros |
-| Límite de uso | **80 solicitudes por minuto por usuario (NIT)**. Responde `429` con `Retry-After`. Ampliable según el volumen | Cola por NIT en la nube con control de ritmo; pedir ampliación para NIT con muchas sedes |
+| Límite de uso | **80 solicitudes por minuto por usuario (NIT)**. Responde `429` con `Retry-After`. Ampliable según el volumen | Cola por NIT con control de ritmo. Un solo envío en vuelo por rango (D-19). Pedir ampliación para un NIT con muchas sedes |
 | Webhooks | **No tiene** | No hace falta para emitir, porque la respuesta es síncrona. El estado de otros documentos se consulta |
-| Numeración | Rangos de factura y documento soporte autorizados por la DIAN y asociados a Factus; se listan por API (`numbering-ranges`). **Factus asigna el consecutivo**. Un NIT puede tener rangos ilimitados | Un rango por sede, o por caja si se quiere separar. Los rangos de notas crédito se crean en la API |
+| Numeración | Rangos de factura y documento soporte autorizados por la DIAN y asociados a Factus; se listan por API (`numbering-ranges`). **Factus asigna el consecutivo**. El tarifario de un NIT (2026) dice que los rangos de sucursal son ilimitados y que no hay tope de ventas aparte de los documentos | Un rango de factura por sede, o por caja si se quiere separar. La cola serializa ese rango (D-19). Los rangos de notas crédito se crean en la API. No pedimos rango de documento soporte ni de contingencia (D-14, D-10) |
 | Varias sedes, un NIT | Un rango por sucursal y el objeto `establishment` (nombre, dirección, teléfono, municipio) en cada factura | Cada sede envía su `establishment` y su `numbering_range_id` |
 | Medios de pago | `payment_details`, uno por medio. Códigos: `10` efectivo, `48` tarjeta crédito, `49` tarjeta débito, `47` transferencia (también Nequi y Daviplata), `71` bonos, `72` vales, `ZZZ` otro. Forma de pago `1` contado, `2` crédito | Tabla de mapeo de nuestros medios a códigos DIAN |
 | Redondeo | `cash_rounding_amount` de hasta ±500 para cuadrar los pagos con el total | Cuadra el total con el precio del menú (8.6) |
-| Propina | Va en `allowance_charges` como **recargo** (`concept_type: "03"`, `is_surcharge: true`, `reason: "propina"`) | La propina de la venta se envía así |
+| Propina | Va en `allowance_charges` como **recargo** (`concept_type: "03"`, `is_surcharge: true`, `reason: "propina"`). Queda fuera de la base gravable (D-08) | La propina voluntaria de la venta se envía así |
 | Anticipo | `prepayment_details`: referencia, fecha y monto | Anticipos de reservas (6.2) |
 | Impuestos | Por ítem, con código y tarifa: `01` IVA, `04` INC, `35` ultraprocesados. Exento: `01` al 0 % o `is_excluded`. **No responsable de IVA: los productos van excluidos.** Varios impuestos se calculan uno tras otro con redondeo bancario | Salida directa del motor de impuestos (8.6) |
 | Bolsas plásticas | No es un código de impuesto: se envía como **un ítem más**, con el valor por bolsa | El motor genera una línea "bolsa" |
-| Responsabilidades del RUT | `O-13` gran contribuyente, `O-15` autorretenedor, `O-23` agente de retención de IVA, `O-47` régimen simple, `R-99-PN` no responsable | Parte del `PerfilFiscal` |
-| Datos del cliente | `GET /v2/dian/acquirer?identification_document_code=&identification_number=` usa un servicio nuevo de la DIAN y devuelve **solo el nombre o razón social y el correo** de recepción de facturas. No trae dirección, teléfono ni municipio. Sin costo publicado; cuenta dentro del límite de 80 solicitudes por minuto del NIT. En sandbox solo responde con los números de prueba de la documentación | Autocompletar nombre y correo en la caja y en el portal (8.5) |
+| Responsabilidades del RUT | `O-13` gran contribuyente, `O-15` autorretenedor, `O-23` agente de retención de IVA, `O-47` régimen simple, `R-99-PN` no responsable | Parte del `TaxProfile` |
+| Datos del cliente | `GET /v2/dian/acquirer?identification_document_code=&identification_number=` usa un servicio nuevo de la DIAN y devuelve **solo el nombre o razón social y el correo** de recepción de facturas. No trae dirección, teléfono ni municipio. **No consume documentos** de la bolsa (D-21). Cuenta dentro del límite de 80 solicitudes por minuto del NIT. En sandbox solo responde con los números de prueba de la documentación | Autocompletar nombre y correo en la caja y en el portal (8.5) |
 | Notas crédito de anulación | `POST /v2/credit-notes/validate` con `correction_concept_code: "2"` (anulación), `customization_id: "20"` (referencia una factura) y `bill_number`. Si no se envía `customer`, toma el de la factura. Los rangos de notas crédito se crean en la API, no en la DIAN. **Cada nota validada consume un documento** del paquete. La documentación no fija un plazo para emitirla | Anulaciones, devoluciones y refacturación desde el portal (8.5) |
 | Correo | Factus envía el PDF, el XML y un enlace público. Con `send_email: false` no lo envía y se puede mandar un PDF propio | Correo de Factus por defecto; envío por WhatsApp en una fase posterior |
 | Representación gráfica | Se puede generar con los datos de la respuesta | **Representación térmica propia** con los datos de la respuesta (número, CUFE, QR) |
-| Documento soporte | `POST support-documents/validate` | Compras a proveedores que no facturan (M4) |
-| Recepción de facturas | `POST receptions/upload` (cargar el XML del proveedor) y eventos RADIAN; consulta de XML por CUFE | Cargar compras de proveedores al inventario (M4, Fase 2) |
+| Documento soporte | `POST support-documents/validate` | No lo usamos (D-14) |
+| Recepción de facturas | `POST receptions/upload` (cargar el XML del proveedor) y eventos RADIAN; consulta de XML por CUFE | No lo usamos (D-14). El contador descarga las facturas de proveedores por fuera |
 | Almacenamiento | Factus guarda los documentos 5 años | Nosotros guardamos el número, el CUFE y el XML para consulta propia |
 
 **Ambientes**
@@ -501,18 +509,54 @@ Fuente: [documentación de Factus API v2](https://developers.factus.com.co/colec
 
 **Credenciales**: cada contribuyente tiene su propia cuenta en Factus. Las credenciales se guardan cifradas en la nube y nunca en el nodo.
 
-**Bolsa de documentos por empresa** (decisión del negocio)
+**Bolsa de documentos por empresa** (D-16, preguntas frecuentes de Factus revisadas el 2026-10-17)
 
-- Cada **empresa** cliente del SaaS tiene **su propia bolsa** de documentos en Factus, y todos sus NIT consumen de ella. Falta confirmar con Factus que una bolsa se puede compartir entre varios NIT (8.4). Si no se puede, cada NIT tendrá su bolsa y el sistema las mostrará sumadas como el saldo de la empresa.
-- **Qué consume un documento**: cada factura, cada nota crédito y cada documento soporte validados. Una refacturación consume 2. Las pruebas en el sandbox no consumen.
-- **Saldo en el sistema**: llevamos un contador propio de documentos consumidos por empresa, NIT y sede, a partir de las respuestas de Factus. Se concilia con el saldo que reporte Factus, si su API lo expone (8.4), o con su panel.
-- **Alerta temprana de saldo**, con la misma idea que la de inventario (9.4):
-  - Amarilla cuando el saldo cubre menos de N días al ritmo de facturación de la empresa (por defecto, 15 días).
+- Cada **empresa** cliente del SaaS tiene **su propia bolsa**. Factus la vende para un NIT o para repartir entre varios. Al repartirla, **cada NIT recibe un cupo**. El saldo que baja es el de esa cuenta.
+- El saldo de la cuenta se consulta con `GET /v2/subscriptions`: `documents_quota`, `documents_consumed`, `documents_available`, vigencia y si la cuota es ilimitada. La introducción del endpoint está en la v2; la tabla de campos está publicada en la página de v1 del mismo recurso.
+- **Qué consume un documento**: cada factura y cada nota crédito validadas. Una refacturación consume 2. Las pruebas en el sandbox no consumen.
+- **Saldo en el sistema**: llevamos un contador propio de documentos consumidos por empresa, NIT y sede, a partir de las respuestas de Factus. Se concilia con el saldo de cada cuenta. La empresa ve la suma de sus cupos. El evento de consumo es `DocumentConsumed` y la bolsa, en M7, es `DocumentWallet`.
+- El **certificado** de la bolsa repartida se paga aparte: $130.000 al año por NIT. Las preguntas frecuentes dicen que el paquete de un solo NIT lo trae incluido; el tarifario de 2026 de ese paquete no lo repite.
+- **Precio 2026** (D-18), anual y por adelantado, en pesos. Lo que no se usa no pasa al año siguiente. Nosotros solo emitimos factura y nota crédito; el paquete también cubre documento soporte y, en la bolsa, nómina.
+
+Bolsa multifacturador. El aliado la recibe y la divide entre los NIT que quiera. No incluye el certificado.
+
+| Documentos al año | Precio anual |
+|-------------------|--------------|
+| 10.000 | $630.000 |
+| 20.000 | $1.120.000 |
+| 50.000 | $2.250.000 |
+| 80.000 | $3.200.000 |
+| 120.000 | $3.840.000 |
+| 200.000 | $5.600.000 |
+| 500.000 | $12.000.000 |
+| 750.000 | $16.500.000 |
+| 1.000.000 | $21.000.000 |
+
+Paquete de un NIT. Incluye factura, notas crédito y débito, documento soporte y nota de ajuste.
+
+| Documentos al año | Precio anual |
+|-------------------|--------------|
+| 150 | $169.000 |
+| 400 | $190.000 |
+| 1.600 | $220.000 |
+| 2.500 | $260.000 |
+| 5.000 | $290.000 |
+| 10.000 | $390.000 |
+| 15.000 | $440.000 |
+| 20.000 | $490.000 |
+| 35.000 | $820.000 |
+| 50.000 | $1.100.000 |
+| 80.000 | $1.700.000 |
+| 120.000 | $2.160.000 |
+
+A igual cantidad, el paquete de un NIT sale más barato que la bolsa. La bolsa conviene cuando varios NIT comparten un solo cupo comprado. El precio que cobramos al restaurante sigue abierto (PA-39).
+- **Alerta temprana de saldo**, con la misma idea que la de inventario (9.4). Se calcula sobre el cupo de cada NIT:
+  - Amarilla cuando ese cupo cubre menos de N días al ritmo de facturación del NIT (por defecto, 15 días).
   - Roja con menos de 5 días.
   - Avisa al administrador de la empresa y a nuestro equipo de soporte.
-- **Si la bolsa se agota**: Factus rechaza la emisión, pero **la venta nunca se bloquea**. El documento queda `pendiente_emision` con el motivo "sin saldo", el cliente recibe el comprobante con QR (8.3) y la factura se emite sola cuando se recarga la bolsa. Se dispara una alerta crítica.
+- **Si el cupo de un NIT llega a cero**: Factus rechaza la emisión de ese NIT, y **la venta nunca se bloquea**. El documento queda `pending_issuance` con el motivo "sin saldo", el cliente recibe el comprobante con QR (8.3) y la factura se emite sola cuando se recarga ese cupo. Se dispara una alerta crítica. Los demás NIT de la empresa siguen emitiendo con el suyo.
 - **Reporte de consumo** por NIT y sede, para repartir el costo de la bolsa entre las sedes y para definir el precio de la suscripción en la Fase 4 (M7).
-- El **límite de 80 solicitudes por minuto sigue siendo por NIT**, aunque la bolsa sea de la empresa. La cola de emisión controla el ritmo por NIT (8.3).
+- El **límite de 80 solicitudes por minuto es por NIT**, igual que el cupo. La cola de emisión controla el ritmo por NIT (8.3).
 
 ### 8.3 Numeración y emisión sin internet
 
@@ -527,53 +571,48 @@ Como Factus asigna el consecutivo, **sin internet no se puede emitir la factura 
 | Situación | Qué recibe el cliente | Qué pasa con la factura |
 |-----------|-----------------------|-------------------------|
 | Con internet | Factura electrónica impresa (número, CUFE, QR) en unos 2,5 segundos | Emitida al instante |
-| Sin internet | **Comprobante de venta** impreso, que dice claramente "no es factura", con un **QR de consulta** | Queda en cola como `pendiente_emision` y se emite sola al volver la conexión, en orden de venta |
+| Sin internet | **Comprobante de venta** impreso, con el texto «Comprobante de venta. No es factura electrónica ni documento equivalente. La factura se emitirá al restablecer la conexión y se consulta en este código QR.» | Queda en cola como `pending_issuance` y se emite sola al volver la conexión, en orden de venta |
 | Al volver internet | Si dejó correo o celular, le llega la factura | Factus la valida; el QR del comprobante pasa a mostrar la factura |
 
 - El **QR de consulta** apunta a una URL nuestra (por ejemplo `/f/<reference_code>`). Mientras la factura está pendiente muestra "en proceso"; cuando Factus la valida, muestra la factura con su enlace público de Factus y el PDF.
 - La caja puede **reimprimir** la factura electrónica cuando ya esté emitida (por ejemplo, si el cliente vuelve).
-- La factura queda con la **fecha y hora de la validación**, no de la venta. Nuestro `DocumentoVenta` guarda las dos.
+- La factura queda con la **fecha y hora de la validación** (`validated_at`). El cuerpo de `POST /v2/bills/validate` trae la hora opcional `created_time`; la respuesta separa `created_at` de `validated_at`. `SalesDocument` guarda también la fecha de la venta (D-17).
 
 **Flujo de emisión**
 
-1. La caja cierra la venta y el nodo crea el `DocumentoVenta` con su `reference_code` (UUIDv7 del documento).
-2. **Con conexión a la nube**: la nube llama a `POST /v2/bills/validate`. Con la respuesta, el nodo imprime la factura.
-3. **Sin conexión**: el nodo imprime el comprobante con QR y deja el documento en `pendiente_emision`.
-4. Al reconectar, la nube emite los pendientes **en orden de venta, antes que cualquier otro dato**, respetando el límite de 80 solicitudes por minuto del NIT.
+1. La caja cierra la venta y el nodo crea el `SalesDocument` con `CreateSalesDocument` y su `reference_code` (UUIDv7 del documento).
+2. **Con conexión a la nube**: la nube llama a `POST /v2/bills/validate` (`IssueDocument`). Con la respuesta, el nodo imprime la factura.
+3. **Sin conexión**: el nodo imprime el comprobante con QR y deja el documento en `pending_issuance`.
+4. Al reconectar, la nube emite los pendientes (`IssuePendingDocuments`) **en orden de venta, antes que cualquier otro dato**, respetando el límite de 80 solicitudes por minuto del NIT. Hay un solo envío en vuelo por rango de numeración (D-19). Rangos distintos del mismo NIT pueden salir a la vez.
 
 **Envío cortado a mitad de camino**
 
-Si la llamada a Factus salió pero no llegó la respuesta, el documento queda `incierto`. **Antes de reintentar, se verifica si se emitió**:
+Si la llamada a Factus salió pero no llegó la respuesta, el documento queda `uncertain`. **Antes de reintentar, se verifica si se emitió** (`VerifyUncertain`):
 
 1. Consultar `GET /v2/bills?filter[reference_code]=<reference_code>`.
 2. Según el resultado:
    - **Validada** (`status = 1`): se toma esa factura (número, CUFE, QR). No se reenvía.
    - **Pendiente por validar** (`status = 0`, o un `409` al reenviar): se elimina con `DELETE bills/destroy/reference/<reference_code>` y se vuelve a enviar.
    - **No existe**: se vuelve a enviar con el mismo `reference_code`.
-3. Si la verificación falla por falta de internet, el documento sigue `incierto` y se reintenta la verificación con espera creciente.
+3. Si la verificación falla por falta de internet, el documento sigue `uncertain` y se reintenta la verificación con espera creciente. Cuando se resuelve, sale `IssuanceResolved`.
 
 Como el `reference_code` es idempotente en Factus (si se repite, devuelve la factura existente), **una venta nunca queda con dos facturas**.
 
-**Estados del documento**: `generado`, `enviando`, `aceptado`, `rechazado`, `pendiente_emision`, `incierto`. Los rechazos generan una alerta; se corrigen los datos y se reenvía con una referencia nueva, o se emite una nota crédito si ya estaba validada.
+**Estados del documento**: `generated`, `sending`, `accepted`, `rejected`, `pending_issuance`, `uncertain`. Los rechazos generan una alerta; se corrigen los datos y se reenvía con una referencia nueva, o se emite una nota crédito si ya estaba validada.
 
 **Alertas**:
-- Documentos `pendiente_emision` o `incierto`, con cuántos son y su antigüedad.
+- Documentos `pending_issuance` o `uncertain`, con cuántos son y su antigüedad.
 - Rango de numeración por agotarse y resolución por vencerse.
 - `429` repetidos de Factus.
 
-**Riesgo asumido**: la norma pide entregar la factura al momento de la venta. Al no usar contingencia, las ventas sin internet se facturan con retraso. Mitigaciones:
+**Riesgo asumido** (D-10): la norma pide entregar la factura al momento de la venta. Al no usar la contingencia de papel (tipo 03) ni la de caída de la DIAN (tipo 04, 48 horas desde que el servicio vuelve), las ventas sin internet se facturan con retraso. El comprobante no es documento fiscal. Mitigaciones:
 - **Módem 4G de respaldo recomendado en todas las sedes**, para que el tiempo sin conexión sea mínimo: en el nodo si la sede es híbrida, o en el router de la sede en modo nube.
 - Emisión inmediata y automática al reconectar.
 - Alerta al administrador si hay pendientes por más de un tiempo configurable (por ejemplo, 1 hora).
 
-### 8.4 Pendientes con Factus y con el contador
+### 8.4 Pendientes con el contador
 
-La mayoría de las preguntas a Factus quedaron respondidas con su documentación (8.2). Quedan:
-
-**Para Factus**
-
-1. **Bolsa por empresa**: ¿una misma bolsa la pueden consumir varios NIT de una empresa? ¿La API expone el **saldo de documentos** para consultarlo automáticamente? (No bloquea: se arranca con lo que ofrezcan hoy.)
-2. **Precio por volumen y ampliación del límite de 80 solicitudes por minuto por NIT**: **no se negocian para arrancar.** Se empieza con las condiciones estándar y se revisan al crecer, cuando se cumpla alguna de las señales de abajo.
+Las preguntas a Factus quedaron respondidas (D-16 a D-21, secciones 8.2 y 8.3). La que queda con el contador vive en el [registro de preguntas abiertas](../preguntas-abiertas.md).
 
 **Cuándo volver a negociar con Factus**
 
@@ -588,25 +627,24 @@ El sistema mide estas señales desde el primer día, para negociar con datos rea
 | Número de empresas clientes | Al llegar a unas 10 empresas | Acuerdo comercial de SaaS con Factus |
 
 Estas métricas salen en el panel de soporte (M7) y generan una alerta interna cuando se cruza un umbral.
-3. ¿Se pueden enviar facturas en paralelo sobre el mismo rango sin conflicto de consecutivos?
-4. ¿La fecha de emisión se puede enviar con la fecha real de la venta, o siempre es la de validación?
-5. **Confirmar por escrito** que `GET dian/acquirer` no consume documentos del paquete. La documentación no publica costo ni límite propio: solo aplica el límite general de 80 solicitudes por minuto del NIT, compartido con la emisión.
 
 **Decididas por el negocio**
 
-- Factura electrónica de venta en todas las ventas, a consumidor final `222222222222` cuando no hay datos del cliente.
+- Factura electrónica de venta en todas las ventas, a consumidor final `222222222222` cuando no hay datos del cliente (D-07).
+- Propina voluntaria como recargo, fuera de la base gravable (D-08).
+- Perfil fiscal seleccionable. Catálogo inicial: INC 8 % y, si es franquicia, IVA 19 % (D-09).
 - Envío cortado: verificar por `reference_code` y reintentar solo si no se emitió (8.3).
-- Sin factura de papel en contingencia: emisión diferida al volver internet (8.3).
+- Sin factura de papel en contingencia: comprobante con el texto de 8.3 y emisión diferida al volver internet (D-10).
+- Refacturación con nota crédito de anulación y factura nueva, mismo día por defecto y mismo mes como máximo (D-11, 8.5).
+- Anticipo abonable en la factura del servicio; monto retenido con su propia clasificación (D-12, 6.2).
+- En plataformas, la factura de la comida la emite el restaurante; la comisión no se carga (D-13, 6.1).
+- Sin documento soporte ni recepción de facturas de proveedores. El costo del insumo es el valor registrado (D-14, D-15).
+- `GET /v2/dian/acquirer` no consume documentos de la bolsa (D-21).
 
-**Para el contador** (recomendado, aunque no bloquea el desarrollo)
+**Para el contador**
 
-1. La propina como recargo en `allowance_charges`, y si afecta o no la base de los impuestos.
-2. El tratamiento de los anticipos de reservas y de los montos retenidos por cancelación o no llegada.
-3. Conocer el riesgo de la emisión diferida sin contingencia, y si el comprobante de venta necesita algún texto obligatorio. Como referencia: la norma de contingencia da 48 horas, desde que se restablece el servicio, para transmitir lo emitido en contingencia; nosotros no usamos ese mecanismo.
-4. **Refacturación** (PRD-00, regla 10). Técnicamente Factus lo permite: nota crédito de anulación (código `2`) que referencia la factura, y una factura nueva con los datos del cliente. La documentación de Factus **no fija un plazo**; el plazo es una decisión fiscal. Preguntas:
-   - ¿Es válido anular una factura de consumidor final para reemplazarla por una a nombre del cliente?
-   - ¿Qué plazo máximo usar? Recomendación técnica: **dentro del mismo mes calendario**, para no mover declaraciones ya presentadas de IVA o INC ni cierres contables. Por defecto, en el sistema: el mismo día.
-   - ¿La nota crédito y la factura nueva deben llevar alguna observación que las relacione?
+PA-10 sigue abierta: el formato de exportación que ya usa su software. Factus no publica ese archivo (registro, sección 1.1).
+
 **Requisitos para activar cada NIT en Factus** (onboarding de un cliente):
 
 - Cámara de Comercio con menos de 30 días.
@@ -622,14 +660,14 @@ Página web pública del celular del cliente. Desde el QR de la mesa pide y paga
 
 **Dónde vive**
 
-- App `portal-clientes` en la nube, mobile first, liviana (sin instalar nada). La misma app atiende la consulta de facturas `/f/<reference_code>` (8.3).
+- App `apps/customer-portal` en la nube, mobile first, liviana (sin instalar nada). La misma app atiende la consulta de facturas `/f/<reference_code>` (8.3).
 - **No corre en el nodo.** El cliente usa sus datos móviles, y el nodo no atiende dispositivos sin registrar (10.1.2).
 
 **Enlaces**
 
 | Entrada | URL | Atada a | Vence |
 |---------|-----|---------|-------|
-| QR fijo de la mesa | `/m/<token-mesa>` | La sede y la mesa | No vence. Rota solo si el administrador lo reimprime |
+| QR fijo de la mesa | `/m/<table-token>` | La sede y la mesa | No vence. Rota solo si el administrador lo reimprime |
 | QR de la precuenta | `/d/<token>` | La cuenta abierta | Cuando se emite la factura, o a las 24 h |
 | QR del comprobante o de la factura | `/f/<reference_code>` | El documento de venta | Si está pendiente: hasta que se emite. Si ya se emitió: al terminar el plazo de refacturación (PRD-00, regla 10) |
 | Enlace por WhatsApp (domicilio, reserva) | `/d/<token>` | El pedido o la reserva | Igual que la precuenta |
@@ -651,7 +689,7 @@ sequenceDiagram
     Factus-->>Portal: Datos del adquiriente
     Cli->>Portal: Confirma datos y acepta la política
     Portal->>Portal: Valida (dígito de verificación, correo, municipio) y guarda
-    Portal-->>Nodo: DatosFacturacionRecibidos (canal en tiempo real)
+    Portal-->>Nodo: BillingDataReceived (canal en tiempo real)
     Nodo-->>Caja: Cuenta marcada "datos recibidos"
     Caja->>Nodo: Cobrar (con esos datos)
 ```
@@ -659,15 +697,15 @@ sequenceDiagram
 **Si la sede está sin internet**
 
 - El cliente igual llena el portal con sus datos móviles. Los datos quedan en la nube, asociados al token.
-- La caja cobra sin verlos, y la factura queda `pendiente_emision` (8.3).
+- La caja cobra sin verlos, y la factura queda `pending_issuance` (8.3).
 - Cuando la nube emite los pendientes, **usa los datos del portal si llegaron antes de la emisión**. Si no, emite a consumidor final.
 
 **Datos y dueños**
 
 | Entidad | Dueño | Notas |
 |---------|-------|-------|
-| `ClienteFiscal` | Nube, por empresa (`tenant_id`) | Campos del objeto `customer` de Factus. Solo se guarda si el cliente marcó "recordar mis datos" |
-| `DatosFacturacionCuenta` | Nube | Copia de los datos usados en una cuenta o documento. Se guarda siempre, porque respalda la factura |
+| `TaxCustomer` | Nube, por empresa (`tenant_id`) | Campos del objeto `customer` de Factus. Solo se guarda si el cliente marcó "recordar mis datos" |
+| `CheckBillingData` | Nube | Copia de los datos usados en una cuenta o documento. Se guarda siempre, porque respalda la factura |
 | Copia en el nodo | Nodo (solo lectura) | Clientes frecuentes de la sede (por ejemplo, los de los últimos 6 meses), para buscarlos en la caja sin internet |
 
 **Autocompletado desde la DIAN**
@@ -689,13 +727,13 @@ sequenceDiagram
 - En el portal: el cliente escribe su documento. Si tiene datos guardados, se le envía un **código de un solo uso** al correo o al celular registrado, y solo después de validarlo se muestran sus datos (enmascarados hasta confirmar). Así nadie ve los datos de otra persona con solo saber su cédula.
 - En la caja: el cajero busca por documento entre los clientes guardados (copia en el nodo) o consulta la DIAN.
 
-**Refacturación desde el portal** (si la empresa la activa y el contador la valida)
+**Refacturación desde el portal** (`Reinvoice`, D-11; la empresa la activa)
 
 1. El cliente abre `/f/<reference_code>` de una factura ya emitida a consumidor final, dentro del plazo.
 2. Registra sus datos.
-3. Según la configuración: la nube emite la **nota crédito** de anulación y la **nueva factura** con sus datos, o crea una solicitud para que el administrador la apruebe.
-   - Nota crédito: `POST /v2/credit-notes/validate` con `correction_concept_code: "2"`, `customization_id: "20"`, `bill_number` de la factura original y los mismos ítems. Sin `customer`, para que tome el de la factura (consumidor final).
-   - Factura nueva: los mismos ítems, impuestos, propina y pagos, con el `customer` del portal y un `reference_code` nuevo.
+3. Administración aprueba la refacturación. Aprobada, la nube emite la **nota crédito** de anulación y la **nueva factura** con sus datos (D-42). Sin esa aprobación no se emite.
+   - Nota crédito: `POST /v2/credit-notes/validate` con `correction_concept_code: "2"`, `customization_id: "20"`, `bill_number` de la factura original, los mismos ítems y la observación «Anulación para expedir la factura al adquirente identificado». Sin `customer`, para que tome el de la factura (consumidor final).
+   - Factura nueva: los mismos ítems, impuestos, propina y pagos, con el `customer` del portal, un `reference_code` nuevo y la observación «Reemplaza la factura anulada» más el número anulado.
    - Orden: primero la nota crédito. Solo si queda validada se emite la factura nueva. Si la factura nueva falla, se reintenta con el mismo `reference_code`; la venta nunca queda sin factura vigente por más tiempo del necesario.
 4. Las dos operaciones quedan enlazadas al documento original y en la auditoría.
 5. **Costo**: cada refacturación consume **2 documentos** del paquete de Factus (la nota y la factura nueva). El reporte de refacturaciones lo muestra por sede, para controlarlo.
@@ -709,38 +747,41 @@ sequenceDiagram
 
 ### 8.6 Motor de impuestos
 
-El motor soporta todos los regímenes de PRD-00, sección 7.1. **Las reglas son datos, no código.**
+El motor soporta todos los regímenes de PRD-00, sección 7.1. **Las reglas son datos, no código.** El perfil se elige al configurar el contribuyente (D-09). El catálogo inicial trae restaurante independiente (INC 8 %) y franquicia (IVA 19 %).
 
 ```
-PerfilFiscal (contribuyente)  ┐
-ClasificacionTributaria (producto) ├──▶ ReglaImpuesto (con vigencia) ──▶ Impuestos de la línea
-Contexto (canal, fecha, bolsa)  ┘
+TaxProfile (contribuyente)          ┐
+TaxClassification (producto)        ├──▶ TaxRule (con vigencia) ──▶ Impuestos de la línea
+Contexto (canal, fecha, bolsa)      ┘
 ```
 
-- **`PerfilFiscal`**: tipo de persona, régimen (ordinario o SIMPLE), responsabilidad de IVA, responsabilidad de INC, responsabilidades del RUT, franquicia y municipio de cada sede.
-- **`ClasificacionTributaria`**: cada producto tiene una clasificación (por ejemplo "servicio de restaurante", "bebida empacada", "bolsa"). Así no hay que configurar el impuesto producto por producto.
-- **`ReglaImpuesto`**: combina el perfil, la clasificación y el contexto, y devuelve uno o varios impuestos (tipo, tarifa porcentual o valor fijo, código DIAN). Tiene `vigente_desde` y `vigente_hasta`.
-- **El motor es una función pura** en el paquete `dominio`. Se ejecuta igual en el nodo, sin internet, y en la nube.
+- **`TaxProfile`**: tipo de persona, régimen (ordinario o SIMPLE), responsabilidad de IVA, responsabilidad de INC, responsabilidades del RUT, franquicia y municipio de cada sede.
+- **`TaxClassification`**: cada producto tiene una clasificación (por ejemplo "servicio de restaurante", "bebida empacada", "bolsa"). Así no hay que configurar el impuesto producto por producto.
+- **`TaxRule`**: combina el perfil, la clasificación y el contexto, y devuelve uno o varios impuestos (tipo, tarifa porcentual o valor fijo, código DIAN). Tiene `valid_from` y `valid_to`.
+- **El motor es una función pura** en `contexts/invoicing/domain`. Se ejecuta igual en el nodo, sin internet, y en la nube.
 - Las reglas se sincronizan de la nube al nodo como el resto de la configuración. Cada línea de venta guarda **qué regla y qué versión** se aplicaron, para poder auditar después.
 - **Precio con impuestos incluidos**: el menú muestra el precio final, pero Factus recibe el **precio sin impuestos** (`price`, con máximo 2 decimales).
   - base = precio del menú ÷ (1 + suma de tarifas porcentuales), con 2 decimales.
   - Los impuestos se calculan uno tras otro con **redondeo bancario**, igual que Factus.
   - La diferencia entre el total calculado y lo que paga el cliente se envía en `cash_rounding_amount` (máximo ±500).
   - El motor replica el cálculo de Factus para que el total impreso y el validado coincidan. Se prueba con casos reales en el sandbox.
-- **Impuestos de valor fijo** (bolsas plásticas): no van como impuesto sino como **una línea de ítem** con el valor por bolsa, como indica Factus.
+- **Impuestos de valor fijo** (bolsas plásticas): no van como impuesto sino como **una línea de ítem** con el valor por bolsa, como indica Factus. En un domicilio, esa línea solo se agrega si la sede tiene el impuesto encendido (D-29).
 - **No responsable de IVA**: si el contribuyente no es responsable de IVA, todos sus productos se envían excluidos.
 - **Retenciones**: no se calculan en la venta al consumidor final. Se registran al recibir el pago de un cliente corporativo (cartera).
-- **Perfiles predefinidos**: plantillas de `PerfilFiscal` y `ReglaImpuesto` para las combinaciones comunes, validadas por un contador. Un cliente nuevo elige su plantilla en la configuración inicial.
+- **Perfiles predefinidos**: plantillas de `TaxProfile` y `TaxRule` para las combinaciones comunes, validadas por un contador. Un cliente nuevo elige su plantilla en la configuración inicial.
 - **Pruebas**: una tabla de casos por régimen, con el precio, el desglose y el documento esperados. Esos casos se usan como pruebas automáticas en cada cambio.
 
 ## 9. Inventario
 
 ### 9.1 Modelo
 
-- **Libro de movimientos**: cada entrada o salida es un registro que no se modifica. Tiene `ubicacion_id`, `insumo_id`, `cantidad` (con signo, en la unidad base), `costo_unitario`, `tipo`, `referencia` y `ocurrido_en`.
-- Tipos de movimiento: `COMPRA`, `CONSUMO_VENTA`, `DEVOLUCION_VENTA`, `MERMA`, `PRODUCCION_CONSUMO`, `PRODUCCION_SALIDA`, `TRASLADO_SALIDA`, `TRASLADO_ENTRADA`, `AJUSTE_CONTEO`.
+- **Libro de movimientos**: cada entrada o salida es un registro que no se modifica. Tiene `location_id`, `ingredient_id`, `quantity` (con signo, en la unidad base), `unit_cost`, `type`, `reference` y `occurred_at`.
+- Tipos de movimiento: `purchase`, `sale_consumption`, `sale_return`, `waste`, `production_consumption`, `production_output`, `transfer_out`, `transfer_in`, `count_adjustment`.
 - **Stock actual** = suma de los movimientos, guardada en una tabla de saldos que se actualiza en la misma transacción.
 - **Costo**: promedio ponderado por ubicación.
+- **Costo de lo producido** (D-26): la empresa elige promedio de los insumos consumidos o costo estándar. Esa entrada actualiza el promedio de la preparación.
+- **Costo del traslado** (D-27): la entrada en el destino usa el costo promedio del origen en el despacho, sin sumar nada.
+- **Ajuste por conteo** (D-28): por encima del tope pide aprobación. El tope es configurable por empresa, cada sede lo puede bajar, y el predeterminado es $1.000.
 - **Unidades**: cada insumo tiene una unidad base (g, ml o unidad) y conversiones a su unidad de compra y de receta.
 - El stock **puede quedar negativo**. La venta nunca se bloquea (PRD-00, regla 1) y se genera una alerta.
 
@@ -749,7 +790,7 @@ Contexto (canal, fecha, bolsa)  ┘
 1. Al enviar un producto a cocina, se toma su receta (según la variante) y se aplican los modificadores.
 2. Se expanden las sub-recetas en el momento solo si no se manejan con stock propio. Si la preparación intermedia tiene stock, se descuenta la preparación, no sus ingredientes.
 3. Se aplica el rendimiento: cantidad bruta = cantidad neta ÷ rendimiento.
-4. Se genera un movimiento `CONSUMO_VENTA` por insumo, en la ubicación `PUNTO` de la sede. La estación no cambia la ubicación de la que se descuenta.
+4. Se genera un movimiento `sale_consumption` por insumo (`RegisterSaleConsumption`), en la ubicación `point` de la sede. La estación no cambia la ubicación de la que se descuenta.
 5. La receta queda **versionada**: el movimiento guarda qué versión se usó.
 
 ### 9.3 Cuánto se puede producir
@@ -757,25 +798,25 @@ Contexto (canal, fecha, bolsa)  ┘
 Para cada producto de una sede:
 
 ```
-unidades_posibles_punto   = mínimo, entre los ingredientes, de (stock_punto ÷ cantidad_por_unidad)
-unidades_con_reabastecer  = igual, usando stock_punto + stock de las bodegas que abastecen la sede
-ingrediente_limitante     = el que da el mínimo
+units_possible_at_point   = mínimo, entre los ingredientes, de (point_stock ÷ quantity_per_unit)
+units_with_replenishment  = igual, usando point_stock + stock de las bodegas que abastecen la sede
+limiting_ingredient       = el que da el mínimo
 ```
 
-- La **disponibilidad en el menú** usa solo `unidades_posibles_punto`, porque es lo que la cocina tiene a la mano.
-- `unidades_con_reabastecer` alimenta las sugerencias de reabastecimiento: "con lo de la bodega alcanzan 40 más; pide 3 kg de carne".
+- La **disponibilidad en el menú** usa solo `units_possible_at_point`, porque es lo que la cocina tiene a la mano.
+- `units_with_replenishment` alimenta las sugerencias de reabastecimiento: "con lo de la bodega alcanzan 40 más; pide 3 kg de carne".
 - El stock de la bodega general solo se conoce hasta la última sincronización. El reporte muestra la fecha de ese dato.
 - Se recalcula cuando cambia el stock de un ingrediente. Se lleva un índice de qué productos usa cada insumo.
-- El resultado se envía en tiempo real a la PWA del mesero: `disponible`, `pocas unidades` o `agotado`.
+- El resultado se envía en tiempo real a la PWA del mesero (`AvailabilityChanged`): `available`, `low` (pocas unidades) o `sold_out`.
 - El umbral de "pocas unidades" es configurable por producto.
 
 ### 9.4 Alerta temprana de escasez
 
 **Configuración**
 
-- `NivelStock` por `(insumo, ubicacion)`: `maximo`, `punto_reposicion` y `minimo`, en la unidad base. Se pueden heredar de una plantilla por marca y ajustar por ubicación.
-- `NivelPlato` opcional por `(producto, sede)`: mínimo de unidades posibles.
-- `ReglaNotificacion` por sede y nivel: a qué roles, por qué canales y tiempo de escalamiento.
+- `StockLevel` por `(ingredient, location)`: `maximum`, `reorder_point` y `minimum`, en la unidad base. Se pueden heredar de una plantilla por marca y ajustar por ubicación. El sistema los sugiere con las métricas de consumo y la sede puede aceptarlos o escribirlos (D-32).
+- `DishLevel` opcional por `(product, venue)`: mínimo de unidades posibles.
+- `NotificationRule` por sede y nivel: a qué roles, por qué canales y tiempo de escalamiento.
 
 **Evaluación**
 
@@ -783,13 +824,13 @@ ingrediente_limitante     = el que da el mínimo
 - **Por cobertura**: un proceso periódico en el nodo (por ejemplo, cada 15 minutos) calcula:
 
   ```
-  consumo_esperado_por_hora = promedio de las últimas N semanas, para ese día de la semana y esa franja horaria
-  cobertura_horas            = stock_actual ÷ consumo_esperado_por_hora del resto del día
+  expected_consumption_per_hour = promedio de las últimas N semanas, para ese día de la semana y esa franja horaria
+  coverage_hours                = current_stock ÷ expected_consumption_per_hour del resto del día
   ```
 
   Si la cobertura no alcanza para el resto del servicio más un margen configurable, se abre una alerta de cobertura.
-- **Platos**: cuando cambia `unidades_posibles_punto` (9.3) y cruza el `NivelPlato`.
-- **Histéresis**: una alerta abierta no se repite mientras siga abierta. Se resuelve sola cuando el stock supera el `punto_reposicion`, no apenas sube del `minimo`. Así no parpadea con cada venta.
+- **Platos**: cuando cambia `units_possible_at_point` (9.3) y cruza el `DishLevel`.
+- **Histéresis**: una alerta abierta no se repite mientras siga abierta. Se resuelve sola cuando el stock supera el `reorder_point`, no apenas sube del `minimum`. Así no parpadea con cada venta.
 
 **Dónde corre**
 
@@ -797,13 +838,13 @@ ingrediente_limitante     = el que da el mínimo
 |-----------|--------|----------|
 | Punto y bodega de la sede | Nodo de la sede (funciona sin internet) | Pantallas de caja y cocina por WebSocket; push en el celular cuando hay internet |
 | Bodega general | Nodo de la bodega | Igual |
-| Vista consolidada | Nube, con los datos sincronizados | Push, y en una fase posterior WhatsApp o correo; escalamiento al gerente |
+| Vista consolidada | Nube, con los datos sincronizados | Push, y desde la entrega 5.1 WhatsApp, SMS o correo por el puerto `Messaging`; escalamiento al gerente |
 
 **Ciclo y acciones**
 
-- `AlertaEscasez`: `abierta` → `vista` (quién y cuándo) → `resuelta` (automática o manual con motivo). Cada cambio queda en la auditoría.
-- Desde la alerta se crea una `SolicitudReabastecimiento` a la bodega que abastece esa ubicación, o una `OrdenCompra` si la ubicación es una bodega. La cantidad sugerida es `maximo − stock_actual`, redondeada a la unidad de compra.
-- **Niveles sugeridos**: un worker en la nube propone `punto_reposicion` y `maximo` a partir del consumo de las últimas semanas y del tiempo de reposición de cada proveedor. El administrador los acepta o los ajusta.
+- `ShortageAlert`: `open` → `seen` (quién y cuándo) → `resolved` (automática o manual con motivo). Cada cambio queda en la auditoría.
+- Desde la alerta se crea una `ReplenishmentRequest` a la bodega que abastece esa ubicación, o una `PurchaseOrder` si la ubicación es una bodega. La cantidad sugerida es `maximum − current_stock`, redondeada a la unidad de compra.
+- **Niveles sugeridos**: un worker en la nube propone `reorder_point` y `maximum` a partir del consumo de las últimas semanas y del tiempo de reposición de cada proveedor. El administrador los acepta o los ajusta.
 
 ## 10. Identidad, roles y auditoría
 
@@ -811,7 +852,7 @@ ingrediente_limitante     = el que da el mínimo
 
 | Contexto | Mecanismo |
 |----------|-----------|
-| Administración web | Correo y contraseña, con segundo factor opcional; sesión en la nube |
+| Administración web | Correo y contraseña. El segundo factor lo exige el administrador a todos o a quienes marque; quien no lo tenga exigido puede activarlo (D-38). Sesión en la nube |
 | Dispositivo de sede | **Registro del dispositivo** con un código de un solo uso; queda con su propia credencial |
 | Usuario en un dispositivo compartido | **PIN personal** validado por el nodo, con sesión corta y cierre por inactividad |
 | Equipo fijo de cocina | Se registra en **modo fijo** con su estación: la PWA de la sede abre siempre la cola de esa estación y no pide PIN para verla. Marcar estados pide PIN solo si la sede lo configura |
@@ -846,7 +887,7 @@ Lo más probable es que las sedes **no** tengan una red separada para el persona
 
 Una impresora de red escucha en el puerto 9100 **sin autenticación**. Si un cliente llega a ella, podría imprimir o **abrir el cajón**. En orden de preferencia:
 
-1. **Router dedicado del sistema en cada sede (recomendado)**: un router o punto de acceso económico solo para el nodo, las impresoras y los dispositivos del personal. La red de clientes sigue en el router actual. Va en el kit de hardware (ADR-006).
+1. **Router dedicado del sistema en cada sede (recomendado)**: un router o punto de acceso económico solo para el nodo, las impresoras y los dispositivos del personal. La red de clientes sigue en el router actual. Se recomienda y lo compra el dueño de la sede (D-36, ADR-006).
 2. **Impresoras por USB o por cable al nodo**, que no quedan accesibles desde el Wi-Fi.
 3. Si nada de lo anterior es posible: activar en el router actual el aislamiento entre clientes y reglas que solo permitan llegar a las impresoras desde la IP del nodo. Esto depende del router de cada sede y se valida en la visita técnica.
 
@@ -856,7 +897,7 @@ Una impresora de red escucha en el puerto 9100 **sin autenticación**. Si un cli
 
 - [ ] Cobertura Wi-Fi en salón, cocina, caja y segundo piso.
 - [ ] Router actual: modelo, aislamiento de clientes, posibilidad de reglas o VLAN.
-- [ ] Decidir si se instala el router dedicado (recomendado).
+- [ ] Entregar la recomendación del router dedicado. Lo compra el dueño (D-36).
 - [ ] Conexión de cada impresora: red, USB o cable al nodo.
 - [ ] Prueba: desde un celular **no registrado** conectado a la red, verificar que no se puede usar el nodo ni imprimir.
 
@@ -868,54 +909,54 @@ El modelo funcional (roles, matriz, topes y reglas) está en [PRD-01](../prd/PRD
 
 | Entidad | Campos principales | Notas |
 |---------|--------------------|-------|
-| `Permiso` | `codigo` (`pedido.anular_despues_cocina`), `modulo`, `sensible`, `admite_tope`, `unidad_tope` (`PORCENTAJE`, `VALOR`, `CANTIDAD_POR_TURNO`), `alcances_validos` | **Se define en el código**, versionado con el producto. No es editable por el cliente |
-| `Rol` | `id`, `tenant_id` (nulo en los predefinidos), `nombre`, `tipo` (`PREDEFINIDO`, `PERSONALIZADO`), `basado_en` | Los predefinidos no se editan; se copian |
-| `RolPermiso` | `rol_id`, `permiso`, `modo` (`SI`, `CON_TOPE`, `CON_AUTORIZACION`), `tope` | La ausencia de fila significa "no puede" |
-| `AsignacionRol` | `usuario_id`, `rol_id`, `alcance_tipo` (`EMPRESA`, `MARCA`, `SEDE`, `BODEGA`, `CONTRIBUYENTE`), `alcance_id`, `vigente_desde`, `vigente_hasta` | Un usuario tiene varias asignaciones |
-| `AjusteSede` | `sede_id`, `rol_id`, `permiso`, `tope` | Solo puede **bajar** topes, nunca subirlos |
-| `SolicitudAutorizacion` | `accion`, `permiso`, `solicitante_id`, `autorizador_id`, `valor`, `motivo_id`, `motivo_texto`, `estado` (`PENDIENTE`, `APROBADA`, `RECHAZADA`, `VENCIDA`), `canal` (`PIN_LOCAL`, `REMOTA`) | Genera un evento de auditoría al resolverse |
+| `Permission` | `code` (`order.void_after_kitchen`), `module`, `sensitive`, `allows_limit`, `limit_unit` (`percentage`, `amount`, `count_per_shift`), `valid_scopes` | **Se define en el código**, versionado con el producto. No es editable por el cliente |
+| `Role` | `id`, `tenant_id` (nulo en los predefinidos), `name`, `type` (`predefined`, `custom`), `based_on` | Los predefinidos no se editan; se copian |
+| `RolePermission` | `role_id`, `permission`, `mode` (`yes`, `with_limit`, `with_authorization`), `limit` | La ausencia de fila significa "no puede" |
+| `RoleAssignment` | `user_id`, `role_id`, `scope_type` (`company`, `brand`, `venue`, `warehouse`, `taxpayer`), `scope_id`, `valid_from`, `valid_to` | Un usuario tiene varias asignaciones |
+| `VenueLimitAdjustment` | `venue_id`, `role_id`, `permission`, `limit` | Solo puede **bajar** topes, nunca subirlos (`AdjustVenueLimit`) |
+| `AuthorizationRequest` | `action`, `permission`, `requester_id`, `authorizer_id`, `amount`, `reason_id`, `reason_text`, `status` (`pending`, `approved`, `rejected`, `expired`), `channel` (`local_pin`, `remote`) | Genera un evento de auditoría al resolverse |
 
-Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina` y `pedido.anular_despues_cocina.autorizar`.
+El código de un permiso sigue la forma `<context>.<action>` del [glosario](../glosario-codigo.md). Cada permiso sensible tiene su par para autorizar: `order.void_after_kitchen` y `order.void_after_kitchen.authorize`.
 
 **Evaluación**
 
-- Una función pura en `contextos/plataforma/dominio`: `evaluar(usuario, accion, contexto) → Permitido | RequiereAutorizacion(permiso, tope_excedido) | Denegado(motivo)`. El contexto trae la sede, el valor de la acción y los acumulados del turno (por ejemplo, anulaciones ya hechas).
-- Resolución del alcance: una asignación en la empresa cubre sus marcas, sedes y bodegas; en una marca, sus sedes. Si el usuario tiene varias asignaciones aplicables, gana la más permisiva, y luego se aplica el `AjusteSede`.
+- Una función pura en `contexts/platform/domain`: `evaluate(user, action, context) → Allowed | RequiresAuthorization(permission, exceededLimit) | Denied(reason)`. El contexto trae la sede, el valor de la acción y los acumulados del turno (por ejemplo, anulaciones ya hechas). Los otros contextos la usan por el caso de uso `EvaluatePermission`; superar un tope es el error `LimitExceeded`.
+- Resolución del alcance: una asignación en la empresa cubre sus marcas, sedes y bodegas; en una marca, sus sedes. Si el usuario tiene varias asignaciones aplicables, gana la más permisiva, y luego se aplica el `VenueLimitAdjustment`.
 - **El mismo código corre en el nodo y en la nube.** El nodo evalúa las acciones de su sede sin internet, y la nube las de la administración web.
 - El nodo guarda una copia de los roles, las asignaciones y los ajustes de su sede (dueño: la nube, sección 5.1). Excepción: **desactivar un usuario o revocar un dispositivo** se puede hacer en el nodo sin internet; el cambio se aplica al instante y sube después.
-- Validación de la autorización: el autorizador debe tener el permiso `.autorizar` con un tope que cubra el valor, y debe ser **distinto del solicitante**, salvo que la sede tenga activa la autoautorización para el turno.
+- Validación de la autorización: el autorizador debe tener el permiso `.authorize` con un tope que cubra el valor, y debe ser **distinto del solicitante**, salvo que la sede tenga activa la autoautorización para el turno.
 - Las rutas de la API declaran el permiso que exigen. Una prueba automática falla si hay una ruta que modifica datos sin permiso declarado.
 - La interfaz oculta lo que no se puede hacer usando la misma función, pero la decisión siempre es del servidor.
 
 **Gestión de roles**
 
 - Al asignar un rol o editar uno personalizado se valida que sus permisos y topes sean un subconjunto de los del usuario que hace el cambio, dentro de su alcance (sin escalar privilegios).
-- Cada cambio genera un `EventoAuditoria` con el antes y el después, y una notificación al propietario.
+- Cada cambio genera un `AuditEvent` (por ejemplo, `RoleAssigned`) con el antes y el después, y una notificación al propietario.
 - La base de datos impide quitar el último propietario activo de una empresa.
 - Al agregar un permiso nuevo en una versión, una migración lo asigna a los roles predefinidos que correspondan. Los roles personalizados no lo reciben automáticamente; el propietario recibe un aviso para decidir.
 
 **Acceso de soporte**
 
 - El propietario concede el acceso desde la web por un tiempo limitado (por ejemplo, 4 horas) y lo puede revocar.
-- El token de soporte lleva el `tenant_id` y el vencimiento; RLS lo respeta. Todo lo que hace soporte se audita en la cuenta del cliente.
+- El token de soporte (`SupportAccess`, de M7) lleva el `tenant_id` y el vencimiento; RLS lo respeta. Todo lo que hace soporte se audita en la cuenta del cliente.
 
 ### 10.3 Auditoría
 
-- Cada acción sensible genera un `EventoAuditoria` con: actor, quién autorizó, dispositivo, sede, acción, entidad, valores antes y después, motivo y hora.
+- Cada acción sensible genera un `AuditEvent` (`RecordAuditEvent`) con: actor, quién autorizó, dispositivo, sede, acción, entidad, valores antes y después, motivo y hora.
 - **Cadena de hash por dispositivo**: cada evento incluye el hash del anterior. Alterar o borrar un evento rompe la cadena, y eso se detecta en la nube.
 - Solo se agregan registros. No existe una API para modificarlos o borrarlos.
 - La nube corre detectores de comportamiento inusual y genera alertas (PRD-00, sección 8.4).
 
 ### 10.4 Asistencia del personal
 
-- `Marcacion` es un evento que solo se agrega: `usuario_id`, `sede_id`, `dispositivo_id`, `tipo` (`ENTRADA`, `SALIDA`, `INICIO_PAUSA`, `FIN_PAUSA`) y la hora.
+- `ClockEntry` es un evento que solo se agrega: `user_id`, `venue_id`, `device_id`, `type` (`clock_in`, `clock_out`, `break_start`, `break_end`) y la hora.
 - **La hora es la del nodo (en modo nube, la del servidor), no la del celular.** Así nadie marca adelantando el reloj de su teléfono.
-- Solo se marca dentro del local, con la misma regla de presencia de la sección 10.1.1. En híbrido se marca contra el nodo y funciona sin internet. En modo nube se marca contra la API central; durante un corte no se marca, igual que no se opera el salón.
-- **Correcciones**: el administrador crea una `CorreccionMarcacion` que apunta a la marcación original, con motivo. Nunca se edita la original.
+- Solo se marca dentro del local. En una sede en nube sin equipo local, la marcación cuenta si la ubicación del dispositivo coincide con la del local. Si no coincide, queda sospechosa y no habilita la operación (D-43). En híbrido se marca contra el nodo y funciona sin internet. En modo nube se marca contra la API central; durante un corte no se marca, igual que no se opera el salón.
+- **Correcciones**: el administrador crea una `ClockEntryCorrection` que apunta a la marcación original, con motivo. Nunca se edita la original.
 - **Cierre automático**: a una hora configurable, el nodo cierra los turnos que quedaron abiertos y los marca para revisión.
-- **Regla "sin entrada no opera"** (configurable por sede): la capa de autorización del nodo rechaza las acciones operativas de un usuario sin entrada marcada. Se exceptúan los roles administrativos.
+- **Regla "sin entrada no opera"** (configurable por sede): la capa de autorización del nodo rechaza las acciones operativas de un usuario sin entrada marcada; M0 lo consulta a M8 con `HasOpenClockIn`. Se exceptúan los roles administrativos.
 - Las horas trabajadas son una **proyección** calculada a partir de las marcaciones y las correcciones. No se guardan como un dato que se edita.
-- `HorarioProgramado` es opcional por trabajador: turnos por día con hora de inicio y fin. Sin horario, solo se cuentan horas. Con horario, la proyección también calcula tardanzas, ausencias, salidas anticipadas y horas por fuera del turno, con tolerancias configurables por sede.
+- `ScheduledShift` es opcional por trabajador: turnos por día con hora de inicio y fin. Sin horario, solo se cuentan horas. Con horario, la proyección también calcula tardanzas, ausencias, salidas anticipadas y horas por fuera del turno, con tolerancias configurables por sede.
 
 ## 11. Reportes y analítica
 
@@ -935,14 +976,14 @@ Cada permiso sensible tiene su par para autorizar: `pedido.anular_despues_cocina
 
 ## 13. Stack
 
-Decidido el 2026-10-15. Sigue pendiente la nube de producción (ADR-005).
+Decidido el 2026-10-15. El primer ensayo corre en AWS o en GCP (D-39). El pipeline es GitHub Actions (D-45).
 
 | Capa | Decisión | Alternativa descartada | Por qué |
 |------|----------|------------------------|---------|
 | Monorepo | pnpm + Turborepo | Nx | Simple y rápido para un equipo pequeño |
 | Lenguaje y runtime | TypeScript estricto sobre Node.js 24 LTS | — | Un solo lenguaje; el dominio y los casos de uso se comparten entre el nodo y la nube |
 | API (nube, nodo y puente) | NestJS sobre Fastify (`@nestjs/platform-fastify`) | Fastify solo | La inyección de dependencias conecta los puertos con sus adaptadores en todos los módulos (sección 14). Fastify debajo mantiene el servidor liviano en el nodo |
-| Validación y contratos | Zod 4 en `compartido/contratos`, integrado a Nest con `nestjs-zod` | `class-validator` | El mismo esquema valida en la PWA, el nodo y la nube |
+| Validación y contratos | Zod 4 en `shared/contracts`, integrado a Nest con `nestjs-zod` | `class-validator` | El mismo esquema valida en la PWA, el nodo y la nube |
 | Acceso a datos | Drizzle, con un esquema para PostgreSQL y otro para SQLite | Prisma, Kysely | Políticas de Row Level Security en el esquema (`pgPolicy`), transacciones explícitas para la outbox y SQL con tipos. Drizzle **no** comparte un mismo esquema entre dialectos: cada base tiene sus tablas y migraciones, detrás de los mismos puertos |
 | Base de datos de la nube | PostgreSQL gestionado (RDS, Cloud SQL o Azure Database for PostgreSQL), solo con extensiones disponibles en las tres | — | Row Level Security, JSONB, madurez; portable entre nubes |
 | Base de datos del nodo | SQLite (modo WAL) con `better-sqlite3` | — | Sin administración; suficiente para una sede; un archivo fácil de respaldar y restaurar |
@@ -960,50 +1001,58 @@ Decidido el 2026-10-15. Sigue pendiente la nube de producción (ADR-005).
 | Nube | Contenedores gestionados en AWS (ECS Fargate), GCP (Cloud Run) o Azure (Container Apps), con módulos equivalentes desde el inicio | — | No quedar atados a un proveedor (TRD-01, sección 3) |
 | Infraestructura como código | Terraform | OpenTofu | Toda la nube se crea y se cambia desde el repositorio |
 | Despliegue continuo | Pipeline con staging automático y producción con aprobación y vuelta atrás automática | — | Desplegar seguido sin romper a los nodos de versiones anteriores (TRD-01, sección 5) |
-| Observabilidad | OpenTelemetry (logs, métricas y trazas) hacia Grafana Cloud; los nodos envían su estado periódicamente | Servicio nativo de cada nube | Un solo backend sin importar la nube; ver qué sedes están sin conexión o con la cola atrasada |
-| Errores | Sentry en la nube, los nodos y las PWA, con envío diferido sin internet | Sentry alojado | Saber qué error vive cada sede y qué despliegue lo introdujo |
+| Observabilidad | OpenTelemetry (logs, métricas y trazas) hacia Grafana Cloud (ADR-013); los nodos envían su estado periódicamente | Servicio nativo de cada nube | Un solo backend sin importar la nube; ver qué sedes están sin conexión o con la cola atrasada |
+| Errores | Sentry como servicio, plan gratuito al inicio (D-41), en la nube y las PWA. El envío diferido sin internet queda en la fase híbrida | — | Saber qué error vive cada sede y qué despliegue lo introdujo |
 
 ## 14. Organización del código
 
-El monorepo se ordena por el negocio. Cada módulo M0 a M9 es un **bounded context**: su propio lenguaje y su propio modelo. La primera carpeta de cada uno lleva el nombre del negocio (`contextos/pedidos`, `contextos/caja`). Eso es screaming architecture: al abrir el repositorio se ven los casos de uso, y el framework queda en el borde. Por dentro, cada contexto sigue siendo hexagonal.
+El monorepo se ordena por el negocio. Cada módulo M0 a M9 es un **bounded context**: su propio lenguaje y su propio modelo. La primera carpeta de cada uno lleva el nombre del negocio (`contexts/orders`, `contexts/cash-register`). Eso es screaming architecture: al abrir el repositorio se ven los casos de uso, y el framework queda en el borde. Por dentro, cada contexto sigue siendo hexagonal.
+
+El código y sus nombres van en inglés; los documentos, en español. Cada carpeta, puerto, caso de uso, evento, error, tabla y permiso que nombran estos documentos sale del [glosario de código](../glosario-codigo.md). Un nombre que solo vive dentro de un módulo lo fija su TRD con las mismas reglas.
 
 Las apps son la raíz de composición. Eligen el modo (nube, nodo o puente) y enchufan adaptadores. Las reglas viven en el contexto.
 
 ```
-contextos/                 # el negocio. Una carpeta por bounded context
-  plataforma/              # M0. Aparece en la Fase 0, con su primera prueba en rojo
-    dominio/
-    aplicacion/
-      puerto-de-entrada.ts # lo único que otro contexto puede importar
-      <caso-de-uso>/       # un caso de uso por carpeta, con su prueba al lado
-    adaptadores/
-      memoria/
+contexts/                  # el negocio. Una carpeta por bounded context
+  platform/                # M0. Ya existe (entrega 0.2): domain, application y adapters
+    domain/
+    application/
+      entry-port.ts        # lo único que otro contexto puede importar
+      ports/               # puertos de salida, cada uno con su <port>.contract.ts
+      <use-case>/          # un caso de uso por carpeta, con su prueba al lado
+    adapters/
+      memory/
       postgres/
       sqlite/
       http/
-  pedidos/                 # M1. El resto de contextos se crea igual, cuando les toca
-  caja/                    # M2
-  facturacion/             # M3. El adaptador de Factus vive en adaptadores/factus
-  inventario/              # M4
-  domicilios/              # M5. Rappi, DiDi, integrador y manual viven en adaptadores/
-  reportes/                # M6
+  orders/                  # M1. El resto de contextos se crea igual, cuando les toca
+  cash-register/           # M2
+  invoicing/               # M3. El adaptador de Factus vive en adapters/factus
+  inventory/               # M4
+  delivery/                # M5. Rappi, DiDi, integrador y manual viven en adapters/
+  reporting/               # M6
   saas/                    # M7
-  asistencia/              # M8
-  reservas/                # M9
-compartido/                # lenguaje publicado y capacidades técnicas, sin regla de negocio
-  contratos/               # esquemas Zod, eventos y DTOs. El mismo en la PWA, el nodo y la nube
-  sincronizacion/          # outbox, inbox y cursores
-  impresion/               # plantillas y driver ESC/POS. Varios contextos lo usan por el puerto Impresora
+  attendance/              # M8
+  reservations/            # M9
+shared/                    # lenguaje publicado y capacidades técnicas, sin regla de negocio
+  contracts/               # esquemas Zod, eventos y DTOs. El mismo en la PWA, el nodo y la nube. Ya existe
+  sync/                    # outbox, inbox y cursores
+  printing/                # plantillas, cola y driver ESC/POS detrás del puerto Printer (sección 7)
   ui/                      # componentes visuales
 apps/                      # raíz de composición y pantallas
-  api-nube/                # enlaza los adaptadores postgres y los de la nube
-  nodo-local/              # enlaza los adaptadores sqlite; el perfil puente solo carga impresión
-  app-sede/                # pantallas agrupadas por contexto: pedidos, caja, cocina
-  app-domicilios/
-  web-admin/
-  portal-clientes/
+  api-cloud/               # ya existe. Enlaza los adaptadores postgres y los de la nube
+  local-node/              # ya existe. Enlaza los adaptadores sqlite; el perfil bridge solo carga impresión
+  venue-app/               # pantallas agrupadas por contexto: pedidos, caja, cocina
+  delivery-app/
+  admin-web/               # incluye el panel de soporte (entrega 4.5)
+  customer-portal/
+tools/                     # herramientas del repositorio, sin código de producto
+  cruiser/                 # reglas y fixtures de dependency-cruiser. Ya existe
+  skeleton/                # pruebas del esqueleto del monorepo. Ya existe
 infra/                     # Terraform (TRD-01, sección 4)
 ```
+
+Hoy existen `contexts/platform`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`, `tools/cruiser` y `tools/skeleton`: el esqueleto de la entrega 0.2. Dentro de esa misma entrega faltan el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `memory`, `postgres` y `sqlite`.
 
 Una carpeta de contexto entra al repositorio con el primer comportamiento de ese módulo, en el ciclo de la sección 16. Un catálogo o una configuración también tienen dominio, aunque sea delgado, y respetan las mismas capas.
 
@@ -1013,15 +1062,15 @@ Dentro de un contexto, un término significa una sola cosa. El mismo término pu
 
 | Cruce | Cómo se hace en código |
 |-------|------------------------|
-| Otro módulo de blackHole | Llama al `puerto-de-entrada` de ese contexto, o reacciona a un evento de `compartido/contratos` |
+| Otro módulo de blackHole | Llama al `entry-port` de ese contexto, o reacciona a un evento de `shared/contracts` |
 | Sistema externo (Factus, pasarela, Rappi, DiDi, impresora) | Un adaptador traduce su modelo al lenguaje del contexto. El dominio no ve el JSON ni el protocolo de afuera. Esa traducción es la capa anticorrupción |
 | Pantalla | Muestra y envía. La regla sigue en el servidor (sección 16.7) |
 
 Quién le entrega qué a quién está en [Flujos](../flujos/README.md). Si un diagrama y un TRD no coinciden, manda el TRD.
 
-- Un contexto importa de otro solo su `aplicacion/puerto-de-entrada.ts`, o un evento de `compartido/contratos`.
-- `compartido/contratos` es el lenguaje publicado. Ahí viven esquemas y eventos, y queda fuera el modelo de dominio de cada contexto.
-- `compartido/impresion` y `compartido/sincronizacion` implementan puertos técnicos. Una regla de salón, caja o factura que aparezca ahí se mueve a su contexto.
+- Un contexto importa de otro solo su `application/entry-port.ts`, o un evento de `shared/contracts`.
+- `shared/contracts` es el lenguaje publicado. Ahí viven esquemas y eventos, y queda fuera el modelo de dominio de cada contexto.
+- `shared/printing` y `shared/sync` implementan puertos técnicos. Una regla de salón, caja o factura que aparezca ahí se mueve a su contexto. Qué se imprime y cuándo lo decide cada contexto (sección 7).
 
 ### 14.2 Principios de diseño
 
@@ -1038,7 +1087,7 @@ Estos principios se aplican dentro de la hexagonal y del TDD. Si uno empuja a sa
 | **DRY** | Dentro del contexto, y en el lenguaje publicado, cada regla y cada esquema existen una sola vez: el contrato del puerto, el esquema Zod y el cálculo de impuestos. Cada contexto conserva su modelo, aunque un nombre coincida con el del vecino |
 | **KISS** | El camino más corto que respeta las capas. Un catálogo tiene poco dominio. Quedan fuera el event sourcing y un modelo de lectura por cada caso de uso |
 | **YAGNI** | El contexto, el puerto y el adaptador aparecen con la prueba que los pide. Los dos dialectos de base ya están decididos: el nodo y la nube los necesitan desde la Fase 0 |
-| **Lenguaje ubicuo** | Clases, casos de uso, errores y pruebas usan las palabras del módulo (`EnviarACocina`, `PedidoVacio`) |
+| **Lenguaje ubicuo** | Clases, casos de uso, errores y pruebas usan las palabras del módulo, en inglés según el glosario (`SendToKitchen`, `EmptyOrder`) |
 | **Regla de dependencia** | Adaptadores → aplicación → dominio. El dominio solo depende del lenguaje |
 | **Modelo con comportamiento** | La invariante la protege el agregado. El caso de uso coordina |
 | **Separación comando/consulta** | Un caso de uso cambia estado o responde una consulta. Las proyecciones de reportes siguen en la sección 11 |
@@ -1048,18 +1097,18 @@ Estos principios se aplican dentro de la hexagonal y del TDD. Si uno empuja a sa
 
 | Capa | Dónde vive | Contiene | Puede depender de |
 |------|------------|----------|-------------------|
-| Dominio | `contextos/<contexto>/dominio` | Entidades, objetos de valor, reglas puras (impuestos, permisos, totales) | Nada más que el lenguaje |
-| Aplicación | `contextos/<contexto>/aplicacion` | Casos de uso y puertos de entrada y de salida (`RepositorioPedidos`, `ProveedorFacturacion`, `Impresora`, `Reloj`, `Secretos`…) | Su dominio y `@nestjs/common` (solo `@Injectable` e `@Inject`) |
-| Adaptadores | `contextos/<contexto>/adaptadores` y `compartido/impresion` | Persistencia, HTTP, WebSocket, workers, Factus, plataformas, impresora | Aplicación y dominio de su contexto |
-| Composición | `apps/*` | Módulos Nest que enlazan puertos con adaptadores, y las pantallas | El puerto de entrada, los adaptadores del dialecto de esa app, y `compartido` |
+| Dominio | `contexts/<context>/domain` | Entidades, objetos de valor, reglas puras (impuestos, permisos, totales) | Nada más que el lenguaje |
+| Aplicación | `contexts/<context>/application` | Casos de uso y puertos de entrada y de salida (`OrderRepository`, `InvoicingProvider`, `Printer`, `Clock`, `Secrets`…) | Su dominio y `@nestjs/common` (solo `@Injectable` e `@Inject`) |
+| Adaptadores | `contexts/<context>/adapters` y `shared/printing` | Persistencia, HTTP, WebSocket, workers, Factus, plataformas, impresora | Aplicación y dominio de su contexto |
+| Composición | `apps/*` | Módulos Nest que enlazan puertos con adaptadores, y las pantallas | El puerto de entrada, los adaptadores del dialecto de esa app, y `shared` |
 
 - La dependencia va siempre hacia adentro: adaptadores → aplicación → dominio. dependency-cruiser lo verifica en la integración continua.
-- **Los puertos de salida son clases abstractas** y sirven de token de inyección de Nest. Ejemplo: `abstract class RepositorioPedidos`. El caso de uso pide `RepositorioPedidos`; no sabe si detrás hay PostgreSQL o SQLite.
-- **Cada app arma sus adaptadores** en sus módulos Nest. `api-nube` enlaza los puertos con `adaptadores/postgres`; `nodo-local` los enlaza con `adaptadores/sqlite`; el perfil `puente` solo carga `compartido/impresion`. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
+- **Los puertos de salida son clases abstractas** y sirven de token de inyección de Nest. Ejemplo: `abstract class OrderRepository`. El caso de uso pide `OrderRepository`; no sabe si detrás hay PostgreSQL o SQLite.
+- **Cada app arma sus adaptadores** en sus módulos Nest. `apps/api-cloud` enlaza los puertos con `adapters/postgres`; `apps/local-node` los enlaza con `adapters/sqlite`; el perfil `bridge` solo carga `shared/printing`. Así se cumple la sección 5.0: el mismo caso de uso corre en la nube o en el nodo según el modo de la sede.
 - **El dominio no usa decoradores de Nest.** Así el motor de impuestos y la evaluación de permisos se prueban y se usan sin arrancar un contenedor de inyección.
-- **Transacciones**: un puerto `UnidadDeTrabajo` envuelve el cambio y su registro en la outbox en la misma transacción (sección 5.2). En la nube, también fija el `tenant_id` de Row Level Security al empezar.
+- **Transacciones**: un puerto `UnitOfWork` envuelve el cambio y su registro en la outbox en la misma transacción (sección 5.2). En la nube, también fija el `tenant_id` de Row Level Security al empezar.
 - **Cómo se escribe**: cada comportamiento entra por una prueba que falla, en el orden de la sección 16. Los casos de uso se prueban con adaptadores en memoria, sin Nest. Una misma suite de contrato por puerto corre contra la memoria, PostgreSQL y SQLite.
-- **`app-sede` carga cada pantalla por separado** y las agrupa por contexto. El celular del mesero no descarga la caja ni la cocina hasta que alguien con ese rol las abre. Cada pantalla tiene su propia barrera de errores. Ocultar una pantalla no reemplaza el permiso: la decisión siempre es del servidor (sección 10.2).
+- **`apps/venue-app` carga cada pantalla por separado** y las agrupa por contexto. El celular del mesero no descarga la caja ni la cocina hasta que alguien con ese rol las abre. Cada pantalla tiene su propia barrera de errores. Ocultar una pantalla no reemplaza el permiso: la decisión siempre es del servidor (sección 10.2).
 
 ## 15. Requisitos no funcionales
 
@@ -1084,7 +1133,7 @@ La sección 14 dice **dónde** vive cada pieza. Esta sección dice **en qué ord
 
 No se escribe código de producción de un comportamiento sin una prueba que lo pida y falle antes. El ciclo es rojo, verde, refactorizar. Se avanza en vertical: una prueba, el mínimo para que pase, y la siguiente. No se escriben primero todas las pruebas del módulo y después toda la implementación.
 
-La prueba de unidad se parte en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA, sección 16.10). Si el comportamiento sale de un flujo o de un escenario del PRD, el nombre usa dado, cuando y entonces (GWT).
+La prueba de unidad se parte en tres bloques separados por una línea en blanco: preparar, actuar y comprobar (AAA, sección 16.10). Si el comportamiento sale de un flujo o de un escenario del PRD, el nombre usa Given / When / Then (GWT), en inglés como el resto del código.
 
 Orden dentro de cada caso de uso, de adentro hacia afuera:
 
@@ -1104,7 +1153,7 @@ El controlador no se escribe antes del caso de uso, ni el caso de uso antes de l
 | Dominio | Entidad, objeto de valor o función pura | Ninguno | La invariante, el cálculo y el error de negocio. Nada de base de datos ni de Nest |
 | Aplicación | Un caso de uso por su puerto de entrada | Adaptadores en memoria | Qué se guarda, qué evento sale, qué queda fuera de la transacción si falla, y qué permiso se exige |
 | Puerto | Una suite de contrato, escrita una sola vez | Cada adaptador la ejecuta | El mismo resultado en memoria, SQLite y PostgreSQL: alta, lectura, idempotencia y el caso vacío |
-| Sistema externo | El adaptador del puerto (`ProveedorFacturacion`, `PasarelaPagos`, `ConectorPlataforma`, `Impresora`) | Simulador que implementa el mismo puerto; sandbox o impresora real aparte | Traducción, reintento seguro y el error del proveedor (`429`, corte, firma inválida) |
+| Sistema externo | El adaptador del puerto (`InvoicingProvider`, `PaymentGateway`, `PlatformConnector`, `Printer`) | Simulador que implementa el mismo puerto; sandbox o impresora real aparte | Traducción, reintento seguro y el error del proveedor (`429`, corte, firma inválida) |
 | Entrada HTTP o WebSocket | Controlador o gateway | La app con los puertos en memoria | Validación Zod, código de respuesta, permiso declarado y que un tenant no lee a otro |
 | Recorrido | Playwright contra la app | Nodo o API con SQLite o Postgres de prueba y proveedores simulados | El flujo de la entrega: mesero, cocina, caja, corte y reconexión |
 | Arquitectura | dependency-cruiser en la integración continua | Ninguno | Las dependencias solo apuntan hacia adentro y un módulo no importa el interior de otro |
@@ -1115,7 +1164,7 @@ La lógica de negocio se prueba en el dominio. Si una regla solo se puede verifi
 
 - **Lo nuestro se sustituye con un adaptador en memoria** que implementa el puerto de verdad (repositorio, reloj, unidad de trabajo, outbox). No se simulan métodos internos, no se espía el dominio y no se usa el módulo de pruebas de Nest para un caso de uso.
 - **Lo ajeno se sustituye con otro adaptador del mismo puerto.** Factus, la pasarela, la plataforma y la impresora tienen simulador en las pruebas rápidas. El sandbox de Factus y la impresora del piloto no bloquean el ciclo rojo-verde.
-- **El tiempo, los identificadores y el azar son puertos** (`Reloj`, generador de UUIDv7, códigos de un solo uso). La prueba fija la hora y los ids. Así un corte, una sesión vencida o un `reference_code` repetido son deterministas.
+- **El tiempo, los identificadores y el azar son puertos** (`Clock`, `IdGenerator` para UUIDv7, códigos de un solo uso). La prueba fija la hora y los ids. Así un corte, una sesión vencida o un `reference_code` repetido son deterministas.
 - **Drizzle no se simula.** El contrato del repositorio habla con SQLite y PostgreSQL reales. Si los dos no pasan la misma suite, el puerto no está listo: el nodo y la nube dejarían de comportarse igual.
 
 ### 16.4 Dónde viven las pruebas
@@ -1123,13 +1172,16 @@ La lógica de negocio se prueba en el dominio. Si una regla solo se puede verifi
 Al lado del código que protegen. La suite de contrato vive junto al puerto; cada adaptador la importa y la corre, sin copiarla.
 
 ```
-contextos/<contexto>/dominio/<agregado>.test.ts
-contextos/<contexto>/aplicacion/<caso-de-uso>/<caso-de-uso>.test.ts
-contextos/<contexto>/aplicacion/puertos/<puerto>.contrato.ts
-contextos/<contexto>/adaptadores/sqlite/<repositorio>.contrato.test.ts
-contextos/<contexto>/adaptadores/postgres/<repositorio>.contrato.test.ts
-contextos/<contexto>/adaptadores/<externo>/<adaptador>.contrato.test.ts
+contexts/<context>/domain/<aggregate>.test.ts
+contexts/<context>/application/<use-case>/<use-case>.test.ts
+contexts/<context>/application/ports/<port>.contract.ts
+contexts/<context>/adapters/memory/<repository>.contract.test.ts
+contexts/<context>/adapters/sqlite/<repository>.contract.test.ts
+contexts/<context>/adapters/postgres/<repository>.contract.test.ts
+contexts/<context>/adapters/<external>/<adapter>.contract.test.ts
 apps/<app>/test/          # entradas HTTP, WebSocket y recorridos de esa app
+tools/skeleton/           # pruebas del esqueleto del monorepo
+tools/cruiser/fixtures/   # casos que dependency-cruiser debe rechazar
 ```
 
 Quien define el puerto escribe el contrato. Quien agrega un adaptador lo hace pasar. Un tercer adaptador (otra nube, otro proveedor) no reescribe las pruebas: engancha la misma suite.
@@ -1138,10 +1190,12 @@ Quien define el puerto escribe el contrato. Quien agrega un adaptador lo hace pa
 
 dependency-cruiser falla el cambio si:
 
-- `contextos/<contexto>/dominio` importa Nest, Drizzle, HTTP, un adaptador o una app.
-- `contextos/<contexto>/aplicacion` importa un adaptador, Drizzle o una app. Solo puede usar `@nestjs/common` para `@Injectable` e `@Inject`.
-- Un contexto importa el dominio, los casos de uso internos o los adaptadores de otro. El cruce permitido es `aplicacion/puerto-de-entrada.ts` o un evento de `compartido/contratos`.
-- Una app importa el esquema Drizzle del otro dialecto (`api-nube` no importa `adaptadores/sqlite`; `nodo-local` no importa `adaptadores/postgres`).
+- `contexts/<context>/domain` importa Nest, Drizzle, HTTP, un adaptador o una app.
+- `contexts/<context>/application` importa un adaptador, Drizzle o una app. Solo puede usar `@nestjs/common` para `@Injectable` e `@Inject`.
+- Un contexto importa el dominio, los casos de uso internos o los adaptadores de otro. El cruce permitido es `application/entry-port.ts` o un evento de `shared/contracts`.
+- Una app importa el esquema Drizzle del otro dialecto (`apps/api-cloud` no importa `adapters/sqlite`; `apps/local-node` no importa `adapters/postgres`).
+
+Los casos que deben fallar viven en `tools/cruiser/fixtures`, y la integración continua comprueba que dependency-cruiser los rechaza. Hoy existe el del dominio que importa Nest; cada regla nueva llega con su caso.
 
 Otras pruebas de arquitectura, junto a las de la sección 10.2:
 
@@ -1159,9 +1213,9 @@ No se exige un porcentaje de líneas cubiertas. Se exige que cada invariante del
 | Un repositorio por agregado | No hay un repositorio por tabla. Las tablas son detalle del adaptador |
 | Una transacción por agregado | El cambio y su outbox entran juntos. Entre agregados, la coherencia llega por eventos |
 | Entrada delgada | El controlador valida con Zod, llama un caso de uso y traduce el error de dominio a HTTP. No abre transacciones ni arma SQL |
-| Errores de dominio | El dominio lanza errores con nombre de negocio (`PedidoVacio`, `TopeExcedido`). El mapa a códigos HTTP existe una sola vez, en la entrada |
+| Errores de dominio | El dominio lanza errores con nombre de negocio (`EmptyOrder`, `LimitExceeded`). El mapa a códigos HTTP existe una sola vez, en la entrada |
 | Idempotencia | Todo comando que puede reintentarse (sincronización, webhook, Factus, pago QR) tiene prueba de "la segunda vez no duplica" |
-| Contratos compartidos | El esquema Zod de `compartido/contratos` es el mismo en la PWA, el nodo y la nube. El DTO del lenguaje publicado existe una sola vez |
+| Contratos compartidos | El esquema Zod de `shared/contracts` es el mismo en la PWA, el nodo y la nube. El DTO del lenguaje publicado existe una sola vez |
 | Sin adelantar complejidad | No hay event sourcing ni un modelo de lectura separado por caso de uso. Las proyecciones de reportes (sección 11) se agregan cuando el reporte existe |
 
 ### 16.7 La PWA no reimplementa las reglas
@@ -1170,7 +1224,7 @@ Las pantallas muestran y envían. La decisión sigue en el servidor (sección 10
 
 - Totales, impuestos, permisos y "agotado" salen de las funciones puras del dominio de su contexto cuando la pantalla necesita el mismo número que el servidor. Esas funciones ya tienen prueba; el componente las usa tal cual.
 - El estado del servidor vive en TanStack Query. El estado de interfaz (panel abierto, paso del asistente) vive en Zustand. No se mezclan.
-- Una pantalla no llama `fetch` a mano: usa el cliente tipado a partir de los esquemas de `compartido/contratos`.
+- Una pantalla no llama `fetch` a mano: usa el cliente tipado a partir de los esquemas de `shared/contracts`.
 - Cada pantalla carga aparte y tiene su propia barrera de errores (sección 14). Una prueba de recorrido comprueba que el mesero no descarga la caja.
 
 ### 16.8 Cuándo corre cada suite
@@ -1186,7 +1240,7 @@ Las pantallas muestran y envían. La decisión sigue en el servidor (sección 10
 
 Estas tres no se cubren solo con la prueba del dominio:
 
-- **Sincronización**: corte simulado, evento duplicado, eventos fuera de orden, reinicio del nodo y cambio de `dueno_operacion` a mitad de un lote.
+- **Sincronización**: corte simulado, evento duplicado, eventos fuera de orden, reinicio del nodo y cambio de `operation_owner` a mitad de un lote.
 - **DIAN**: el simulador de Factus en el ciclo diario; el sandbox compartido solo con datos de prueba, para el cálculo de impuestos (sección 8.6) y el `reference_code` repetido.
 - **Impresión**: la plantilla se prueba contra una salida ESC/POS fijada en el repositorio; la impresora real queda en el ensayo del piloto.
 
@@ -1199,25 +1253,25 @@ Toda prueba de unidad —dominio, caso de uso, contrato y entrada— tiene tres 
 3. **Comprobar** (Assert): el resultado, el evento o el error de negocio.
 
 ```ts
-it("rechaza el envío si el pedido no tiene líneas", () => {
-  const pedido = Pedido.abrir({ mesaId, sedeId });
+it("rejects sending an order without lines", () => {
+  const order = Order.open({ tableId, venueId });
 
-  const enviar = () => pedido.enviarACocina();
+  const send = () => order.sendToKitchen();
 
-  expect(enviar).toThrow(PedidoVacio);
+  expect(send).toThrow(EmptyOrder);
 });
 ```
 
-Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre se escribe en **dado / cuando / entonces** (GWT). Given es preparar, When es actuar y Then es comprobar.
+Cuando el comportamiento sale de un flujo o de un escenario del PRD, el nombre se escribe en **Given / When / Then** (GWT), en inglés. Given es preparar, When es actuar y Then es comprobar. El escenario del PRD sigue en español; la prueba lo traduce.
 
 ```ts
-it("dado un pedido con líneas, cuando se envía a cocina, entonces cada producto queda en su estación", () => {
-  const pedido = Pedido.abrir({ mesaId, sedeId });
-  pedido.agregar(productoDeCocina);
+it("given an order with lines, when it is sent to the kitchen, then each product lands on its station", () => {
+  const order = Order.open({ tableId, venueId });
+  order.add(kitchenProduct);
 
-  pedido.enviarACocina();
+  order.sendToKitchen();
 
-  expect(pedido.lineas[0].estacion).toBe("cocina");
+  expect(order.lines[0].station).toBe("kitchen");
 });
 ```
 
@@ -1250,37 +1304,48 @@ Playwright usa esa misma frase como título del recorrido. Una prueba cubre un c
 | El certificado HTTPS local vence si una sede pasa semanas caída | Baja | Renovación en cada conexión, con margen; alerta de vencimiento. Semanas sin enlace quedan fuera del producto |
 | Mantener la infraestructura en tres nubes cuesta más de lo que aporta | Media | Módulos con la misma interfaz, `terraform plan` en cada cambio y ensayo mensual en las nubes que no son de producción (TRD-01) |
 
-## 18. ADRs pendientes
+## 18. ADRs
 
-| ADR | Tema | Se decide en |
-|-----|------|--------------|
-| ADR-001 | Modo por sede: **nube por defecto, híbrido si se activa** (decidido, sección 5.0) | Fase 0 |
-| ADR-002 | Proveedor tecnológico DIAN: **Factus** (decidido). Factura electrónica de venta para todas las ventas, sin documento equivalente POS; emisión diferida sin internet, sin factura de papel. **Una bolsa de documentos por empresa**. Falta el precio por volumen y confirmar que la bolsa se comparte entre NIT | Fase 0 |
-| ADR-003 | HTTPS local para la PWA (certificado por sede y DNS local). La PWA ya está decidida; falta validar el mecanismo | Spike de la Fase 0 |
-| ADR-004 | Relevo a la nube cuando falla el nodo híbrido: solo con outbox vacía o con confirmación del administrador (sección 5.0) | Fase 0 |
-| ADR-005 | Nube: módulos para AWS, GCP y Azure desde el inicio (decidido); falta elegir cuál corre producción (TRD-01) | Fase 0 |
-| ADR-006 | Kit de hardware por sede: nodo, impresoras, UPS y **router dedicado del sistema** (por la red Wi-Fi compartida, 10.1.2) | Fase 0, con el piloto |
-| ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban), frente a solo registro | Después de la Fase 1 |
-| ADR-008 | Reintentos de sincronización en sedes intermitentes y módem 4G de respaldo (recomendado en todas las sedes; falta elegir el equipo) | Fase 0 |
-| ADR-009 | Modelo del motor de impuestos y catálogo de perfiles predefinidos | Antes de la Fase 1, con el contador |
-| ADR-010 | Bodega general con nodo propio en modo bodega (propuesto); operación desde la web como alternativa para clientes pequeños | Fase 2 |
-| ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |
-| ADR-012 | Cobro de reservas: **transferencia directa con verificación manual** (decidido para el piloto). Una pasarela con confirmación automática queda como mejora futura | Revisar después del piloto |
-| ADR-013 | Backend de observabilidad: **Grafana Cloud** (decidido, TRD-01 sección 7). Descartados el servicio nativo de cada nube y Grafana alojado por nosotros | Fase 0 |
-| ADR-014 | Sentry como servicio (propuesto) frente a alojado en nuestra nube (TRD-01) | Fase 0 |
-| ADR-015 | Servicio del pipeline de despliegue continuo, según dónde quede el repositorio (TRD-01) | Fase 0 |
-| ADR-016 | Pasarela del pago QR en la mesa: proveedor, medios (Nequi, Daviplata, Bre-B, tarjeta) y webhook. Las reservas no entran aquí (ADR-012) | Antes de la entrega 1.13 |
-| ADR-017 | Construir con TDD sobre la hexagonal, en AAA y GWT, en todos los módulos ([ADR-017](../adr/ADR-017-tdd-sobre-hexagonal.md), sección 16) | Decidido |
-| ADR-018 | Screaming architecture por bounded context, con SoC, SOLID, DRY, KISS y YAGNI ([ADR-018](../adr/ADR-018-screaming-y-bounded-context.md), sección 14) | Decidido |
+Cada ADR pendiente cita su pregunta en el [registro](../preguntas-abiertas.md). Cuando la pregunta se responde, el ADR pasa a decidido.
+
+| ADR | Tema | Estado | Se decide en |
+|-----|------|--------|--------------|
+| ADR-001 | Modo por sede: **nube por defecto, híbrido si se activa** (sección 5.0) | Decidido | — |
+| ADR-002 | Proveedor tecnológico DIAN: **Factus**. Factura electrónica de venta para todas las ventas, sin documento equivalente POS; emisión diferida sin internet, sin factura de papel. **Bolsa por empresa, con cupo por NIT** (D-16). La fecha oficial es la de la validación (D-17). Tarifario 2026 en §8.2 (D-18). Un envío en vuelo por rango (D-19) | Decidido | Fase 0 |
+| ADR-003 | HTTPS local para la PWA (certificado por sede y DNS local). La PWA ya está decidida; falta validar el mecanismo | Pendiente: PA-29 | Fase híbrida (D-37) |
+| ADR-004 | Relevo a la nube cuando falla el nodo híbrido: solo con outbox vacía o con confirmación del administrador; volver a nube, con outbox vacía o aceptación explícita de lo pendiente (sección 5.0) | Decidido (D-02) | — |
+| ADR-005 | Nube: módulos para AWS, GCP y Azure desde el inicio. El primer ensayo corre en AWS o en GCP (D-39) | Decidido (D-39) | — |
+| ADR-006 | Router dedicado del sistema, recomendado por la red Wi-Fi compartida (10.1.2). Lo compra el dueño. El producto es solo software (D-36) | Decidido (D-36) | — |
+| ADR-007 | Integración directa con los datáfonos del piloto (Credibanco, Bold, Redeban), frente a solo registro | Pendiente: PA-43 | Después de la Fase 1 (entrega 5.2) |
+| ADR-008 | Reintentos de sincronización en sedes intermitentes y módem 4G de respaldo, recomendado en todas las sedes. Lo compra el dueño (D-36) | Decidido (D-36) | — |
+| ADR-009 | Modelo del motor de impuestos y catálogo de perfiles predefinidos. El perfil se selecciona. Catálogo inicial: restaurante independiente (INC 8 %) y franquicia (IVA 19 %). Las reglas son datos con vigencia (8.6) | Decidido (D-09) | — |
+| ADR-010 | Bodega general con nodo propio en modo bodega (sección 5.5) | El nodo queda para la fase híbrida (D-04, D-37). En el MVP la bodega opera en la nube. Operarla desde la web para clientes pequeños sigue abierto: PA-44 | Fase híbrida |
+| ADR-011 | Plataformas de domicilio: conectores directos con cada plataforma frente a un integrador de terceros | Pendiente: PA-28 | Fase 0 (iniciar el trámite de acceso), decisión antes de la Fase 3 |
+| ADR-012 | Cobro de reservas: **transferencia directa con verificación manual**; en persona, también efectivo (D-01). Una pasarela con confirmación automática queda como mejora futura | Decidido para el piloto. La pasarela: PA-45 | Entrega 5.3 |
+| ADR-013 | Backend de observabilidad: **Grafana Cloud** (TRD-01 sección 7). Descartados el servicio nativo de cada nube y Grafana alojado por nosotros | Decidido | — |
+| ADR-014 | Sentry como servicio, plan gratuito al inicio (D-41). No se aloja en nuestra nube | Decidido (D-41) | — |
+| ADR-015 | Pipeline: **GitHub Actions** (D-45), con identidad de corta duración hacia AWS, GCP y Azure | Decidido (D-45) | — |
+| ADR-016 | Pago QR con varias pasarelas detrás de `PaymentGateway`. Bold es una (D-46). Medios: Nequi, Daviplata, Bre-B y tarjeta, según el adaptador. La comisión es la del contrato. Las reservas no entran aquí (ADR-012) | Decidido (D-46) | — |
+| ADR-017 | Construir con TDD sobre la hexagonal, en AAA y GWT, en todos los módulos ([ADR-017](../adr/ADR-017-tdd-sobre-hexagonal.md), sección 16) | Decidido | — |
+| ADR-018 | Screaming architecture por bounded context, con SoC, SOLID, DRY, KISS y YAGNI ([ADR-018](../adr/ADR-018-screaming-y-bounded-context.md), sección 14) | Decidido | — |
+
 ## 19. Plan de la Fase 0
 
-1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real.
-2. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero.
-3. Esqueleto del monorepo con la forma de la sección 14 (`contextos/plataforma` y `compartido`) y el arnés de la sección 16 (Vitest, dependency-cruiser, suite de contrato y adaptadores en memoria), la API del nodo, la API de la nube y la sincronización outbox/inbox. El primer caso de uso entra por una prueba que falla.
-4. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash.
-5. Prueba de los dos modos: una sede en nube opera de punta a punta sin nodo. Al activar híbrido, se crean pedidos en el nodo, se desconecta 2 h, se reconecta y no se pierde ni se duplica nada. Volver a nube exige outbox en cero.
-6. Prueba de intermitencia del portal: un pedido QR y un pago QR confirmado durante el corte se aplican una sola vez al reconectar.
-7. **Factus**: obtener credenciales del sandbox compartido, emitir un documento de prueba desde el adaptador y resolver las preguntas de la sección 8.4.
-8. **Trámite con las plataformas**: solicitar el acceso a las API de integración de Rappi y DiDi Food, y cotizar al menos un integrador. No es desarrollo, pero tarda y define la Fase 3.
+El MVP de esta fase es solo nube (D-37). Lo que necesita el nodo o un corte está en la fase híbrida, más abajo.
+
+1. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero, desde el puente.
+2. Esqueleto del monorepo con la forma de la sección 14 y el arnés de la sección 16, y la API de la nube. **Hecho**: `contexts/platform` (con `domain`, `application` y `adapters`), `shared/contracts`, `apps/api-cloud` y `apps/local-node` con su prueba de arranque, `tools/cruiser` (dependency-cruiser con su fixture) y `tools/skeleton`. **Falta, dentro de la entrega 0.2**: el primer caso de uso nacido de una prueba en rojo, la suite de contrato del primer puerto (`<port>.contract.ts`) y los adaptadores `memory` y `postgres`. El adaptador `sqlite` y la sincronización quedan en la fase híbrida.
+3. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash en la nube.
+4. Prueba del modo nube: una sede opera de punta a punta sin nodo.
+5. **Factus**: las credenciales del sandbox compartido ya están (D-20) y no se guardan en el repositorio. Falta emitir un documento de prueba desde el adaptador.
+6. **Trámite con las plataformas** (PA-28): solicitar el acceso a las API de integración de Rappi y DiDi Food, y cotizar al menos un integrador. No es desarrollo, pero tarda y define la Fase 3.
+7. **Infraestructura, despliegue continuo, monitoreo y errores**: TRD-01, entregas 0.8 y 0.9 del [roadmap](../roadmap.md).
 
 Criterio de salida: el mismo de la Fase 0 en PRD-00.
+
+### Fase híbrida
+
+1. **Spike de HTTPS local** con un celular Android, un iPhone, un mini PC y el router de una sede real (PA-29).
+2. Sincronización outbox/inbox y adaptador `sqlite`.
+3. Prueba de los dos modos: al activar híbrido, se crean pedidos en el nodo, se desconecta 2 h, se reconecta y no se pierde ni se duplica nada. Volver a nube exige la outbox vacía, o la aceptación explícita del administrador de lo que quede sin subir (D-02).
+4. Prueba de intermitencia del portal: un pedido QR y un pago QR confirmado durante el corte se aplican una sola vez al reconectar (PA-52).

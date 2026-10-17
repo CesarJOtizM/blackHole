@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
+| Versión | 0.5 |
+| Fecha | 2026-10-17 |
 | Módulo | M0 · Plataforma |
 | Fase | 0 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
@@ -60,9 +60,9 @@ Las asignaciones pueden tener **vigencia**: por ejemplo, "cajero de reemplazo en
 | **Anfitrión** | Sede | Reservas, recibir clientes, asignar mesas. |
 | **Jefe de cocina** | Sede | Pantalla de cocina, mermas de cocina, conteos, solicitar reabastecimiento, ver recetas. |
 | **Cocina / estación** | Sede (una o varias estaciones) | Ver y avanzar los productos de su estación. |
-| **Bartender** | Sede (estación bar) | Igual que cocina para el bar. Opcionalmente puede cobrar en la barra. |
+| **Bartender** | Sede (estación bar) | Igual que cocina para el bar. Puede cobrar en la barra si la sede le activa ese permiso. En el piloto empieza apagado (D-22). |
 | **Bodeguero** | Bodega o sede | Recibir compras, despachar y recibir traslados, conteos de bodega. |
-| **Compras** | Empresa | Proveedores, órdenes de compra, documento soporte, costos. |
+| **Compras** | Empresa | Proveedores, órdenes de compra y costos. |
 | **Domiciliario** | Sede | Ver sus pedidos asignados, confirmar entrega y cobro contra entrega. |
 | **Contador** | Empresa o contribuyente | Solo lectura de ventas, facturas, impuestos y exportaciones. |
 | **Auditor** | Empresa | Solo lectura de la auditoría, las autorizaciones y los reportes de control. |
@@ -157,6 +157,8 @@ El **arqueo es ciego**: el cajero cuenta sin ver el total esperado. Por eso el c
 | Exportar datos personales de clientes | S | A | — | — | — | — | — | — |
 | Ver la auditoría | S | S | L | — | — | — | — | — |
 
+**Pausar una plataforma** está permitido de forma explícita al administrador de sede y al supervisor, además del propietario y el gerente general. Si un PRD de módulo dice otra cosa, manda esta matriz.
+
 En la tabla de personal, la **L** del administrador significa que solo asigna roles de su sede y con permisos que él mismo tenga (sección 8). En los reportes, la **L** del supervisor significa que ve solo el turno actual. En la auditoría, la **L** del administrador significa que ve solo la de su sede.
 
 ## 7. Topes configurables
@@ -171,11 +173,12 @@ Cada empresa define los topes por rol, y cada sede los puede ajustar hacia abajo
 | Diferencia de arqueo que se puede aprobar | Supervisor hasta $10.000, administrador hasta $50.000 |
 | Egreso de caja sin autorización | Supervisor hasta $50.000 |
 | Merma sin autorización | Jefe de cocina hasta $30.000 por registro |
+| Ajuste por conteo sin aprobación | $1.000 por ajuste. Por encima pide aprobación (D-28) |
 | Anulaciones del mesero antes de cocina | Hasta 3 por turno sin autorización |
 
 ## 8. Reglas de seguridad
 
-1. **Nadie se autoriza a sí mismo** en las acciones marcadas como sensibles. Si una sede tiene una sola persona con permiso de autorizar (por ejemplo, de madrugada), el administrador puede activar la **autoautorización** para ese turno; cada caso queda marcado y genera una alerta.
+1. **Nadie se autoriza a sí mismo** en las acciones marcadas como sensibles. Quien autoriza en cada sede es el administrador de la sede (D-30). Si en el turno esa persona es la única con permiso de autorizar, puede activar la **autoautorización**; cada caso queda marcado y genera una alerta.
 2. **Sin escalar privilegios**: solo se pueden asignar roles cuyos permisos y topes sean iguales o menores a los propios, y dentro del propio alcance.
 3. **El propietario recibe aviso** de cada cambio de roles, permisos o topes.
 4. Los cambios de roles y permisos quedan en la auditoría con el antes y el después.
@@ -187,9 +190,9 @@ Cada empresa define los topes por rol, y cada sede los puede ajustar hacia abajo
 
 1. El cajero intenta una acción que requiere autorización (por ejemplo, anular un producto ya preparado).
 2. El sistema pide el **motivo** (de una lista configurable, más un texto opcional).
-3. Hay dos formas de autorizar:
-   - **En el mismo dispositivo**: el supervisor escribe su PIN.
-   - **A distancia**: la solicitud llega al celular del supervisor o del administrador, que la aprueba o la rechaza. Funciona por la red del local, y desde fuera cuando hay internet.
+3. Quien autoriza es el administrador de la sede (D-30). Hay dos formas:
+   - **En el mismo dispositivo**: el administrador escribe su PIN.
+   - **A distancia**: la solicitud llega a su celular, que la aprueba o la rechaza. Funciona por la red del local, y desde fuera cuando hay internet.
 4. Queda registrado: quién pidió, quién autorizó, la acción, el valor, el motivo, el dispositivo y la hora.
 5. Si nadie responde en un tiempo configurable, la solicitud vence.
 
@@ -211,6 +214,8 @@ Cada empresa define los topes por rol, y cada sede los puede ajustar hacia abajo
 | Intentos fallidos de PIN | Varios seguidos en el mismo dispositivo |
 | Acciones fuera del horario del trabajador | Si tiene horario programado (M8) |
 
+Estos números son el valor inicial. Cada sede puede cambiarlos (D-31).
+
 ## 12. Criterios de aceptación
 
 - [ ] Un mesero no ve ni puede ejecutar acciones de caja, ni siquiera llamando directamente al servidor.
@@ -224,8 +229,9 @@ Cada empresa define los topes por rol, y cada sede los puede ajustar hacia abajo
 
 ## 13. Preguntas abiertas
 
-| # | Pregunta | Impacto |
-|---|----------|---------|
-| 1 | ¿Los topes predeterminados de la sección 7 se ajustan a la realidad del piloto? | Configuración inicial |
-| 2 | ¿Quién autoriza hoy en cada sede, y hay turnos con una sola persona a cargo? | Uso de la autoautorización |
-| 3 | ¿El bartender cobra en la barra en alguna sede? | Permisos del rol bartender |
+Viven en el [registro de preguntas abiertas](../preguntas-abiertas.md):
+
+- Los topes y el autorizador quedaron decididos (D-30): se adoptan los predeterminados de la sección 7 y autoriza el administrador de la sede.
+- Los umbrales de la sección 11 quedaron decididos (D-31): esos ejemplos son el valor inicial y cada sede puede cambiarlos.
+- El cobro en la barra quedó decidido (D-22): el permiso existe y en el piloto empieza apagado.
+- El tope del ajuste por conteo quedó decidido (D-28): configurable, predeterminado $1.000.

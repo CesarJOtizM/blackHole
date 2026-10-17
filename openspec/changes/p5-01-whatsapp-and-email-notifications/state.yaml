@@ -1,10 +1,10 @@
 change: p5-01-whatsapp-and-email-notifications
 roadmap_delivery: "5.1"
-roadmap_title: "WhatsApp and email notifications"
+roadmap_title: "WhatsApp, email and SMS notifications"
 phase: 5
 modules: [M0, M3, M4, M7, M9]
 bounded_contexts: [platform, inventory, invoicing, saas, reservations, contracts]
-apps: [api-cloud, local-node, web-admin]
+apps: [api-cloud, local-node, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p1-05-electronic-invoicing, p2-08-shortage-alerts, p3-06-reservations, p4-03-plans-and-subscription]

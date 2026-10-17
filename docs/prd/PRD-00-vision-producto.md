@@ -3,15 +3,18 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.3 |
-| Fecha | 2026-10-15 |
+| Versión | 0.14 |
+| Fecha | 2026-10-17 |
 | Documento técnico asociado | [TRD-00 Arquitectura base](../trd/TRD-00-arquitectura-base.md) |
+| Preguntas abiertas | [Registro](../preguntas-abiertas.md) |
 
 ## 1. Resumen
 
 Construimos un software para restaurantes que se vende por suscripción mensual. Cubre toda la operación de un local: el mesero toma el pedido en su celular, el pedido llega a la cocina y a la caja, la venta descuenta ingredientes del inventario según la receta, se emite el documento electrónico ante la DIAN y se imprime en impresora térmica. Todo queda auditado para evitar robos en caja e inventario.
 
 Cada sede tiene internet y **nace operando 100 % en la nube**: el mesero, la cocina y la caja hablan con el servidor central. Si esa sede necesita seguir el servicio durante un corte, se **activa el modo híbrido** y aparece un equipo en el local. Durante el corte, el mesero toma el pedido, la cocina lo prepara, la caja cobra y se imprime. Al volver la conexión se emiten las facturas pendientes y entran los pedidos y pagos que el cliente hizo desde el QR de la mesa. Una sede que nunca tiene internet queda fuera de este producto. El primer cliente es un grupo familiar con 6 restaurantes que mezcla sedes de la misma marca y de marcas distintas. Con ese piloto validamos el producto en operación real y conseguimos referidos para vender a otros restaurantes.
+
+**Orden de construcción (D-37).** El MVP es esa operación en la nube, de punta a punta, incluida la bodega del piloto. El híbrido no se diseña ni se construye hasta que esa nube esté operando. Hasta entonces un corte detiene la sede: no hay cola de pedidos o pagos QR, ni emisión diferida, ni comprobante de corte. Esas reglas siguen en el producto y se construyen en la fase híbrida.
 
 ## 2. Problema
 
@@ -123,7 +126,7 @@ El mesero puede tomar el pedido, y el cliente también puede pedirlo y pagarlo d
 Otros momentos en que el cliente puede dar sus datos:
 
 - **Después de pagar, si la factura quedó pendiente** porque no había internet: el QR del comprobante lleva al mismo portal, y la factura se emite con sus datos cuando vuelva la conexión.
-- **Después de pagar, si la factura ya salió a consumidor final**: puede pedir la factura a su nombre dentro de un plazo que configura la empresa. El sistema anula la anterior con una nota crédito y emite la nueva (sujeto a validación del contador; ver regla 10).
+- **Después de pagar, si la factura ya salió a consumidor final**: puede pedir la factura a su nombre dentro del plazo de la empresa (regla 10, D-11). El sistema anula la anterior con una nota crédito y emite la nueva.
 - **Domicilios y reservas**: el enlace al portal se envía por WhatsApp con el pedido o la reserva.
 - **Cliente frecuente en la caja**: el cajero escribe la cédula o el NIT y el sistema trae los datos guardados, o los consulta en la DIAN.
 
@@ -169,7 +172,7 @@ En los dos casos se mide el tiempo de cada etapa.
 
 1. El cliente reserva por teléfono o WhatsApp (lo registra el personal) o, más adelante, en un enlace público de la sede.
 2. Se elige fecha, hora, número de personas y, si se quiere, zona o mesa.
-3. Si la sede exige cobro para esa franja, se le envían al cliente los **datos para transferir** (Nequi, Daviplata o llave Bre-B, con QR si existe) y el valor. El cliente envía el comprobante, el personal **verifica que el dinero llegó** a la cuenta y confirma la reserva.
+3. Si la sede exige cobro para esa franja, se le envían al cliente los **datos para transferir** (Nequi, Daviplata o llave Bre-B, con QR si existe) y el valor. El cliente envía el comprobante, el personal **verifica que el dinero llegó** a la cuenta y confirma la reserva. Si el cliente reserva en persona en la sede, también puede pagar en efectivo (M9).
 4. El día de la reserva, la mesa aparece bloqueada en el plano un tiempo antes de la hora.
 5. Cuando el cliente llega, se le asigna la mesa. Si pagó un **anticipo**, se abona a su cuenta al cobrar.
 6. Si no llega o cancela tarde, se aplica la política de cancelación de la sede: se retiene el cobro, o se devuelve todo o una parte.
@@ -234,9 +237,9 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 
 - Turnos por cajero, con apertura, cierre parcial y cierre final.
 - **Todos los medios de pago**: efectivo, tarjeta débito y crédito (datáfono), transferencias y billeteras (Nequi, Daviplata, Bre-B / QR), bonos o vales, y crédito a cliente o cuenta corporativa.
-- **Pago con QR en la mesa** (6.1.3): el cliente paga el saldo desde su celular. El monto lo fija la cuenta. El pago entra solo cuando la pasarela confirma el dinero. En el arqueo, ese total se compara con el reporte de la pasarela y no se mezcla con el efectivo. La pasarela se elige en el ADR-016 antes de construir esta entrega.
+- **Pago con QR en la mesa** (6.1.3): el cliente paga el saldo desde su celular. El monto lo fija la cuenta. El pago entra solo cuando la pasarela confirma el dinero. Hay varias pasarelas; Bold es una, y la sede activa la que contrató (D-46). En el arqueo, ese total se compara con el reporte de la pasarela y no se mezcla con el efectivo. La comisión es la del contrato. Con el cobro activo se puede pagar aunque el turno de caja esté cerrado; ese pago no modifica el turno cerrado (D-44).
 - **Datáfonos del piloto: Credibanco, Bold y Redeban.** Cada pago con tarjeta registra el datáfono, el número de aprobación, la franquicia y los últimos 4 dígitos.
-  - En la Fase 1 el pago se **registra** en el sistema. La integración directa (que el monto viaje solo al datáfono) se evalúa después (TRD-00, ADR-007).
+  - En la Fase 1 el pago se **registra** en el sistema. La integración directa (que el monto viaje solo al datáfono) se evalúa después (TRD-00, ADR-007; PA-43).
   - En el arqueo, el total de tarjetas de cada datáfono se compara con su reporte de cierre.
 - Pagos mixtos (varios medios en una cuenta) y división de la cuenta por comensal, por productos o en partes iguales.
 - Cambio en efectivo, ingresos y egresos de caja con motivo, retiros parciales.
@@ -260,7 +263,7 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 - **Domicilios a consumidor final**: si la venta se entrega fuera del local, el documento debe llevar la **dirección de entrega**, aunque el cliente no dé sus datos.
 - La factura sale en unos 2 a 3 segundos con internet y se imprime en la térmica con su número, CUFE y código QR.
 - Si el cliente da un correo, Factus le envía el PDF, el XML y un enlace de consulta.
-- La propina va en la factura como recargo, separada de la venta. Los anticipos de reservas se descuentan en la factura final (M9).
+- La propina voluntaria va en la factura como recargo, separada de la venta y fuera de la base gravable (D-08). El anticipo de una reserva que se abona a la cuenta viaja en la factura del servicio. El monto retenido por cancelación o no llegada, si se factura, usa su propia clasificación tributaria (D-12, M9).
 - Numeración **por contribuyente**, con un rango por sede (y opcionalmente por caja). Cada factura lleva los datos de la sede que la emite.
 - **Sin internet no hay factura de papel.** El cliente recibe un **comprobante de venta** (que dice "no es factura") con un **QR**. Cuando vuelve la conexión, el sistema emite la factura electrónica solo y en orden; el QR pasa a mostrar la factura, y si el cliente dejó correo o celular, se la envía.
 - **Si el internet se corta mientras se envía una factura**, el sistema primero revisa en Factus si quedó emitida. Solo si no se emitió, la vuelve a enviar. Una venta nunca queda con dos facturas.
@@ -277,7 +280,7 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
   - Cumple la Ley 1581: autorización explícita, finalidad (facturación), consulta y eliminación a solicitud del titular.
   - El mismo portal muestra el estado de la factura: "en proceso" o emitida, con el PDF y el enlace de Factus.
 - **Soporte para todos los regímenes tributarios de Colombia** con un motor de impuestos configurable (sección 7.1).
-- Impresión en **impresoras térmicas** (80 mm y 58 mm) de: comandas, precuenta, documento DIAN con su código QR, cierre de caja y comprobantes de traslado.
+- Impresión en **impresoras térmicas** (80 mm y 58 mm) de: comandas, precuenta, documento DIAN con su código QR, cierre de caja y comprobantes de traslado. Cada módulo imprime lo suyo: M1 las comandas y la precuenta, M3 el documento DIAN, M2 el cierre de caja y la liquidación de propinas, M4 los comprobantes de traslado. Las plantillas y el manejo de la impresora son comunes (TRD-00, sección 7).
 - Apertura del cajón monedero desde la impresora. Si se abre sin una venta, requiere permiso y queda auditado.
 
 ### M4 · Inventario, bodegas y recetas
@@ -286,14 +289,13 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 - **Recetas** por producto y variante, con sub-recetas (preparaciones intermedias) y porcentaje de rendimiento o merma de limpieza.
 - Los modificadores ajustan el consumo (por ejemplo, "extra queso" suma y "sin cebolla" resta).
 - Ubicaciones de inventario: el **inventario del punto** (uno por sede) y las **bodegas** (de la sede o generales). Cada una lleva su propio stock.
-- Compras y recepción contra pedido, con proveedor, costo real y costo promedio.
-- **Documento soporte electrónico** (por Factus) para compras a proveedores que no facturan, como la plaza de mercado.
-- **Recepción de facturas electrónicas de proveedores** (por Factus) para cargar la compra al inventario sin digitarla. Se evalúa en la Fase 2.
+- Compras y recepción contra pedido, con proveedor y costo real. El costo se guarda al valor registrado, sin separar el IVA de la compra (D-15). El costo promedio sale de esas recepciones.
+- Factus no recibe facturas de proveedores ni emite documento soporte. La compra queda registrada en el local; el documento del proveedor lo lleva el contador por fuera (D-14).
 - **Reabastecimiento** de bodega a punto, con solicitud del punto o sugerencia automática por stock mínimo.
-- Traslados con estados: solicitado, despachado, en tránsito, recibido y recibido con diferencias.
-- Producción de preparaciones intermedias.
+- Traslados con estados: solicitado, despachado, en tránsito, recibido y recibido con diferencias. El traslado mueve el costo del origen tal cual, sin sumarle nada (D-27).
+- Producción de preparaciones intermedias. El costo de lo producido es configurable por empresa: promedio de los insumos consumidos, o costo estándar (D-26).
 - Mermas y bajas con motivo (vencido, dañado, error de preparación…).
-- Conteos físicos totales o por categoría, y ajuste contra el inventario teórico.
+- Conteos físicos totales o por categoría, y ajuste contra el inventario teórico. Un ajuste por encima del tope pide aprobación. El tope es configurable y, por defecto, $1.000 (D-28).
 - **Control de lo que se puede producir**:
   - Cuántas unidades de cada plato se pueden preparar **con el inventario del punto**.
   - Cuántas más se podrían preparar **si se reabastece desde la bodega** de la sede o la bodega general.
@@ -318,7 +320,7 @@ Avisa **antes** de que falte un producto, para reponerlo a tiempo.
 - **Alerta por cobertura**: además de los niveles fijos, el sistema calcula **para cuánto tiempo alcanza** el stock según el consumo promedio de ese día de la semana. Por ejemplo: "Al ritmo de los viernes, la carne alcanza para 3 horas". Así avisa aunque el stock esté todavía sobre el mínimo, si viene un día de mucha venta.
 - **Alerta de platos**: se puede configurar un mínimo de unidades posibles por plato. Por ejemplo, avisar cuando quedan menos de 10 porciones de un plato estrella.
 - **Niveles sugeridos**: el sistema puede proponer los niveles a partir del consumo histórico, y el administrador los ajusta.
-- **A quién y por dónde avisa**: se configura por sede y por tipo de alerta (administrador, jefe de cocina, bodeguero). Avisa en la pantalla de la caja y la cocina, con notificación en el celular y, en una fase posterior, por WhatsApp o correo.
+- **A quién y por dónde avisa**: se configura por sede y por tipo de alerta (administrador, jefe de cocina, bodeguero). Avisa en la pantalla de la caja y la cocina, con notificación en el celular y, desde la entrega 5.1, por WhatsApp, SMS o correo (D-03).
 - **Acción con un toque**: desde la alerta se crea la **solicitud de reabastecimiento** a la bodega, o la **orden de compra** al proveedor si el que está bajo es la bodega, con la cantidad sugerida.
 - **Ciclo de la alerta**: abierta, vista (por quién y cuándo) y resuelta. Se resuelve sola cuando el stock vuelve a subir del punto de reposición.
 - **Escalamiento**: si nadie atiende una alerta roja en un tiempo configurable, se avisa al siguiente nivel (del jefe de cocina al administrador, y de ahí al gerente).
@@ -355,7 +357,8 @@ Sirve para que un cliente no se quede esperando un plato que no va a salir. Es d
 - Estados enviados a la plataforma: aceptado, en preparación, listo para recoger.
 - Entrega al repartidor de la plataforma con verificación del código del pedido.
 - Cancelaciones de la plataforma: si la cocina ya empezó, se registra como merma con motivo (regla 2 de la sección 10).
-- **Comisiones y conciliación**: se registra la comisión de cada plataforma (porcentaje y cargos fijos). Se compara lo que la plataforma debería pagar con su liquidación real y se alertan las diferencias.
+- **Factura del pedido**: la emite el restaurante, al cliente o a consumidor final, con la dirección de entrega. La comisión la factura la plataforma al restaurante y no se carga aquí (D-13).
+- **Comisiones y conciliación**: se registra la comisión de cada plataforma (porcentaje y cargos fijos). Se compara lo que la plataforma debería pagar con su liquidación real y se alertan las diferencias. La conciliación muestra venta bruta, comisión, retenciones y neto.
 - **Rentabilidad por canal**: venta neta después de comisión, comparada con el costo de los platos.
 
 **Para todos los domicilios**
@@ -372,13 +375,14 @@ Ver la sección 8.
 - Planes y precio por sede.
 - Alta de clientes, configuración guiada y carga inicial de menú, recetas e insumos.
 - Cobro de la suscripción, suspensión por falta de pago y periodo de gracia.
-- Panel de soporte para nuestro equipo.
+- Panel de soporte para nuestro equipo, como una vista de la web de administración con permisos de soporte (D-05).
 - **Bolsa de documentos de Factus por empresa**:
   - Se activa en el alta del cliente, junto con los requisitos de cada NIT (Cámara de Comercio, RUT, rango DIAN, certificado digital).
-  - Saldo visible para el administrador de la empresa, con el consumo por NIT y por sede.
-  - **Alerta temprana de saldo** por días de cobertura (amarilla por defecto a 15 días, roja a 5), al administrador y a nuestro soporte.
-  - Si se agota, se sigue vendiendo: las facturas quedan pendientes y se emiten solas al recargar.
-  - Cómo se cobra la bolsa al cliente (incluida en la suscripción o aparte) se define con el precio, en la Fase 4.
+  - Saldo visible para el administrador de la empresa: la suma de los cupos, con el consumo por NIT y por sede.
+  - **Alerta temprana de saldo** por días de cobertura de cada cupo (amarilla por defecto a 15 días, roja a 5), al administrador y a nuestro soporte.
+  - Si el cupo de un NIT se agota, se sigue vendiendo: las facturas de ese NIT quedan pendientes y se emiten solas al recargar. Los demás NIT siguen emitiendo.
+  - Cada NIT recibe un cupo dentro de esa bolsa. El saldo de la empresa es la suma de los cupos (D-16).
+  - Cómo se cobra la bolsa al cliente (incluida en la suscripción o aparte) se define con el precio, en la Fase 4. Pendiente: PA-39 ([registro](../preguntas-abiertas.md)).
 
 ### M8 · Asistencia del personal
 
@@ -411,12 +415,12 @@ No es un sistema de nómina. Es el registro de las horas de trabajo, para saber 
   - **Anticipo**: se abona a la cuenta del cliente cuando consume.
   - **Tarifa de reserva**: un cobro que no se abona al consumo.
   - Valor fijo, valor por persona o porcentaje de un consumo mínimo.
-- **Medios de cobro: transferencia directa** a las cuentas de la sede en **Nequi, Daviplata o Bre-B** (llave o QR), o efectivo en la sede. No se necesita pasarela de pagos.
+- **Medios de cobro** (D-01): si la reserva entra por enlace, llamada o chat, solo **transferencia directa verificada** a las cuentas de la sede en **Nequi, Daviplata o Bre-B** (llave o QR). Si el cliente reserva en persona en la sede, transferencia o efectivo. No se necesita pasarela de pagos.
   - Cada sede configura sus cuentas de recaudo, y el sistema arma el mensaje para el cliente con el valor, los datos y una referencia de la reserva.
   - Estados del cobro: pendiente, **comprobante recibido**, **verificado** y rechazado. La reserva solo se confirma cuando alguien con permiso **verifica en la cuenta** que el dinero llegó; el pantallazo solo no basta.
   - Quién verificó y cuándo queda auditado. El comprobante se adjunta a la reserva.
   - Las devoluciones se hacen por transferencia y se registran con su comprobante.
-  - Una pasarela de pagos con confirmación automática queda como mejora futura (TRD-00, ADR-012).
+  - Una pasarela de pagos con confirmación automática queda como mejora futura (TRD-00, ADR-012). Pendiente: PA-45 ([registro](../preguntas-abiertas.md)).
 - **Política de devolución configurable**, desde devolución total hasta ninguna devolución, pasando por cualquier porcentaje. Se define por tramos de anticipación a la cancelación. Por ejemplo:
 
   | Cancela con… | Devolución |
@@ -427,7 +431,7 @@ No es un sistema de nómina. Es el registro de las horas de trabajo, para saber 
 
   Cada sede define sus tramos y porcentajes. La política vigente se muestra al cliente al reservar y queda guardada en la reserva, así un cambio posterior de la política no la afecta.
 - Devoluciones registradas y auditadas.
-- Confirmación y recordatorio al cliente (WhatsApp, SMS o correo) en una fase posterior.
+- Confirmación y recordatorio al cliente por WhatsApp, SMS o correo en la entrega 5.1 (D-03).
 - Reportes: reservas por día y franja, tasa de clientes que no llegan, ocupación, anticipos retenidos e ingresos por reservas.
 
 ### 7.1 Impuestos y regímenes tributarios
@@ -451,7 +455,7 @@ El producto soporta **todos los regímenes tributarios de Colombia** que aplican
 - Impuesto nacional al consumo (INC) del 8 %.
 - IVA del 19 % y del 5 %.
 - Exento (0 %), excluido y no gravado.
-- Impuesto al consumo de bolsas plásticas, con valor fijo por bolsa (aplica en domicilios y pedidos para llevar). En la factura va como una línea más, no como impuesto.
+- Impuesto al consumo de bolsas plásticas, con valor fijo por bolsa (aplica en pedidos para llevar). En los domicilios cada sede lo enciende o lo apaga (D-29). En la factura va como una línea más, no como impuesto.
 - Impuesto a productos ultraprocesados, si algún producto lo tiene.
 - Cualquier impuesto nuevo que defina la ley se agrega como un registro más del catálogo.
 
@@ -465,7 +469,7 @@ El producto soporta **todos los regímenes tributarios de Colombia** que aplican
 6. Hay reportes de impuestos por contribuyente, periodo y tipo, y exportación para el contador.
 7. El sistema trae **perfiles predefinidos** para las combinaciones más comunes, así configurar un restaurante nuevo es rápido.
 
-> Las tarifas y combinaciones de esta sección son la referencia inicial. Un contador las valida antes de la Fase 1, y las vuelve a revisar cada vez que cambia la norma.
+> El perfil se elige al configurar cada contribuyente (D-09). El catálogo trae restaurante independiente, con impuesto nacional al consumo del 8 %, y franquicia, con IVA del 19 %. Las tarifas se revisan cada vez que cambia la norma: se crea un registro nuevo, sin desplegar código.
 
 ## 8. Reportes y métricas
 
@@ -576,6 +580,8 @@ Todos estos tiempos se pueden ver por sede, estación, producto, mesero, domicil
 
 Toda sede tiene internet y nace en **modo nube**. El **híbrido** se activa sede por sede. Una sede que no va a tener conexión queda fuera. El mecanismo está en [TRD-00, sección 5.0](../trd/TRD-00-arquitectura-base.md).
 
+**Construcción (D-37).** El MVP solo implementa la fila Nube. Un corte detiene la sede. La cola del QR, el comprobante de corte y las filas híbridas se implementan en la fase híbrida. No se borran de este documento.
+
 | Modo | Situación | Cómo opera |
 |------|-----------|------------|
 | **Nube** | Predeterminado. Hay internet, o se acepta parar si se corta | El salón trabaja contra la nube. La factura sale en el momento si el proveedor responde. La impresión, si hay impresora, pasa por un puente en el local. |
@@ -607,11 +613,11 @@ Reglas:
 7. Ningún registro de venta, pago, inventario o auditoría se borra. Las correcciones son registros nuevos.
 8. **Cada venta tiene su propia factura electrónica.** No se agrupan ventas de varios clientes en una sola factura, aunque todos sean consumidor final.
 9. Si el cliente pide factura a su nombre, se emite con sus datos en el momento. Lo ideal es que él mismo los registre en el portal desde la precuenta.
-10. **Cambiar una factura ya emitida a consumidor final** por una a nombre del cliente se hace con una **nota crédito de anulación y una factura nueva**, nunca editando la original. Factus lo permite técnicamente y su documentación no fija un plazo.
-    - El plazo lo configura la empresa. **Por defecto: el mismo día. Máximo recomendado: dentro del mismo mes**, para no afectar declaraciones de IVA o INC ya presentadas ni cierres contables.
+10. **Cambiar una factura ya emitida a consumidor final** por una a nombre del cliente se hace con una **nota crédito de anulación y una factura nueva**, nunca editando la original (D-11).
+    - El plazo lo configura la empresa. **Por defecto: el mismo día. Máximo: dentro del mismo mes**, para no afectar declaraciones de IVA o INC ya presentadas ni cierres contables.
+    - La nota crédito lleva la observación «Anulación para expedir la factura al adquirente identificado». La factura nueva cita el número anulado.
     - Se puede automatizar desde el portal o dejarlo para aprobación del administrador. Queda auditado.
     - **Cada refacturación consume 2 documentos** del paquete de Factus (la nota y la factura nueva).
-    - **Pendiente: validación del contador** sobre el procedimiento y el plazo.
 11. Si llegan datos de facturación por el portal y por la caja para la misma cuenta, **decide el cajero** antes de cobrar. Después de emitida la factura, los datos de la cuenta no se pueden cambiar (ver regla 10).
 
 ## 11. Fases y entregables
@@ -622,12 +628,13 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 
 | Fase | Duración estimada | Entregable | Criterio de salida |
 |------|-------------------|------------|--------------------|
-| **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría, operación en la nube y, si se activa, nodo local con sincronización | Una sede en modo nube opera sin nodo. Al activar híbrido, un dispositivo sigue operando contra el nodo durante un corte y los datos llegan a la nube al reconectar |
+| **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría y operación en la nube, con impresión por el puente. Infraestructura como código con despliegue continuo, y monitoreo y errores de la nube y las PWA ([TRD-01](../trd/TRD-01-infraestructura-y-operacion.md)). El nodo y la sincronización quedan en la fase híbrida (D-37) | Una sede en modo nube opera sin nodo. Un cambio en la rama principal llega a staging sin pasos a mano, y las alarmas básicas (facturas pendientes, error en una PWA) avisan |
 | **1 · Operación de salón (piloto en 1 sede)** | 10 a 13 semanas | M1, M2, M3 con Factus, el motor de impuestos, el portal del cliente (datos de facturación, **pedido por QR en la mesa** y **pago por QR en la mesa**), impresión térmica, M8 asistencia, reportes de ventas, caja, tiempos y horas trabajadas | Una sede opera 2 semanas seguidas solo con el sistema, con documentos DIAN aceptados, pedidos y pagos QR de mesa en un servicio real, y el personal marcando asistencia |
 | **2 · Inventario (6 sedes)** | 7 a 9 semanas | M4 completo con bodegas y reabastecimiento, productos que se pueden producir, costo de alimentos; despliegue en las 6 sedes | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes |
-| **3 · Domicilios y reservas** | 9 a 12 semanas, más el tiempo de aprobación de cada plataforma | M5: domicilio propio, captura manual de plataformas, conectores de Rappi y DiDi Food, menú por canal, conciliación. M9: reservas con cobro por transferencia (Nequi, Daviplata, Bre-B) verificado y política de cancelación | Los domicilios propios y de plataformas de al menos 1 sede entran al sistema sin digitarlos dos veces, con tiempos y comisiones medidos. Las reservas con anticipo se cobran y se abonan a la cuenta. |
+| **3 · Domicilios y reservas** | 9 a 12 semanas, más el tiempo de aprobación de cada plataforma | M5: domicilio propio, captura manual de plataformas, conectores de Rappi y DiDi Food, menú por canal, conciliación. M9: reservas con cobro por transferencia (Nequi, Daviplata, Bre-B) verificado, efectivo solo si se reserva en persona (D-01), y política de cancelación | Los domicilios propios y de plataformas de al menos 1 sede entran al sistema sin digitarlos dos veces, con tiempos y comisiones medidos. Las reservas con anticipo se cobran y se abonan a la cuenta. |
 | **4 · Comercial** | 5 a 7 semanas | M6 avanzado (consolidado, ingeniería de menú, alertas), M7 | Un restaurante que no es del piloto se configura sin desarrollo a la medida |
-| **5 · Integraciones y canales** | Por estimar | Notificaciones por WhatsApp y correo, integración directa con datáfonos (ADR-007), pasarela de pagos para reservas (ADR-012), foto al marcar asistencia | Cada integración opera en al menos 1 sede |
+| **5 · Integraciones y canales** | Por estimar | Notificaciones por WhatsApp, SMS y correo (D-03), integración directa con datáfonos (ADR-007), pasarela de pagos para reservas (ADR-012), foto al marcar asistencia | Cada integración opera en al menos 1 sede |
+| **Híbrida** | Después de que la nube opere | Nodo, sincronización, HTTPS local, avisos sin internet, resiliencia, emisión diferida, cola de QR al reconectar y bodega con nodo (D-37). El detalle está en el [roadmap, fase híbrida](../roadmap.md) | Un corte de 2 horas no pierde los pedidos del salón. Al reconectar salen las facturas pendientes y entran los pedidos y pagos QR |
 
 ## 12. Métricas de éxito del piloto
 
@@ -658,8 +665,8 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Celulares personales: un mesero que se va sigue con acceso, o un celular viejo funciona mal | Revocación inmediata, uso solo dentro del local, y un punto de pedido fijo de la empresa como respaldo en cada sede |
 | Factus no emite documento equivalente POS | No lo necesitamos: toda venta es factura electrónica, que Factus confirma válida para POS y consumidor final. Si algún cliente futuro lo exige, el puerto de facturación permite agregar otro proveedor (TRD-00, sección 8) |
 | Que alguien pida "una factura global a fin de mes" para ahorrar documentos | El sistema no lo permite (regla 8). Si el motivo es el costo por documento, se negocia el precio de las bolsas con el proveedor |
-| Cada venta consume un documento del paquete de Factus | **Una bolsa de documentos por empresa** con condiciones estándar para arrancar; negociar precio por volumen cuando el sistema muestre que crecimos; incluir ese costo en el precio de la suscripción |
-| La bolsa de documentos de una empresa se agota | Alerta temprana de saldo (días de cobertura). Si se agota, se sigue vendiendo y las facturas quedan pendientes hasta la recarga |
+| Cada venta consume un documento del paquete de Factus | **Una bolsa de documentos por empresa**, repartida en un cupo por NIT (D-16). El tarifario 2026 está en D-18. El precio al restaurante se cierra en la Fase 4 (PA-39) |
+| El cupo de un NIT se agota | Alerta temprana de saldo (días de cobertura de ese cupo). Se sigue vendiendo y las facturas de ese NIT quedan pendientes hasta la recarga. Los demás NIT siguen emitiendo |
 | El portal de facturación se usa para averiguar datos de otras personas | El portal solo funciona con un enlace atado a una cuenta, que vence; nunca muestra datos guardados sin un código enviado al titular; límite de consultas |
 | Muchas refacturaciones elevan el consumo de documentos de Factus | Plazo corto por defecto, aprobación del administrador opcional, y reporte de refacturaciones por sede. Lo mejor es que el cliente registre sus datos antes de pagar, desde el QR de la precuenta |
 | Clientes que llenan mal sus datos y la factura sale con errores | Autocompletado desde la DIAN, validación del dígito de verificación y del correo; el cajero ve los datos antes de cobrar |
@@ -669,23 +676,22 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 
 ## 14. Preguntas abiertas
 
-| # | Pregunta | Impacto |
-|---|----------|---------|
-| 1 | Con Factus: si una bolsa la pueden consumir varios NIT y si la API muestra el saldo de documentos (TRD-00, sección 8.4) | No bloquea: se arranca con las condiciones estándar. El precio por volumen y la ampliación del límite se negocian al crecer, con señales medidas por el sistema |
-| 2 | ¿En qué plataformas está cada sede hoy, con cuántos pedidos al día y con qué comisión? ¿Tienen un gerente de cuenta en Rappi o DiDi? | Prioridad de los conectores y trámite de acceso a las API |
-| 3 | ¿Qué pasarela confirma el pago QR de la mesa (Nequi, Daviplata, Bre-B, tarjeta) y con qué comisión? | ADR-016, antes de la entrega 1.13. No bloquea el pedido por QR |
+Las preguntas abiertas viven en un solo lugar: el [registro de preguntas abiertas](../preguntas-abiertas.md). Aquí solo se listan las que nacen de este documento o lo afectan:
+
+- **Contador**: PA-10 (formato de exportación que ya usa su software). El enfoque de factura, la propina, los perfiles, la emisión diferida y la refacturación quedaron decididos (D-07 a D-11). Las preguntas de Factus quedaron decididas (D-16 a D-21).
+- **Plataformas de domicilio**: PA-28 (acceso a las API o integrador). Al inicio se construye con adaptadores y datos de prueba (D-35).
+- **Pagos**: el QR admite varias pasarelas y Bold es una (D-46). Pagar con el turno cerrado quedó decidido (D-44). PA-43 (datáfonos), PA-45 (pasarela de reservas).
+- **Comercial**: PA-39 (precio por sede y bolsa), PA-46 (nombre comercial).
 
 **Datos para la configuración del piloto** (no cambian el diseño; se recogen antes de salir a producción)
 
 - Lista de NIT, con su régimen y las sedes que factura cada uno.
 - Por cada NIT, para activarlo en Factus: Cámara de Comercio (menos de 30 días), cédula del representante legal, RUT, y acceso al usuario DIAN de la empresa para solicitar los rangos.
 - Rangos de numeración DIAN de cada NIT: uno electrónico por sede (sin rangos de papel).
-- Internet de cada sede: conectada o intermitente, y dónde va el módem 4G de respaldo.
+- Internet de cada sede: conectada o intermitente. El módem 4G y el router dedicado se recomiendan y los compra el dueño (D-36).
 - Datáfonos por sede (Credibanco, Bold o Redeban).
-- Mínimos iniciales de los insumos principales, o permiso para que el sistema los sugiera después de unas semanas de operación.
-- Política de propinas y de reservas de cada sede.
-- Cuentas de recaudo de reservas por sede (Nequi, Daviplata, llave Bre-B).
-- Estado de la red de cada sede: router, cobertura en salón y cocina, y si se instala el router dedicado del sistema.
+- Cuentas de recaudo de reservas por sede: Nequi, Daviplata, llave Bre-B. El cobro ya está decidido (D-34).
+- Cobertura de la red en salón y cocina, en la visita técnica.
 
 **Resueltas**
 
@@ -696,24 +702,35 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 | Inventario por sede | Un solo inventario por punto, más bodegas de la sede o generales para reabastecer (sección 5). |
 | Internet en las sedes | Toda sede tiene internet y nace en modo nube. El híbrido se activa por sede para seguir durante un corte. Una sede sin conexión permanente queda fuera (sección 9.1). |
 | NIT del piloto | Puede haber más de 2 NIT. Algunas sedes comparten NIT y otras no. El modelo soporta cualquier cantidad de contribuyentes por empresa (sección 5). |
-| Propinas | Fondo común repartido en partes iguales, con porcentaje ajustable por persona o rol (M2). |
-| Datáfonos | Credibanco, Bold y Redeban. Registro del pago en la Fase 1; integración directa evaluada después (M2, ADR-007). |
-| Política de reservas | Cobro configurable desde $0 hasta una tarifa; devolución configurable desde total hasta nula, por tramos y porcentajes (M9). |
+| Propinas | Cada sede elige partes iguales para quien trabajó, o un porcentaje por empleado. Los porcentajes son datos de la sede (D-24) |
+| Internet de la sede | Lo contrata cada sede. Si no tiene proveedor, se le recomienda uno. El producto no incluye ese contrato (D-25) |
+| Datáfonos | Credibanco, Bold y Redeban. Registro del pago en la Fase 1; integración directa evaluada después (M2, ADR-007, PA-43). |
+| Política de reservas | Cada sede elige $0, anticipo que se abona y retiene un porcentaje si cancelan, o tarifa no reembolsable. Las cuentas de recaudo son datos de la sede (D-34) |
 | Horarios del personal | Conviven los dos modos: contar horas desde la entrada y horarios programados (M8). |
 | Alertas de escasez | Niveles por insumo y ubicación, alerta por cobertura y reposición con un toque (M4). |
 | Celulares de los meseros | Usan su celular personal, y algunos tienen iPhone. La app del mesero es una PWA que funciona en Android y en iPhone (TRD-00, sección 5.4). |
-| Plataformas de domicilio | Se integran Rappi, DiDi Food y cualquier otra plataforma con conectores, más captura manual como respaldo (M5). |
-| Bodega general | Tiene internet y personal propio. Opera con su propio nodo en modo bodega (TRD-00, sección 5.5). |
+| Plataformas de domicilio | Se integran Rappi, DiDi Food y cualquier otra plataforma con conectores, más captura manual como respaldo (M5). Al inicio se usan adaptadores y datos de prueba (D-35). Los accesos reales siguen en PA-28 |
+| Router y módem 4G | Se recomiendan. Los compra el dueño de la sede. El producto es solo software (D-36) |
+| Bodega general | Tiene internet y personal propio. En el piloto opera con su propio nodo en modo bodega (D-04; TRD-00, sección 5.5). Operarla desde la web para clientes pequeños sigue abierto: PA-44. |
 | Proveedor DIAN | Factus (sección 7, M3). Revisada su documentación: factura electrónica para todas las ventas, propina como recargo, anticipos, una cuenta por NIT (TRD-00, sección 8.2). |
-| Documento de cada venta | Factura electrónica de venta para todo el mundo, en todas las sedes, con Factus. Sin datos del cliente, consumidor final `222222222222`. No se usa el documento equivalente POS (M3). |
+| Documento de cada venta | Factura electrónica de venta para todo el mundo, en todas las sedes, con Factus. Sin datos del cliente, consumidor final `222222222222`. No se usa el documento equivalente POS (D-07, M3). |
 | Factura global a fin de mes | **No se permite.** La norma exige un documento por venta, en el momento de la venta (M3, regla 8). |
 | Envío cortado a mitad de camino | Se consulta en Factus si se emitió; solo si no, se reintenta (TRD-00, sección 8.3). |
-| Contingencia con factura de papel | No se usa. Sin internet, comprobante con QR y emisión diferida al reconectar (TRD-00, sección 8.3). |
+| Contingencia con factura de papel | No se usa. Sin internet, comprobante que dice que no es factura, con QR de consulta, y emisión diferida al reconectar (D-10; TRD-00, sección 8.3). |
 | Nómina | No se hace nómina. Solo se registran las horas de entrada y salida (M8). |
 | Reservas | Entran al alcance, con cobro opcional (M9). |
 | Validación de impuestos | La hace el equipo: un tecnólogo en contabilidad (socio del proyecto) y un contador (sección 7.1). |
 | Precio de la suscripción | Se define al final, en la Fase 4 (M7), con los costos reales (Factus, infraestructura, soporte). |
-| Bolsa de documentos de Factus | Una bolsa por empresa cliente, compartida por sus NIT (por confirmar con Factus), con alerta de saldo (M7). |
+| Bolsa de documentos de Factus | Una bolsa por empresa, con un cupo asignado a cada NIT. El saldo de cada cuenta se consulta en la API y la empresa ve la suma (D-16, M7). |
+| Precio de Factus 2026 | Bolsa multifacturador o paquete de un NIT, anual. Tablas en TRD-00 §8.2 (D-18). Lo que cobramos al restaurante sigue abierto (PA-39). |
+| Fecha de la factura | La oficial es la de la validación. La de la venta se guarda aparte (D-17). |
+| Consulta del adquirente | `GET /v2/dian/acquirer` no consume documentos de la bolsa (D-21). |
+| Propina en la factura | Recargo, fuera de la base gravable (D-08). |
+| Perfil fiscal | Se elige por contribuyente. Catálogo inicial: INC 8 % o IVA 19 % si es franquicia (D-09). |
+| Refacturación | Nota crédito de anulación y factura nueva. Mismo día por defecto; mismo mes como máximo (D-11). |
+| Anticipo y monto retenido | El anticipo abonable va en la factura del servicio. El monto retenido usa su propia clasificación (D-12). |
+| Pedido de plataforma | La factura de la comida la emite el restaurante. La comisión no se carga (D-13). |
+| Compras y Factus | Sin recepción de facturas de proveedores ni documento soporte. El costo es el valor registrado (D-14, D-15). |
 | Red Wi-Fi del personal | Probablemente las sedes **no** tienen red separada. El diseño asume que el personal y los clientes comparten la red (TRD-00, sección 10.1.2). |
-| Cobro de reservas | Por transferencia directa a Nequi, Daviplata o Bre-B, con verificación manual. Sin pasarela por ahora (M9). |
-| Pedido y pago en la mesa por QR | El cliente pide y paga desde el QR de su mesa (6.1.2 y 6.1.3). El pago lo confirma una pasarela; el proveedor se elige en ADR-016. |
+| Cobro de reservas | Por enlace, llamada o chat, solo transferencia directa a Nequi, Daviplata o Bre-B con verificación manual. En persona en la sede, transferencia o efectivo (D-01). Sin pasarela por ahora (M9, PA-45). |
+| Pedido y pago en la mesa por QR | El cliente pide y paga desde el QR de su mesa (6.1.2 y 6.1.3). El pago lo confirma la pasarela que la sede activó. Bold es una de ellas (D-46). |

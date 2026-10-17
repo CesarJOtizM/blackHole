@@ -40,7 +40,7 @@ In `contexts/cash-register`, a pure distribution function computes shares in int
 | `contexts/attendance/application/entry-port.ts` | Modified | Participants of a period |
 | `shared/printing` | Modified | Tip settlement template data |
 | `apps/local-node`, `apps/api-cloud` | Modified | Settle and rule endpoints |
-| `apps/web-admin`, `apps/site-app` | Modified | Rule configuration, settlement screen |
+| `apps/admin-web`, `apps/venue-app` | Modified | Rule configuration, settlement screen |
 | `shared/contracts`, `shared/sync` | Modified | Settlement event |
 
 ## Risks
@@ -48,7 +48,7 @@ In `contexts/cash-register`, a pure distribution function computes shares in int
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Contradiction: TRD-00 6.3 assigns rounding so the total matches exactly; TRD-M2 keeps an explicit residue | Med | Spec allocates the residue deterministically and shows it; design confirms |
-| Percentage per role with several people is undefined | Med | Assume equal split within the role; product owner confirms |
+| A venue has not loaded its percentages yet | Low | Each venue chooses equal split or a percentage per employee; the numbers are venue data (D-24) |
 | Staff dispute a closed settlement | Med | Rule snapshot, participant reasons, adjustment settlements |
 
 ## Rollback Plan

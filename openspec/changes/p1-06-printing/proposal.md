@@ -57,7 +57,7 @@ Revert to the minimal kitchen-ticket output from 1.2 and disable the new templat
 
 ## Dependencies
 
-- 0.1 ESC/POS spike; 1.2, 1.3, 1.5 job producers; 0.4 registered devices; 0.6 audit; pilot printers on site.
+- 0.1 ESC/POS spike; 1.2, 1.3, 1.5 job producers; 0.4 registered devices; 0.6 audit; pilot printers on site. Offline receipt text is D-10.
 
 ## Success Criteria
 

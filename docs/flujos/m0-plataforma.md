@@ -3,9 +3,9 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-14 |
-| Fuentes | [PRD-01](../prd/PRD-01-roles-y-permisos.md), [TRD-00 §5 y §10](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-01](../prd/PRD-01-roles-y-permisos.md), [PRD-M0](../prd/PRD-M0-plataforma.md), [TRD-M0](../trd/TRD-M0-plataforma.md), [TRD-00 §5 y §10](../trd/TRD-00-arquitectura-base.md) |
 
 M0 es la base que los demás módulos usan: quién entra, en qué dispositivo, qué puede hacer y qué queda registrado. También define el modo de cada sede y quién es el dueño de cada dato.
 
@@ -13,8 +13,8 @@ M0 es la base que los demás módulos usan: quién entra, en qué dispositivo, q
 
 | Con | Qué pasa |
 |-----|----------|
-| Todos | Cada acción pasa por el permiso. Las sensibles dejan auditoría. |
-| M8 | Si la sede lo configura, sin entrada marcada no hay acciones operativas. |
+| Todos | Cada acción pasa por el permiso (`EvaluatePermission`). Las sensibles dejan auditoría (`RecordAuditEvent`). |
+| M8 | Si la sede lo configura, sin entrada marcada no hay acciones operativas (`HasOpenClockIn`). |
 | Nube | En modo nube, la nube es la operación. En híbrido, la configuración (empresa, roles, menú) baja al nodo y la operación sube. |
 
 ## Modo de la sede
@@ -26,7 +26,23 @@ Cada sede nace en **nube**. Un administrador puede **activar el híbrido** para 
 | Nube | La API central | Detiene el salón |
 | Híbrido | El nodo, dentro de la red del local | El salón sigue. Al reconectar se sincroniza |
 
-Solo hay un dueño de la operación a la vez. Activar o apagar el híbrido cambia ese dueño y sube un número de generación. El sitio anterior deja de aceptar escrituras nuevas.
+Solo hay un dueño de la operación a la vez. Activar o apagar el híbrido cambia ese dueño (`operation_owner`) y sube un número de generación. El sitio anterior deja de aceptar escrituras nuevas.
+
+### Volver de híbrido a nube
+
+```mermaid
+flowchart TD
+  A["El administrador pide volver a nube"] --> B["El nodo envía lo pendiente de la outbox"]
+  B --> C{"¿La outbox quedó vacía?"}
+  C -->|Sí| E["operation_owner pasa a cloud y sube la generación"]
+  C -->|No| D{"¿El administrador acepta de forma explícita lo que no subió?"}
+  D -->|No| F["La sede sigue en híbrido"]
+  D -->|Sí| G["Queda auditado lo que no subió"]
+  G --> E
+  E --> H["Los dispositivos vuelven a la API central"]
+```
+
+Sin outbox vacía ni aceptación explícita no hay vuelta a nube (D-02). El relevo por falla del nodo sigue la misma regla (ADR-004).
 
 ## Dueños de los datos
 
@@ -34,7 +50,7 @@ Solo el dueño crea o modifica el dato. El otro lado recibe una copia. El diagra
 
 ```mermaid
 flowchart LR
-  subgraph Nube["Dueño: nube"]
+  subgraph Cloud["Dueño: nube"]
     CFG["Empresa, marcas, sedes, roles"]
     MENU["Menú, recetas, precios"]
     PORTAL["Datos de facturación, pedido QR y pago QR"]
@@ -42,25 +58,25 @@ flowchart LR
     RES["Reserva y su cobro"]
   end
 
-  subgraph Nodo["Dueño: nodo de la sede"]
-    PED["Pedidos, cocina, cuentas"]
-    CAJA["Pagos, turnos, propinas"]
+  subgraph Node["Dueño: nodo de la sede"]
+    ORD["Pedidos, cocina, cuentas"]
+    CASH["Pagos, turnos, propinas"]
     DOC["Documento de venta"]
     INV["Movimientos del punto y de la bodega de la sede"]
-    MAR["Marcaciones de asistencia"]
+    ATT["Marcaciones de asistencia"]
     AUD["Auditoría generada en la sede"]
-    ATE["Llegada y mesa de una reserva"]
+    ARR["Llegada y mesa de una reserva"]
   end
 
-  CFG -->|"copia"| Nodo
-  MENU -->|"copia"| Nodo
-  PORTAL -->|"datos de la cuenta abierta"| Nodo
-  RES -->|"reservas del día"| Nodo
-  EXT -->|"pedido por aceptar"| Nodo
-  Nodo -->|"eventos, cuando hay internet"| Nube
+  CFG -->|"copia"| Node
+  MENU -->|"copia"| Node
+  PORTAL -->|"datos de la cuenta abierta"| Node
+  RES -->|"reservas del día"| Node
+  EXT -->|"pedido por aceptar"| Node
+  Node -->|"eventos, cuando hay internet"| Cloud
 ```
 
-La bodega general tiene su propio nodo y es dueña de sus movimientos. Un traslado entre dos nodos se parte en dos mitades: salida en el origen y entrada en el destino. El detalle está en [M4](m4-inventario.md).
+La bodega general tiene su propio nodo, en modo bodega, y es dueña de sus movimientos. Un traslado entre dos nodos se parte en dos mitades: salida en el origen y entrada en el destino. El detalle está en [M4](m4-inventario.md).
 
 ## Ingreso en un dispositivo de la sede
 
@@ -71,19 +87,19 @@ sequenceDiagram
   participant Nodo
 
   Persona->>App: PIN personal
-  App->>Nodo: Validar PIN
+  App->>Nodo: PinSignIn
   Nodo->>Nodo: Dispositivo registrado y usuario activo
   alt La sede exige entrada y no hay marcación abierta
     Nodo-->>App: No puede operar
   else Sesión válida
     Nodo-->>App: Sesión corta, con el nombre en pantalla
     App->>Nodo: Acción operativa
-    Nodo->>Nodo: Evalúa el permiso
-    Nodo-->>App: Permitida, pide autorización, o denegada
+    Nodo->>Nodo: EvaluatePermission
+    Nodo-->>App: Allowed, RequiresAuthorization o Denied
   end
 ```
 
-La administración web entra con correo y contraseña en la nube. En híbrido, el celular del mesero solo habla con el nodo, dentro de la red del local. En modo nube habla con la nube y antes de operar comprueba que llega al puente del local. En los dos casos no guarda datos del negocio.
+La administración web entra con correo, contraseña y segundo factor en la nube (`AdminSignIn`). En híbrido, el celular del mesero solo habla con el nodo, dentro de la red del local. En modo nube habla con la nube y antes de operar comprueba que llega al puente del local. En los dos casos no guarda datos del negocio.
 
 ## Registro y revocación de un celular
 
@@ -94,14 +110,14 @@ sequenceDiagram
   participant Nodo
   participant PWA as Celular del mesero
 
-  Admin->>Nodo: Genera QR de un solo uso
+  Admin->>Nodo: GenerateRegistrationCode (QR de un solo uso)
   Mesero->>PWA: Escanea el QR dentro del local
-  PWA->>Nodo: Registro del dispositivo
+  PWA->>Nodo: RegisterDevice
   Nodo-->>PWA: Credencial de ese celular y esa sede
   Note over Admin,Nodo: Más tarde, si el mesero se va o pierde el celular
-  Admin->>Nodo: Revocar dispositivo o usuario
+  Admin->>Nodo: RevokeDevice o DeactivateUser
   Nodo-->>PWA: La sesión deja de servir
-  Nodo--)Nube: El cambio sube cuando hay internet
+  Nodo--)Nube: DeviceRevoked sube cuando hay internet
 ```
 
 Un celular en la misma red, sin registro y sin PIN, no opera. El nodo no responde nada útil a un dispositivo sin registrar, salvo la pantalla de registro con un QR vigente.
@@ -141,10 +157,14 @@ flowchart LR
   B --> C{"¿Hay internet?"}
   C -->|No| D["La sede sigue operando"]
   D --> C
-  C -->|Sí| E["Lote hacia la nube"]
-  E --> F["Primero facturas pendientes"]
-  F --> G["Luego auditoría, ventas, inventario y telemetría"]
+  C -->|Sí| E["Lote hacia la nube (ApplyBatch)"]
+  E --> F["1. Documentos DIAN y pagos QR confirmados"]
+  F --> G["2. Pedidos QR"]
+  G --> J["3. Auditoría"]
+  J --> K["4. Ventas y caja, luego inventario, y por último telemetría"]
   H["Cambios de configuración en la nube"] --> I["El nodo los baja desde su último cursor"]
 ```
+
+El orden de envío es el de [TRD-00, sección 5.5](../trd/TRD-00-arquitectura-base.md) y [TRD-M0, sección 3](../trd/TRD-M0-plataforma.md).
 
 En modo híbrido, la operación del local no espera a la nube. Lo que sí espera conexión: emitir ante la DIAN, ver la sede desde afuera, reportes consolidados, cambios de menú hechos en la web, pedidos de plataformas y reservas hechas en el enlace público. En modo nube, todo el salón espera conexión.

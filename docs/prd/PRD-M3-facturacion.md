@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.4 |
+| Fecha | 2026-10-17 |
 | Fase | 1 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M3](../trd/TRD-M3-facturacion.md) |
@@ -12,7 +12,7 @@
 
 ## 1. Resumen
 
-Cada venta tiene su factura electrónica de venta, emitida por Factus desde la nube. El salón arma el documento, calcula los impuestos y lo imprime. Sin internet el cliente se lleva un comprobante con QR, que no es factura, y la factura sale sola al reconectar. No hay factura de papel ni factura que agrupe varias ventas.
+Cada venta tiene su factura electrónica de venta, emitida por Factus desde la nube. M2 entrega los ítems con su clasificación tributaria; M3 arma el documento en la sede, calcula los impuestos e imprime la factura o el comprobante. Sin internet el cliente se lleva un comprobante con QR, que no es factura, y la factura sale sola al reconectar. No hay factura de papel ni factura que agrupe varias ventas.
 
 ## 2. Alcance
 
@@ -22,25 +22,26 @@ Cada venta tiene su factura electrónica de venta, emitida por Factus desde la n
 - Adquirente genérico de consumidor final, o datos del cliente capturados en el portal o en caja.
 - Motor de impuestos con los regímenes de [PRD-00, 7.1](PRD-00-vision-producto.md): perfiles, vigencias, INC, IVA, exentos, excluidos, bolsas, ultraprocesados y retenciones en el pago.
 - Numeración por contribuyente, con rango por sede y, si se quiere, por caja.
-- Emisión diferida, verificación de envíos inciertos y notas crédito.
+- Emisión diferida, verificación de envíos inciertos y notas crédito. La fecha oficial de la factura diferida es la de la validación (D-17).
 - Portal de datos y consulta de facturas, con Ley 1581.
 - Refacturación: nota crédito y factura nueva, dentro del plazo de la empresa.
-- Impresión térmica de comanda, precuenta, factura, comprobante, cierre, traslado y propinas. Cajón monedero.
-- Documento soporte y recepción de facturas de proveedores, en la Fase 2, por el mismo puerto.
+- Impresión térmica de la factura y del comprobante, y su reimpresión.
 
 **No incluye**
 
 - Ser proveedor tecnológico ante la DIAN.
 - Acumular ventas en una factura global, diaria o mensual.
 - Contingencia con talonario de papel.
+- Documento soporte y recepción de facturas de proveedores (D-14).
 - El precio de la bolsa de documentos: [PRD-M7](PRD-M7-saas.md). Aquí solo se consume y, si no hay saldo, la factura queda pendiente.
 - Envío de la factura por WhatsApp (Fase 5). Factus envía el correo cuando hay correo del cliente.
+- Las demás impresiones las dispara su módulo: comanda y precuenta en [PRD-M1](PRD-M1-pedidos-y-salon.md); cierre, liquidación de propinas y cajón monedero en [PRD-M2](PRD-M2-caja.md); comprobante de traslado en [PRD-M4](PRD-M4-inventario.md). Las plantillas, la cola y el controlador de impresión son compartidos (`shared/printing`).
 
 ## 3. Usuarios y permisos
 
 | Rol | Qué puede hacer | Requiere autorización de supervisor |
 |-----|-----------------|-------------------------------------|
-| Cajero | Cobrar y con eso emitir. Ver datos recibidos. Consultar adquirente por documento | Reimprimir factura o precuenta por encima del tope |
+| Cajero | Cobrar y con eso emitir. Ver datos recibidos. Consultar adquirente por documento | Reimprimir la factura por encima del tope (la precuenta sigue la misma regla en M1) |
 | Administrador | Aprobar refacturación si la empresa lo exige. Elegir el plazo | Emitir nota crédito |
 | Cliente | Dejar sus datos en el portal, recordarlos con un código, consultar su factura | No ve datos de otra persona |
 | Contador | Reportes de impuestos y el resumen mensual. No emite | No |
@@ -55,7 +56,7 @@ Cada venta tiene su factura electrónica de venta, emitida por Factus desde la n
 Criterios de aceptación:
 
 - [ ] Dado una venta cerrada con internet, cuando M2 pide el documento, entonces Factus lo valida y se imprime con CUFE y QR.
-- [ ] Sin datos del cliente, el adquirente es consumidor final (`13`, `222222222222`). Con datos, sale a su nombre.
+- [ ] Sin datos del cliente, el adquirente es consumidor final: tipo `13`, número `222222222222`, nombre "Consumidor final", responsabilidad `R-99-PN` y el correo interno de la empresa ([PRD-00, sección 7, M3](PRD-00-vision-producto.md)). Con datos, sale a su nombre.
 - [ ] Durante un corte: se imprime un comprobante que dice que no es factura, con QR. Al reconectar se emite en orden de venta, una sola vez.
 - [ ] Queda auditado: la emisión, el rechazo y la reimpresión.
 
@@ -88,7 +89,7 @@ Criterios de aceptación:
 
 - [ ] Dado una factura aceptada a consumidor final y dentro del plazo, cuando se aprueba, entonces sale primero la nota crédito y después la factura nueva, enlazadas.
 - [ ] El par consume 2 documentos de la bolsa.
-- [ ] Fuera del plazo, o sin la aprobación si la empresa la exige, no se emite.
+- [ ] Fuera del plazo, o sin la aprobación de administración, no se emite (D-42).
 - [ ] Queda auditado: quién aprobó, plazo vigente al momento y las dos referencias.
 
 ### HU-M3-05 · Impuestos según el perfil
@@ -98,7 +99,7 @@ Criterios de aceptación:
 Criterios de aceptación:
 
 - [ ] Dado un perfil y una clasificación, cuando se factura, entonces la base y el impuesto se desglosan y se redondean al peso, con el precio del menú ya incluido.
-- [ ] La propina queda fuera de la base. El anticipo se descuenta en la factura. La bolsa plástica va como línea, no como impuesto.
+- [ ] La propina queda fuera de la base. El anticipo se descuenta en la factura. La bolsa plástica va como línea, no como impuesto. En un domicilio, esa línea solo sale si la sede la tiene activa (D-29).
 - [ ] Una tarifa nueva es un registro con vigencia, no un despliegue.
 - [ ] Queda auditado: el perfil y la regla usados en el documento.
 
@@ -112,11 +113,11 @@ Criterios de aceptación:
 | 4 | La propina va como recargo, separada de la venta | No |
 | 5 | Sin internet no hay factura de papel: hay comprobante con QR | No |
 | 6 | Una referencia única por venta. El reintento no crea otra | No |
-| 7 | Refacturar es nota crédito y factura nueva. Plazo por defecto: el mismo día. Máximo recomendado: el mismo mes | El plazo y si exige aprobación, por empresa |
+| 7 | Refacturar es nota crédito y factura nueva. Plazo por defecto: el mismo día. Máximo recomendado: el mismo mes. Administración la aprueba y, aprobada, se emite (D-42) | El plazo, por empresa |
 | 8 | Si no hay saldo en la bolsa, se sigue vendiendo y la factura queda pendiente | No |
 | 9 | Los datos fiscales se guardan por empresa y no se comparten con otra | No |
 | 10 | El impuesto de la línea combina perfil, clasificación y fecha | Las reglas y sus vigencias |
-| 11 | Reimprimir factura o precuenta tiene tope y queda auditado | El tope, en PRD-01 |
+| 11 | Reimprimir la factura tiene tope y queda auditado. La precuenta sigue la misma regla en M1 | El tope, en PRD-01 |
 
 ## 6. Pantallas y flujos
 
@@ -130,7 +131,7 @@ Caja: marca "datos recibidos", consulta por documento y reimpresión.
 
 Web de administración: perfiles fiscales, resoluciones, plazos de refacturación y pendientes.
 
-Cola de impresión en el nodo o en el puente: plantillas 80 mm y 58 mm.
+Impresión de la factura y del comprobante por la cola compartida del nodo o del puente: plantillas 80 mm y 58 mm.
 
 Recorrido: [Flujo M3](../flujos/m3-facturacion.md).
 
@@ -151,8 +152,4 @@ M6 arma el resumen mensual por contribuyente y sede, el porcentaje de facturas c
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Procedimiento y plazo de refacturación, y perfiles de impuestos | Contador, antes de la Fase 1 (TRD-00, 8.4) |
-| 2 | Si una bolsa de Factus la consumen varios NIT y si la API muestra el saldo | Factus, vía [PRD-00, sección 14](PRD-00-vision-producto.md). No bloquea el arranque |
-| 3 | Proveedor de correo y SMS del código de un solo uso | Antes del portal en producción |
+- PA-37: proveedor independiente de correo, SMS y WhatsApp. No es el servicio de la nube (D-47). Ver [registro](../preguntas-abiertas.md).

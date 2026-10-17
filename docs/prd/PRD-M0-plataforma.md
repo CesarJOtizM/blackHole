@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 0 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M0](../trd/TRD-M0-plataforma.md) |
@@ -23,7 +23,7 @@ La matriz de permisos, los topes y la autorización en el momento viven en [PRD-
 
 - Empresa, contribuyentes con perfil fiscal, marcas, sedes, estaciones de cocina, cajas y bodegas ([PRD-00, sección 5](PRD-00-vision-producto.md)).
 - Modo de cada sede: nace en nube y puede activar el híbrido ([PRD-00, 9.1](PRD-00-vision-producto.md)).
-- Sesión de administración (correo, contraseña y segundo factor) y sesión corta con PIN en dispositivos compartidos.
+- Sesión de administración (correo, contraseña y segundo factor). El administrador decide a quién se lo exige; quien no lo tenga exigido puede activarlo (D-38). Sesión corta con PIN en dispositivos compartidos.
 - Registro de dispositivos con QR, celulares personales solo dentro del local, y revocación inmediata.
 - Auditoría que solo se agrega, con cadena de hash por dispositivo.
 - Sincronización: un solo dueño por dato, y un solo dueño de la operación de la sede a la vez.
@@ -86,7 +86,8 @@ Criterios de aceptación:
 Criterios de aceptación:
 
 - [ ] Dado una sede en nube, cuando se empareja el nodo, entonces la operación pasa al nodo, sube la generación y la nube deja de aceptar pedidos y cobros directos de esa sede.
-- [ ] Durante un corte posterior: el salón sigue en el nodo. Volver a nube exige outbox en cero, o una aceptación explícita de lo que no subió.
+- [ ] Durante un corte posterior: el salón sigue en el nodo.
+- [ ] Dado una sede híbrida, cuando el administrador pide volver a nube, entonces la vuelta solo ocurre con la outbox vacía, o si el administrador acepta de forma explícita lo que quede sin subir (D-02). Esa aceptación queda auditada con lo que no subió.
 - [ ] Queda auditado: activación, emparejamiento, vuelta a nube y relevo del nodo.
 
 ### HU-M0-05 · Detectar una auditoría alterada
@@ -107,12 +108,12 @@ Criterios de aceptación:
 | 2 | El menú y las recetas son de la marca; la sede ajusta precio, disponibilidad y horario | No |
 | 3 | Cada sede tiene un inventario de punto. Las estaciones no tienen inventario | No |
 | 4 | La sede nace en modo nube. El híbrido se activa sede por sede | Sí |
-| 5 | Solo hay un dueño de la operación a la vez. El cambio sube la generación | No |
-| 6 | Un dispositivo no registrado no opera ni imprime | No |
+| 5 | Solo hay un dueño de la operación a la vez. El cambio sube la generación | No || 6 | Un dispositivo no registrado no opera ni imprime | No |
 | 7 | El celular personal solo opera dentro del local y no guarda datos del negocio | No |
 | 8 | El servidor decide el permiso. Ocultar un botón no lo reemplaza | No |
 | 9 | La auditoría solo se agrega. Nadie, ni el propietario, la edita o la borra | No |
 | 10 | Si la sede activa "sin entrada no opera", M0 consulta a M8 antes de la acción operativa | Sí, por sede |
+| 11 | Volver de híbrido a nube exige la outbox vacía, o que el administrador acepte de forma explícita lo que quede sin subir (D-02) | No |
 
 El detalle de topes, autoautorización y "nadie se autoriza a sí mismo" está en [PRD-01, secciones 7 a 9](PRD-01-roles-y-permisos.md).
 
@@ -149,8 +150,5 @@ Cada acción sensible emite un evento de auditoría (actor, autorizador, disposi
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Topes iniciales y turnos de una sola persona (autoautorización) | Piloto, vía [PRD-01, sección 13](PRD-01-roles-y-permisos.md) |
-| 2 | Mecanismo de HTTPS local para la PWA | Spike ADR-003, antes de cerrar la Fase 0 |
-| 3 | Router dedicado y módem 4G del kit | ADR-006 y ADR-008, con la visita técnica |
+- PA-29: mecanismo de HTTPS local para la PWA. Ver [registro](../preguntas-abiertas.md).
+- Los topes y el autorizador quedaron decididos (D-30). El router dedicado y el módem 4G se recomiendan y los compra el dueño (D-36). Ver [registro](../preguntas-abiertas.md).

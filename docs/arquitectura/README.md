@@ -3,9 +3,10 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.4 |
-| Fecha | 2026-10-15 |
+| Versión | 0.5 |
+| Fecha | 2026-10-17 |
 | Fuentes | [TRD-00](../trd/TRD-00-arquitectura-base.md), [TRD-01](../trd/TRD-01-infraestructura-y-operacion.md), [Flujos](../flujos/README.md) |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
 
 Vistas estructurales del sistema con el modelo [C4](https://c4model.com/): de lo general (quién usa el sistema y con qué se integra) a lo particular (qué componentes tiene cada módulo). Los [flujos](../flujos/README.md) cuentan **qué pasa** en cada funcionalidad; estos diagramas cuentan **dónde vive** cada pieza y **cómo se comunican**. Si un diagrama y un maestro no coinciden, manda el maestro.
 
@@ -18,7 +19,7 @@ Vistas estructurales del sistema con el modelo [C4](https://c4model.com/): de lo
 | 3 · Componentes | Un archivo por módulo (abajo) | Qué entradas, casos de uso, dominio, puertos y adaptadores tiene cada módulo |
 | Despliegue | [Infraestructura y comunicación](infraestructura-y-comunicacion.md) | En qué máquinas y redes corre todo, qué protocolos y puertos usa y quién inicia cada conexión |
 
-El nivel 4 (código) no se dibuja: lo da la estructura del monorepo (TRD-00, sección 14). Cada módulo es un bounded context y su carpeta lleva el nombre del negocio. El orden en que se escribe cada comportamiento está en TRD-00, sección 16: una prueba que falla, de adentro hacia afuera, en AAA o en GWT.
+El nivel 4 (código) no se dibuja: lo da la estructura del monorepo (TRD-00, sección 14). Cada módulo es un bounded context y su carpeta lleva el nombre del negocio, en inglés según el [glosario de código](../glosario-codigo.md) (por ejemplo, `contexts/orders`). El orden en que se escribe cada comportamiento está en TRD-00, sección 16: una prueba que falla, de adentro hacia afuera, en AAA o en GWT.
 
 ## Componentes por módulo
 
@@ -88,4 +89,4 @@ Dominio y salidas comparten columna: los casos de uso usan los dos. Todas las fl
 
 La dependencia va siempre hacia adentro. Los adaptadores implementan los puertos que declara la aplicación; los casos de uso no saben si detrás hay PostgreSQL o SQLite. Un módulo habla con otro solo por su **puerto de entrada** (llamada en proceso) o por **eventos**, nunca importando su interior.
 
-Los nombres de componentes y casos de uso los adopta el TRD de cada módulo. Si el diagrama y el TRD no coinciden, manda el TRD.
+Los nombres de componentes y casos de uso los adopta el TRD de cada módulo, en inglés según el glosario. Si el diagrama y el TRD no coinciden, manda el TRD. Las preguntas que todavía cambian un diagrama viven en el [registro de preguntas abiertas](../preguntas-abiertas.md).

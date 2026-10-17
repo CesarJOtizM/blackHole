@@ -40,14 +40,14 @@ New context `contexts/attendance`. Clock events are append-only; hours are a pro
 | `contexts/attendance/adapters` (memory, sqlite, postgres) | New | Append-only repositories |
 | `contexts/platform/application` | Modified | Operation rule check |
 | `apps/local-node`, `apps/api-cloud` | Modified | Clock and correction endpoints, auto-close worker, export |
-| `apps/site-app`, `apps/web-admin` | Modified | Clock screen; schedules, corrections, who is here |
+| `apps/venue-app`, `apps/admin-web` | Modified | Clock screen; schedules, corrections, who is here |
 | `shared/contracts`, `shared/sync` | Modified | Clock event schemas and sync |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Contradiction: TRD-00 10.4 reuses 10.1.1 presence, which exempts cloud sites without local equipment; PRD-00/PRD-M8 forbid off-premises clocking | Med | Spec rejects clocking without presence; product owner confirms |
+| Presence check at a cloud site without local equipment | Low | The clock-in counts when the device location matches the venue. Otherwise it is flagged and does not enable operation (D-43) |
 | Someone clocks for another | Med | Personal PIN plus presence; photo in 5.4 |
 | Rule locks out staff on day one | Med | Rule off by default; enable per site after the pilot week |
 | Corrections arriving after original during sync | Low | Projection applies corrections regardless of arrival order |
@@ -59,7 +59,7 @@ Turn off the per-site operation rule to unblock operation immediately. Clock eve
 ## Dependencies
 
 - p0-02, p0-03, p0-04, p0-05, p0-06.
-- Pilot site tolerance and rule decision (PRD-M8 Q1, Q2).
+- Service does not start without a clocked-in cashier. Lateness tolerance is per venue (D-33).
 
 ## Success Criteria
 

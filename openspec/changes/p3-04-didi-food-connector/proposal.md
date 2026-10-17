@@ -37,13 +37,13 @@ Reuse the connector port, hub propagation and watchdog from 3.2/3.3. The chosen 
 | `contexts/delivery/adapters/integrator` | New (if ADR-011 picks it) | Integrator adapter |
 | `shared/contracts` | Modified | Channel configuration schema |
 | `apps/api-cloud` | Modified | Webhook/polling endpoints, secrets |
-| `apps/web-admin` | Modified | Link DiDi store, choose path |
+| `apps/admin-web` | Modified | Link DiDi store, choose path |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| DiDi API access or integrator quote unresolved (ADR-011) | High | Manual adapter stays; decision gate before build |
+| DiDi API access or integrator quote open: PA-28 (ADR-011) | High | Manual adapter stays; decision gate before build |
 | Integrator exposes fewer capabilities | Med | Declared capabilities; portal fallback |
 | Integrator outage affects several platforms | Med | Per-channel manual fallback and alert |
 
@@ -54,7 +54,7 @@ Switch the DiDi channel to the Manual adapter by configuration and revoke creden
 ## Dependencies
 
 - Platform hub (3.2) and hub delta from Rappi connector (3.3)
-- ADR-011 decision; DiDi or integrator credentials
+- PA-28 (ADR-011) decision; DiDi or integrator credentials
 
 ## Success Criteria
 

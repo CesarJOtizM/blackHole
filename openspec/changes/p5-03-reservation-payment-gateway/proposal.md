@@ -47,8 +47,8 @@ Add a `ReservationGateway` port and one provider adapter in `contexts/reservatio
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Gateway provider not chosen | High | Port + in-memory adapter; ADR-012 revision first |
-| c4-m9 names `PasarelaPagos` (table QR port) for this; TRD-M2/TRD-M9 say reservations do not use it | Med | TRD wins: separate port |
+| Gateway provider open: PA-45 (ADR-012) | High | Port + in-memory adapter; ADR-012 revision first |
+| Provider not chosen yet | Med | `ReservationGateway` is an M9-owned port, separate from the QR `PaymentGateway` (glossary, TRD-M9); the provider is chosen in the ADR-012 revision (PA-45) |
 | Payment arrives after link expiry | Med | Confirm if slot available; else refund automatically |
 | Gateway commission vs deposit | Low | Commission recorded per charge |
 

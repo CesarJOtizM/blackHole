@@ -12,11 +12,13 @@ In hybrid mode the node is a single point of failure inside the site (TRD-00 5.3
 - Failover to the cloud only with empty outbox or administrator confirmation; reconciliation of the returning node.
 - Sync retries with growing backoff, resume after reconnect, backup 4G link.
 - Two-way drain on reconnect: pending invoice-class events out, cloud-held QR orders and payments in.
+- Return to cloud with pending events only through explicit, audited administrator acceptance (D-02).
+- Local capacity: at least 90 days of site operation stored on the node (TRD-00 15).
 - Staged node updates, off-hours, automatic rollback; cloud accepts current and previous sync contract.
 
 ### Out of Scope
 - Real invoices, QR orders and QR payments → 1.5, 1.12, 1.13 (this change uses their event classes).
-- Choosing the 4G equipment → ADR-008 with technical visit.
+- The 4G modem is recommended and the owner buys it (D-36, ADR-008).
 - Hot standby second node → excluded until failure data exists (TRD-00 5.3).
 - Node telemetry → 0.9.
 
@@ -36,7 +38,7 @@ Failover and reconciliation as use cases next to `ActivateHybrid` / `ReturnToClo
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `contexts/platform/application` | Modified | `FailOverNode`, reconciliation |
+| `contexts/platform/application` | Modified | `FailOverToCloud`, reconciliation |
 | `shared/sync` | Modified | Backoff, resume, link switching, inbound drain |
 | `apps/local-node` | Modified | Restart policy, update agent, restore command |
 | `apps/api-cloud` | Modified | Failover endpoint, dual sync contract |
@@ -47,12 +49,12 @@ Failover and reconciliation as use cases next to `ActivateHybrid` / `ReturnToClo
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Invoice/QR flows not built yet | High | Drill with synthetic events of those priority classes; re-run in 1.5 and 1.13 |
-| Roadmap says return to cloud requires nothing unsent; PRD-M0/TRD-00 allow explicit acceptance | Med | Master wins; acceptance kept and audited |
+| Administrator accepts losing unsent events by mistake | Med | Explicit acceptance step showing the pending count; audited with the unsent events (D-02) |
 | Failed update during service | Low | Off-hours only, health gate, rollback |
 
 ## Rollback Plan
 
-Disable failover and staged updates by flag; nodes keep the previous image. Sites can return to cloud with empty outbox.
+Disable failover and staged updates by flag; nodes keep the previous image. Sites can return to cloud with empty outbox, or with audited acceptance of the unsent remainder (D-02).
 
 ## Dependencies
 
@@ -62,5 +64,5 @@ Disable failover and staged updates by flag; nodes keep the previous image. Site
 
 - [ ] Restore in under 30 minutes.
 - [ ] A 2-hour cut loses no dining-room orders; on reconnect pending invoices go out and the QR orders and payments left in the cloud come in.
-- [ ] Returning to cloud mode requires that nothing remains unsent.
-- [ ] A failed node update rolls back on its own.
+- [ ] Returning to cloud mode requires an empty outbox, or an explicit administrator acceptance of what remains unsent, audited with the unsent events (D-02).
+- [ ] The node keeps at least 90 days of site operation without depending on the cloud (TRD-00 15).- [ ] A failed node update rolls back on its own.

@@ -40,7 +40,7 @@ A public HTTP entry in `api-cloud`, served by `apps/customer-portal`, calls the 
 | `shared/contracts` | Modified | Public availability and booking schemas |
 | `apps/api-cloud` | Modified | Public routes, rate limiting |
 | `apps/customer-portal` | Modified | Booking screens |
-| `apps/web-admin` | Modified | Enable link, publish collection data |
+| `apps/admin-web` | Modified | Enable link, publish collection data |
 
 ## Risks
 

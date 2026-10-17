@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 1 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M1](../trd/TRD-M1-pedidos-y-salon.md) |
@@ -30,7 +30,7 @@ M1 es el camino de la mesa: el mesero, o el cliente desde el QR, arma el pedido;
 **No incluye**
 
 - Cobro, propina y arqueo: [PRD-M2](PRD-M2-caja.md).
-- Factura DIAN e impresión de la factura: [PRD-M3](PRD-M3-facturacion.md). La precuenta y la comanda sí salen de aquí.
+- Factura DIAN e impresión de la factura y del comprobante: [PRD-M3](PRD-M3-facturacion.md). M1 sí dispara la impresión de la comanda y de la precuenta. Las plantillas y el controlador de impresión son compartidos (`shared/printing`) y no son de ningún módulo.
 - Recetas, stock y la decisión de "hoy no se repone": [PRD-M4](PRD-M4-inventario.md). Aquí se muestra el resultado y se avisa al mesero.
 - Domicilio y plataformas: [PRD-M5](PRD-M5-domicilios.md). Cuando se aceptan, entran como pedido interno de este módulo.
 - WhatsApp o correo al cliente (Fase 5).
@@ -116,7 +116,7 @@ Criterios de aceptación:
 |---|-------|--------------|
 | 1 | El menú es de la marca. La sede ajusta precio, disponibilidad y horario | Sí, por sede |
 | 2 | Cada producto va a una estación. La caja siempre ve la cuenta. La estación no tiene stock | La estación y la salida (pantalla, impresora o ambas) |
-| 3 | El pedido QR sale directo a cocina, salvo que la sede exija aceptación en caja | Sí, por sede |
+| 3 | El pedido QR sale directo a cocina, salvo que la sede exija aceptación en caja. En el piloto esa opción empieza apagada (D-23) | Sí, por sede |
 | 4 | El cliente del QR no anula, no descuenta y no cambia precios | No |
 | 5 | Una venta no se bloquea por inventario negativo. Sí se bloquea el plato marcado "hoy no se repone" | La marca la confirma una persona (M4) |
 | 6 | El consumo se descuenta al enviar a cocina, no al cobrar | No |
@@ -159,7 +159,5 @@ Cada cambio de estado guarda la hora. M6 calcula [PRD-00, 8.1](PRD-00-vision-pro
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | ¿El bartender cobra en la barra en alguna sede? | Piloto, vía [PRD-01, sección 13](PRD-01-roles-y-permisos.md) |
-| 2 | Aceptación en caja del pedido QR: ¿alguna sede del piloto la quiere desde el día uno? | Administrador de la sede, al configurar |
+- PA-30: aviso al mesero con el celular bloqueado y sin internet. Ver [registro](../preguntas-abiertas.md).
+- El cobro del bartender (D-22) y la aceptación en caja del pedido QR (D-23) quedaron decididos. Ver [registro](../preguntas-abiertas.md).

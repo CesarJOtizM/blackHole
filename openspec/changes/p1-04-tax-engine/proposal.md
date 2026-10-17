@@ -42,14 +42,14 @@ Pure function in `contexts/invoicing/domain` (TRD-M3 sec. 1-2): profile + classi
 | `contexts/invoicing/adapters/{postgres,sqlite,http}` | New | Rule storage and node copy |
 | `contexts/cash-register/domain` | Modified | Withholdings on corporate payment |
 | `shared/contracts` | Modified | Rule copy schema, line tax result |
-| `apps/api-cloud`, `apps/local-node`, `apps/web-admin` | Modified | Hosts and admin screens |
+| `apps/api-cloud`, `apps/local-node`, `apps/admin-web` | Modified | Hosts and admin screens |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Rounding diverges from Factus | High | Replicate banker's rounding; sandbox comparison per case |
-| Accountant validation late | Med | Blocks the exit criterion, not the build |
+| Accountant answers are in D-07, D-08 and D-09 | Med | The exit criterion is the sandbox case table |
 | Rule copy outdated on node | Med | Lines store rule version; audit reveals drift |
 
 ## Rollback Plan
@@ -58,7 +58,7 @@ The engine is additive and not yet used for emission. Revert to the previous rul
 
 ## Dependencies
 
-- 0.3 taxpayers and sites; 1.1 tax classification; 1.3 payments; accountant validation (TRD-00 sec. 8.4); Factus sandbox credentials.
+- 0.3 taxpayers and sites; 1.1 tax classification; 1.3 payments; Factus sandbox credentials already held outside the repo (D-20). Tax profile selection is D-09.
 
 ## Success Criteria
 

@@ -40,7 +40,7 @@ Cloud (`api-cloud`, PostgreSQL) owns ingredients and recipes (TRD-00 sec. 5.1). 
 | `contexts/inventory/adapters/{postgres,sqlite,http}` | New | Cloud repository, node recipe copy, admin endpoints |
 | `shared/contracts` | Modified | Recipe version copy schemas |
 | `apps/api-cloud`, `apps/local-node` | Modified | Wire the inventory module |
-| `apps/web-admin` | New | Ingredient, recipe and import screens |
+| `apps/admin-web` | New | Ingredient, recipe and import screens |
 
 ## Risks
 

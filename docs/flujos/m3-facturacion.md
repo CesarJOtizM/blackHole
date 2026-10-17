@@ -3,43 +3,42 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
-| Fuentes | [PRD-00 §6.1.1 y M3](../prd/PRD-00-vision-producto.md), [TRD-00 §7 y §8](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.2 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-00 §6.1.1 y M3](../prd/PRD-00-vision-producto.md), [PRD-M3](../prd/PRD-M3-facturacion.md), [TRD-M3](../trd/TRD-M3-facturacion.md), [TRD-00 §7 y §8](../trd/TRD-00-arquitectura-base.md) |
 
-Cada venta tiene su factura electrónica, emitida por Factus desde la nube. El nodo arma el documento e imprime. Sin internet, el cliente se lleva un comprobante con QR y la factura sale sola al volver la conexión.
+Cada venta tiene su factura electrónica, emitida por Factus desde la nube. En la sede, M3 arma el documento, calcula los impuestos e imprime la factura o el comprobante. Sin internet, el cliente se lleva un comprobante con QR y la factura sale sola al volver la conexión. Los nombres de casos de uso y estados son los de [TRD-M3](../trd/TRD-M3-facturacion.md).
 
 ## Cómo se conecta
 
 | Con | Qué pasa |
 |-----|----------|
-| M2 | Entrega la venta cerrada: ítems, impuestos, propina, pagos y anticipos. |
+| M2 | Entrega la venta cerrada (`CreateSalesDocument`): ítems con su clasificación tributaria, propina, pagos, anticipos y adquirente. No entrega impuestos: los calcula M3. |
 | Portal | Entrega los datos del cliente, atados a esa cuenta. |
-| M7 | Si la bolsa de documentos se agota, la venta sigue y la factura queda pendiente. |
+| M7 | Si la bolsa de documentos se agota, la venta sigue y la factura queda pendiente. Cada documento aceptado emite `DocumentConsumed`. |
 | M9 | El anticipo viaja en la factura como anticipo. |
-| M4 | El documento soporte de una compra a quien no factura sale por el mismo proveedor, en la Fase 2. |
 | M6 | Emisiones, rechazos y refacturaciones alimentan el reporte fiscal. |
-| Impresoras | Comandas, precuenta, factura, cierre, traslado y propinas salen del nodo. |
+| Impresoras | M3 dispara la factura y el comprobante. La comanda y la precuenta las dispara M1; el cierre, las propinas y el cajón, M2; el comprobante de traslado, M4. Plantillas, cola y controlador viven en `shared/printing`. |
 
 ## Emisión de la factura
 
 ```mermaid
 flowchart TD
-  A["M2 cierra la venta"] --> B["El nodo crea el documento con su referencia"]
-  B --> C["El motor de impuestos desglosa base e impuesto"]
+  A["M2 cierra la venta y envía ítems con su clasificación tributaria"] --> B["CreateSalesDocument: el nodo crea el documento con su referencia"]
+  B --> C["El motor de impuestos de M3 desglosa base e impuesto"]
   C --> D{"¿Hay datos del cliente para esta cuenta?"}
   D -->|Sí| E["Adquirente con esos datos"]
-  D -->|No| F["Consumidor final"]
+  D -->|No| F["Consumidor final (GenericBuyer)"]
   E --> G{"¿La nube puede llamar a Factus ahora?"}
   F --> G
-  G -->|Sí| H["Factus valida ante la DIAN"]
+  G -->|Sí| H["IssueDocument: Factus valida ante la DIAN"]
   H --> I{"Respuesta"}
-  I -->|Aceptada| J["El nodo imprime factura, CUFE y QR"]
+  I -->|Aceptada| J["M3 imprime factura, CUFE y QR"]
   I -->|Rechazada| K["Alerta, se corrige y se reenvía"]
-  I -->|"Sin respuesta"| L["Queda incierta: se consulta antes de reenviar"]
-  G -->|No| M["El nodo imprime un comprobante que no es factura"]
-  M --> N["Pendiente de emisión"]
-  N --> O["Al reconectar, se emite en orden de venta"]
+  I -->|"Sin respuesta"| L["uncertain: se consulta antes de reenviar"]
+  G -->|No| M["M3 imprime un comprobante que no es factura"]
+  M --> N["pending_issuance"]
+  N --> O["Al reconectar, IssuePendingDocuments emite en orden de venta"]
   O --> H
 ```
 
@@ -49,8 +48,8 @@ La llamada a Factus sale solo de la nube. El token no se guarda en la sede. La p
 
 ```mermaid
 flowchart TD
-  A["La llamada salió y no volvió la respuesta"] --> B["Documento incierto"]
-  B --> C["Consultar en Factus por la referencia"]
+  A["La llamada salió y no volvió la respuesta"] --> B["Documento uncertain"]
+  B --> C["VerifyUncertain: consultar en Factus por la referencia"]
   C --> D{"¿Qué hay?"}
   D -->|Ya validada| E["Se toma esa factura y no se reenvía"]
   D -->|"Pendiente de validar"| F["Se elimina esa tentativa y se vuelve a enviar"]
@@ -73,12 +72,12 @@ sequenceDiagram
   participant Caja
 
   Cliente->>Portal: Abre el enlace y escribe su documento
-  Portal->>Factus: Consulta nombre y correo
+  Portal->>Factus: LookUpBuyer, consulta nombre y correo
   Factus-->>Portal: Datos, que el portal muestra ocultos
   Cliente->>Portal: Confirma, completa lo opcional y acepta la política
-  Portal->>Portal: Guarda los datos de esta cuenta
+  Portal->>Portal: RecordBillingData de esta cuenta
   alt La sede está en línea con la nube
-    Portal-->>Nodo: Datos recibidos
+    Portal-->>Nodo: BillingDataReceived
     Nodo-->>Caja: La cuenta queda marcada
     Caja->>Nodo: Cobra con esos datos
   else La sede está sin internet
@@ -88,13 +87,13 @@ sequenceDiagram
   end
 ```
 
-Si el cliente pide recordar sus datos, la próxima vez confirma con un código enviado a su correo o celular. Los datos son de esa empresa y sirven en todas sus sedes.
+Si el cliente pide recordar sus datos, la próxima vez confirma con un código enviado a su correo o celular (`ValidateOtp`). Los datos son de esa empresa y sirven en todas sus sedes.
 
 En la caja, el cajero también puede escribir el documento y traer los datos guardados, o consultar el nombre y el correo. Si portal y caja traen datos distintos para la misma cuenta, elige el cajero antes de cobrar.
 
 ## Refacturación
 
-Aplica cuando la factura ya salió a consumidor final y el cliente pide una a su nombre, dentro del plazo de la empresa.
+Aplica cuando la factura ya salió a consumidor final y el cliente pide una a su nombre, dentro del plazo de la empresa (`Reinvoice`).
 
 ```mermaid
 sequenceDiagram
@@ -112,7 +111,7 @@ sequenceDiagram
   Factus-->>Nube: Nota validada
   Nube->>Factus: Factura nueva con los datos del cliente
   Factus-->>Nube: Factura nueva
-  Nube->>Nube: Las dos quedan enlazadas y auditadas
+  Nube->>Nube: Las dos quedan enlazadas y auditadas (Reinvoiced)
 ```
 
 La nota se emite primero. La factura nueva reutiliza su referencia si hay que reintentarla. El par consume dos documentos de la bolsa.
@@ -121,10 +120,12 @@ La nota se emite primero. La factura nueva reutiliza su referencia si hay que re
 
 ```mermaid
 flowchart LR
-  App["PWA de la sede (caja, cocina o salón)"] --> Nodo
-  Nodo --> Cola["Cola de impresión"]
-  Cola --> T["Térmica 80 mm o 58 mm"]
-  T --> Cajon["Cajón, solo con el comando de la caja"]
+  M1["M1: comanda y precuenta"] --> Q["Cola de impresión<br/>shared/printing"]
+  M2["M2: cierre, propinas y cajón"] --> Q
+  M3["M3: factura y comprobante"] --> Q
+  M4["M4: comprobante de traslado"] --> Q
+  Q --> T["Térmica 80 mm o 58 mm"]
+  T --> D["Cajón, solo con el comando de la caja"]
 ```
 
-El navegador no habla con la impresora. Si una impresora de red tiene respaldo, la cola lo usa cuando la principal falla. Reimprimir queda auditado y, para factura y precuenta, tiene tope.
+El navegador no habla con la impresora: cada módulo dispara su impresión en el nodo (o en el puente, en modo nube) y la cola compartida la entrega. Si una impresora de red tiene respaldo, la cola lo usa cuando la principal falla. Reimprimir la factura queda auditado y tiene tope; la precuenta sigue la misma regla en M1.

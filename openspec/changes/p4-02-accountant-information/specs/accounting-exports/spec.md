@@ -50,7 +50,7 @@ The summary MUST be labelled as a report and the system MUST NOT offer any actio
 
 ### Requirement: Pending Documents at Cut-off
 
-The summary MUST list documents still `pending_issue` or `uncertain` at the moment of the report, separately from accepted totals.
+The summary MUST list documents still `pending_issuance` or `uncertain` at the moment of the report, separately from accepted totals.
 
 #### Scenario: Pending excluded from totals
 

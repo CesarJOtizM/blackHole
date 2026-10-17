@@ -3,9 +3,10 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fuentes | [TRD-00 §5, §7, §10.1.2 y §13](../trd/TRD-00-arquitectura-base.md), [TRD-01](../trd/TRD-01-infraestructura-y-operacion.md) |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
 
 Vista de despliegue de C4: en qué máquinas y redes corre cada contenedor, por qué protocolo se habla cada par y **quién abre la conexión**. Esa última pregunta importa porque ninguna sede abre puertos en su router: todo lo que baja de la nube a la sede viaja por una conexión que la sede abrió.
 
@@ -54,7 +55,7 @@ flowchart LR
     PAS["<b>Pasarela de pagos</b><br/>[ADR-016]"]:::externo
     PLAT["<b>Plataformas</b><br/>[Rappi, DiDi, integrador]"]:::externo
     PUSH["<b>Web Push</b><br/>[FCM, APNs]"]:::externo
-    MSG["<b>Correo y SMS</b><br/>[Por definir]"]:::externo
+    MSG["<b>Correo y SMS</b><br/>[Por definir: PA-37]"]:::externo
   end
 
   subgraph Obs["Observabilidad como servicio"]
@@ -182,7 +183,7 @@ flowchart TB
     CEL["<b>Celulares de clientes</b><br/>Portal por internet"]:::externo
 
     subgraph Sistema["Red del sistema · router dedicado"]
-      RDED["<b>Router dedicado</b><br/>Wi-Fi del personal<br/>DNS local en el router o en el nodo:<br/>sede-xxx.local.dominio → IP del nodo"]:::infra
+      RDED["<b>Router dedicado</b><br/>Wi-Fi del personal<br/>DNS local en el router o en el nodo:<br/>venue-xxx.local.&lt;dominio&gt; → IP del nodo"]:::infra
       NODO["<b>Nodo local</b><br/>Solo 443: HTTPS y WSS<br/>Sin SSH ni paneles expuestos"]:::contenedor
       DEV["<b>Celulares, tablets, PC de caja, TV de cocina</b><br/>Dispositivos registrados"]:::contenedor
       IMPR["<b>Impresora de red</b><br/>TCP 9100, solo desde la IP del nodo"]:::externo
@@ -213,7 +214,7 @@ flowchart TB
 
 | Protección | Cómo |
 |------------|------|
-| HTTPS dentro del local | Certificado real de `sede-xxx.local.dominio`, emitido en la nube por DNS-01 en Cloudflare, instalado y renovado en el nodo en cada conexión (ADR-003, opción A) |
+| HTTPS dentro del local | Certificado real de `venue-xxx.local.<dominio>`, emitido en la nube por DNS-01 en Cloudflare, instalado y renovado en el nodo en cada conexión (ADR-003, opción A) |
 | Dispositivo sin registrar | El nodo solo responde la pantalla de registro, y solo con un QR vigente de un solo uso |
 | Peticiones | Firmadas con la llave ECDSA no exportable de cada dispositivo, más PIN y sesión corta |
 | Impresoras | En la red del sistema, con reglas que solo dejan llegar al nodo, o por USB o cable |
@@ -228,7 +229,7 @@ No hay nodo. Los dispositivos van por internet a la API central. El puente, si e
 flowchart LR
   subgraph Local["Local en modo nube"]
     DEV["<b>Dispositivos del personal</b>"]:::contenedor
-    PUE["<b>Puente</b><br/>[nodo-local, perfil puente]<br/>Sin puertos de entrada"]:::contenedor
+    PUE["<b>Puente</b><br/>[local-node, perfil bridge]<br/>Sin puertos de entrada"]:::contenedor
     IMP["<b>Impresoras y cajón</b>"]:::externo
     R["<b>Router</b>"]:::infra
   end
@@ -260,13 +261,13 @@ Si el puente está apagado, el trabajo espera en la nube y la pantalla avisa que
 | 5 | Puente | API central | WSS 443: trabajos de impresión | Puente | Credencial del puente | Nube |
 | 6 | Nodo o puente | Impresora | ESC/POS por TCP 9100, o USB | Nodo o puente | Ninguna en la impresora: aislamiento de red | Ambos |
 | 7 | Dispositivo de la sede | DNS local (router o nodo) | DNS 53, red local | Dispositivo | — | Híbrido |
-| 8 | Web de administración | API central | HTTPS 443 | Navegador | Better Auth, segundo factor opcional | Ambos |
+| 8 | Web de administración | API central | HTTPS 443 | Navegador | Better Auth. El segundo factor lo exige el administrador o lo activa el usuario (D-38) | Ambos |
 | 9 | Portal de clientes | API central | HTTPS 443 | Celular del cliente | Token firmado de un solo propósito; límite por token e IP; captcha; código de un solo uso para datos guardados | Ambos |
 | 10 | API central → pasarela, y celular del cliente → pasarela | Pasarela | HTTPS 443 | La API crea el cobro por el saldo; el celular paga en la pasarela | Credencial del comercio en el gestor de secretos; la del proveedor para el cliente | Ambos |
 | 11 | Pasarela | API central | HTTPS 443, webhook | Pasarela | Firma del webhook; idempotente por referencia | Ambos |
 | 12 | App del domiciliario | API central | HTTPS + WSS 443 | Celular | Dispositivo registrado | Ambos |
 | 13 | App del domiciliario | Nodo | HTTPS 443, Wi-Fi de la sede | Celular | Dispositivo registrado | Híbrido, durante un corte |
-| 14 | Plataformas | API central | HTTPS 443, webhook | Plataforma | Firma del webhook; clave `(plataforma, id_externo)` | Ambos |
+| 14 | Plataformas | API central | HTTPS 443, webhook | Plataforma | Firma del webhook; clave `(platform, external_order_id)` | Ambos |
 | 15 | Workers | Plataformas | HTTPS 443 | Worker | Credenciales cifradas por tienda | Ambos |
 | 16 | Workers | Factus | HTTPS 443 | Worker | OAuth2 por contribuyente, token de 60 minutos; 80 solicitudes por minuto por NIT | Ambos |
 | 17 | Balanceador | API central | HTTP, puerto interno, red privada | Balanceador | Red privada | — |
@@ -392,8 +393,8 @@ sequenceDiagram
 
   P->>LB: Webhook HTTPS
   LB->>API: Petición
-  API->>API: Verifica la firma y la clave (plataforma, id_externo)
-  API->>PG: PedidoExterno normalizado
+  API->>API: Verifica la firma y la clave (platform, external_order_id)
+  API->>PG: ExternalOrder normalizado
   API-->>P: 200 recibido
   API-->>Nodo: Pedido por el WSS que abrió el nodo
   Nodo-->>Caja: Alerta para aceptar
@@ -491,11 +492,14 @@ Las métricas, tableros y alarmas están en TRD-01, sección 7. Las trazas sigue
 
 ## 9. Pendientes que cambian estos diagramas
 
+Cada pendiente vive en el [registro de preguntas abiertas](../preguntas-abiertas.md).
+
 | Pendiente | Qué cambia |
 |-----------|------------|
-| ADR-003 | Si el spike de HTTPS local no valida la opción A, cambia el canal 1 y la red de la sede |
-| ADR-005 | Nombres concretos de los servicios en la nube de producción |
-| ADR-006 | Si el kit incluye o no el router dedicado en cada sede |
-| ADR-015 | Servicio del pipeline |
-| ADR-016 | Pasarela del pago QR: canales 10 y 11 |
-| Por definir | Proveedor de correo y SMS (canal 21); cómo se sirven las PWA estáticas desde la nube |
+| PA-29 (ADR-003) | Si el spike de HTTPS local no valida la opción A, cambia el canal 1 y la red de la sede |
+| ADR-005 | El primer ensayo corre en AWS o en GCP (D-39). Los módulos de las tres nubes siguen |
+| D-36 (ADR-006) | El router dedicado se recomienda. Lo compra el dueño. El producto es solo software |
+| D-45 | El pipeline es GitHub Actions |
+| D-46 | Varias pasarelas de pago QR. Bold es una. Canales 10 y 11 |
+| PA-37 | Proveedor de correo y SMS (canal 21) |
+| D-40 | Las PWA del MVP son archivos estáticos en la nube y el navegador las instala. El nodo no las sirve |

@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.2 |
+| Fecha | 2026-10-17 |
 | Fase | 1 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | PRD asociado | [PRD-M8](../prd/PRD-M8-asistencia.md) |
@@ -14,25 +14,28 @@
 
 | Tema | Decisión |
 |------|----------|
-| Registro | `Marcacion` solo se agrega. La corrección es otra fila que apunta a la original |
-| Hora | Puerto `Reloj`. En híbrido, la del nodo. En modo nube, la del servidor. El cliente no la envía |
-| Presencia | `PresenciaLocal`. En híbrido la petición entra por la red del nodo. En nube, la PWA llega al puente antes de marcar |
+| Registro | `ClockEntry` solo se agrega. La corrección es otra fila que apunta a la original |
+| Hora | Puerto `Clock`. En híbrido, la del nodo. En modo nube, la del servidor. El cliente no la envía |
+| Presencia | Puerto `VenuePresence`. En híbrido la petición entra por la red del nodo. En nube, la PWA llega al puente antes de marcar. Sin presencia comprobada no hay marcación, sin excepciones (PRD-M8, regla 3) |
 | Horas | Proyección. No hay una columna de horas que alguien edite |
-| Regla operativa | M0 llama `TieneEntradaAbierta` si la sede activó la regla |
-| Propinas | M2 llama `ParticipantesDelPeriodo` |
+| Regla operativa | M0 llama `HasOpenClockIn` si la sede activó la regla |
+| Propinas | M2 llama `ParticipantsForPeriod` |
 | Cierre | Un worker del nodo, a la hora configurada, agrega la salida y deja el turno por revisar |
 | Foto | No está. El puerto de archivos de esta fase solo guarda exportaciones |
-| Código | `contextos/asistencia/dominio`, `contextos/asistencia/aplicacion` |
+| Código | `contexts/attendance/domain`, `contexts/attendance/application` |
+
+La excepción de [TRD-00, 10.1.1](TRD-00-arquitectura-base.md), que deja operar desde cualquier lugar a una sede en modo nube sin ningún equipo local, vale para operar, no para marcar. Esa sede no puede comprobar presencia, así que no marca hasta tener un puente en el local.
 
 ## 2. Modelo de dominio
 
 | Tipo | Nombre | Invariantes |
 |------|--------|-------------|
-| Entidad | `Marcacion` | Tipos: entrada, salida, inicio de pausa, fin de pausa. Lleva usuario, sede, dispositivo y hora del reloj del servidor. No se actualiza |
-| Entidad | `CorreccionMarcacion` | Apunta a una marcación, con motivo. No la sustituye en el almacenamiento; la proyección la aplica |
-| Entidad | `HorarioProgramado` | Opcional por trabajador y día. Sin él, solo hay horas |
+| Entidad | `ClockEntry` | Tipos `clock_in`, `clock_out`, `break_start`, `break_end`. Lleva usuario, sede, dispositivo y hora del reloj del servidor. No se actualiza |
+| Entidad | `ClockEntryCorrection` | Apunta a una marcación, con motivo. No la sustituye en el almacenamiento; la proyección la aplica |
+| Entidad | `ScheduledShift` | Opcional por trabajador y día. Sin él, solo hay horas |
 | Regla | Proyección de horas | Entrada a salida, menos pausas. Con horario: tardanza, ausencia, salida anticipada y tiempo fuera, con tolerancia |
 | Regla | Turno abierto | Como máximo una entrada sin salida por persona y sede. Otra entrada se rechaza |
+| Regla | Estado del turno | `off_shift`, `on_shift`, `on_break` y `pending_review`, este último tras el cierre automático. Se deriva de las marcaciones; no se guarda aparte |
 
 La proyección no redondea a gusto del reporte: la hora queda en minutos del reloj del nodo, y el redondeo, si la sede lo define, es una regla explícita.
 
@@ -49,28 +52,28 @@ La proyección no redondea a gusto del reporte: la hora queda en minutos del rel
 
 | Caso de uso | Entrada | Reglas | Eventos | Corre en |
 |-------------|---------|--------|---------|----------|
-| `Marcar` | PIN, tipo, dispositivo | Hora del reloj del servidor. Presencia local. No abre una segunda entrada | `Marcacion` | Dueño de la operación |
-| `Corregir` | Marcación, motivo, administrador | Agrega corrección. Llama a M0 para auditar | `CorreccionMarcacion` | Dueño de la operación |
-| `CerrarTurnosAbiertos` | Hora de cierre | Agrega salida y marca por revisar | `Marcacion` de salida automática | Nodo, o nube en modo nube |
-| `TieneEntradaAbierta` | Usuario y sede | La consulta M0. Los roles administrativos no pasan por aquí | — | Dueño de la operación |
-| `ParticipantesDelPeriodo` | Periodo | Personas y horas ya proyectadas. La consulta M2 | — | Dueño de la operación |
-| `ExportarHoras` | Sede y periodo | Excel. Sin salario | — | Nube |
+| `RecordClockEntry` | PIN, tipo, dispositivo | Hora del reloj del servidor. Presencia en el local. No abre una segunda entrada | `ClockEntryRecorded` | Dueño de la operación |
+| `CorrectClockEntry` | Marcación, motivo, administrador | Agrega corrección. Llama a M0 para auditar | `ClockEntryCorrected` | Dueño de la operación |
+| `CloseOpenShifts` | Hora de cierre | Agrega salida y marca por revisar | `ClockEntryRecorded` de salida automática | Nodo, o nube en modo nube |
+| `HasOpenClockIn` | Usuario y sede | La consulta M0. Los roles administrativos no pasan por aquí | — | Dueño de la operación |
+| `ParticipantsForPeriod` | Periodo | Personas y horas ya proyectadas. La consulta M2 | — | Dueño de la operación |
+| `ExportHours` | Sede y periodo | Excel. Sin salario | — | Nube |
 
 ## 5. Contratos
 
 **HTTP:** marcar, corregir, quién está ahora.
 
-**Puerto de entrada:** `TieneEntradaAbierta`, `ParticipantesDelPeriodo`.
+**Puerto de entrada** (`entry-port.ts`): `HasOpenClockIn`, `ParticipantsForPeriod`.
 
-**Reloj:** el comando de marcar no trae timestamp del cliente. Si viene, se ignora.
+**`Clock`:** el comando de marcar no trae timestamp del cliente. Si viene, se ignora.
 
-Los esquemas Zod viven en `compartido/contratos`. El cuerpo de marcación es usuario, sede, dispositivo y tipo.
+Los esquemas Zod viven en `shared/contracts`. El cuerpo de marcación es usuario, sede, dispositivo y tipo.
 
 ## 6. Persistencia
 
-`marcaciones`, `correcciones_marcacion`, `horarios`.
+`clock_entries`, `clock_entry_corrections`, `scheduled_shifts`.
 
-- `marcaciones` solo acepta inserción.
+- `clock_entries` solo acepta inserción.
 - PostgreSQL con `tenant_id` y Row Level Security. SQLite en el nodo, solo su sede.
 - Índice por usuario, sede y hora para la proyección del periodo.
 - La exportación vive en el almacén de objetos de la nube.
@@ -85,7 +88,7 @@ Al reconectar, las marcaciones suben en orden. Una corrección hecha en el nodo 
 
 ## 8. Seguridad y auditoría
 
-Marcar exige PIN y dispositivo registrado. Corregir exige el permiso de administrador de esa sede.
+Marcar exige PIN, dispositivo registrado y presencia en el local. Corregir exige el permiso `attendance.correct_entry`, que por defecto tiene el administrador de esa sede ([PRD-01, 6.4](../prd/PRD-01-roles-y-permisos.md)).
 
 La marcación ordinaria no llena la auditoría de acciones sensibles: el registro es la propia fila. Sí quedan en la cadena la corrección, el cambio de horario y el cambio de la regla "sin entrada no opera".
 
@@ -102,11 +105,12 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 | Sin horario no hay tardanza | Dominio | Solo hay horas |
 | Con horario y tolerancia | Dominio | Dentro de la tolerancia no es tardanza |
 | La corrección no borra la original | Dominio | Las dos filas existen y la proyección usa la corrección |
-| `Marcar` con reloj fijo | Aplicación | Ignora una hora enviada por el cliente |
-| Sin presencia local | Aplicación | No hay marcación |
-| `TieneEntradaAbierta` | Aplicación | Falso si la última es una salida |
+| `RecordClockEntry` con reloj fijo | Aplicación | Ignora una hora enviada por el cliente |
+| Sin presencia en el local | Aplicación | No hay marcación |
+| Sede en modo nube sin puente | Aplicación | No hay marcación, aunque el dispositivo esté registrado y tenga PIN |
+| `HasOpenClockIn` | Aplicación | Falso si la última es una salida |
 | Cierre automático | Aplicación | Agrega salida y deja por revisar |
-| `RepositorioMarcaciones` | Contrato, memoria, SQLite y PostgreSQL | La proyección del periodo coincide |
+| `ClockEntryRepository` | Contrato, memoria, SQLite y PostgreSQL | La proyección del periodo coincide |
 | Marcar repetido por reintento | Aplicación | La segunda llamada con la misma clave no duplica |
 
 - [ ] Cada invariante de la sección 2 tiene prueba de dominio, sin Nest ni base de datos
@@ -124,3 +128,4 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 | Reloj del celular | No se acepta |
 | Turno abierto al día siguiente | Cierre automático por revisar |
 | Modo nube en corte | No se marca. Es el mismo criterio del salón |
+| Sede en modo nube sin equipo local | No marca hasta tener puente en el local |

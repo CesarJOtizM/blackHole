@@ -4,7 +4,7 @@ roadmap_title: "Customer onboarding"
 phase: 4
 modules: [M7, M0, M1, M3, M4]
 bounded_contexts: [saas, platform, orders, inventory, invoicing, contracts]
-apps: [api-cloud, web-admin]
+apps: [api-cloud, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-03-organization, p0-04-identity-and-devices, p0-05-roles-and-permissions, p1-01-menu-and-catalog, p1-04-tax-engine, p1-05-electronic-invoicing, p2-01-ingredients-and-recipes, p4-03-plans-and-subscription]

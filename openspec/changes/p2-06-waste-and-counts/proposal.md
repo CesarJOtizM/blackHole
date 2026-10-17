@@ -2,7 +2,7 @@
 
 ## Intent
 
-The gap between theoretical and real stock is the Phase 2 success metric (PRD-00 sec. 11–12). It can only be measured if waste is recorded with a reason and physical counts are compared against the ledger, adjusting through movements rather than edited balances (PRD-M4 rule 4, TRD-M4 `RegistrarConteo`, `AprobarAjuste`).
+The gap between theoretical and real stock is the Phase 2 success metric (PRD-00 sec. 11–12). It can only be measured if waste is recorded with a reason and physical counts are compared against the ledger, adjusting through movements rather than edited balances (PRD-M4 rule 4, TRD-M4 `RecordStockCount`, `ApproveAdjustment`).
 
 ## Scope
 
@@ -11,7 +11,7 @@ The gap between theoretical and real stock is the Phase 2 success metric (PRD-00
 - Waste cap per role (kitchen chief up to 30,000 COP per record by default); above cap needs supervisor authorization.
 - Physical counts, full or by category, at a location, with a cut-off time.
 - Comparison against theoretical stock at cut-off, per ingredient, in quantity and value.
-- Approval within cap, and count adjustment movements; rejection leaves stock untouched.
+- Approval of a count adjustment above a configurable cap (default 1,000 COP, lowerable per site) (D-28), and count adjustment movements; rejection leaves stock untouched.
 
 ### Out of Scope
 - Waste, variance and adjustment reports (PRD-00 sec. 8.3, 8.4) → 2.10.
@@ -44,9 +44,9 @@ Use cases run on the location owner (`local-node` offline-capable for hybrid sit
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Count-approval cap not defined in PRD-01 sec. 7 | High | Ask PO; default to value-based cap per role |
+| Count-approval cap not defined in PRD-01 sec. 7 | High | Configurable cap, default 1,000 COP, lowerable per site (D-28) |
 | Sales during a count distort variance | Med | Variance computed at cut-off; later movements untouched |
-| Counters bias to the theoretical | Med | Open question: blind count like cash count |
+| Counters bias to the theoretical | Med | Blind count open: PA-42 |
 
 ## Rollback Plan
 

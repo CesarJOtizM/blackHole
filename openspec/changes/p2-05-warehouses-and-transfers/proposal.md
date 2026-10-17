@@ -8,12 +8,13 @@ Sites are replenished from their own warehouse and from a general warehouse that
 
 ### In Scope
 - Site warehouses (owned by the site) and company general warehouses, plus which warehouses supply each site.
-- General warehouse on a node in warehouse profile (inventory, receiving, dispatch, voucher printing; no dining room or cash), or web-only without a node.
+- Pilot general warehouse on its own node in warehouse mode (inventory, receiving, dispatch, voucher printing; no dining room or cash) (D-04).
 - Transfers: requested, dispatched, in transit, received, received with differences; same-node and two-owner (general→site, site→site).
 - Two halves sharing one transfer ID; dispatch voucher with QR to receive offline.
 - Replenishment request from the point of sale and suggestion by minimum stock.
 
 ### Out of Scope
+- General warehouse operated from the web without a node, for small customers → open, PA-44 (after the pilot).
 - Full levels (reorder point), coverage alerts, one-tap replenishment from an alert → 2.8.
 - Producible quantity with replenishment → 2.7.
 - Transfer and difference reports → 2.10.
@@ -46,17 +47,17 @@ Each owner records only its half (TRD-M4 sec. 3, 7): origin writes transfer-out,
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Forged or reused QR | Med | Registered device only; unmatched receipts flagged at reconciliation |
-| Transfer cost not specified in docs | Med | Origin average cost at dispatch; confirm with PO |
+| Transfer cost not specified in docs | Med | Origin average cost at dispatch, with nothing added (D-27) |
 | Minimum/maximum overlap with 2.8 levels | Med | 2.5 defines min/max only; 2.8 extends |
-| ADR-010 still "proposed" | Med | Accept ADR before apply |
+| ADR-010 still "proposed" | Med | D-04 settles the pilot (own node, warehouse mode); record it in ADR-010 before apply |
 
 ## Rollback Plan
 
-Disable transfer endpoints and the warehouse profile by flag; general warehouse falls back to web-only. Recorded halves stay in the ledger; open transfers are closed by compensating movements.
+Disable transfer endpoints and the warehouse profile by flag; the general warehouse keeps its node and records movements by manual adjustments until re-enabled. Recorded halves stay in the ledger; open transfers are closed by compensating movements.
 
 ## Dependencies
 
-- p2-02 ledger, p2-03 average cost, p0-04 devices, p0-07 node operation, p1-06 printing; ADR-010 accepted.
+- p2-02 ledger, p2-03 average cost, p0-04 devices, p0-07 node operation, p1-06 printing; D-04 (warehouse mode node), ADR-010.
 
 ## Success Criteria
 

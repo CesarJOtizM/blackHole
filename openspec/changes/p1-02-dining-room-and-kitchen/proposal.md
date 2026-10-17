@@ -45,7 +45,7 @@ Bounded context `orders`: `Table`, `Order`, `OrderLine`, pure `Router` (TRD-M1 s
 | `contexts/orders/adapters/{postgres,sqlite,http,websocket}` | New | Persistence, HTTP and real time |
 | `shared/printing` | New | Minimal kitchen-ticket output through `Printer` port |
 | `shared/contracts`, `shared/sync` | Modified | Line-state events, outbox |
-| `apps/local-node`, `apps/api-cloud`, `apps/site-app` | Modified/New | Hosts and PWA screens |
+| `apps/local-node`, `apps/api-cloud`, `apps/venue-app` | Modified/New | Hosts and PWA screens |
 
 ## Risks
 
@@ -57,11 +57,11 @@ Bounded context `orders`: `Table`, `Order`, `OrderLine`, pure `Router` (TRD-M1 s
 
 ## Rollback Plan
 
-Feature flag per site disables the dining-room screens; the site keeps its previous process. Revert additive migrations of `tables`, `accounts`, `orders`, `order_lines`. No sales exist yet, so no fiscal data is affected.
+Feature flag per site disables the dining-room screens; the site keeps its previous process. Revert additive migrations of `dining_tables`, `checks`, `orders`, `order_lines`. No sales exist yet, so no fiscal data is affected.
 
 ## Dependencies
 
-- 1.1 catalog; 0.3 stations; 0.4 devices; 0.5 permissions; 0.6 audit; 0.1 notification spike.
+- 1.1 catalog; 0.3 stations; 0.4 devices; 0.5 permissions; 0.6 audit; 0.1 notification spike (PA-30).
 
 ## Success Criteria
 

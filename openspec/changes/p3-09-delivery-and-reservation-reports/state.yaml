@@ -4,7 +4,7 @@ roadmap_title: "Delivery and reservation reports"
 phase: 3
 modules: [M6, M5, M9]
 bounded_contexts: [reporting, delivery, reservations, contracts, sync]
-apps: [api-cloud, local-node, site-app, web-admin]
+apps: [api-cloud, local-node, venue-app, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p1-11-site-reports, p3-01-own-delivery, p3-02-platform-hub-and-manual-capture, p3-05-platform-reconciliation, p3-06-reservations, p3-07-reservation-payments, p3-08-public-booking-link]

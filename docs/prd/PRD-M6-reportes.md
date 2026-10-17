@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 1 a 4 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M6](../trd/TRD-M6-reportes.md) |
@@ -34,7 +34,7 @@ M6 lee lo que los demás módulos ya registraron. No crea ventas ni corrige caja
 
 | Rol | Qué puede hacer | Requiere autorización de supervisor |
 |-----|-----------------|-------------------------------------|
-| Cajero | Cierre y turno actual | No ve el histórico de otros turno si el permiso es el del supervisor |
+| Cajero | Cierre y turno actual | No ve el histórico de otros turnos si el permiso es el del supervisor |
 | Supervisor | El turno actual | No |
 | Administrador de sede | Su sede, también costos | No |
 | Gerente general | Su marca o la empresa, consolidado | No |
@@ -97,7 +97,7 @@ Criterios de aceptación:
 | 5 | Ventas netas son después de descuentos, sin impuestos ni propinas | No |
 | 6 | El pago QR va separado del efectivo | No |
 | 7 | El costo de alimentos usa el costo teórico de lo vendido | No |
-| 8 | Un detector señala. No modifica la operación | Los umbrales de PRD-01 |
+| 8 | Un detector señala. No modifica la operación | Los umbrales de PRD-01, sección 11 |
 
 Definiciones de cada métrica: [PRD-00, sección 8](PRD-00-vision-producto.md). Este documento no las vuelve a redactar.
 
@@ -134,7 +134,5 @@ Este módulo es el destino. Familias:
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Umbrales de comportamiento del piloto | [PRD-01, sección 13](PRD-01-roles-y-permisos.md) |
-| 2 | Formato de exportación que ya usa el contador | Contador, en la Fase 4 |
+- PA-10: formato de exportación que ya usa el software del contador. Factus lista facturas y notas crédito y descarga XML y PDF; no publica el archivo de ese software. Ver [registro](../preguntas-abiertas.md).
+- Los umbrales de comportamiento inusual quedaron decididos (D-31): los ejemplos de [PRD-01, sección 11](PRD-01-roles-y-permisos.md) son el valor inicial y cada sede puede cambiarlos.

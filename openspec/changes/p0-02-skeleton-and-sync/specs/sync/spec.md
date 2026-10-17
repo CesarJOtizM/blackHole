@@ -62,6 +62,20 @@ The node MUST send compressed batches. A batch cut midway MUST resume from the l
 - WHEN internet returns
 - THEN every event reaches the cloud once and in order
 
+### Requirement: Sync Delay
+
+With the site connected to internet, the delay between an event being stored on the node and being applied in the cloud MUST stay at p95 < 1 min (TRD-00 15).
+
+#### Scenario: Connected site
+- GIVEN a hybrid site with internet during a service
+- WHEN its events are measured from node storage to cloud application
+- THEN the p95 delay is under 1 minute
+
+#### Scenario: Delay over target
+- GIVEN a connected site whose sync delay p95 rises above 1 minute
+- WHEN the delay is measured
+- THEN it is reported as a sync delay breach
+
 ### Requirement: Send Priority
 
 The node MUST send by priority: electronic invoice documents and confirmed QR payments, QR orders, audit, sales and cash register, inventory, telemetry. Telemetry MUST never delay a higher class.

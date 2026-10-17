@@ -52,7 +52,7 @@ An administrator MUST activate hybrid mode from the cloud, which issues a single
 
 ### Requirement: Return to Cloud
 
-Returning to cloud MUST require the node outbox to be empty, or an explicit administrator acceptance of what has not been uploaded. On return the owner MUST become `cloud` and the generation MUST increase.
+Returning to cloud MUST require the node outbox to be empty, or an explicit administrator acceptance of what has not been uploaded (D-02). The acceptance MUST be audited together with the events left unsent. On return the owner MUST become `cloud` and the generation MUST increase.
 
 #### Scenario: Empty outbox
 - GIVEN a hybrid site whose outbox is empty
@@ -63,6 +63,12 @@ Returning to cloud MUST require the node outbox to be empty, or an explicit admi
 - GIVEN a hybrid site with pending outbox events
 - WHEN the administrator requests the return without acceptance
 - THEN the return is refused and the pending count is shown
+
+#### Scenario: Pending events explicitly accepted
+- GIVEN a hybrid site with pending outbox events
+- WHEN the administrator explicitly accepts the unsent remainder and confirms the return
+- THEN the owner is `cloud` and the generation increased
+- AND an audit event records the acceptance and the events left unsent
 
 ### Requirement: Same Behavior in Both Hosts
 

@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fuentes | [Flujos M6](../../flujos/m6-reportes.md), [TRD-00 §11](../../trd/TRD-00-arquitectura-base.md) |
 
 M6 no tiene escrituras propias de operación: lee los eventos que los demás módulos ya guardan. El nodo responde el día sin internet. La nube construye las proyecciones consolidadas y corre los detectores de comportamiento inusual.
@@ -45,10 +45,10 @@ flowchart LR
   end
 
   subgraph Aplicacion["Casos de uso"]
-    UC_PRY["<b>Proyectar hechos</b>"]:::componente
-    UC_DET["<b>Detectar patrones</b><br/>Patrón repetido"]:::componente
-    UC_CON["<b>Consultar consolidado</b>"]:::componente
-    EXP["<b>Exportaciones</b><br/>Excel para contador y nómina"]:::componente
+    UC_PRY["<b>Proyectar hechos</b><br/>ProjectFacts"]:::componente
+    UC_DET["<b>Detectar patrones</b><br/>DetectPatterns: patrón repetido"]:::componente
+    UC_CON["<b>Consultar consolidado</b><br/>QueryConsolidatedReport"]:::componente
+    EXP["<b>Exportaciones</b><br/>ExportReport: Excel para contador y nómina"]:::componente
   end
 
   subgraph Dominio["Dominio"]
@@ -109,8 +109,8 @@ flowchart LR
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `FuenteEventos` | Inbox de PostgreSQL | Tablas de operación en SQLite |
-| `RepositorioProyecciones` | Tablas de hechos y vistas materializadas; réplica de lectura cuando el volumen lo pida (TRD-01, 6) | — |
-| `AlmacenamientoArchivos` | S3, Cloud Storage o Blob Storage | — |
+| `EventSource` | Inbox de PostgreSQL | Tablas de operación en SQLite |
+| `ProjectionRepository` | Tablas de hechos y vistas materializadas; réplica de lectura cuando el volumen lo pida (TRD-01, 6) | — |
+| `FileStorage` | S3, Cloud Storage o Blob Storage | — |
 
 Una base analítica separada se evalúa solo si el volumen lo exige (TRD-00, 11).

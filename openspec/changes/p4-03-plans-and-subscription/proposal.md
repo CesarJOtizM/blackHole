@@ -10,7 +10,7 @@ blackHole must charge customers per site without cutting service on the day a pa
 - Plans with price per site; price changes never rewrite charged periods.
 - Subscription charging through a subscription gateway port (distinct from the table-QR gateway, ADR-016).
 - Lifecycle active → grace → suspended → active, with configurable grace length.
-- Suspension effect on sites (decided in this delivery, PRD-M7 open question 4), propagated to nodes.
+- Suspension effect on sites (open: PA-40, answered in this delivery), propagated to nodes.
 - Document bag billing: recharge purchase, balance credit, re-issue of "no balance" pending invoices.
 
 ### Out of Scope
@@ -29,7 +29,7 @@ None
 
 ## Approach
 
-Cloud-only `contexts/saas` with `Subscription`, `Plan` and `DocumentBag` aggregates (TRD-M7 sec. 2). Charging sits behind a `SubscriptionGateway` port; provider chosen before build. State changes emit `SubscriptionChanged` to M0, which syncs the suspension flag down the site channel. Recharge calls M3 to issue pending documents with reason "no balance".
+Cloud-only `contexts/saas` with `Subscription`, `Plan` and `DocumentWallet` aggregates (TRD-M7 sec. 2). Charging sits behind a `SubscriptionGateway` port; provider chosen before build. State changes emit `SubscriptionChanged` to M0, which syncs the suspension flag down the site channel. Recharge calls M3 to issue pending documents with reason "no balance".
 
 ## Affected Areas
 
@@ -41,15 +41,15 @@ Cloud-only `contexts/saas` with `Subscription`, `Plan` and `DocumentBag` aggrega
 | `contexts/saas/adapters/subscription-gateway` | New | Provider adapter + in-memory double |
 | `contexts/platform/application` | Modified | Enforce suspension state |
 | `contexts/invoicing/application/entry-port.ts` | Modified | Issue pending "no balance" documents |
-| `apps/api-cloud`, `apps/local-node` | Modified | Backoffice routes; node applies synced suspension |
+| `apps/api-cloud`, `apps/local-node` | Modified | Backoffice routes (backoffice container open: PA-47); node applies synced suspension |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Subscription gateway not chosen (PRD-M7 open question 3) | High | Port + in-memory adapter; test subscription runs against the double |
+| Subscription gateway open: PA-38 | High | Port + in-memory adapter; test subscription runs against the double |
 | Suspending a hybrid node offline | Med | Applied on reconnect; lag audited; offline sales kept |
-| Suspension blocks a service mid-day | Med | Open service day may close; only new shifts blocked |
+| Suspension blocks a service mid-day | Med | Open: PA-40. Assumed: open service day may close; only new shifts blocked |
 | Price set before real costs | Med | Price is plan data, not code |
 
 ## Rollback Plan
@@ -58,7 +58,7 @@ Plans and subscriptions are additive cloud tables. Disable the charging worker a
 
 ## Dependencies
 
-- Subscription gateway provider decision; 1.5 bag counter and `DocumentConsumed` event; 0.3 organization.
+- Subscription gateway (PA-38); site price and whether the bag is included (PA-39); cost per site (PA-27); Factus 2026 price list (D-18); 1.5 bag counter and `DocumentConsumed` event; quota per NIT (D-16); 0.3 organization.
 
 ## Success Criteria
 

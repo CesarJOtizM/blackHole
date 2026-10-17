@@ -4,7 +4,7 @@ roadmap_title: "Invoicing portal"
 phase: 1
 modules: [M3]
 bounded_contexts: [invoicing, platform, contracts, sync]
-apps: [api-cloud, local-node, customer-portal, site-app, web-admin]
+apps: [api-cloud, local-node, customer-portal, venue-app, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-05-roles-and-permissions, p0-06-audit, p1-02-dining-room-and-kitchen, p1-03-cash-register, p1-05-electronic-invoicing, p1-06-printing]

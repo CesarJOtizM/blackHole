@@ -4,7 +4,7 @@ roadmap_title: "Reservation payments"
 phase: 3
 modules: [M9, M2, M3, M0]
 bounded_contexts: [reservations, cash-register, invoicing, platform, contracts, sync]
-apps: [api-cloud, local-node, site-app, web-admin]
+apps: [api-cloud, local-node, venue-app, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p3-06-reservations, p1-03-cash-register, p1-05-electronic-invoicing, p0-05-roles-and-permissions, p0-06-audit]

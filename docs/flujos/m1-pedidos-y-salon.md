@@ -3,24 +3,24 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
-| Fuentes | [PRD-00 §6.1 y M1](../prd/PRD-00-vision-producto.md), [TRD-00 §6](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-00 §6.1 y M1](../prd/PRD-00-vision-producto.md), [PRD-M1](../prd/PRD-M1-pedidos-y-salon.md), [TRD-M1](../trd/TRD-M1-pedidos-y-salon.md), [TRD-00 §6](../trd/TRD-00-arquitectura-base.md) |
 
-El mesero toma el pedido en el celular, o el cliente lo envía desde el QR de su mesa. El nodo lo guarda, lo reparte por estación de cocina, lo muestra en la caja y descuenta la receta. El pedido del mesero ocurre dentro del local. El del QR nace en la nube y el nodo lo aplica al instante, o al reconectar si hay un corte.
+El mesero toma el pedido en el celular, o el cliente lo envía desde el QR de su mesa. El nodo lo guarda, lo reparte por estación de cocina, lo muestra en la caja y descuenta la receta. El pedido del mesero ocurre dentro del local. El del QR nace en la nube y el nodo lo aplica al instante, o al reconectar si hay un corte. Los nombres de casos de uso y eventos son los de [TRD-M1](../trd/TRD-M1-pedidos-y-salon.md).
 
 ## Cómo se conecta
 
 | Con | Qué pasa |
 |-----|----------|
 | M0 | El nodo valida el permiso antes de abrir mesa, anular, descontar o transferir. |
-| M4 | Al enviar a cocina descuenta la receta. M4 le devuelve si el plato está agotado. |
+| M4 | Al enviar a cocina descuenta la receta (`RegisterSaleConsumption`). Al anular, devuelve (`ReturnStock`) o registra merma (`RecordWaste`). M4 avisa si el plato está agotado (`AvailabilityChanged`). |
 | M2 | La cuenta se ve en la caja desde que existe. Pedir la cuenta abre el cobro. |
-| M3 | La precuenta lleva el QR del portal de facturación. |
+| M3 | La precuenta lleva el QR del portal de facturación. La factura la imprime M3. |
 | Portal | El QR fijo de la mesa crea o amplía la cuenta. El canal es QR mesa. |
-| M5 | Un domicilio o un pedido de plataforma, una vez aceptado, entra como pedido de esta sección. |
+| M5 | Un domicilio o un pedido de plataforma, una vez aceptado, entra como pedido de esta sección (`CreateInternalOrder`). |
 | M8 | Sin entrada marcada no se opera, si la sede lo exige. |
-| M9 | La reserva bloquea la mesa y, al llegar el cliente, se asocia a la cuenta. |
+| M9 | La reserva bloquea la mesa y, al llegar el cliente, se asocia a la cuenta (`AttachReservation`). |
 | M6 | Cada cambio de estado guarda su hora. |
 
 ## Pedido en mesa
@@ -33,17 +33,17 @@ sequenceDiagram
   participant Caja
   participant Inv as Inventario M4
 
-  Mesero->>Nodo: Abrir mesa y comensales
-  Mesero->>Nodo: Productos, modificadores y notas
-  Mesero->>Nodo: Enviar a cocina
-  Nodo->>Nodo: Permiso, pedido y evento
-  Nodo->>Inv: Consumo según receta en el punto
+  Mesero->>Nodo: OpenTable (mesa y comensales)
+  Mesero->>Nodo: AddItems (productos, modificadores y notas)
+  Mesero->>Nodo: SendToKitchen
+  Nodo->>Nodo: Permiso, pedido y LineSent en la outbox
+  Nodo->>Inv: RegisterSaleConsumption en el punto
   Nodo-->>Cocina: Comanda en la estación, por pantalla, impresora o ambas
   Nodo-->>Caja: Cuenta actualizada
-  Cocina->>Nodo: En preparación
-  Cocina->>Nodo: Listo
+  Cocina->>Nodo: En preparación (LineStateChanged)
+  Cocina->>Nodo: Listo (LineStateChanged)
   Nodo-->>Mesero: Aviso de listo
-  Mesero->>Nodo: Entregado en la mesa
+  Mesero->>Nodo: Entregado en la mesa (LineStateChanged)
 ```
 
 Si la impresora de comandas falla, la comanda sigue en la pantalla y se avisa a la caja. Un pedido puede enviarse por tiempos: primero entradas, después fuertes. Reenviar un producto vuelve a enrutar solo ese producto.
@@ -61,13 +61,13 @@ sequenceDiagram
   Cliente->>Portal: Escanea el QR fijo de su mesa
   Portal-->>Cliente: Carta de esa sede
   Cliente->>Portal: Productos, modificadores y notas
-  Portal->>Portal: Intención de pedido, una sola vez
+  Portal->>Portal: RecordQrOrderIntent, una sola vez
   alt La sede tiene enlace
-    Portal-->>Nodo: Aplicar ahora
+    Portal-->>Nodo: QrOrderPendingApply, aplicar ahora
   else Hay un corte
-    Portal-->>Nodo: Aplicar al reconectar
+    Portal-->>Nodo: QrOrderPendingApply, aplicar al reconectar
   end
-  Nodo->>Nodo: Abre la mesa o suma a la cuenta
+  Nodo->>Nodo: ApplyQrOrder: abre la mesa o suma a la cuenta
   Nodo-->>Cocina: Comanda, canal QR mesa
   Nodo-->>Caja: Cuenta actualizada
 ```
@@ -92,33 +92,47 @@ El menú y las recetas son de la marca. La sede ajusta precio, disponibilidad y 
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Libre
-  Libre --> Ocupada: Abrir mesa
-  Ocupada --> Ocupada: Enviar productos
-  Ocupada --> CuentaPedida: Pedir la cuenta
-  CuentaPedida --> Ocupada: Seguir consumiendo
-  CuentaPedida --> PorLimpiar: Cuenta pagada
-  PorLimpiar --> Libre: Mesa lista
+  state "Libre" as free
+  state "Ocupada" as occupied
+  state "Cuenta pedida" as check_requested
+  state "Por limpiar" as to_clean
+
+  [*] --> free
+  free --> occupied: Abrir mesa
+  occupied --> occupied: Enviar productos
+  occupied --> occupied: Mover, unir o transferir
+  occupied --> check_requested: Pedir la cuenta
+  check_requested --> check_requested: Mover, unir o transferir
+  check_requested --> occupied: Seguir consumiendo
+  check_requested --> to_clean: Cuenta pagada
+  to_clean --> free: Mesa lista
 ```
 
-Mover una mesa, unir mesas o pasar productos entre cuentas ocurre mientras la mesa sigue ocupada. Esas acciones pasan por el permiso de M0.
+Mover una mesa (`MoveTable`), unir mesas (`MergeTables`) o pasar productos entre cuentas (`TransferItems`) ocurre mientras la mesa está ocupada o en cuenta pedida. Una mesa libre o por limpiar no se mueve ni se une. Esas acciones pasan por el permiso de M0 y emiten `CheckReassigned`.
 
 ## Estados de un producto en cocina
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Enviado: Sale hacia la estación
-  Enviado --> EnPreparacion: Cocina lo toma
-  EnPreparacion --> Listo: Cocina lo termina
-  Listo --> Entregado: El mesero lo entrega
-  Enviado --> Anulado: Anulación antes de empezar
-  Enviado --> NoSeEntrega: Hoy no se repone y no hay para esta línea
-  EnPreparacion --> Anulado: Anulación con autorización
-  EnPreparacion --> NoSeEntrega: Cocina marca que no se puede terminar
-  Listo --> Anulado: Anulación con autorización
+  state "Enviado" as sent
+  state "En preparación" as in_preparation
+  state "Listo" as ready
+  state "Entregado" as delivered
+  state "Anulado" as voided
+  state "No se entrega" as not_delivered
+
+  [*] --> sent: Sale hacia la estación
+  sent --> in_preparation: Cocina lo toma
+  in_preparation --> ready: Cocina lo termina
+  ready --> delivered: El mesero lo entrega
+  sent --> voided: Anulación antes de empezar
+  sent --> not_delivered: Hoy no se repone y no hay para esta línea
+  in_preparation --> voided: Anulación con autorización
+  in_preparation --> not_delivered: Cocina marca que no se puede terminar
+  ready --> voided: Anulación con autorización
 ```
 
-Cada flecha guarda la hora. Con esas horas se arman los tiempos de toma, espera, preparación, entrega y duración de la mesa.
+La primera flecha emite `LineSent`; las demás, `LineStateChanged` con el estado nuevo. Cada flecha guarda la hora. Con esas horas se arman los tiempos de toma, espera, preparación, entrega y duración de la mesa.
 
 ## Anulación de un producto
 
@@ -133,8 +147,8 @@ flowchart TD
   R -->|No| X["El producto sigue en la cuenta"]
   R -->|Sí| D
   D --> F{"¿La cocina ya había empezado?"}
-  F -->|No| G["M4 devuelve el inventario"]
-  F -->|Sí| H["M4 registra merma con motivo"]
+  F -->|No| G["M4 devuelve el inventario (ReturnStock)"]
+  F -->|Sí| H["M4 registra merma con motivo (RecordWaste)"]
   D --> I["La cuenta y la auditoría se actualizan"]
 ```
 
@@ -160,7 +174,7 @@ flowchart TD
   I --> L["El mesero avisa al cliente y lo confirma"]
 ```
 
-El sistema propone la marca cuando el punto no alcanza, las bodegas que abastecen tampoco y no hay un traslado en camino. Hasta esa confirmación no se retiran platos de las mesas. Lo ya entregado, listo o en preparación no se toca, salvo que cocina marque esa línea. Si no habían empezado, [M4](m4-inventario.md) devuelve el inventario. Si ya habían empezado, queda como merma. En un pedido de plataforma, la caja avisa al canal.
+El sistema propone la marca cuando el punto no alcanza, las bodegas que abastecen tampoco y no hay un traslado en camino. Hasta esa confirmación no se retiran platos de las mesas. Lo ya entregado, listo o en preparación no se toca, salvo que cocina marque esa línea. Si no habían empezado, [M4](m4-inventario.md) devuelve el inventario (`ReturnStock`). Si ya habían empezado, queda como merma (`RecordWaste`). En un pedido de plataforma, la caja avisa al canal.
 
 ## Pedir la cuenta
 
@@ -173,13 +187,13 @@ sequenceDiagram
   participant Portal as Portal M3
   participant Caja
 
-  Mesero->>Nodo: Pedir la cuenta
+  Mesero->>Nodo: RequestCheck
   Nodo->>Imp: Precuenta, con opción de dividir
-  Note over Imp: La precuenta lleva un QR
+  Note over Imp: M1 dispara la precuenta, que lleva un QR
   Cliente->>Portal: Escanea el QR y deja sus datos
   Portal-->>Nodo: Datos recibidos, cuando hay canal con la nube
-  Nodo-->>Caja: La cuenta queda marcada
+  Nodo-->>Caja: CheckRequested, la cuenta queda marcada
   Caja->>Caja: Sigue en M2
 ```
 
-Dividir la cuenta (por comensal, por productos o en partes iguales) ocurre aquí y se cobra en [M2](m2-caja.md). El QR se genera en el nodo, así la precuenta se imprime aunque la sede esté sin internet. El cliente llena el portal con sus propios datos móviles.
+Dividir la cuenta (`SplitCheck`: por comensal, por productos o en partes iguales) ocurre aquí y se cobra en [M2](m2-caja.md). El QR se genera en el nodo, así la precuenta se imprime aunque la sede esté sin internet. El cliente llena el portal con sus propios datos móviles. La comanda y la precuenta las dispara M1; la factura y el comprobante, [M3](m3-facturacion.md). Las plantillas y el controlador de impresión viven en `shared/printing`.

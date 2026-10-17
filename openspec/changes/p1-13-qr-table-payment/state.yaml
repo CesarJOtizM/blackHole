@@ -4,7 +4,7 @@ roadmap_title: "QR table payment"
 phase: 1
 modules: [M2, M3, M1]
 bounded_contexts: [cash-register, invoicing, orders, contracts, sync]
-apps: [api-cloud, local-node, customer-portal, site-app]
+apps: [api-cloud, local-node, customer-portal, venue-app]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-07-hybrid-resilience, p1-03-cash-register, p1-05-electronic-invoicing, p1-08-invoicing-portal, p1-10-tips, p1-12-qr-table-ordering]

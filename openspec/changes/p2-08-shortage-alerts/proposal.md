@@ -58,6 +58,7 @@ Disable evaluation per site by configuration. Alerts write no stock movements; s
 ## Dependencies
 
 - p2-03, p2-05, p2-07, p0-05, p0-06.
+- The system suggests minimum, reorder point and maximum from consumption metrics. The venue can accept or type the values (D-32).
 
 ## Success Criteria
 

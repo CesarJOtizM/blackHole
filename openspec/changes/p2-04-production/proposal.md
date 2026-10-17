@@ -2,7 +2,7 @@
 
 ## Intent
 
-Kitchens prepare sauces, doughs and portions ahead of service. Without recording that production, the theoretical stock of raw ingredients and of the preparations drifts from reality (PRD-00 sec. 6.6 step 4, flujos M4 "Producción", TRD-M4 `RegistrarProduccion`).
+Kitchens prepare sauces, doughs and portions ahead of service. Without recording that production, the theoretical stock of raw ingredients and of the preparations drifts from reality (PRD-00 sec. 6.6 step 4, flujos M4 "Producción", TRD-M4 `RecordProduction`).
 
 ## Scope
 
@@ -10,7 +10,7 @@ Kitchens prepare sauces, doughs and portions ahead of service. Without recording
 - Production runs of stocked intermediate preparations at a point-of-sale location or warehouse.
 - Consumption of the preparation recipe's ingredients and output of the preparation's own stock in one transaction.
 - Actual output quantity versus expected yield, with the difference visible.
-- Output unit cost derived from consumed cost.
+- Output unit cost from the company rule: average of consumed inputs, or standard cost (D-26).
 - Corrections through compensating runs, audited.
 
 ### Out of Scope
@@ -34,7 +34,7 @@ A run is registered by the location owner (`local-node` for hybrid sites and nod
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `contexts/inventory/domain` | Modified | Production run, output cost rule |
+| `contexts/inventory/domain` | Modified | Production run, configurable output cost rule (D-26) |
 | `contexts/inventory/application` | Modified | Register production, correct production |
 | `contexts/inventory/adapters/http` | Modified | Production endpoints for site PWA |
 | `shared/contracts` | Modified | Production events |
@@ -44,7 +44,7 @@ A run is registered by the location owner (`local-node` for hybrid sites and nod
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Output cost rule not defined in docs | Med | Consumed cost ÷ actual output; confirm with PO |
+| Output cost rule not defined in docs | Med | Company chooses average of consumed inputs or standard cost (D-26) |
 | Preparation not marked stocked | Med | Production only allowed for stocked preparations |
 | Kitchens skip registering runs | Med | Negative preparation stock alert (p2-02) surfaces it |
 

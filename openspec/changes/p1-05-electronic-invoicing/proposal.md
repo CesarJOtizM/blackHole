@@ -11,7 +11,7 @@ Every sale must have exactly one DIAN electronic sales invoice, issued through F
 - Final-consumer buyer, or ID card/NIT buyer with name and email autocompleted from DIAN at the cash register.
 - Numbering range per site, or per cash register.
 - Tip as a surcharge; payment methods mapped to DIAN codes.
-- Deferred emission without internet (`pending_emission`), in sale order, under 80 requests/min per NIT.
+- Deferred emission without internet (`pending_issuance`), in sale order, under 80 requests/min per NIT.
 - Uncertain-send verification by `reference_code` before any resend; rejection handling.
 - Credit notes for voids or returns after emission.
 - Document consumption counter per company, NIT and site, with yellow/red balance alerts; empty balance never blocks sales.
@@ -33,7 +33,7 @@ None
 
 ## Approach
 
-Bounded context `invoicing` (TRD-M3). The operation owner (node in hybrid, cloud in cloud mode) creates `SaleDocument` with a UUIDv7 `reference_code` from the closed sale of 1.3 and taxes of 1.4. A cloud worker emits in sale order through a per-NIT rate limiter; results return as `EmissionResolved`. Documents sync with top priority. Factus credentials stay in the cloud secret manager.
+Bounded context `invoicing` (TRD-M3). The operation owner (node in hybrid, cloud in cloud mode) creates `SalesDocument` with a UUIDv7 `reference_code` from the closed sale of 1.3 and taxes of 1.4. A cloud worker emits in sale order through a per-NIT rate limiter; results return as `IssuanceResolved`. Documents sync with top priority. Factus credentials stay in the cloud secret manager.
 
 ## Affected Areas
 
@@ -52,13 +52,13 @@ Bounded context `invoicing` (TRD-M3). The operation owner (node in hybrid, cloud
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Duplicate invoice after a cut | Med | Verify by `reference_code` before resend |
-| Late invoicing without contingency | Med | 4G backup, automatic emission, aging alerts |
+| Late invoicing without paper contingency | Med | Receipt text and deferred emission are D-10. 4G backup, automatic emission, aging alerts |
 | Factus 429 at reconnection peak | Med | Shared per-NIT limiter; emission before queries |
-| Accountant approval pending (TRD-00 8.4) | Med | Tracked; blocks production go-live only |
+| Same-range consecutive collision | Med | One in-flight validate per numbering range (D-19). Different ranges of the same NIT may run together, inside the 80/min limit |
 
 ## Rollback Plan
 
-Switch the provider to the simulated adapter: documents stay `pending_emission` and sales continue with receipts. Accepted documents are never deleted; corrections use credit notes.
+Switch the provider to the simulated adapter: documents stay `pending_issuance` and sales continue with receipts. Accepted documents are never deleted; corrections use credit notes.
 
 ## Dependencies
 
@@ -68,3 +68,4 @@ Switch the provider to the simulated adapter: documents stay `pending_emission` 
 
 - [ ] Invoices accepted in sandbox and production, including an internet cut in the middle of a send without duplicate invoices.
 - [ ] An empty document balance leaves invoices pending without blocking sales.
+- [ ] On reconnection, 200 pending invoices of a site are issued in under 10 minutes, within the Factus limit (TRD-00 15).

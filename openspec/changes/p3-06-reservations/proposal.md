@@ -30,7 +30,7 @@ None
 
 ## Approach
 
-New `reservations` bounded context. The cloud owns `Reservation` and validates capacity. The node owns `ReservationAttendance` (block, arrival, no-show) in hybrid mode; in cloud mode `api-cloud` owns both. Day reservations sync down to the node; attendance and provisional reservations sync up through the outbox.
+New `reservations` bounded context. The cloud owns `Reservation` and validates capacity. The node owns `ReservationSeating` (block, arrival, no-show) in hybrid mode; in cloud mode `api-cloud` owns both. Day reservations sync down to the node; attendance and provisional reservations sync up through the outbox.
 
 ## Affected Areas
 
@@ -40,7 +40,7 @@ New `reservations` bounded context. The cloud owns `Reservation` and validates c
 | `contexts/orders` | Modified | Blocked tables, open table from reservation |
 | `shared/contracts`, `shared/sync` | Modified | Reservation events, day download |
 | `apps/api-cloud`, `apps/local-node` | Modified | Composition and HTTP |
-| `apps/site-app`, `apps/web-admin` | Modified | Agenda, floor plan, settings |
+| `apps/venue-app`, `apps/admin-web` | Modified | Agenda, floor plan, settings |
 
 ## Risks
 
@@ -57,6 +57,7 @@ Hide reservations per site via flag; blocked tables are released. Tables are add
 ## Dependencies
 
 - Organization (0.3), sync (0.2), dining room floor plan (1.2), permissions (0.5)
+- Each venue chooses $0, a deposit applied to the bill with a retention percentage on cancel, or a non-refundable fee. Collection accounts are venue data (D-34).
 
 ## Success Criteria
 

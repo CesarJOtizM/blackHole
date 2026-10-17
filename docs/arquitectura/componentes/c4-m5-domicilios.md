@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.2 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fuentes | [Flujos M5](../../flujos/m5-domicilios.md), [TRD-00 §5.5 y §6.1](../../trd/TRD-00-arquitectura-base.md) |
 
 El hub de integraciones vive en la nube: recibe pedidos de las plataformas, publica menú y disponibilidad, y concilia liquidaciones. Al aceptar, el nodo crea el pedido interno y pasa a ser su dueño. El domicilio propio y la captura manual nacen en la sede.
@@ -28,18 +28,18 @@ flowchart LR
   end
 
   subgraph Aplicacion["Casos de uso"]
-    UC_EXT["<b>Pedido externo</b><br/>RecibirPedidoExterno: normalizar,<br/>sin duplicar, sede y productos"]:::componente
-    UC_LIQ["<b>Conciliación</b><br/>Importar liquidación, comparar"]:::componente
-    UC_PUB["<b>Canal</b><br/>PublicarMenuCanal, PropagarDisponibilidad,<br/>PausarTienda, ReanudarTienda"]:::componente
+    UC_EXT["<b>Pedido externo</b><br/>ReceiveExternalOrder: normalizar,<br/>sin duplicar, sede y productos"]:::componente
+    UC_LIQ["<b>Conciliación</b><br/>ImportSettlement: importar, comparar"]:::componente
+    UC_PUB["<b>Canal</b><br/>PublishChannelMenu, PropagateAvailability,<br/>PauseStore, ResumeStore"]:::componente
     UC_ENT["<b>Entregas</b><br/>Pedido asignado, etapas"]:::componente
   end
 
   subgraph Dominio["Dominio"]
-    D_EXT["<b>PedidoExterno, ProductoCanal</b><br/>[Entidades]<br/>Clave plataforma + id externo"]:::componente
+    D_EXT["<b>ExternalOrder, ChannelProduct</b><br/>[Entidades]<br/>Clave plataforma + id externo"]:::componente
   end
 
   subgraph Salida["Salidas"]
-    CON["<b>ConectorPlataforma</b><br/>[contextos/domicilios/adaptadores]<br/>Rappi, DiDi, Integrador, Manual"]:::componente
+    CON["<b>PlatformConnector</b><br/>[contexts/delivery/adapters]<br/>Rappi, DiDi, Integrador, Manual"]:::componente
     REPO["<b>Repositorios</b><br/>[Drizzle, PostgreSQL]<br/>Pedidos externos, mapeos,<br/>credenciales cifradas"]:::componente
     CAN["<b>Canal de la sede</b><br/>[M0, WSS]<br/>Pedido nuevo, cancelación"]:::modulo
   end
@@ -99,21 +99,21 @@ flowchart LR
   end
 
   subgraph Aplicacion["Casos de uso"]
-    UC_ACE["<b>Aceptación</b><br/>Aceptar, Rechazar, MapearProducto,<br/>AceptarAutomatico"]:::componente
-    UC_CAN["<b>Cancelación de plataforma</b>"]:::componente
-    UC_DOM["<b>Domicilio propio</b><br/>CrearDomicilio, AsignarDomiciliario,<br/>ConfirmarEntrega"]:::componente
+    UC_ACE["<b>Aceptación</b><br/>AcceptExternalOrder, RejectExternalOrder,<br/>MapProduct, AutoAcceptExternalOrder"]:::componente
+    UC_CAN["<b>Cancelación de plataforma</b><br/>ApplyExternalCancellation"]:::componente
+    UC_DOM["<b>Domicilio propio</b><br/>CreateDelivery, AssignCourier,<br/>ConfirmDelivery"]:::componente
   end
 
   subgraph Dominio["Dominio"]
-    D_DOM["<b>Domicilio</b><br/>[Agregado]<br/>Dirección, etapas con hora"]:::componente
+    D_DOM["<b>Delivery</b><br/>[Agregado]<br/>Dirección, etapas con hora"]:::componente
   end
 
   subgraph Salida["Salidas"]
-    M1["<b>M1 Pedidos</b><br/>[Puerto de entrada]<br/>CrearPedidoInterno"]:::modulo
+    M1["<b>M1 Pedidos</b><br/>[Puerto de entrada]<br/>CreateInternalOrder"]:::modulo
     M2["<b>M2 Caja</b><br/>[Puerto de entrada]<br/>Por cobrar y contra entrega"]:::modulo
     M4["<b>M4 Inventario</b><br/>[Puerto de entrada]<br/>Merma si ya empezó"]:::modulo
-    M0["<b>M0 Plataforma</b><br/>[Puerto de entrada]<br/>Permiso para aceptar o pausar"]:::modulo
-    OUT["<b>Persistencia y outbox</b><br/>[Drizzle + UnidadDeTrabajo]<br/>Estados hacia el hub"]:::componente
+    M0["<b>M0 Plataforma</b><br/>[Puerto de entrada]<br/>Permiso para aceptar o pausar (supervisor o administrador)"]:::modulo
+    OUT["<b>Persistencia y outbox</b><br/>[Drizzle + UnitOfWork]<br/>Estados hacia el hub"]:::componente
   end
 
   CAN -.-> EVT
@@ -145,7 +145,7 @@ flowchart LR
   style Salida fill:none,stroke:#888,stroke-dasharray: 3 3
 ```
 
-## Puerto `ConectorPlataforma`
+## Puerto `PlatformConnector`
 
 Cada adaptador declara qué operaciones soporta (TRD-00, 6.1). Lo que no soporta se hace a mano.
 
@@ -160,16 +160,16 @@ Cada adaptador declara qué operaciones soporta (TRD-00, 6.1). Lo que no soporta
 
 | Puerto | Nube | Nodo |
 |--------|------|------|
-| `RepositorioPedidosExternos` | `adaptadores/postgres` | Copia del pedido por aceptar |
-| `RepositorioDomicilios` | `adaptadores/postgres` | `adaptadores/sqlite` |
-| `Secretos` | Credenciales de cada tienda, cifradas | — |
-| `CanalSede` | Gateway WebSocket hacia el nodo | Cliente WebSocket saliente |
+| `ExternalOrderRepository` | `adapters/postgres` | Copia del pedido por aceptar |
+| `DeliveryRepository` | `adapters/postgres` | `adapters/sqlite` |
+| `Secrets` | Credenciales de cada tienda, cifradas | — |
+| `VenueChannel` | Gateway WebSocket hacia el nodo | Cliente WebSocket saliente |
 
 ## Contratos con otros módulos
 
 | Con | Mecanismo | Qué viaja |
 |-----|-----------|-----------|
-| M5 → M1 | Llamada en proceso a `CrearPedidoInterno` | Pedido con canal y código externo |
+| M5 → M1 | Llamada en proceso a `CreateInternalOrder` | Pedido con canal y código externo |
 | M4 → M5 | Evento por la outbox hasta el hub | Agotado o disponible |
 | M5 → M2 | Llamada en proceso | Saldo por cobrar a la plataforma; cobro contra entrega |
 | M5 → M4 | Llamada en proceso | Devolución o merma por cancelación |

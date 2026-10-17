@@ -41,7 +41,7 @@ Each guarded use case in `orders` and `cash-register` calls the `platform` entry
 | `shared/printing` | Modified | Drawer job without sale |
 | `shared/contracts` | Modified | Sensitive-action audit events |
 | `apps/api-cloud` | Modified | Control reports, detectors |
-| `apps/local-node`, `apps/site-app` | Modified | Local evaluation, PIN prompt |
+| `apps/local-node`, `apps/venue-app` | Modified | Local evaluation, PIN prompt |
 
 ## Risks
 
@@ -58,6 +58,7 @@ Caps and modes are data: restore the previous role configuration. Code rollback 
 ## Dependencies
 
 - 0.5 roles and caps; 0.6 audit; 1.2, 1.3, 1.6 operations to guard.
+- Default caps and the site administrator as authorizer (D-30). Example thresholds are the initial values and each venue can change them (D-31).
 
 ## Success Criteria
 

@@ -64,15 +64,25 @@ Each counted quantity MUST be compared with the theoretical balance at cut-off, 
 
 ### Requirement: Approval and Adjustment
 
-A count MUST be approved before adjusting. Approval within cap MUST record one count adjustment per ingredient with variance; above cap, or for roles requiring authorization to adjust, supervisor authorization MUST be required. Rejection MUST leave stock unchanged. Self-approval MUST be denied unless self-authorization is enabled for the shift. All MUST be audited.
+A count adjustment at or under the cap MUST be recorded without extra approval, one movement per ingredient with variance. An adjustment whose absolute value is above the cap MUST wait for approval from a role allowed to approve count results (D-28). The cap MUST default to 1,000 COP, MUST be set per company and MUST be lowerable per site. Rejection MUST leave stock unchanged. Self-approval MUST be denied unless self-authorization is enabled for the shift. All MUST be audited.
 
-#### Scenario: Approved
-- GIVEN a −600 g variance within the administrator's cap
-- WHEN approved
-- THEN a −600 g adjustment is recorded
+#### Scenario: Within cap
+- GIVEN a −600 g variance valued at 900 COP and a 1,000 COP cap
+- WHEN the count is submitted
+- THEN a −600 g adjustment is recorded without extra approval
+
+#### Scenario: Above cap
+- GIVEN a variance valued at 1,500 COP and a 1,000 COP cap
+- WHEN submitted without approval
+- THEN no adjustment is recorded
+
+#### Scenario: Above cap approved
+- GIVEN the same 1,500 COP variance
+- WHEN a role allowed to approve count results approves it
+- THEN the adjustment is recorded
 
 #### Scenario: Rejected
-- GIVEN a submitted count
+- GIVEN a count above the cap waiting for approval
 - WHEN rejected
 - THEN no movement is recorded and a recount may open
 

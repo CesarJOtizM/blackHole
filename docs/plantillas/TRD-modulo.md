@@ -7,6 +7,10 @@
 | Fase | <0-4> |
 | Hereda de | [TRD-00](../trd/TRD-00-arquitectura-base.md) |
 | PRD asociado | PRD-XX |
+| Nombres en código | [Glosario de código](../glosario-codigo.md) |
+| Preguntas abiertas | [Registro](../preguntas-abiertas.md): PA-xx |
+
+El texto va en español. Todo identificador que se cite va en inglés, según el [glosario](../glosario-codigo.md): carpetas en kebab-case bajo `contexts/<context>/{domain,application,adapters}`, clases en PascalCase, tablas, columnas y estados en snake_case, permisos con la forma `<context>.<action>`, suites de contrato en `application/ports/<port>.contract.ts` corridas desde `<adapter>.contract.test.ts`. Si falta un nombre que cruza módulos, se propone en el glosario antes de usarlo.
 
 ## 1. Resumen de decisiones
 
@@ -45,7 +49,7 @@
 
 ## 9. Pruebas
 
-Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Cada fila entra al código en vertical: una prueba en rojo, el mínimo para ponerla en verde, y la siguiente. La prueba de unidad va en AAA; si la fila sale de un flujo, el nombre va en GWT. No se listan aquí pasos de implementación.
+Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Cada fila entra al código en vertical: una prueba en rojo, el mínimo para ponerla en verde, y la siguiente. La prueba de unidad va en AAA; si la fila sale de un flujo, el nombre va en GWT, en inglés (Given / When / Then). No se listan aquí pasos de implementación.
 
 | Comportamiento | Capa | Qué afirma la prueba |
 |----------------|------|----------------------|
@@ -65,3 +69,5 @@ Hereda el ciclo de [TRD-00, sección 16](../trd/TRD-00-arquitectura-base.md). Ca
 
 | Riesgo / ADR | Mitigación / Estado |
 |--------------|---------------------|
+
+Un ADR pendiente cita su código del registro (PA-xx).

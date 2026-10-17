@@ -30,19 +30,19 @@ None
 
 ## Approach
 
-Cloud-only use cases in `contexts/saas/application` (`CreateCompany`, `TrackNitRequirements`, `Import`) that delegate to M0, M1 and M4 entry ports; M7 never writes their tables (TRD-M7 sec. 1). Import files go to object storage and are applied atomically per file. Factus readiness uses the invoicing entry port (token + `numbering-ranges`).
+Cloud-only use cases in `contexts/saas/application` (`OnboardCompany`, `TrackTaxIdRequirements`, `ImportInitialCatalog`) that delegate to M0, M1 and M4 entry ports; M7 never writes their tables (TRD-M7 sec. 1). Import files go to object storage and are applied atomically per file. Factus readiness uses the invoicing entry port (token + `numbering-ranges`).
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `contexts/saas/domain` | Modified | `NitRequirement`, onboarding progress |
+| `contexts/saas/domain` | Modified | `TaxIdRequirement`, onboarding progress |
 | `contexts/saas/application` | Modified | Create company, track NIT, import |
 | `contexts/platform/application/entry-port.ts` | Modified | Create organization and owner |
 | `contexts/orders/application/entry-port.ts` | Modified | Bulk menu import |
 | `contexts/inventory/application/entry-port.ts` | Modified | Bulk ingredient and recipe import |
 | `contexts/invoicing/application/entry-port.ts` | Modified | Factus readiness check |
-| `apps/api-cloud`, `apps/web-admin` | Modified | Backoffice and guided-setup screens |
+| `apps/api-cloud`, `apps/admin-web` | Modified | Backoffice and guided-setup screens (backoffice container open: PA-47) |
 
 ## Risks
 

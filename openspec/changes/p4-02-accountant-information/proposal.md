@@ -40,13 +40,13 @@ Cloud-only projections in `contexts/reporting` fed by M3 document events (accept
 | `contexts/invoicing/application/entry-port.ts` | Modified | Read model of documents per taxpayer |
 | `shared/contracts` | Modified | Export request and file schemas |
 | `apps/api-cloud` | Modified | Admin routes, export worker |
-| `apps/web-admin` | Modified | Accountant screens |
+| `apps/admin-web` | Modified | Accountant screens |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Accountant's software format unknown (PRD-M6 open question 2) | High | Column mapping as configuration; validate with the pilot accountant first |
+| Accountant's software export format open: PA-10 | High | Factus lists bills and credit notes and downloads XML and PDF. It does not publish an import file. Column mapping stays configuration until the pilot accountant names the format |
 | Late-validated offline invoices land in the next month | Med | Month by validation date; sale date shown; pending list at cut-off |
 | Summary mistaken for a global invoice | Low | Labelled "not a fiscal document"; no DIAN grouping action exists |
 

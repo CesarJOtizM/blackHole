@@ -78,12 +78,22 @@ COD MUST enter the dispatching register's shift and MUST be reconciled per couri
 
 ### Requirement: Delivery Invoice and Bag Tax
 
-The invoice MUST carry the delivery address even without fiscal data. If the order leaves with plastic bags, the bag tax MUST be a line per the tax engine.
+The invoice MUST carry the delivery address even without fiscal data. When the site has bag tax enabled (D-29) and the order leaves with plastic bags, the bag tax MUST be a line per the tax engine. When the site has it disabled, the invoice MUST NOT add that line.
 
 #### Scenario: Address on final-consumer invoice
 - GIVEN a delivery without fiscal data
 - WHEN invoiced
 - THEN the document carries the address
+
+#### Scenario: Bag tax on
+- GIVEN bag tax enabled and a delivery that leaves with bags
+- WHEN invoiced
+- THEN a bag tax line exists
+
+#### Scenario: Bag tax off
+- GIVEN bag tax disabled and a delivery that leaves with bags
+- WHEN invoiced
+- THEN no bag tax line exists
 
 #### Scenario: No bag
 - GIVEN a delivery without bags

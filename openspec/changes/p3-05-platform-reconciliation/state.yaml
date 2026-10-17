@@ -4,7 +4,7 @@ roadmap_title: "Platform reconciliation"
 phase: 3
 modules: [M5, M2, M4]
 bounded_contexts: [delivery, cash-register, inventory, contracts]
-apps: [api-cloud, web-admin]
+apps: [api-cloud, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p3-02-platform-hub-and-manual-capture, p3-03-rappi-connector, p3-04-didi-food-connector, p2-01-ingredients-and-recipes, p0-06-audit]

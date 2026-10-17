@@ -39,7 +39,7 @@ Implement adapters of the existing `CardTerminal` port in `contexts/cash-registe
 | `contexts/cash-register/adapters/credibanco`, `bold`, `redeban` | New | Provider adapters (as ADR-007 allows) |
 | `shared/contracts` | Modified | Terminal payment schemas |
 | `apps/local-node`, `apps/api-cloud` | Modified | Wire adapters per site terminal |
-| `apps/site-app` | Modified | Cash register terminal flow |
+| `apps/venue-app` | Modified | Cash register terminal flow |
 
 ## Risks
 
@@ -56,7 +56,7 @@ Switch the site's terminal configuration back to the manual adapter. Payments al
 
 ## Dependencies
 
-- ADR-007 decision; provider SDK/API access and test terminals at the pilot site.
+- PA-43 (ADR-007) decision; provider SDK/API access and test terminals at the pilot site.
 
 ## Success Criteria
 

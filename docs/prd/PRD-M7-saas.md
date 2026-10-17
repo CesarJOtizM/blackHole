@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
 | Fase | 4 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M7](../trd/TRD-M7-saas.md) |
@@ -21,9 +21,9 @@ M7 es cómo se vende blackHole: alta de una empresa, sus NIT en Factus, la bolsa
 - Planes y precio por sede. El precio se cierra en esta fase, con los costos reales.
 - Alta guiada: empresa, contribuyentes, sedes, propietario, requisitos de cada NIT y carga inicial de menú, recetas e insumos.
 - Cobro de la suscripción, falta de pago, periodo de gracia y suspensión.
-- Bolsa de documentos por empresa: saldo, consumo por NIT y por sede, alerta por días de cobertura y recarga.
-- Si la bolsa se agota, se sigue vendiendo y las facturas quedan pendientes hasta recargar.
-- Panel de soporte: nodos, sincronización, facturas pendientes y señales para negociar con Factus.
+- Bolsa de documentos por empresa: un cupo por NIT, saldo consultado en Factus, consumo por NIT y por sede, alerta por días de cobertura y recarga (D-16).
+- Si el cupo de un NIT se agota, se sigue vendiendo y las facturas de ese NIT quedan pendientes hasta recargar. Los demás NIT siguen emitiendo.
+- Panel de soporte: nodos, sincronización, facturas pendientes y señales para negociar con Factus. Es una vista de la web de administración, visible solo con permisos de soporte, no una aplicación aparte (D-05).
 - Acceso de soporte con vencimiento.
 
 **No incluye**
@@ -61,8 +61,8 @@ Criterios de aceptación:
 
 Criterios de aceptación:
 
-- [ ] Dado el ritmo de la empresa, cuando el saldo cubre 15 días o menos, entonces alerta amarilla; a 5 días, roja; en cero, crítica.
-- [ ] En cero se sigue vendiendo. Las facturas quedan pendientes y se emiten al recargar.
+- [ ] Dado el ritmo de un NIT, cuando su cupo cubre 15 días o menos, entonces alerta amarilla; a 5 días, roja; en cero, crítica.
+- [ ] En cero se sigue vendiendo. Las facturas de ese NIT quedan pendientes y se emiten al recargar. Los demás NIT siguen emitiendo.
 - [ ] El consumo se ve por NIT y por sede.
 - [ ] Queda auditado: la recarga y cada alerta enviada a soporte.
 
@@ -73,7 +73,7 @@ Criterios de aceptación:
 Criterios de aceptación:
 
 - [ ] Dado un plan por sede, cuando el cobro falla, entonces entra en gracia y, al vencer, se suspende.
-- [ ] Suspendida, los datos y los documentos ya emitidos siguen. Qué puede hacer todavía la sede (cerrar el día, o solo consultar) se fija en la entrega 4.3.
+- [ ] Suspendida, los datos y los documentos ya emitidos siguen. Qué puede hacer todavía la sede (cerrar el día, o solo consultar) se fija en la entrega 4.3 (PA-40).
 - [ ] Al reactivar, vuelve el acceso y se retoman las facturas pendientes si hay saldo.
 - [ ] Queda auditado: cada cambio de estado de la suscripción.
 
@@ -107,7 +107,7 @@ Backoffice, solo para el equipo de blackHole: empresas, planes, bolsas, recargas
 
 Web de administración del cliente: configuración guiada, saldo, requisitos del NIT, conceder soporte.
 
-Panel de soporte: estado de nodos, cola de sincronización, facturas pendientes. Sin escritorio remoto.
+Panel de soporte, como vista de la misma web de administración con permisos de soporte: estado de nodos, cola de sincronización, facturas pendientes. Los datos de una empresa solo aparecen con el acceso vigente que concedió su propietario. Sin escritorio remoto.
 
 Recorrido: [Flujo M7](../flujos/m7-saas.md).
 
@@ -127,9 +127,6 @@ M6 recibe consumo de documentos y señales para negociar el precio por volumen c
 
 ## 9. Preguntas abiertas
 
-| # | Pregunta | Responsable |
-|---|----------|-------------|
-| 1 | Precio por sede y si la bolsa va incluida o aparte | Fase 4, con los costos reales |
-| 2 | Si varios NIT consumen la misma bolsa y si Factus expone el saldo | Factus, [PRD-00, sección 14](PRD-00-vision-producto.md) |
-| 3 | Pasarela de cobro de la suscripción | Antes de la entrega 4.3. No es la pasarela del QR de la mesa |
-| 4 | Con la sede suspendida, ¿se puede cerrar el servicio del día o solo consultar? | Entrega 4.3 |
+- PA-38: pasarela de cobro de la suscripción, distinta de la del QR de la mesa. Ver [registro](../preguntas-abiertas.md).
+- PA-39: precio por sede, y si la bolsa va incluida o aparte. Ver [registro](../preguntas-abiertas.md).
+- PA-40: con la sede suspendida, si se puede cerrar el servicio del día o solo consultar. Ver [registro](../preguntas-abiertas.md).

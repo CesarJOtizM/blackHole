@@ -30,7 +30,7 @@ None
 
 ## Approach
 
-Bounded context `orders` (TRD-M1 sec. 1, 2) with a thin `Menu` aggregate and `SitePrice`. The cloud owns the menu (TRD-M1 sec. 3); changes travel to hybrid nodes through the sync channel from 0.2 as a versioned menu copy. In cloud mode the site app reads the cloud directly. Schemas live in `shared/contracts`.
+Bounded context `orders` (TRD-M1 sec. 1, 2) with a thin `Menu` aggregate and `VenuePrice`. The cloud owns the menu (TRD-M1 sec. 3); changes travel to hybrid nodes through the sync channel from 0.2 as a versioned menu copy. In cloud mode the site app reads the cloud directly. Schemas live in `shared/contracts`.
 
 ## Affected Areas
 
@@ -41,7 +41,7 @@ Bounded context `orders` (TRD-M1 sec. 1, 2) with a thin `Menu` aggregate and `Si
 | `contexts/orders/adapters/{postgres,sqlite,http}` | New | Cloud store, node copy, admin HTTP |
 | `shared/contracts` | Modified | Menu copy schema and events |
 | `apps/api-cloud`, `apps/local-node` | Modified | Wire catalog module |
-| `apps/web-admin`, `apps/site-app` | New (planned) | Menu admin; waiter menu view |
+| `apps/admin-web`, `apps/venue-app` | New (planned) | Menu admin; waiter menu view |
 
 ## Risks
 
@@ -53,7 +53,7 @@ Bounded context `orders` (TRD-M1 sec. 1, 2) with a thin `Menu` aggregate and `Si
 
 ## Rollback Plan
 
-The catalog is additive. Disable the catalog module in both apps and revert migrations of `menus`, `products`, `variants`, `modifiers`, `site_prices`; no other context consumes it yet.
+The catalog is additive. Disable the catalog module in both apps and revert migrations of `menus`, `products`, `variants`, `modifiers`, `venue_prices`; no other context consumes it yet.
 
 ## Dependencies
 

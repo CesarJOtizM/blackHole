@@ -4,7 +4,7 @@ roadmap_title: "Public booking link"
 phase: 3
 modules: [M9]
 bounded_contexts: [reservations, contracts]
-apps: [api-cloud, customer-portal, web-admin]
+apps: [api-cloud, customer-portal, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p3-06-reservations, p3-07-reservation-payments]

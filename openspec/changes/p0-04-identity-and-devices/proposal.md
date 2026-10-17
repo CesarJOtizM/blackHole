@@ -44,14 +44,14 @@ Domain entities `User` and `Device` in `contexts/platform/domain`; session and d
 | `shared/contracts` | Modified | Session, registration and revocation schemas |
 | `apps/api-cloud` | Modified | Admin auth adapter, device endpoints for cloud mode |
 | `apps/local-node` | Modified | PIN and device endpoints; reject unsigned traffic |
-| `apps/site-app`, `apps/admin-web` (planned) | New | PIN, QR scan, revoke screens |
+| `apps/venue-app`, `apps/admin-web` (planned) | New | PIN, QR scan, revoke screens |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| ADR-003 outcome changes the device channel | Med | Depends on p0-01 decision |
-| TRD-00 10.1 makes second factor optional; roadmap/PRD-M0 require it | Med | Spec requires support and enforcement once enrolled; product owner decides mandatory |
+| Local HTTPS outcome changes the device channel: PA-29 (ADR-003) | Med | Depends on p0-01 decision |
+| Who must use a second factor | Low | The administrator requires it for everyone or for the people they mark. Anyone else may turn it on (D-38) |
 | TRD-00 allows off-premises use when a cloud site has no local equipment; PRD-M0 rule 7 forbids it | Med | Master wins; exception specified and flagged |
 | iOS evicts PWA storage | High | Phone stores only session and credential |
 

@@ -2,7 +2,7 @@
 
 ## Intent
 
-Cashiers juggle one tablet per platform and retype orders. This change adds the cloud integration hub, the `ConnectorPort` with declared capabilities, and the Manual adapter, so every platform order enters through one screen from day one, even typed by hand (PRD-M5 HU-M5-02/03, TRD-00 sec. 6.1, TRD-M5).
+Cashiers juggle one tablet per platform and retype orders. This change adds the cloud integration hub, the `PlatformConnector` with declared capabilities, and the Manual adapter, so every platform order enters through one screen from day one, even typed by hand (PRD-M5 HU-M5-02/03, TRD-00 sec. 6.1, TRD-M5).
 
 ## Scope
 
@@ -33,7 +33,7 @@ None
 
 ## Approach
 
-`contexts/delivery` gains `ExternalOrder` and `ChannelProduct` entities and the `ConnectorPort` with optional operations queried before each call. The cloud owns external orders until accepted; acceptance runs on the operation owner (node in hybrid, cloud in cloud mode) and calls the `orders` and `cash-register` entry ports. Manual capture runs on the node and needs no platform.
+`contexts/delivery` gains `ExternalOrder` and `ChannelProduct` entities and the `PlatformConnector` with optional operations queried before each call. The cloud owns external orders until accepted; acceptance runs on the operation owner (node in hybrid, cloud in cloud mode) and calls the `orders` and `cash-register` entry ports. Manual capture runs on the node and needs no platform.
 
 ## Affected Areas
 
@@ -44,7 +44,7 @@ None
 | `contexts/orders`, `contexts/cash-register`, `contexts/inventory` | Modified | Platform channel, receivable, cancellation waste |
 | `shared/contracts` | Modified | ExternalOrder schemas and events |
 | `apps/api-cloud`, `apps/local-node` | Modified | Hub, site channel events |
-| `apps/site-app`, `apps/web-admin` | Modified | Queue screen; channel menu and mapping |
+| `apps/venue-app`, `apps/admin-web` | Modified | Queue screen; channel menu and mapping |
 
 ## Risks
 
@@ -52,7 +52,7 @@ None
 |------|------------|------------|
 | Manual capture typo duplicates a platform order | Med | Unique (platform, code) key |
 | Auto-accept while the node is silent | Med | Auto-accept only on the operation owner |
-| Who issues the DIAN document for platform orders (TRD-00 6.1) | Med | Validate with accountant before go-live |
+| Platform food invoice vs commission invoice | Low | Restaurant issues the food invoice (D-13). Commission invoice stays outside |
 
 ## Rollback Plan
 
@@ -61,6 +61,7 @@ Disable platform channels per site via flag; cashiers return to the tablets. Hub
 ## Dependencies
 
 - Own delivery (3.1), catalog (1.1), dining room (1.2), cash register (1.3), sale consumption (2.2)
+- Food invoice is D-13. Pilot platforms, volumes and commissions are not available yet; build with adapters and test data (D-35). API access stays in PA-28.
 
 ## Success Criteria
 

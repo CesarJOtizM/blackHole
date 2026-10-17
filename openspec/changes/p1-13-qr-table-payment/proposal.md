@@ -29,7 +29,7 @@ Customers should pay their table's balance and tip from the same QR portal, for 
 
 ## Approach
 
-Charges are born only in api-cloud behind a payment-gateway port; the node never talks to the gateway (TRD-M2 sec. 1). Confirmed payments sync to the operation owner with top priority and apply idempotently by reference, requesting the invoice with portal data (1.8). The adapter waits for ADR-016.
+Charges are born only in api-cloud behind a payment-gateway port; the node never talks to the gateway (TRD-M2 sec. 1). Confirmed payments sync to the operation owner with top priority and apply idempotently by reference, requesting the invoice with portal data (1.8). Bold is the first adapter (D-46). Other gateways implement the same port.
 
 ## Affected Areas
 
@@ -40,16 +40,16 @@ Charges are born only in api-cloud behind a payment-gateway port; the node never
 | `contexts/invoicing/application` | Modified | Invoice on QR confirmation |
 | `contexts/orders/application/entry-port.ts` | Modified | Account balance, table to clean |
 | `apps/customer-portal`, `apps/api-cloud` | Modified | Pay screen, webhook endpoint |
-| `apps/local-node`, `apps/site-app` | Modified | Apply payment; QR totals in count |
+| `apps/local-node`, `apps/venue-app` | Modified | Apply payment; QR totals in count |
 | `shared/contracts`, `shared/sync` | Modified | Confirmed-payment contract, priority |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| ADR-016 gateway undecided | High | Blocks this delivery only; contract defined first |
+| Which gateway | Low | Several adapters. Bold is one. The site enables the one it contracted. The fee is that contract (D-46) |
 | Duplicate or forged webhook | Med | Signature check, unique reference |
-| No open shift when a payment arrives (docs silent) | Med | Spec keeps it pending and alerts; product owner confirms |
+| QR payment with the cash-register shift closed | Low | Allowed when that QR charge is active. It does not modify the closed shift (D-44). Delivery may keep its QR after the dining room closes |
 | Balance changes after charge starts | Med | Charge bound to balance snapshot; mismatch flagged |
 
 ## Rollback Plan
@@ -58,7 +58,7 @@ A per-site flag hides the pay button; customers pay at the register. Confirmed b
 
 ## Dependencies
 
-- ADR-016 decision; gateway merchant account.
+- A Bold merchant account for the first adapter (D-46). Other gateways use the same port.
 - p1-03, p1-05, p1-08, p1-10, p1-12, p0-07.
 
 ## Success Criteria

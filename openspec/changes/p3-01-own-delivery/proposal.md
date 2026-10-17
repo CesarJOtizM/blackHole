@@ -11,7 +11,7 @@ Sites take delivery orders by phone, WhatsApp and counter outside the system, so
 - Courier PWA: assigned orders, delivery and COD confirmation
 - Dispatch, delivery, stage timestamps (created, ready, dispatched, delivered)
 - COD into the shift and end-of-shift courier reconciliation
-- Delivery address on the invoice; plastic bag tax line when the order leaves the site
+- Delivery address on the invoice; plastic bag tax line when the site has it enabled and the order leaves the site (D-29)
 - Cancellation (stock return or waste) and audit
 
 ### Out of Scope
@@ -41,7 +41,7 @@ New `delivery` bounded context with a `Delivery` aggregate (mandatory address, o
 | `contexts/invoicing` | Modified | Delivery address on document |
 | `shared/contracts` | Modified | Delivery schemas and events |
 | `apps/api-cloud`, `apps/local-node` | Modified | Composition, HTTP + WebSocket for courier |
-| `apps/delivery-app`, `apps/site-app` | New / Modified | Courier PWA; delivery screens |
+| `apps/delivery-app`, `apps/venue-app` | New / Modified | Courier PWA; delivery screens |
 
 ## Risks
 
@@ -49,7 +49,7 @@ New `delivery` bounded context with a `Delivery` aggregate (mandatory address, o
 |------|------------|------------|
 | Courier outside site Wi-Fi during internet cut | High | Confirmation waits for connectivity; reconciliation tolerates late sync |
 | COD cash lost between courier and drawer | Med | Per-courier reconciliation with audited differences |
-| Bag tax rule for delivery unclear with accountant | Med | Reuse tax engine profile; validate in sandbox |
+| Bag tax rule for delivery unclear with accountant | Med | Each site turns the bag tax line on or off (D-29); when on, reuse the tax engine line |
 
 ## Rollback Plan
 
@@ -59,6 +59,7 @@ Feature flag per site disables the delivery channel; open deliveries are closed 
 
 - Dining room and kitchen (1.2), cash register (1.3), tax engine (1.4), electronic invoicing (1.5), sale consumption (2.2)
 - Device registry for courier phones (0.4)
+- Own delivery uses the same sales invoice (D-07), with the delivery address on the document.
 
 ## Success Criteria
 

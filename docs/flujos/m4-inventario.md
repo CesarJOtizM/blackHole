@@ -3,20 +3,19 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
-| Fuentes | [PRD-00 §6.6 y M4](../prd/PRD-00-vision-producto.md), [TRD-00 §9](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.3 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-00 §6.6 y M4](../prd/PRD-00-vision-producto.md), [PRD-M4](../prd/PRD-M4-inventario.md), [TRD-M4](../trd/TRD-M4-inventario.md), [TRD-00 §9](../trd/TRD-00-arquitectura-base.md) |
 
-Cada sede tiene un inventario de punto. Las bodegas lo reabastecen. Las ventas descuentan ingredientes al enviar a cocina, según la receta. El stock puede quedar negativo: la venta no se detiene.
+Cada sede tiene un inventario de punto. Las bodegas lo reabastecen. Las ventas descuentan ingredientes al enviar a cocina, según la receta. El stock puede quedar negativo: la venta no se detiene. Los nombres de casos de uso y eventos son los de [TRD-M4](../trd/TRD-M4-inventario.md).
 
 ## Cómo se conecta
 
 | Con | Qué pasa |
 |-----|----------|
-| M1 | Envía el consumo al mandar un producto a cocina, y recibe si el plato se puede vender. |
+| M1 | Envía el consumo al mandar un producto a cocina (`RegisterSaleConsumption`), la devolución o la merma al anular (`ReturnStock`, `RecordWaste`), y recibe si el plato se puede vender (`AvailabilityChanged`). |
 | M5 | El mismo agotado se publica en las plataformas. Una cancelación ya empezada se registra como merma. |
 | M0 | Ajustes, conteos y traslados con diferencia piden permiso. |
-| M3 | Compras a quien no factura pueden generar documento soporte. La recepción de facturas de proveedores se evalúa en la Fase 2. |
 | M6 | Teórico contra real, mermas, margen y quiebres de stock. |
 
 ## De la venta al stock
@@ -30,28 +29,28 @@ flowchart TD
   D -->|No| F["Se expanden sus ingredientes"]
   E --> G["Cantidad bruta según rendimiento"]
   F --> G
-  G --> H["Movimiento de consumo en el punto"]
+  G --> H["RegisterSaleConsumption: movimiento de consumo en el punto"]
   H --> I["Saldo nuevo"]
   I --> J["Cuántos platos alcanzan"]
   J --> K["Menú del mesero: disponible, pocas unidades o agotado"]
   J --> L["Hub de plataformas, si la sede las tiene"]
 ```
 
-La estación de cocina no tiene inventario. Cocina y barra descuentan del mismo punto. El movimiento guarda la versión de la receta. Si se anula antes de que cocina empiece, entra un movimiento de devolución. Si se anula después, entra una merma con motivo.
+La estación de cocina no tiene inventario. Cocina y barra descuentan del mismo punto. El movimiento guarda la versión de la receta. Si se anula antes de que cocina empiece, entra un movimiento de devolución (`ReturnStock`). Si se anula después, entra una merma con motivo (`RecordWaste`).
 
 ## Tipos de movimiento
 
 ```mermaid
 flowchart LR
-  COMPRA["Compra"] --> SALDO["Saldo del insumo en esa ubicación"]
-  DEV["Devolución de venta"] --> SALDO
-  PROD_OUT["Salida de producción"] --> SALDO
-  TIN["Entrada de traslado"] --> SALDO
-  CON["Consumo de venta"] --> SALDO
-  MER["Merma"] --> SALDO
-  PROD_IN["Consumo de producción"] --> SALDO
-  TOUT["Salida de traslado"] --> SALDO
-  AJ["Ajuste de conteo"] --> SALDO
+  PUR["Compra"] --> BAL["Saldo del insumo en esa ubicación"]
+  RET["Devolución de venta"] --> BAL
+  PROD_OUT["Salida de producción"] --> BAL
+  TIN["Entrada de traslado"] --> BAL
+  CON["Consumo de venta"] --> BAL
+  WST["Merma"] --> BAL
+  PROD_IN["Consumo de producción"] --> BAL
+  TOUT["Salida de traslado"] --> BAL
+  ADJ["Ajuste de conteo"] --> BAL
 ```
 
 Ningún movimiento se edita ni se borra. El saldo es la suma, actualizada en la misma operación. El costo es el promedio de esa ubicación.
@@ -62,27 +61,31 @@ Ningún movimiento se edita ni se borra. El saldo es la suma, actualizada en la 
 flowchart TD
   A["Alerta o pedido del punto"] --> B{"¿La bodega es de la misma sede?"}
   B -->|Sí| C["Mismo nodo: despacho y recepción locales"]
-  B -->|"Bodega general u otra sede"| D["El origen registra la salida"]
+  B -->|"Bodega general u otra sede"| D["El origen registra la salida (TransferDispatched)"]
   D --> E["En tránsito"]
-  E --> F["El destino registra la entrada"]
+  E --> F["El destino registra la entrada (TransferReceived)"]
   C --> G{"¿Llegó lo despachado?"}
   F --> G
   G -->|Sí| H["Recibido"]
   G -->|No| I["Recibido con diferencias, con permiso"]
 ```
 
-Si el destino todavía no tiene internet, el comprobante impreso del despacho lleva un QR. El punto lo escanea y registra la recepción sin esperar la sincronización.
+La bodega general del piloto opera con su propio nodo en modo bodega (D-04), así que un traslado desde ella siempre tiene dos dueños. Operarla desde la web, sin nodo, sigue abierto para clientes pequeños (PA-44).
 
-Estados del traslado: solicitado, despachado, en tránsito, recibido, recibido con diferencias.
+Si el destino todavía no tiene internet, el comprobante impreso del despacho lleva un QR. El punto lo escanea y registra la recepción sin esperar la sincronización. M4 dispara ese comprobante; la plantilla y el controlador viven en `shared/printing`.
+
+Estados del traslado: solicitado, despachado, en tránsito, recibido, recibido con diferencias. El costo que viaja es el del origen en el despacho, sin sumarle nada (D-27).
 
 ## Producción
 
 ```mermaid
 flowchart LR
-  A["Ingredientes del punto o de la bodega"] --> B["Producción"]
+  A["Ingredientes del punto o de la bodega"] --> B["RecordProduction"]
   B --> C["Preparación intermedia con stock"]
   C --> D["La venta descuenta la preparación, no la receta completa"]
 ```
+
+El costo de lo producido lo elige la empresa: promedio de los insumos consumidos, o costo estándar (D-26).
 
 ## Conteo
 
@@ -92,11 +95,17 @@ sequenceDiagram
   participant Nodo
   actor Admin as Administrador
 
-  Bodeguero->>Nodo: Conteo físico, total o por categoría
+  Bodeguero->>Nodo: RecordStockCount, total o por categoría
   Nodo->>Nodo: Compara contra el teórico
-  Admin->>Nodo: Aprueba el resultado, dentro del tope
-  Nodo->>Nodo: Ajuste de conteo, con motivo
+  alt Dentro del tope
+    Nodo->>Nodo: Ajuste de conteo, con motivo
+  else Por encima del tope
+    Admin->>Nodo: ApproveAdjustment
+    Nodo->>Nodo: Ajuste de conteo, con motivo
+  end
 ```
+
+Si el conteo es a ciegas, como el arqueo, está en el registro (PA-42). Un ajuste por encima del tope pide aprobación. El tope es configurable y, por defecto, $1.000 (D-28).
 
 ## Alerta de escasez
 
@@ -142,8 +151,8 @@ sequenceDiagram
   actor Mesero
 
   Nodo-->>Cocina: No alcanza en el punto ni en las bodegas
-  Cocina->>Nodo: Hoy no se repone
-  Nodo->>Nodo: El plato queda agotado para este servicio
+  Cocina->>Nodo: ConfirmNoRestockToday
+  Nodo->>Nodo: El plato queda agotado para este servicio (AvailabilityChanged)
   Nodo-->>Mesero: Aviso de las mesas con ese plato aún sin empezar
   Mesero->>Nodo: Cliente avisado
 ```

@@ -27,7 +27,7 @@ None
 
 ## Approach
 
-Extend cloud projections built from the inbox (TRD-M6 sec. 4: `ProjectFacts`, `QueryConsolidated`, `DetectPatterns`). Metric definitions stay pure in `contexts/reporting/domain` so node and cloud compute identical numbers. Materialized views first; detectors run as cloud workers and notify through the M0 notifier. Every query filters by role scope (TRD-M6 sec. 8).
+Extend cloud projections built from the inbox (TRD-M6 sec. 4: `ProjectFacts`, `QueryConsolidatedReport`, `DetectPatterns`). Metric definitions stay pure in `contexts/reporting/domain` so node and cloud compute identical numbers. Materialized views first; detectors run as cloud workers and notify through the M0 notifier. Every query filters by role scope (TRD-M6 sec. 8).
 
 ## Affected Areas
 
@@ -38,7 +38,7 @@ Extend cloud projections built from the inbox (TRD-M6 sec. 4: `ProjectFacts`, `Q
 | `contexts/reporting/adapters/postgres` | Modified | Fact tables, materialized views |
 | `shared/contracts` | Modified | Filter and alert schemas |
 | `apps/api-cloud` | Modified | Admin HTTP routes, detector workers |
-| `apps/web-admin` | Modified | Consolidated and menu-engineering screens |
+| `apps/admin-web` | Modified | Consolidated and menu-engineering screens |
 
 ## Risks
 

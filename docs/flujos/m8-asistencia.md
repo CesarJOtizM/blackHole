@@ -3,11 +3,11 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
-| Fuentes | [PRD-00 §6.4 y M8](../prd/PRD-00-vision-producto.md), [TRD-00 §10.4](../trd/TRD-00-arquitectura-base.md) |
+| Versión | 0.2 |
+| Fecha | 2026-10-17 |
+| Fuentes | [PRD-00 §6.4 y M8](../prd/PRD-00-vision-producto.md), [PRD-M8](../prd/PRD-M8-asistencia.md), [TRD-M8](../trd/TRD-M8-asistencia.md), [TRD-00 §10.4](../trd/TRD-00-arquitectura-base.md) |
 
-Registra entrada, salida y pausas. No liquida nómina. La hora la pone el nodo, así el reloj del celular no adelanta la marcación. Solo se puede marcar dentro del local.
+Registra entrada, salida y pausas. No liquida nómina. La hora la pone el nodo (en modo nube, el servidor), así el reloj del celular no adelanta la marcación. Solo se puede marcar dentro del local: en modo nube, la PWA comprueba antes que llega al puente de la sede. Una sede en modo nube sin ningún equipo local no marca hasta tener puente.
 
 ## Cómo se conecta
 
@@ -40,12 +40,16 @@ Dos modos conviven, por trabajador:
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Fuera
-  Fuera --> Activo: Entrada
-  Activo --> EnPausa: Inicio de pausa
-  EnPausa --> Activo: Fin de pausa
-  Activo --> Fuera: Salida
-  Activo --> PorRevisar: Cierre automático al final del día
+  state "Fuera" as off_shift
+  state "En turno" as on_shift
+  state "En pausa" as on_break
+  state "Por revisar" as pending_review
+  [*] --> off_shift
+  off_shift --> on_shift: Entrada
+  on_shift --> on_break: Inicio de pausa
+  on_break --> on_shift: Fin de pausa
+  on_shift --> off_shift: Salida
+  on_shift --> pending_review: Cierre automático al final del día
 ```
 
 El cierre automático no borra la marcación abierta: agrega el cierre y lo deja para que el administrador lo revise.

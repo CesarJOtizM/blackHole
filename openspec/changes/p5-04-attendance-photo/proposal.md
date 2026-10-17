@@ -39,8 +39,8 @@ Extend `Mark` in `contexts/attendance/application`: when the site requires a pho
 | `contexts/attendance/adapters/sqlite`, `postgres` | Modified | Photo reference on clock events |
 | `contexts/platform/adapters/files` | Modified | Node file store and cloud object store |
 | `shared/sync` | Modified | Low-priority media lane |
-| `apps/site-app` | Modified | Camera capture at clock event |
-| `apps/web-admin` | Modified | Photo review |
+| `apps/venue-app` | Modified | Camera capture at clock event |
+| `apps/admin-web` | Modified | Photo review |
 
 ## Risks
 

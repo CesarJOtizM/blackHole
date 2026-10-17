@@ -2,7 +2,7 @@
 
 Software SaaS para restaurantes: punto de venta mobile first, cocina, caja, inventario con recetas, facturación electrónica DIAN, domicilios y plataformas, reservas, asistencia del personal, roles y auditoría. Se vende por suscripción mensual. El primer cliente piloto es un grupo de 6 restaurantes.
 
-> Nombre de trabajo: **blackHole**. El nombre comercial está por definir.
+> Nombre de trabajo: **blackHole**. El nombre comercial está por definir (PA-46).
 
 ## Cómo está organizada
 
@@ -16,7 +16,18 @@ Usamos un enfoque **híbrido**: dos documentos maestros que fijan las reglas com
 | 1 | [TRD-01 Infraestructura y operación](trd/TRD-01-infraestructura-y-operacion.md) | Terraform en AWS, GCP y Azure, despliegue continuo, escalado, monitoreo y errores |
 | 1 | PRD y TRD por módulo | Detalle funcional y técnico de cada módulo. El alcance completo ya está escrito; cada entrega del roadmap implementa un corte |
 
+| Transversal | [Registro de preguntas abiertas](preguntas-abiertas.md) | Qué falta por decidir (códigos PA-xx) y qué ya se decidió (códigos D-xx) |
+| Transversal | [Glosario de código](glosario-codigo.md) | Cómo se nombra en inglés cada concepto en carpetas, clases, eventos, tablas, permisos y pruebas |
+
 Plantillas para los documentos de módulo: [PRD de módulo](plantillas/PRD-modulo.md) y [TRD de módulo](plantillas/TRD-modulo.md).
+
+### Jerarquía
+
+- **PRD-00 y TRD-00 son los maestros.** Los documentos de módulo heredan de ellos y no los contradicen.
+- **El PRD manda en lo de negocio** (qué hace el producto y con qué reglas); **el TRD manda en lo técnico** (cómo se construye).
+- **El TRD manda sobre los diagramas.** Si un flujo o un diagrama C4 no coincide con su TRD, se corrige el diagrama.
+- **Las preguntas abiertas viven solo en el [registro](preguntas-abiertas.md).** Los demás documentos citan su código, por ejemplo "Pendiente: PA-10", en lugar de repetir la pregunta.
+- **Los nombres en código los fija el [glosario](glosario-codigo.md).** Los documentos se escriben en español, y los identificadores que citan van en inglés (D-06).
 
 Los flujos de cada funcionalidad, y cómo se pasan el trabajo entre sí, están diagramados en [Flujos](flujos/README.md).
 

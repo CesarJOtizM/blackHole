@@ -43,14 +43,15 @@ Evaluation as a pure domain function in `contexts/platform/domain`, exposed thro
 | `contexts/platform/adapters/{http,ws,postgres,sqlite}` | Modified | Routes with declared permission, authorization gateway, stores |
 | `shared/contracts` | Modified | Permission codes, authorization request schemas |
 | `apps/api-cloud`, `apps/local-node` | Modified | Bind evaluation, route-permission check |
-| `apps/site-app`, `apps/admin-web` (planned) | New | Supervisor prompt, roles screens |
+| `apps/venue-app`, `apps/admin-web` (planned) | New | Supervisor prompt, roles screens |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Default limits do not fit pilot (PRD-01 13) | Med | Limits are data; adjust per company |
-| Single-person night shifts | Med | Per-shift self-authorization, flagged and alerted |
+| Default limits | Low | Adopted as the initial values; the site administrator authorizes (D-30) |
+| Single-person shift | Low | Self-authorization, flagged and alerted, when that person is the only authorizer (D-30) |
+| Bartender charging at the bar | Low | Permission exists and starts off in the pilot (D-22) |
 | Matrix grows faster than tests | Med | Test generated from the catalog; build fails if a cell lacks one |
 
 ## Rollback Plan

@@ -2,9 +2,23 @@
 
 ## Purpose
 
-Let blackHole support diagnose a customer's sites from the cloud, without remote desktop, only within an owner-granted access. Served only by api-cloud (PostgreSQL).
+Let blackHole support diagnose a customer's sites from the cloud, without remote desktop, only within an owner-granted access. Served only by api-cloud (PostgreSQL) and shown as a view of admin-web (D-05).
 
 ## Requirements
+
+### Requirement: View Inside the Administration Web
+
+The panel MUST be a view of admin-web, not a separate app. It MUST be visible only to users holding `support.view_panel`; other admin-web users MUST NOT see it or reach its routes.
+
+#### Scenario: Support user in admin-web
+- GIVEN a blackHole support user signed in to admin-web
+- WHEN they open the navigation
+- THEN the support view is listed
+
+#### Scenario: Customer administrator
+- GIVEN a company administrator without `support.view_panel` signed in to admin-web
+- WHEN they request the support view route
+- THEN the request is rejected and the view is not listed
 
 ### Requirement: Access Requires a Valid Grant
 
@@ -47,7 +61,7 @@ For each site the panel MUST show its mode (cloud or hybrid); for hybrid sites i
 
 ### Requirement: Pending Invoices
 
-The panel MUST list documents in `pending_issue` or `uncertain` per taxpayer and site with count, oldest age and reason (no link, no balance, rejected, rate limit). It MUST NOT show customer personal data or line items.
+The panel MUST list documents in `pending_issuance` or `uncertain` per taxpayer and site with count, oldest age and reason (no link, no balance, rejected, rate limit). It MUST NOT show customer personal data or line items.
 
 #### Scenario: Pending by reason
 

@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-15 |
+| Versión | 0.2 |
+| Fecha | 2026-10-17 |
 | Fase | 1 a 4 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | PRD asociado | [PRD-M6](../prd/PRD-M6-reportes.md) |
@@ -21,7 +21,7 @@
 | Hora | La del nodo, ya guardada en el evento. El reporte no resta relojes |
 | Detectores | Workers en la nube. Avisan por el notificador de M0. No escriben en M1 ni en M2 |
 | Exportación | Archivo en el almacén de objetos. Excel para contador y para quien liquida nómina |
-| Código | `contextos/reportes/dominio`, `contextos/reportes/aplicacion` |
+| Código | `contexts/reporting/domain`, `contexts/reporting/application` |
 
 ## 2. Modelo de dominio
 
@@ -54,10 +54,10 @@ M6 no tiene outbox de negocio. Si un evento llega dos veces al inbox, la proyecc
 | Caso de uso | Entrada | Reglas | Eventos | Corre en |
 |-------------|---------|--------|---------|----------|
 | Consultas del día | Turno, sede, hoy | Lee la base local. No espera a la nube | — | Nodo, o nube en modo nube |
-| `ProyectarHechos` | Inbox | Idempotente por dispositivo y secuencia. Dimensiones: día, sede, producto, estación, persona | — | Nube |
-| `DetectarPatrones` | Hechos y umbrales | Anulaciones, descuentos, cajón, pareja que se repite, autoautorización | Aviso | Nube |
-| `ConsultarConsolidado` | Filtros y periodo | Marca la sede atrasada si su cursor no está al día | — | Nube |
-| `Exportar` | Periodo, contribuyente o sede | Fiscal, impuestos u horas. Sin salario | Auditoría si hay datos personales | Nube |
+| `ProjectFacts` | Inbox | Idempotente por dispositivo y secuencia. Dimensiones: día, sede, producto, estación, persona | — | Nube |
+| `DetectPatterns` | Hechos y umbrales | Anulaciones, descuentos, cajón, pareja que se repite, autoautorización | Aviso | Nube |
+| `QueryConsolidatedReport` | Filtros y periodo | Marca la sede atrasada si su cursor no está al día | — | Nube |
+| `ExportReport` | Periodo, contribuyente o sede | Fiscal, impuestos u horas. Sin salario | Auditoría si hay datos personales | Nube |
 
 Familias y fuente: [C4 M6](../arquitectura/componentes/c4-m6-reportes.md).
 
@@ -69,7 +69,7 @@ Familias y fuente: [C4 M6](../arquitectura/componentes/c4-m6-reportes.md).
 
 No hay puerto de entrada para que otro módulo "guarde un reporte". Los otros emiten sus eventos; el projector los lee del inbox.
 
-Los esquemas Zod de los filtros viven en `compartido/contratos`. La definición numérica vive en el dominio, no en el SQL de un solo adaptador: el SQL la implementa.
+Los esquemas Zod de los filtros viven en `shared/contracts`. La definición numérica vive en el dominio, no en el SQL de un solo adaptador: el SQL la implementa.
 
 ## 6. Persistencia
 
@@ -84,7 +84,7 @@ Tablas de hechos por día, sede, producto, estación y persona. Vistas materiali
 
 El nodo responde el día con lo que ya tiene: ventas, caja, tiempos, horas y alertas de inventario locales.
 
-El consolidado, los detectores y el Excel esperan en la nube. Al reconectar, `ProyectarHechos` alcanza el cursor sin sumar dos veces.
+El consolidado, los detectores y el Excel esperan en la nube. Al reconectar, `ProjectFacts` alcanza el cursor sin sumar dos veces.
 
 En modo nube no hay copia del día en un nodo. Si no hay enlace, no hay reporte, igual que no hay caja.
 
@@ -106,10 +106,10 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 | Venta neta | Dominio | Excluye impuesto, propina y descuento |
 | Percentil | Dominio | p50 y p90 del conjunto de prueba |
 | Sede atrasada | Dominio | No aparece como venta cero |
-| `ProyectarHechos` repetido | Aplicación | El total no cambia |
+| `ProjectFacts` repetido | Aplicación | El total no cambia |
 | Detector | Aplicación | Avisa y no escribe en caja ni en pedidos |
 | Alcance de sede | Aplicación | El administrador de la sede 1 no lee la sede 2 |
-| `FuenteEventos` | Contrato, memoria, SQLite y PostgreSQL | El mismo día da el mismo total |
+| `EventSource` | Contrato, memoria, SQLite y PostgreSQL | El mismo día da el mismo total |
 | Exportación fiscal | Aplicación | Separa consumidor final y no es un documento DIAN |
 
 - [ ] Cada invariante de la sección 2 tiene prueba de dominio, sin Nest ni base de datos

@@ -4,7 +4,7 @@ roadmap_title: "Consolidated reports"
 phase: 4
 modules: [M6, M4, M0]
 bounded_contexts: [reporting, contracts]
-apps: [api-cloud, web-admin]
+apps: [api-cloud, admin-web]
 status: specified
 artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-06-audit, p0-05-roles-and-permissions, p1-07-anti-theft-controls, p1-11-site-reports, p2-10-inventory-reports, p3-09-delivery-and-reservation-reports]

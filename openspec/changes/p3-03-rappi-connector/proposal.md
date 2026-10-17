@@ -39,13 +39,13 @@ The adapter translates Rappi payloads into the domain `ExternalOrder`; Rappi JSO
 | `contexts/inventory` | Modified | Availability events consumed by the hub |
 | `shared/contracts`, `shared/sync` | Modified | Status and availability events |
 | `apps/api-cloud` | Modified | Webhook endpoint, polling and watchdog workers, secrets |
-| `apps/site-app`, `apps/web-admin` | Modified | Pause controls, connector state |
+| `apps/venue-app`, `apps/admin-web` | Modified | Pause controls, connector state |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Rappi API access not granted (ADR-011) | High | Manual adapter remains; 3.4 integrator path |
+| Rappi API access open: PA-28 (ADR-011) | High | Manual adapter remains; 3.4 integrator path |
 | Accepted on Rappi but not in kitchen | Med | Watchdog pauses; auto-accept off when node silent |
 | Rappi contract changes | Med | Contract suite per adapter |
 
@@ -56,7 +56,7 @@ Switch the site's Rappi channel back to the Manual adapter (configuration only).
 ## Dependencies
 
 - Platform hub (3.2); producible quantity (2.7) for availability
-- Rappi API credentials and agreement (ADR-011)
+- Rappi API credentials and agreement (PA-28, ADR-011). Until then, adapters and test data (D-35).
 
 ## Success Criteria
 

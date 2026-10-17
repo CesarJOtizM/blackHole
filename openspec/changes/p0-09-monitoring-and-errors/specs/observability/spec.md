@@ -62,6 +62,16 @@ Dashboards and alarms MUST be code beside the infrastructure, each alarm with ow
 - WHEN the alarm evaluates
 - THEN it fires
 
+#### Scenario: Cloud availability below target
+- GIVEN the cloud API below 99.5% availability in the month, or not answering for more than 5 minutes
+- WHEN the alarm evaluates
+- THEN the cloud availability alarm fires (TRD-00 15, TRD-01 7.5)
+
+#### Scenario: Sync delay over target
+- GIVEN a connected hybrid site whose sync delay p95 exceeds 1 minute
+- WHEN the alarm evaluates
+- THEN the sync delay alarm fires (TRD-00 15, TRD-01 7.5)
+
 ### Requirement: Error Tracking with Deferred Sending
 
 Cloud, node and PWAs MUST report errors with company, site, role and release, queuing them offline up to a maximum. PWA source maps MUST be uploaded but not published.

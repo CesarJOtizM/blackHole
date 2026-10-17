@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Deliver staff alerts and customer messages through WhatsApp and email, in addition to in-app and Web Push, according to each site's configuration. External channels are sent only from the cloud (api-cloud); in hybrid mode the node keeps in-app alerts working without internet; in cloud mode a site outage stops both in-app and external alerts until the link returns.
+Deliver staff alerts and customer messages through WhatsApp, email and SMS (D-03), in addition to in-app and Web Push, according to each site's configuration. External channels go through the `Messaging` port; in-app and Web Push stay on `Notifier`. External channels are sent only from the cloud (api-cloud); in hybrid mode the node keeps in-app alerts working without internet; in cloud mode a site outage stops both in-app and external alerts until the link returns.
 
 ## Requirements
 
 ### Requirement: Channel Configuration per Site
 
-Each site MUST configure, per notification type (shortage alert, bag balance alert, reservation confirmation, reservation reminder, invoice delivery), the channels (in-app, push, WhatsApp, email) and recipient roles. In-app MUST remain enabled for staff alerts.
+Each site MUST configure, per notification type (shortage alert, bag balance alert, reservation confirmation, reservation reminder, invoice delivery), the channels (in-app, push, WhatsApp, email, SMS) and recipient roles. In-app MUST remain enabled for staff alerts.
 
 #### Scenario: WhatsApp for red shortage alerts
 
@@ -22,6 +22,13 @@ Each site MUST configure, per notification type (shortage alert, bag balance ale
 - GIVEN site 2 with email disabled for shortage alerts
 - WHEN a shortage alert opens there
 - THEN no email is sent
+
+#### Scenario: SMS for critical bag balance
+
+- GIVEN a site configured to send critical bag balance alerts by SMS to the company administrator
+- WHEN the bag balance reaches critical
+- THEN the administrator receives an SMS
+- AND the alert also appears in-app
 
 ### Requirement: Staff Alerts
 
@@ -50,15 +57,21 @@ The system MUST send a confirmation when a reservation becomes confirmed and a r
 - WHEN their reservation is confirmed
 - THEN they receive date, time, party size and the site's policy
 
+#### Scenario: Reminder by SMS
+
+- GIVEN a customer with SMS consent and no WhatsApp consent
+- WHEN the reminder time of their reservation arrives
+- THEN they receive the reminder by SMS only
+
 #### Scenario: Cancelled before reminder
 
 - GIVEN a reservation cancelled before its reminder time
 - WHEN the reminder time arrives
 - THEN no reminder is sent
 
-### Requirement: Invoice Delivery by WhatsApp
+### Requirement: Invoice Delivery by WhatsApp or SMS
 
-When the customer provided a mobile number and consent, the system MUST send the invoice link by WhatsApp only after Factus validated it. Email delivery by Factus SHALL remain the default for customers with email.
+When the customer provided a mobile number and consent, the system MUST send the invoice link by WhatsApp or SMS, as the site configures, only after Factus validated it. Email delivery by Factus SHALL remain the default for customers with email.
 
 #### Scenario: Validated invoice
 

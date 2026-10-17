@@ -41,7 +41,7 @@ The portal runs only in api-cloud (`apps/customer-portal`), never on the node (T
 | `apps/customer-portal` | New | Mobile-first public portal |
 | `apps/api-cloud`, `apps/local-node` | Modified | Portal endpoints; "data received" applied on node |
 | `shared/contracts`, `shared/sync` | Modified | Billing-data event and schemas |
-| `apps/site-app`, `apps/web-admin` | Modified | Register flag; window and approval settings |
+| `apps/venue-app`, `apps/admin-web` | Modified | Register flag; window and approval settings |
 
 ## Risks
 
@@ -50,8 +50,8 @@ The portal runs only in api-cloud (`apps/customer-portal`), never on the node (T
 | ID enumeration through the portal | High | Masking, token-only lookups, rate limit per token and IP |
 | Lookups starve issuance quota | Med | Shared limiter, issuance priority, per-company cache |
 | `/f/` uses a time-ordered UUIDv7 | Med | Design must confirm unguessability or add a signed suffix |
-| Contradiction: PRD-01 requires authorization for credit notes; TRD-00 8.5 allows automatic re-invoicing | Med | Default to approval; product owner decides |
-| One-time code provider undecided (PRD-M3 Q3) | Med | Port with a pluggable sender |
+| Credit note of a re-invoice | Low | Administration approves it; once approved, it is issued (D-42) |
+| One-time code provider open: PA-37 | Med | Port with a pluggable sender |
 
 ## Rollback Plan
 
@@ -60,7 +60,7 @@ A per-company flag hides portal QR codes; pre-bills print without QR and cashier
 ## Dependencies
 
 - p1-05, p1-06, p1-02, p1-03, p0-05, p0-06.
-- Accountant validation of re-invoicing (TRD-00 8.4); email/SMS provider.
+- Re-invoicing rules are D-11. Administration approves the credit note and then it is issued (D-42). `GET /v2/dian/acquirer` does not consume documents (D-21). Still open: email, SMS and WhatsApp provider (PA-37).
 
 ## Success Criteria
 
