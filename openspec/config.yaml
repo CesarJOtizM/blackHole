@@ -1,0 +1,126 @@
+schema: spec-driven
+project: blackhole
+initialized: 2026-10-16
+persistence: openspec
+
+context: |
+  Tech stack: TypeScript 7 (strict, ESM, NodeNext), Node >=24, pnpm 12 workspaces + Turborepo 2, NestJS 12 on Fastify.
+  Layout: apps/{api-cloud,local-node} (Nest hosts), contexts/platform (bounded context), shared/contracts, tools/.
+  Architecture: Hexagonal + DDD, screaming bounded contexts with domain/application/adapters layers (ADR-017, ADR-018).
+  Boundaries: dependency-cruiser forbids domain->infrastructure, application->adapters, cross-context interiors, foreign SQL dialects per app.
+  Testing: Vitest 5 root projects (api-cloud, local-node, skeleton); TDD inside-out mandated by ADR-017.
+  Style: Biome 2 (recommended rules, 2 spaces, double quotes, semicolons). Code/names in English; docs/ may be Spanish.
+
+strict_tdd: false
+strict_tdd_reason: >
+  ADR-017 mandates test-first, but the workspace test command (vitest projects) only collects
+  apps/api-cloud/src/**/*.test.ts, apps/local-node/src/**/*.test.ts and tools/skeleton/**/*.test.ts.
+  Tests co-located in contexts/* or shared/* are NOT collected, so the command does not cover every
+  in-scope project. Enable once vitest.config.ts adds projects for contexts/* and shared/*.
+
+workspace:
+  package_manager: pnpm
+  task_runner: turbo
+  projects:
+    - name: "@blackhole/api-cloud"
+      path: apps/api-cloud
+      kind: app (NestJS + Fastify, cloud / PostgreSQL target)
+      tests: vitest project "api-cloud" (src/**/*.test.ts)
+    - name: "@blackhole/local-node"
+      path: apps/local-node
+      kind: app (NestJS + Fastify, venue node / SQLite target)
+      tests: vitest project "local-node" (src/**/*.test.ts)
+    - name: "@blackhole/platform"
+      path: contexts/platform
+      kind: bounded context (domain, application, adapters)
+      tests: none co-located; indirectly asserted by vitest project "skeleton"
+    - name: "@blackhole/contracts"
+      path: shared/contracts
+      kind: shared contracts package
+      tests: none co-located; indirectly asserted by vitest project "skeleton"
+    - name: tools
+      path: tools
+      kind: workspace tooling (skeleton tests, dependency-cruiser helpers); not a pnpm package
+      tests: vitest project "skeleton"
+
+testing:
+  detected: 2026-10-16
+  runner:
+    framework: vitest 5.0.5
+    command: pnpm test            # vitest run (root config, projects)
+    single_project: pnpm vitest run --project <api-cloud|local-node|skeleton>
+    config: vitest.config.ts
+    covered_paths:
+      - apps/api-cloud/src/**/*.test.ts
+      - apps/local-node/src/**/*.test.ts
+      - tools/skeleton/**/*.test.ts
+    uncovered_paths:
+      - contexts/**
+      - shared/**
+  layers:
+    unit:
+      available: true
+      tool: vitest
+    integration:
+      available: true
+      tool: vitest + NestJS application bootstrap (Fastify adapter, no listening port)
+    e2e:
+      available: false
+      tool: null
+  coverage:
+    available: false
+    command: null
+    note: No @vitest/coverage-v8 or @vitest/coverage-istanbul installed; ADR-017 requires no line percentage.
+  quality:
+    linter:
+      available: true
+      command: pnpm lint          # biome check .
+    type_checker:
+      available: true
+      command: pnpm typecheck     # tsc -b (project references)
+    formatter:
+      available: true
+      command: pnpm biome format --write .
+    architecture:
+      available: true
+      command: pnpm architecture  # dependency-cruiser + tools/cruiser/verify-domain.mjs
+      warning: dependency-cruiser 18.6.0 reports missing-typescript-transpiler with TypeScript 7; TS sources may be skipped.
+  conventions:
+    - Tests named Given / When / Then (lowercase "given ..., when ..., then ..." in it() titles).
+    - Arrange / Act / Assert blocks separated by a blank line.
+    - Inside-out order: domain, use case with in-memory adapters, port contract in both dialects, external adapter, HTTP/WebSocket entry.
+    - Doubles are in-memory adapters of the real port; Drizzle is never mocked; domain never depends on Nest.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Name the affected bounded context(s) and apps (api-cloud, local-node)
+    - Reference the relevant PRD/TRD module under docs/ (M0-M9)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Behaviors that differ between SQLite (local-node) and PostgreSQL (api-cloud) MUST be called out
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale; link ADRs under docs/adr/
+    - Respect dependency-cruiser rules (domain has no infrastructure imports; contexts only expose application/entry-port.ts)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Order tasks inside-out per ADR-017
+    - Forecast against the 400-line review budget
+  apply:
+    guidelines:
+      - Follow existing code patterns
+      - Code, file names and identifiers in English; rename Spanish identifiers when touched
+      - Write the failing test first (ADR-017) even while strict_tdd is false
+    tdd: false
+    test_command: pnpm test
+  verify:
+    test_command: pnpm test
+    build_command: pnpm typecheck
+    lint_command: pnpm lint
+    architecture_command: pnpm architecture
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
