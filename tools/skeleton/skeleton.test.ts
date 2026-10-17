@@ -106,10 +106,28 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
   for (const relativePath of absent) {
     expect(existsSync(path.join(root, relativePath)), relativePath).toBe(false);
   }
-  expect(domainSource).toBe('export const layer = "domain" as const;\n');
+  expect(domainSource).toContain('export const layer = "domain" as const;');
   expect(useCaseFolders).toEqual([]);
   expect(useCaseTests).toEqual([]);
-  expect(declarations).toEqual([]);
+  expect(
+    declarations.map((filePath) => path.relative(platform, filePath)).sort(),
+  ).toEqual(
+    [
+      path.join(
+        "adapters",
+        "memory",
+        "in-memory-venue-operation-repository.ts",
+      ),
+      path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
+      path.join("application", "ports", "venue-operation-repository.ts"),
+      path.join(
+        "application",
+        "ports",
+        "venue-operation-repository.contract.ts",
+      ),
+      path.join("domain", "venue-operation.ts"),
+    ].sort(),
+  );
 });
 
 it("given the platform package, when its layers are listed, then domain, application, and adapters exist", () => {
@@ -126,12 +144,12 @@ it("given the platform package, when its layers are listed, then domain, applica
   expect(adaptersDependsOn).toBe("application");
 });
 
-it("given domain, when the module is analyzed, then it declares no business type and no use case", () => {
+it("given domain, when the module is analyzed, then it exports the layer and the venue operation", () => {
   const module = domain;
 
-  const keys = Object.keys(module);
+  const keys = Object.keys(module).sort();
 
-  expect(keys).toEqual(["layer"]);
+  expect(keys).toEqual(["StaleGeneration", "VenueOperation", "layer"]);
 });
 
 it("given the contracts package, when its published contents are inspected, then the package exists and publishes no schemas", () => {
