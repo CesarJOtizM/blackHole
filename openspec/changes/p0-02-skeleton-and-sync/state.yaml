@@ -1,0 +1,21 @@
+change: p0-02-skeleton-and-sync
+roadmap_delivery: "0.2"
+roadmap_title: "Skeleton and synchronization"
+phase: 0
+modules: [M0]
+bounded_contexts: [platform, contracts, sync]
+apps: [api-cloud, local-node]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-01-risk-spikes]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M0-plataforma.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M0-plataforma.md
+  - docs/flujos/m0-plataforma.md
+  - docs/arquitectura/componentes/c4-m0-plataforma.md
+  - docs/arquitectura/infraestructura-y-comunicacion.md
+  - docs/adr/ADR-017-tdd-sobre-hexagonal.md
+  - docs/adr/ADR-018-screaming-y-bounded-context.md

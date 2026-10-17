@@ -1,0 +1,20 @@
+change: p5-01-whatsapp-and-email-notifications
+roadmap_delivery: "5.1"
+roadmap_title: "WhatsApp and email notifications"
+phase: 5
+modules: [M0, M3, M4, M7, M9]
+bounded_contexts: [platform, inventory, invoicing, saas, reservations, contracts]
+apps: [api-cloud, local-node, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p1-05-electronic-invoicing, p2-08-shortage-alerts, p3-06-reservations, p4-03-plans-and-subscription]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M3-facturacion.md
+  - docs/prd/PRD-M7-saas.md
+  - docs/prd/PRD-M9-reservas.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M0-plataforma.md
+  - docs/trd/TRD-M7-saas.md
+  - docs/arquitectura/componentes/c4-m0-plataforma.md

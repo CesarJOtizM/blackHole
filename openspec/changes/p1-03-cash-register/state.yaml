@@ -1,0 +1,19 @@
+change: p1-03-cash-register
+roadmap_delivery: "1.3"
+roadmap_title: "Cash register"
+phase: 1
+modules: [M2]
+bounded_contexts: [cash-register, orders, contracts, sync]
+apps: [api-cloud, local-node, site-app]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-03-organization, p0-05-roles-and-permissions, p0-06-audit, p1-02-dining-room-and-kitchen]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-01-roles-y-permisos.md
+  - docs/prd/PRD-M2-caja.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M2-caja.md
+  - docs/flujos/m2-caja.md
+  - docs/arquitectura/componentes/c4-m2-caja.md

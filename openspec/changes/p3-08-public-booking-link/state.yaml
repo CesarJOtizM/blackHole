@@ -1,0 +1,18 @@
+change: p3-08-public-booking-link
+roadmap_delivery: "3.8"
+roadmap_title: "Public booking link"
+phase: 3
+modules: [M9]
+bounded_contexts: [reservations, contracts]
+apps: [api-cloud, customer-portal, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p3-06-reservations, p3-07-reservation-payments]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M9-reservas.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M9-reservas.md
+  - docs/flujos/m9-reservas.md
+  - docs/arquitectura/componentes/c4-m9-reservas.md

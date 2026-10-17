@@ -1,0 +1,17 @@
+change: p1-04-tax-engine
+roadmap_delivery: "1.4"
+roadmap_title: "Tax engine"
+phase: 1
+modules: [M3]
+bounded_contexts: [invoicing, platform, contracts, sync]
+apps: [api-cloud, local-node, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-02-skeleton-and-sync, p0-03-organization, p0-06-audit, p1-01-menu-and-catalog, p1-03-cash-register]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M3-facturacion.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M3-facturacion.md
+  - docs/flujos/m3-facturacion.md

@@ -1,0 +1,20 @@
+change: p4-02-accountant-information
+roadmap_delivery: "4.2"
+roadmap_title: "Accountant information"
+phase: 4
+modules: [M6, M3]
+bounded_contexts: [reporting, invoicing, contracts]
+apps: [api-cloud, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p1-04-tax-engine, p1-05-electronic-invoicing, p1-08-invoicing-portal, p1-11-site-reports, p4-01-consolidated-reports]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-01-roles-y-permisos.md
+  - docs/prd/PRD-M6-reportes.md
+  - docs/prd/PRD-M3-facturacion.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M6-reportes.md
+  - docs/trd/TRD-M3-facturacion.md
+  - docs/flujos/m6-reportes.md

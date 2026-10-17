@@ -1,0 +1,18 @@
+change: p3-04-didi-food-connector
+roadmap_delivery: "3.4"
+roadmap_title: "DiDi Food connector"
+phase: 3
+modules: [M5]
+bounded_contexts: [delivery, contracts]
+apps: [api-cloud, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p3-02-platform-hub-and-manual-capture, p3-03-rappi-connector]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M5-domicilios.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M5-domicilios.md
+  - docs/flujos/m5-domicilios.md
+  - docs/arquitectura/componentes/c4-m5-domicilios.md

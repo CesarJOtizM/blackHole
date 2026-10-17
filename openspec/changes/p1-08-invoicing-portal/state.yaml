@@ -1,0 +1,18 @@
+change: p1-08-invoicing-portal
+roadmap_delivery: "1.8"
+roadmap_title: "Invoicing portal"
+phase: 1
+modules: [M3]
+bounded_contexts: [invoicing, platform, contracts, sync]
+apps: [api-cloud, local-node, customer-portal, site-app, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-05-roles-and-permissions, p0-06-audit, p1-02-dining-room-and-kitchen, p1-03-cash-register, p1-05-electronic-invoicing, p1-06-printing]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-01-roles-y-permisos.md
+  - docs/prd/PRD-M3-facturacion.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M3-facturacion.md
+  - docs/flujos/m3-facturacion.md

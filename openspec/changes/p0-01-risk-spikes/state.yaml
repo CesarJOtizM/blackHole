@@ -1,0 +1,17 @@
+change: p0-01-risk-spikes
+roadmap_delivery: "0.1"
+roadmap_title: "Risk spikes"
+phase: 0
+modules: [M0, M1, M3]
+bounded_contexts: [platform, printing, infra]
+apps: [local-node, site-app]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: []
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-M0-plataforma.md
+  - docs/trd/TRD-M0-plataforma.md
+  - docs/trd/TRD-M1-pedidos-y-salon.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/arquitectura/infraestructura-y-comunicacion.md

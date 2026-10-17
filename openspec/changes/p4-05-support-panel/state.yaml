@@ -1,0 +1,20 @@
+change: p4-05-support-panel
+roadmap_delivery: "4.5"
+roadmap_title: "Support panel"
+phase: 4
+modules: [M7, M0, M3, M6]
+bounded_contexts: [saas, platform, sync, invoicing, contracts]
+apps: [api-cloud, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-02-skeleton-and-sync, p0-05-roles-and-permissions, p0-06-audit, p0-09-monitoring-and-errors, p1-05-electronic-invoicing, p4-03-plans-and-subscription]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-01-roles-y-permisos.md
+  - docs/prd/PRD-M7-saas.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-01-infraestructura-y-operacion.md
+  - docs/trd/TRD-M7-saas.md
+  - docs/trd/TRD-M0-plataforma.md
+  - docs/flujos/m7-saas.md
+  - docs/arquitectura/componentes/c4-m7-saas.md

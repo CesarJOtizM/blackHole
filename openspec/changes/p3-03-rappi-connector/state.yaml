@@ -1,0 +1,19 @@
+change: p3-03-rappi-connector
+roadmap_delivery: "3.3"
+roadmap_title: "Rappi connector"
+phase: 3
+modules: [M5, M4]
+bounded_contexts: [delivery, inventory, contracts, sync]
+apps: [api-cloud, local-node, site-app, web-admin]
+status: specified
+artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+depends_on: [p3-02-platform-hub-and-manual-capture, p2-07-producible-quantity, p0-07-hybrid-resilience, p0-08-infrastructure-and-delivery]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-01-roles-y-permisos.md
+  - docs/prd/PRD-M5-domicilios.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M5-domicilios.md
+  - docs/flujos/m5-domicilios.md
+  - docs/arquitectura/componentes/c4-m5-domicilios.md
