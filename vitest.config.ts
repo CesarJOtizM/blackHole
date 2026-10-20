@@ -24,6 +24,12 @@ export default defineConfig({
         },
       },
       {
+        test: {
+          name: "spikes",
+          include: ["tools/spikes/**/*.test.ts"],
+        },
+      },
+      {
         server: {
           fs: {
             allow: ["../.."],
