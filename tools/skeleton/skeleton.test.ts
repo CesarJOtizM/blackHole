@@ -146,6 +146,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "ports",
         "venue-operation-repository.contract.ts",
       ),
+      path.join("domain", "organization.ts"),
       path.join("domain", "venue-operation.ts"),
     ].sort(),
   );
@@ -165,12 +166,24 @@ it("given the platform package, when its layers are listed, then domain, applica
   expect(adaptersDependsOn).toBe("application");
 });
 
-it("given domain, when the module is analyzed, then it exports the layer and the venue operation", () => {
+it("given domain, when the module is analyzed, then it exports the layer, the venue operation, and the organization", () => {
   const module = domain;
 
   const keys = Object.keys(module).sort();
 
-  expect(keys).toEqual(["StaleGeneration", "VenueOperation", "layer"]);
+  expect(keys).toEqual([
+    "DuplicateNit",
+    "DuplicateOrganizationId",
+    "InvalidOrganizationId",
+    "InvoicingTaxpayerAlreadyAssigned",
+    "Organization",
+    "PointAlreadyOpen",
+    "StaleGeneration",
+    "StockNotHeld",
+    "UnknownOrganizationReference",
+    "VenueOperation",
+    "layer",
+  ]);
 });
 
 it("given the contracts package, when its published contents are inspected, then it publishes the cloud write schemas", () => {
