@@ -25,19 +25,19 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Spike test project
 
-- [ ] 1.1 In `vitest.config.ts`, add project `spikes` including `tools/spikes/**/*.test.ts`.
+- [x] 1.1 In `vitest.config.ts`, add project `spikes` including `tools/spikes/**/*.test.ts`.
 
 ## Phase 2: ESC/POS render
 
-- [ ] 2.1 RED `tools/spikes/escpos/render-escpos.test.ts`: given paper 80 or 58, when `renderEscPos` runs, then width is 48 or 32, the drawer pulse is `0x1b, 0x70, 0x00, 0x19, 0xfa`, and transport does not change the bytes.
-- [ ] 2.2 GREEN `tools/spikes/escpos/render-escpos.mjs` until 2.1 passes. No I/O and no `child_process`.
+- [x] 2.1 RED `tools/spikes/escpos/render-escpos.test.ts`: given paper 80 or 58, when `renderEscPos` runs, then width is 48 or 32, the drawer pulse is `0x1b, 0x70, 0x00, 0x19, 0xfa`, and transport does not change the bytes.
+- [x] 2.2 GREEN `tools/spikes/escpos/render-escpos.mjs` until 2.1 passes. No I/O and no `child_process`.
 
 ## Phase 3: Decision report
 
-- [ ] 3.1 RED `tools/spikes/escpos/decision-report.test.ts`: `concluded` only with non-null legibility and drawer on every printer, both network booleans, and `delivery16: "unblocked"`; else `blocking`, non-empty `owner`, `delivery16: "pending"`. `dedicatedRouter` is `owner-buys` (no price); `adr003` is `pending-hybrid`; no isolation says buy the dedicated router or use wired printers.
-- [ ] 3.2 RED in that file: given `report.example.json`, when it is read, then `status` is `blocking`, `owner` is `pilot-visit`, and `delivery16` is `pending`.
-- [ ] 3.3 GREEN `tools/spikes/escpos/decision-report.mjs` (no Zod) until 3.1 and 3.2 pass.
-- [ ] 3.4 Create `tools/spikes/escpos/report.example.json` with those blocking fields, `spike: "escpos-cash-drawer"`, `dedicatedRouter: "owner-buys"`, `consumerDelivery: "1.6"`, and `adr003: "pending-hybrid"`. No concluded visit.
+- [x] 3.1 RED `tools/spikes/escpos/decision-report.test.ts`: `concluded` only with non-null legibility and drawer on every printer, both network booleans, and `delivery16: "unblocked"`; else `blocking`, non-empty `owner`, `delivery16: "pending"`. `dedicatedRouter` is `owner-buys` (no price); `adr003` is `pending-hybrid`; no isolation says buy the dedicated router or use wired printers.
+- [x] 3.2 RED in that file: given `report.example.json`, when it is read, then `status` is `blocking`, `owner` is `pilot-visit`, and `delivery16` is `pending`.
+- [x] 3.3 GREEN `tools/spikes/escpos/decision-report.mjs` (no Zod) until 3.1 and 3.2 pass.
+- [x] 3.4 Create `tools/spikes/escpos/report.example.json` with those blocking fields, `spike: "escpos-cash-drawer"`, `dedicatedRouter: "owner-buys"`, `consumerDelivery: "1.6"`, and `adr003: "pending-hybrid"`. No concluded visit.
 
 ## Phase 4: Byte transport
 
