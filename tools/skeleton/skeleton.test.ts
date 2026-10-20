@@ -1,22 +1,21 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, it } from "vitest";
-
 import {
   dependsOn as adaptersDependsOn,
   layer as adaptersLayer,
-} from "../../contexts/platform/adapters/index.js";
+} from "@blackhole/platform/adapters";
 import {
   dependsOn as applicationDependsOn,
   layer as applicationLayer,
-} from "../../contexts/platform/application/index.js";
-import * as domain from "../../contexts/platform/domain/index.js";
-import { layer as domainLayer } from "../../contexts/platform/domain/index.js";
+} from "@blackhole/platform/application";
+import * as domain from "@blackhole/platform/domain";
+import { layer as domainLayer } from "@blackhole/platform/domain";
+import { expect, it } from "vitest";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
-const forbiddenPackages = ["zod", "drizzle-orm", "nestjs-zod"] as const;
+const forbiddenPackages = ["zod", "nestjs-zod"] as const;
 
 const sourceTrees = ["apps", "contexts", "shared", "tools"] as const;
 
@@ -58,7 +57,7 @@ it("given node_modules and a build artifact, when git ignores are listed, then b
   expect(ignored).toContain("coverage/");
 });
 
-it("given Zod declared in the catalog, when imports are reviewed, then no module imports Zod and Drizzle and nestjs-zod are absent", () => {
+it("given Zod declared in the catalog, when imports are reviewed, then no module imports Zod and nestjs-zod is absent", () => {
   const catalog = readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
   const sources = sourceTrees.flatMap((tree) =>
     listFiles(path.join(root, tree), isSource),
@@ -117,6 +116,11 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "adapters",
         "memory",
         "in-memory-venue-operation-repository.ts",
+      ),
+      path.join(
+        "adapters",
+        "postgres",
+        "drizzle-venue-operation-repository.ts",
       ),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
       path.join("application", "ports", "venue-operation-repository.ts"),

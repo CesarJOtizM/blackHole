@@ -1,4 +1,4 @@
-import { venueOperationRepositoryContract } from "../../application/ports/venue-operation-repository.contract.js";
-import { InMemoryVenueOperationRepository } from "./in-memory-venue-operation-repository.js";
+import { InMemoryVenueOperationRepository } from "#adapters/memory/in-memory-venue-operation-repository.js";
+import { venueOperationRepositoryContract } from "#application/ports/venue-operation-repository.contract.js";
 
 venueOperationRepositoryContract(() => new InMemoryVenueOperationRepository());

@@ -2,5 +2,26 @@
   "name": "@blackhole/platform",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": {
+    "./domain": "./domain/index.js",
+    "./application": "./application/index.js",
+    "./adapters": "./adapters/index.js"
+  },
+  "imports": {
+    "#domain/*": "./domain/*",
+    "#application/*": "./application/*",
+    "#application/ports/*": "./application/ports/*",
+    "#application/accept-cloud-write/*": "./application/accept-cloud-write/*",
+    "#adapters/*": "./adapters/*",
+    "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/postgres/*": "./adapters/postgres/*"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
 }

@@ -48,9 +48,9 @@ No sync, SQLite, `shared/sync`, local-node, pairing, organization, RLS, Better A
 
 ## Phase 2: PostgreSQL
 
-- [ ] 2.1 Catalog `drizzle-orm` and `@electric-sql/pglite` in `pnpm-workspace.yaml` and `contexts/platform/package.json`. Relax skeleton `expect(dependencies).toEqual([])` for `drizzle-orm` only.
-- [ ] 2.2 RED `contexts/platform/adapters/postgres/drizzle-venue-operation-repository.contract.test.ts`: contract on PGlite + `0001_venue_operation.sql`. Test omits `drizzle-orm`.
-- [ ] 2.3 GREEN `schema.ts`, `0001_venue_operation.sql` (`venue_operations`, `operational_writes`), `drizzle-venue-operation-repository.ts` via `drizzle({ client })` from `drizzle-orm/pglite`. Same `write_id` no-op. Relax `expect(imports).toEqual([])` for `drizzle-orm`.
+- [x] 2.1 Catalog `drizzle-orm` and `@electric-sql/pglite` in `pnpm-workspace.yaml` and `contexts/platform/package.json`. Relax skeleton `expect(dependencies).toEqual([])` for `drizzle-orm` only.
+- [x] 2.2 RED `contexts/platform/adapters/postgres/drizzle-venue-operation-repository.contract.test.ts`: contract on PGlite + `0001_venue_operation.sql`. Test omits `drizzle-orm`.
+- [x] 2.3 GREEN `schema.ts`, `0001_venue_operation.sql` (`venue_operations`, `operational_writes`), `drizzle-venue-operation-repository.ts` via `drizzle({ client })` from `drizzle-orm/pglite`. Same `write_id` no-op. Relax `expect(imports).toEqual([])` for `drizzle-orm`.
 
 ## Phase 3: HTTP
 

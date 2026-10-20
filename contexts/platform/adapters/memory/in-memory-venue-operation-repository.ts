@@ -1,6 +1,6 @@
-import type { OperationalWrite } from "../../application/ports/venue-operation-repository.js";
-import { VenueOperationRepository } from "../../application/ports/venue-operation-repository.js";
-import type { VenueOperation } from "../../domain/venue-operation.js";
+import type { OperationalWrite } from "#application/ports/venue-operation-repository.js";
+import { VenueOperationRepository } from "#application/ports/venue-operation-repository.js";
+import type { VenueOperation } from "#domain/venue-operation.js";
 
 export class InMemoryVenueOperationRepository extends VenueOperationRepository {
   private readonly operations = new Map<string, VenueOperation>();

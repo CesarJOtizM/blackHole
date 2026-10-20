@@ -2,6 +2,18 @@
 module.exports = {
   forbidden: [
     {
+      name: "internal-imports-use-package-aliases",
+      severity: "error",
+      from: {
+        path: "^(contexts|apps|shared|tools)/",
+        pathNot: "^tools/cruiser/fixtures/",
+      },
+      to: {
+        dependencyTypes: ["local"],
+        dependencyTypesNot: ["aliased-subpath-import"],
+      },
+    },
+    {
       name: "domain-does-not-import-infrastructure",
       severity: "error",
       from: { path: "(^|/)contexts/[^/]+/domain/" },

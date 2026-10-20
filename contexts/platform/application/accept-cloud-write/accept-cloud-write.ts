@@ -1,9 +1,9 @@
+import type { VenueOperationRepository } from "#application/ports/venue-operation-repository.js";
 import {
   type OperatingMode,
   type OperationOwner,
   VenueOperation,
-} from "../../domain/venue-operation.js";
-import type { VenueOperationRepository } from "../ports/venue-operation-repository.js";
+} from "#domain/venue-operation.js";
 
 export interface AcceptCloudWriteCommand {
   venueId: string;

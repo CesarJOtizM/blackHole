@@ -1,0 +1,12 @@
+---
+description: Internal imports use package aliases, never relative paths
+alwaysApply: true
+---
+
+# Path aliases
+
+Inside a package, import through its `package.json` `"imports"` map (`#domain/...`, `#application/...`, `#src/...`). Across packages, import the package name (`@blackhole/platform/domain`).
+
+Relative specifiers (`./` and `../`) are forbidden in `contexts/`, `apps/`, `shared/`, and `tools/`. `pnpm architecture` rejects them.
+
+`node:` and external packages stay as package specifiers. Each folder has its own `"imports"` pattern, and each `*` is one path segment (`#application/ports/*`, not `#application/*/*`). Add that pattern before importing from a new folder.

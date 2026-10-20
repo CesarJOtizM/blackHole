@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 
-import { StaleGeneration } from "./index.js";
-import { VenueOperation } from "./venue-operation.js";
+import { StaleGeneration } from "#domain/index.js";
+import { VenueOperation } from "#domain/venue-operation.js";
 
 it("given a new venue with no node, when it opens in the cloud, then the mode and owner are cloud at generation 1", () => {
   const venueId = "venue-1";

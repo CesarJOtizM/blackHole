@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 
-import { ApplicationModule } from "./application-module.js";
-import { createApplication } from "./create-application.js";
+import { ApplicationModule } from "#src/application-module.js";
+import { createApplication } from "#src/create-application.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication();
