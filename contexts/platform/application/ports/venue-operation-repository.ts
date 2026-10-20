@@ -1,4 +1,4 @@
-import type { VenueOperation } from "../../domain/venue-operation.js";
+import type { VenueOperation } from "#domain/venue-operation.js";
 
 export interface OperationalWrite {
   writeId: string;

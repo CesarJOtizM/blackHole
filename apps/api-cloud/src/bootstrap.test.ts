@@ -1,10 +1,14 @@
+import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { ApplicationModule } from "./application-module.js";
-import { createApplication } from "./create-application.js";
+import { ApplicationModule } from "#src/application-module.js";
+import { createApplication } from "#src/create-application.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
-  const application = await createApplication();
+  const application = await createApplication(
+    new InMemoryVenueOperationRepository(),
+  );
 
   let listening = true;
 
@@ -17,28 +21,36 @@ it("given api-cloud, when it is created and closed, then no port is listening", 
   expect(listening).toBe(false);
 });
 
-it("given the created application, when its routes are listed, then there are no business or health routes", async () => {
-  const application = await createApplication();
+it("given the created application, when its routes are listed, then there is no health route", async () => {
+  const application = await createApplication(
+    new InMemoryVenueOperationRepository(),
+  );
 
   try {
     const routes = application.getHttpAdapter().getInstance().printRoutes();
 
     expect(routes).not.toMatch(/health/i);
-    expect(routes.trim()).toBe("(empty tree)");
   } finally {
     await application.close();
   }
 });
 
 it("given startup, when it is inspected, then there is no persistence dialect", async () => {
-  const application = await createApplication();
+  const venueOperations = new InMemoryVenueOperationRepository();
+  const application = await createApplication(venueOperations);
 
   try {
-    const imports = Reflect.getMetadata("imports", ApplicationModule) ?? [];
-    const providers = Reflect.getMetadata("providers", ApplicationModule) ?? [];
+    const registered = ApplicationModule.register(venueOperations);
+    const repository = application.get(VenueOperationRepository);
 
-    expect(imports).toEqual([]);
-    expect(providers).toEqual([]);
+    expect(registered.providers).toEqual([
+      {
+        provide: VenueOperationRepository,
+        useValue: venueOperations,
+      },
+    ]);
+    expect(repository).toBe(venueOperations);
+    expect(repository).toBeInstanceOf(InMemoryVenueOperationRepository);
   } finally {
     await application.close();
   }

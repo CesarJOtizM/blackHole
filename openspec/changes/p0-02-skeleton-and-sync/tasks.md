@@ -48,18 +48,18 @@ No sync, SQLite, `shared/sync`, local-node, pairing, organization, RLS, Better A
 
 ## Phase 2: PostgreSQL
 
-- [ ] 2.1 Catalog `drizzle-orm` and `@electric-sql/pglite` in `pnpm-workspace.yaml` and `contexts/platform/package.json`. Relax skeleton `expect(dependencies).toEqual([])` for `drizzle-orm` only.
-- [ ] 2.2 RED `contexts/platform/adapters/postgres/drizzle-venue-operation-repository.contract.test.ts`: contract on PGlite + `0001_venue_operation.sql`. Test omits `drizzle-orm`.
-- [ ] 2.3 GREEN `schema.ts`, `0001_venue_operation.sql` (`venue_operations`, `operational_writes`), `drizzle-venue-operation-repository.ts` via `drizzle({ client })` from `drizzle-orm/pglite`. Same `write_id` no-op. Relax `expect(imports).toEqual([])` for `drizzle-orm`.
+- [x] 2.1 Catalog `drizzle-orm` and `@electric-sql/pglite` in `pnpm-workspace.yaml` and `contexts/platform/package.json`. Relax skeleton `expect(dependencies).toEqual([])` for `drizzle-orm` only.
+- [x] 2.2 RED `contexts/platform/adapters/postgres/drizzle-venue-operation-repository.contract.test.ts`: contract on PGlite + `0001_venue_operation.sql`. Test omits `drizzle-orm`.
+- [x] 2.3 GREEN `schema.ts`, `0001_venue_operation.sql` (`venue_operations`, `operational_writes`), `drizzle-venue-operation-repository.ts` via `drizzle({ client })` from `drizzle-orm/pglite`. Same `write_id` no-op. Relax `expect(imports).toEqual([])` for `drizzle-orm`.
 
 ## Phase 3: HTTP
 
-- [ ] 3.1 RED `apps/api-cloud/src/accept-cloud-write.controller.test.ts`: POST 200 `{venueId,writeId,mode:cloud,operationOwner:cloud,generation}` on memory; no listen/PGlite.
-- [ ] 3.2 GREEN controller, `createApplication(venueOperations)`, `ApplicationModule.register(venueOperations)`. Drop `expect(routes.trim()).toBe("(empty tree)")`. Keep no-listen, no SQL.
-- [ ] 3.3 RED: invalid body → 400; memory empty.
-- [ ] 3.4 GREEN `shared/contracts/accept-cloud-write.ts` (Zod 4.6.7) via `index.ts`. 400 does not save. Add `zod`; api-cloud tsconfig refs; contracts `include`. Relax `expect(contents).toBe("export {};")`, `expect(importsZod).toBe(false)`, Zod import/dependency expects.
-- [ ] 3.5 RED: stale → 409 `{ "error": "StaleGeneration" }`; memory empty.
-- [ ] 3.6 GREEN: map `StaleGeneration` to 409; no persist.
-- [ ] 3.7 RED: repeat `writeId` → 200.
-- [ ] 3.8 GREEN: replay 200; no second insert.
-- [ ] 3.9 `apps/api-cloud/src/postgres-venue-operations.ts`: `postgresVenueOperations(db)` binds Drizzle. HTTP keeps memory.
+- [x] 3.1 RED `apps/api-cloud/src/accept-cloud-write.controller.test.ts`: POST 200 `{venueId,writeId,mode:cloud,operationOwner:cloud,generation}` on memory; no listen/PGlite.
+- [x] 3.2 GREEN controller, `createApplication(venueOperations)`, `ApplicationModule.register(venueOperations)`. Drop `expect(routes.trim()).toBe("(empty tree)")`. Keep no-listen, no SQL.
+- [x] 3.3 RED: invalid body → 400; memory empty.
+- [x] 3.4 GREEN `shared/contracts/accept-cloud-write.ts` (Zod 4.6.7) via `index.ts`. 400 does not save. Add `zod`; api-cloud tsconfig refs; contracts `include`. Relax `expect(contents).toBe("export {};")`, `expect(importsZod).toBe(false)`, Zod import/dependency expects.
+- [x] 3.5 RED: stale → 409 `{ "error": "StaleGeneration" }`; memory empty.
+- [x] 3.6 GREEN: map `StaleGeneration` to 409; no persist.
+- [x] 3.7 RED: repeat `writeId` → 200.
+- [x] 3.8 GREEN: replay 200; no second insert.
+- [x] 3.9 `apps/api-cloud/src/postgres-venue-operations.ts`: `postgresVenueOperations(db)` binds Drizzle. HTTP keeps memory.

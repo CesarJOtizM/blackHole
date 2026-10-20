@@ -1,20 +1,21 @@
 import { expect, it } from "vitest";
-
-import { VenueOperation } from "../../domain/venue-operation.js";
 import type {
   OperationalWrite,
   VenueOperationRepository,
-} from "./venue-operation-repository.js";
+} from "#application/ports/venue-operation-repository.js";
+import { VenueOperation } from "#domain/venue-operation.js";
 
 export type VenueOperationRepositorySubject = VenueOperationRepository & {
   countByWriteId(writeId: string): Promise<number>;
 };
 
 export function venueOperationRepositoryContract(
-  createRepository: () => VenueOperationRepositorySubject,
+  createRepository: () =>
+    | VenueOperationRepositorySubject
+    | Promise<VenueOperationRepositorySubject>,
 ): void {
   it("given a cloud operation, when it is saved, then it can be read back", async () => {
-    const repository = createRepository();
+    const repository = await createRepository();
     const operation = VenueOperation.openCloud("venue-1");
 
     await repository.save(operation);
@@ -27,7 +28,7 @@ export function venueOperationRepositoryContract(
   });
 
   it("given the same writeId, when the write is saved twice, then one write is stored", async () => {
-    const repository = createRepository();
+    const repository = await createRepository();
     const write: OperationalWrite = {
       writeId: "write-1",
       venueId: "venue-1",
@@ -41,7 +42,7 @@ export function venueOperationRepositoryContract(
   });
 
   it("given no saved operation, when findByVenueId runs, then the result is empty", async () => {
-    const repository = createRepository();
+    const repository = await createRepository();
 
     const stored = await repository.findByVenueId("venue-1");
 

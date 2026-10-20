@@ -1,3 +1,3 @@
 export const layer = "domain" as const;
 
-export { StaleGeneration, VenueOperation } from "./venue-operation.js";
+export { StaleGeneration, VenueOperation } from "#domain/venue-operation.js";

@@ -1,11 +1,13 @@
 ---
-description: All code and naming in this repository must be English
+description: Code and names are English; replies and explanations to the user are Spanish
 alwaysApply: true
 ---
 
-# English code and naming
+# English code, Spanish replies
 
-Code and names are English. This covers folders, files, packages, types, functions, variables, tests, scripts, comments, and error names.
+Code and names are English. Replies, explanations, and conversation with the user are Spanish.
+
+This covers folders, files, packages, types, functions, variables, tests, scripts, comments, and error names. Progress updates, review notes, and chat answers stay in Spanish even when they quote English identifiers.
 
 Product documents under `docs/` may stay in Spanish. Do not copy Spanish ubiquitous-language terms into identifiers.
 

@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 
-import { InMemoryVenueOperationRepository } from "../../adapters/memory/in-memory-venue-operation-repository.js";
-import { StaleGeneration } from "../../domain/index.js";
-import { AcceptCloudWrite } from "./accept-cloud-write.js";
+import { InMemoryVenueOperationRepository } from "#adapters/memory/in-memory-venue-operation-repository.js";
+import { AcceptCloudWrite } from "#application/accept-cloud-write/accept-cloud-write.js";
+import { StaleGeneration } from "#domain/index.js";
 
 it("given a new venue with no node, when an operational write is accepted, then memory stores that write", async () => {
   const repository = new InMemoryVenueOperationRepository();
@@ -62,7 +62,7 @@ it("given an accepted write, when the same writeId is accepted again, then it is
 });
 
 it("given the application entry port, when it is imported, then it exposes AcceptCloudWrite and StaleGeneration", async () => {
-  const entry = await import("../entry-port.js");
+  const entry = await import("#application/entry-port.js");
 
   expect(entry.AcceptCloudWrite).toBe(AcceptCloudWrite);
   expect(entry.StaleGeneration).toBe(StaleGeneration);
