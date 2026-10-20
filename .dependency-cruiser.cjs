@@ -52,6 +52,12 @@ module.exports = {
       from: { path: "(?:^|/)apps/local-node/" },
       to: { path: "(?:^|/)adapters/postgres/" },
     },
+    {
+      name: "contexts-and-apps-do-not-import-spikes",
+      severity: "error",
+      from: { path: "(?:^|/)(?:contexts|apps)/" },
+      to: { path: "(?:^|/)tools/spikes/" },
+    },
   ],
   options: {
     tsPreCompilationDeps: true,

@@ -1,0 +1,60 @@
+{
+  "spike": "escpos-cash-drawer",
+  "setup": {
+    "printers": [
+      {
+        "id": "paper-80-network",
+        "paperMm": 80,
+        "transport": "network"
+      },
+      {
+        "id": "paper-80-usb",
+        "paperMm": 80,
+        "transport": "usb"
+      },
+      {
+        "id": "paper-58-network",
+        "paperMm": 58,
+        "transport": "network"
+      },
+      {
+        "id": "paper-58-usb",
+        "paperMm": 58,
+        "transport": "usb"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "printerId": "paper-80-network",
+      "ticketLegible": null,
+      "drawerOpened": null
+    },
+    {
+      "printerId": "paper-80-usb",
+      "ticketLegible": null,
+      "drawerOpened": null
+    },
+    {
+      "printerId": "paper-58-network",
+      "ticketLegible": null,
+      "drawerOpened": null
+    },
+    {
+      "printerId": "paper-58-usb",
+      "ticketLegible": null,
+      "drawerOpened": null
+    }
+  ],
+  "network": {
+    "unregisteredDeviceReachedPrinterPort": null,
+    "currentRouterIsolatesPrinters": null
+  },
+  "dedicatedRouter": "owner-buys",
+  "decision": "Visit not recorded.",
+  "consumerDelivery": "1.6",
+  "delivery16": "pending",
+  "status": "blocking",
+  "owner": "pilot-visit",
+  "adr003": "pending-hybrid"
+}
