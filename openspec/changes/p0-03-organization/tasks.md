@@ -36,10 +36,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Use case
 
-- [ ] 2.1 RED `contexts/platform/application/update-structure/update-structure.test.ts`: `renameCashRegister` emits `OrganizationChanged` (`actorId`, before, after); rejection skips `save` and emits nothing.
-- [ ] 2.2 GREEN `update-structure.ts`, `application/ports/organization-repository.ts` (`load`, `save`), `adapters/memory/in-memory-organization-repository.ts`. Export `UpdateStructure` from `application/entry-port.ts`. Add `#application/update-structure/*` in `contexts/platform/package.json`.
-- [ ] 2.3 RED `application/ports/organization-repository.contract.ts`, `adapters/memory/in-memory-organization-repository.contract.test.ts`: round-trip; tenant A hides B; one point.
-- [ ] 2.4 GREEN: memory passes. Update skeleton. Folder `update-structure`.
+- [x] 2.1 RED `contexts/platform/application/update-structure/update-structure.test.ts`: `renameCashRegister` emits `OrganizationChanged` (`actorId`, before, after); rejection skips `save` and emits nothing.
+- [x] 2.2 GREEN `update-structure.ts`, `application/ports/organization-repository.ts` (`load`, `save`), `adapters/memory/in-memory-organization-repository.ts`. Export `UpdateStructure` from `application/entry-port.ts`. Add `#application/update-structure/*` in `contexts/platform/package.json`.
+- [x] 2.3 RED `application/ports/organization-repository.contract.ts`, `adapters/memory/in-memory-organization-repository.contract.test.ts`: round-trip; tenant A hides B; one point.
+- [x] 2.4 GREEN: memory passes. Update skeleton. Folder `update-structure`.
 
 ## Phase 3: Postgres RLS
 
