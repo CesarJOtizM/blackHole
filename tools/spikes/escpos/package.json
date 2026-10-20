@@ -4,6 +4,7 @@
   "imports": {
     "#decision-report": "./decision-report.mjs",
     "#render-escpos": "./render-escpos.mjs",
-    "#report-example": "./report.example.json"
+    "#report-example": "./report.example.json",
+    "#send-bytes": "./send-bytes.mjs"
   }
 }

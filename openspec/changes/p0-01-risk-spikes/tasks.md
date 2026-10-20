@@ -41,16 +41,16 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Byte transport
 
-- [ ] 4.1 RED `tools/spikes/escpos/send-bytes.test.ts`: given `requirements.txt`, `CMakeLists.txt`, `*.md`, `*.mdx`, or `README.sh`, when `sendBytes` runs, then it refuses before `fs.open`, spawns nothing, exits non-zero, and leaves the report unchanged. Refuse a non-hostname/IPv4 host or a non-numeric port before connect (default 9100).
-- [ ] 4.2 GREEN `tools/spikes/escpos/send-bytes.mjs`: same bytes over TCP or a file write. No `child_process`.
+- [x] 4.1 RED `tools/spikes/escpos/send-bytes.test.ts`: given `requirements.txt`, `CMakeLists.txt`, `*.md`, `*.mdx`, or `README.sh`, when `sendBytes` runs, then it refuses before `fs.open`, spawns nothing, exits non-zero, and leaves the report unchanged. Refuse a non-hostname/IPv4 host or a non-numeric port before connect (default 9100).
+- [x] 4.2 GREEN `tools/spikes/escpos/send-bytes.mjs`: same bytes over TCP or a file write. No `child_process`.
 
 ## Phase 5: On-site runner
 
-- [ ] 5.1 Create `tools/spikes/escpos/run-onsite.mjs`: load the cloud job (`paperMm` 80 or 58, `lines`, `kickDrawer: true`), render, and send. Never set `ticketLegible` or `drawerOpened`.
+- [x] 5.1 Create `tools/spikes/escpos/run-onsite.mjs`: load the cloud job (`paperMm` 80 or 58, `lines`, `kickDrawer: true`), render, and send. Never set `ticketLegible` or `drawerOpened`.
 
 ## Phase 6: Import boundary
 
-- [ ] 6.1 Add `tools/spikes/escpos/boundary.test.ts`: given `contexts/` and `apps/`, when sources are scanned, then none mention `tools/spikes`.
-- [ ] 6.2 In `.dependency-cruiser.cjs`, forbid `contexts/` and `apps/` from importing `tools/spikes/`.
+- [x] 6.1 Add `tools/spikes/escpos/boundary.test.ts`: given `contexts/` and `apps/`, when sources are scanned, then none mention `tools/spikes`.
+- [x] 6.2 In `.dependency-cruiser.cjs`, forbid `contexts/` and `apps/` from importing `tools/spikes/`.
 
 Out of scope: HTTPS, alerts, SQLite, `local-node`, `api-cloud`, production printing.
