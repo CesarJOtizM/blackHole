@@ -6,7 +6,11 @@
   "exports": {
     "./domain": "./domain/index.js",
     "./application": "./application/index.js",
-    "./adapters": "./adapters/index.js"
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/ports/venue-operation-repository": "./application/ports/venue-operation-repository.js",
+    "./adapters": "./adapters/index.js",
+    "./adapters/memory/in-memory-venue-operation-repository": "./adapters/memory/in-memory-venue-operation-repository.js",
+    "./adapters/postgres/drizzle-venue-operation-repository": "./adapters/postgres/drizzle-venue-operation-repository.js"
   },
   "imports": {
     "#domain/*": "./domain/*",

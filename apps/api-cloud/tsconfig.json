@@ -9,5 +9,9 @@
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    { "path": "../../contexts/platform" },
+    { "path": "../../shared/contracts" }
+  ]
 }
