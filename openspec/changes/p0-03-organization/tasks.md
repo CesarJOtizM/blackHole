@@ -43,9 +43,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Postgres RLS
 
-- [ ] 3.1 RED `contexts/platform/adapters/postgres/drizzle-organization-repository.contract.test.ts`: PGlite and `0002_organization.sql`. `organization_app` `SELECT` without `tenant_id` returns one tenant. No Drizzle mock.
-- [ ] 3.2 GREEN `adapters/postgres/schema.ts`, `0002_organization.sql`, `drizzle-organization-repository.ts`. Forced RLS, unique `(company_id, nit)`, one `point`. Leave `venue_operations`. `save` sets `organization_app` and `app.tenant_id`, then stores the event.
-- [ ] 3.3 Export from `contexts/platform/package.json`. Update skeleton.
+- [x] 3.1 RED `contexts/platform/adapters/postgres/drizzle-organization-repository.contract.test.ts`: PGlite and `0002_organization.sql`. `organization_app` `SELECT` without `tenant_id` returns one tenant. No Drizzle mock.
+- [x] 3.2 GREEN `adapters/postgres/schema.ts`, `0002_organization.sql`, `drizzle-organization-repository.ts`. Forced RLS, unique `(company_id, nit)`, one `point`. Leave `venue_operations`. `save` sets `organization_app` and `app.tenant_id`, then stores the event.
+- [x] 3.3 Export from `contexts/platform/package.json`. Update skeleton.
 
 ## Phase 4: Cloud HTTP
 

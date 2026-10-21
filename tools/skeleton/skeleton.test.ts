@@ -135,6 +135,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "memory",
         "in-memory-venue-operation-repository.ts",
       ),
+      path.join("adapters", "postgres", "drizzle-organization-repository.ts"),
       path.join(
         "adapters",
         "postgres",
