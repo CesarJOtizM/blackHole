@@ -7,8 +7,10 @@
     "./domain": "./domain/index.js",
     "./application": "./application/index.js",
     "./application/entry-port": "./application/entry-port.js",
+    "./application/ports/organization-repository": "./application/ports/organization-repository.js",
     "./application/ports/venue-operation-repository": "./application/ports/venue-operation-repository.js",
     "./adapters": "./adapters/index.js",
+    "./adapters/memory/in-memory-organization-repository": "./adapters/memory/in-memory-organization-repository.js",
     "./adapters/memory/in-memory-venue-operation-repository": "./adapters/memory/in-memory-venue-operation-repository.js",
     "./adapters/postgres/drizzle-venue-operation-repository": "./adapters/postgres/drizzle-venue-operation-repository.js"
   },
@@ -17,6 +19,7 @@
     "#application/*": "./application/*",
     "#application/ports/*": "./application/ports/*",
     "#application/accept-cloud-write/*": "./application/accept-cloud-write/*",
+    "#application/update-structure/*": "./application/update-structure/*",
     "#adapters/*": "./adapters/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*"

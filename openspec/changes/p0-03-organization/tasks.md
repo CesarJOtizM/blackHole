@@ -30,16 +30,16 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Domain
 
-- [ ] 1.1 RED `contexts/platform/domain/organization.test.ts`: two NITs kept; `900123456` duplicate rejected; `openVenue` `cloud`, one point; second point, extra taxpayer, `assignStock` rejected; replace leaves one; stations, registers, warehouses kept.
-- [ ] 1.2 GREEN `contexts/platform/domain/organization.ts`, `domain/index.ts`: `registerCompany`, `addTaxpayer`, `addBrand`, `openVenue` (point at `cloud`), `replaceInvoicingTaxpayer`, `addKitchenStation`, `addCashRegister`, `renameCashRegister`, `addSiteWarehouse`, `addGeneralWarehouse`. Unique NIT, `taxProfileId` only, prefix `organization_`. Keep `layer`.
-- [ ] 1.3 `tools/skeleton/skeleton.test.ts`: allow `domain/organization.ts` and new domain keys.
+- [x] 1.1 RED `contexts/platform/domain/organization.test.ts`: two NITs kept; `900123456` duplicate rejected; `openVenue` `cloud`, one point; second point, extra taxpayer, `assignStock` rejected; replace leaves one; stations, registers, warehouses kept.
+- [x] 1.2 GREEN `contexts/platform/domain/organization.ts`, `domain/index.ts`: `registerCompany`, `addTaxpayer`, `addBrand`, `openVenue` (point at `cloud`), `replaceInvoicingTaxpayer`, `addKitchenStation`, `addCashRegister`, `renameCashRegister`, `addSiteWarehouse`, `addGeneralWarehouse`. Unique NIT, `taxProfileId` only, prefix `organization_`. Keep `layer`.
+- [x] 1.3 `tools/skeleton/skeleton.test.ts`: allow `domain/organization.ts` and new domain keys.
 
 ## Phase 2: Use case
 
-- [ ] 2.1 RED `contexts/platform/application/update-structure/update-structure.test.ts`: `renameCashRegister` emits `OrganizationChanged` (`actorId`, before, after); rejection skips `save` and emits nothing.
-- [ ] 2.2 GREEN `update-structure.ts`, `application/ports/organization-repository.ts` (`load`, `save`), `adapters/memory/in-memory-organization-repository.ts`. Export `UpdateStructure` from `application/entry-port.ts`. Add `#application/update-structure/*` in `contexts/platform/package.json`.
-- [ ] 2.3 RED `application/ports/organization-repository.contract.ts`, `adapters/memory/in-memory-organization-repository.contract.test.ts`: round-trip; tenant A hides B; one point.
-- [ ] 2.4 GREEN: memory passes. Update skeleton. Folder `update-structure`.
+- [x] 2.1 RED `contexts/platform/application/update-structure/update-structure.test.ts`: `renameCashRegister` emits `OrganizationChanged` (`actorId`, before, after); rejection skips `save` and emits nothing.
+- [x] 2.2 GREEN `update-structure.ts`, `application/ports/organization-repository.ts` (`load`, `save`), `adapters/memory/in-memory-organization-repository.ts`. Export `UpdateStructure` from `application/entry-port.ts`. Add `#application/update-structure/*` in `contexts/platform/package.json`.
+- [x] 2.3 RED `application/ports/organization-repository.contract.ts`, `adapters/memory/in-memory-organization-repository.contract.test.ts`: round-trip; tenant A hides B; one point.
+- [x] 2.4 GREEN: memory passes. Update skeleton. Folder `update-structure`.
 
 ## Phase 3: Postgres RLS
 
