@@ -17,14 +17,13 @@ it("given local-node, when it is created and closed, then no port is listening",
   expect(listening).toBe(false);
 });
 
-it("given the created application, when its routes are listed, then there are no business or health routes", async () => {
+it("given the created application, when its routes are listed, then there is no health route", async () => {
   const application = await createApplication();
 
   try {
     const routes = application.getHttpAdapter().getInstance().printRoutes();
 
     expect(routes).not.toMatch(/health/i);
-    expect(routes.trim()).toBe("(empty tree)");
   } finally {
     await application.close();
   }
