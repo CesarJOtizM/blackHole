@@ -1,19 +1,21 @@
 import "reflect-metadata";
 
-import type { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
 
-import { ApplicationModule } from "#src/application-module.js";
+import {
+  ApplicationModule,
+  type CloudApplicationDependencies,
+} from "#src/application-module.js";
 
 export async function createApplication(
-  venueOperations: VenueOperationRepository,
+  dependencies: CloudApplicationDependencies,
 ): Promise<NestFastifyApplication> {
   const application = await NestFactory.create<NestFastifyApplication>(
-    ApplicationModule.register(venueOperations),
+    ApplicationModule.register(dependencies),
     new FastifyAdapter(),
   );
 

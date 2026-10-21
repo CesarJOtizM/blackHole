@@ -1,3 +1,4 @@
+import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
@@ -8,7 +9,10 @@ const writeId = "6f1e1b5a-7c3d-4e2f-9a1b-2c3d4e5f6071";
 
 it("given a new venue, when a write is posted with the current generation, then the cloud accepts and stores it", async () => {
   const venueOperations = new InMemoryVenueOperationRepository();
-  const application = await createApplication(venueOperations);
+  const application = await createApplication({
+    venueOperations,
+    organizations: new InMemoryOrganizationRepository(),
+  });
 
   try {
     const response = await application.inject({
@@ -37,7 +41,10 @@ it("given a new venue, when a write is posted with the current generation, then 
 
 it("given a write with an invalid body, when it is posted, then the response is 400 and memory is unchanged", async () => {
   const venueOperations = new InMemoryVenueOperationRepository();
-  const application = await createApplication(venueOperations);
+  const application = await createApplication({
+    venueOperations,
+    organizations: new InMemoryOrganizationRepository(),
+  });
   const invalidWriteId = "not-a-uuid";
 
   try {
@@ -60,7 +67,10 @@ it("given a write with an invalid body, when it is posted, then the response is 
 
 it("given a write whose generation is not a positive integer, when it is posted, then the response is 400 and memory is unchanged", async () => {
   const venueOperations = new InMemoryVenueOperationRepository();
-  const application = await createApplication(venueOperations);
+  const application = await createApplication({
+    venueOperations,
+    organizations: new InMemoryOrganizationRepository(),
+  });
 
   try {
     const response = await application.inject({
@@ -82,7 +92,10 @@ it("given a write whose generation is not a positive integer, when it is posted,
 
 it("given a cloud venue, when a stale generation is posted, then the response is 409 and nothing is stored", async () => {
   const venueOperations = new InMemoryVenueOperationRepository();
-  const application = await createApplication(venueOperations);
+  const application = await createApplication({
+    venueOperations,
+    organizations: new InMemoryOrganizationRepository(),
+  });
   const staleWriteId = "6f1e1b5a-7c3d-4e2f-9a1b-2c3d4e5f6072";
 
   try {
@@ -106,7 +119,10 @@ it("given a cloud venue, when a stale generation is posted, then the response is
 
 it("given an accepted write, when the same writeId is posted again, then the response is 200 and it is stored once", async () => {
   const venueOperations = new InMemoryVenueOperationRepository();
-  const application = await createApplication(venueOperations);
+  const application = await createApplication({
+    venueOperations,
+    organizations: new InMemoryOrganizationRepository(),
+  });
   const payload = {
     writeId,
     generation: 1,
