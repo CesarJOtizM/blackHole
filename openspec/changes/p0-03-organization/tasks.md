@@ -49,10 +49,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Cloud HTTP
 
-- [ ] 4.1 RED `apps/api-cloud/src/update-structure.controller.test.ts`: inject `POST .../structure` → 200; bad body → 400; domain rejection → 409; neither writes. No `listen`.
-- [ ] 4.2 GREEN `update-structure.controller.ts`, `create-application.ts`, `application-module.ts`, `shared/contracts/update-structure.ts`, `index.ts`. Zod; no platform import.
-- [ ] 4.3 RED: six venues, `SAMPLE-NIT-01` through `SAMPLE-NIT-06`, `label` `sample`, mode `cloud`.
-- [ ] 4.4 GREEN `apps/api-cloud/src/sample-pilot-structure.ts`, `postgres-organizations.ts`. Bind Postgres. Memory OK.
+- [x] 4.1 RED `apps/api-cloud/src/update-structure.controller.test.ts`: inject `POST .../structure` → 200; bad body → 400; domain rejection → 409; neither writes. No `listen`.
+- [x] 4.2 GREEN `update-structure.controller.ts`, `create-application.ts`, `application-module.ts`, `shared/contracts/update-structure.ts`, `index.ts`. Zod; no platform import.
+- [x] 4.3 RED: six venues, `SAMPLE-NIT-01` through `SAMPLE-NIT-06`, `label` `sample`, mode `cloud`.
+- [x] 4.4 GREEN `apps/api-cloud/src/sample-pilot-structure.ts`, `postgres-organizations.ts`. Bind Postgres. Memory OK.
 
 ## Phase 5: Node 403
 
