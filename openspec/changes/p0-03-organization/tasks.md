@@ -43,20 +43,20 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Postgres RLS
 
-- [ ] 3.1 RED `contexts/platform/adapters/postgres/drizzle-organization-repository.contract.test.ts`: PGlite and `0002_organization.sql`. `organization_app` `SELECT` without `tenant_id` returns one tenant. No Drizzle mock.
-- [ ] 3.2 GREEN `adapters/postgres/schema.ts`, `0002_organization.sql`, `drizzle-organization-repository.ts`. Forced RLS, unique `(company_id, nit)`, one `point`. Leave `venue_operations`. `save` sets `organization_app` and `app.tenant_id`, then stores the event.
-- [ ] 3.3 Export from `contexts/platform/package.json`. Update skeleton.
+- [x] 3.1 RED `contexts/platform/adapters/postgres/drizzle-organization-repository.contract.test.ts`: PGlite and `0002_organization.sql`. `organization_app` `SELECT` without `tenant_id` returns one tenant. No Drizzle mock.
+- [x] 3.2 GREEN `adapters/postgres/schema.ts`, `0002_organization.sql`, `drizzle-organization-repository.ts`. Forced RLS, unique `(company_id, nit)`, one `point`. Leave `venue_operations`. `save` sets `organization_app` and `app.tenant_id`, then stores the event.
+- [x] 3.3 Export from `contexts/platform/package.json`. Update skeleton.
 
 ## Phase 4: Cloud HTTP
 
-- [ ] 4.1 RED `apps/api-cloud/src/update-structure.controller.test.ts`: inject `POST .../structure` → 200; bad body → 400; domain rejection → 409; neither writes. No `listen`.
-- [ ] 4.2 GREEN `update-structure.controller.ts`, `create-application.ts`, `application-module.ts`, `shared/contracts/update-structure.ts`, `index.ts`. Zod; no platform import.
-- [ ] 4.3 RED: six venues, `SAMPLE-NIT-01` through `SAMPLE-NIT-06`, `label` `sample`, mode `cloud`.
-- [ ] 4.4 GREEN `apps/api-cloud/src/sample-pilot-structure.ts`, `postgres-organizations.ts`. Bind Postgres. Memory OK.
+- [x] 4.1 RED `apps/api-cloud/src/update-structure.controller.test.ts`: inject `POST .../structure` → 200; bad body → 400; domain rejection → 409; neither writes. No `listen`.
+- [x] 4.2 GREEN `update-structure.controller.ts`, `create-application.ts`, `application-module.ts`, `shared/contracts/update-structure.ts`, `index.ts`. Zod; no platform import.
+- [x] 4.3 RED: six venues, `SAMPLE-NIT-01` through `SAMPLE-NIT-06`, `label` `sample`, mode `cloud`.
+- [x] 4.4 GREEN `apps/api-cloud/src/sample-pilot-structure.ts`, `postgres-organizations.ts`. Bind Postgres. Memory OK.
 
 ## Phase 5: Node 403
 
-- [ ] 5.1 RED `apps/local-node/src/update-structure.controller.test.ts`: POST → 403 `StructureEditRejected`; nothing stored.
-- [ ] 5.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
-- [ ] 5.3 `apps/local-node/src/bootstrap.test.ts`: drop `(empty tree)`. No `listen`, health, or dialect.
-- [ ] 5.4 `tools/skeleton/skeleton.test.ts`: allow new files. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.
+- [x] 5.1 RED `apps/local-node/src/update-structure.controller.test.ts`: POST → 403 `StructureEditRejected`; nothing stored.
+- [x] 5.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
+- [x] 5.3 `apps/local-node/src/bootstrap.test.ts`: drop `(empty tree)`. No `listen`, health, or dialect.
+- [x] 5.4 `tools/skeleton/skeleton.test.ts`: allow new files. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.

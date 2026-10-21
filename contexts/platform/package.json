@@ -12,6 +12,7 @@
     "./adapters": "./adapters/index.js",
     "./adapters/memory/in-memory-organization-repository": "./adapters/memory/in-memory-organization-repository.js",
     "./adapters/memory/in-memory-venue-operation-repository": "./adapters/memory/in-memory-venue-operation-repository.js",
+    "./adapters/postgres/drizzle-organization-repository": "./adapters/postgres/drizzle-organization-repository.js",
     "./adapters/postgres/drizzle-venue-operation-repository": "./adapters/postgres/drizzle-venue-operation-repository.js"
   },
   "imports": {

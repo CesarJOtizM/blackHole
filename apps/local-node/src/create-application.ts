@@ -8,9 +8,13 @@ import {
 
 import { ApplicationModule } from "#src/application-module.js";
 
-export function createApplication(): Promise<NestFastifyApplication> {
-  return NestFactory.create<NestFastifyApplication>(
+export async function createApplication(): Promise<NestFastifyApplication> {
+  const application = await NestFactory.create<NestFastifyApplication>(
     ApplicationModule,
     new FastifyAdapter(),
   );
+
+  await application.init();
+
+  return application;
 }

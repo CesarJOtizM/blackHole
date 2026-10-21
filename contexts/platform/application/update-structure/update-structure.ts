@@ -21,6 +21,7 @@ const STRUCTURE_COMMAND = {
   RENAME_CASH_REGISTER: "renameCashRegister",
   ADD_SITE_WAREHOUSE: "addSiteWarehouse",
   ADD_GENERAL_WAREHOUSE: "addGeneralWarehouse",
+  ADD_POINT: "addPoint",
   ASSIGN_STOCK: "assignStock",
 } as const;
 
@@ -87,6 +88,13 @@ interface AddGeneralWarehouseCommand {
   name: string;
 }
 
+interface AddPointCommand {
+  type: typeof STRUCTURE_COMMAND.ADD_POINT;
+  id: string;
+  venueId: string;
+  name: string;
+}
+
 interface AssignStockCommand {
   type: typeof STRUCTURE_COMMAND.ASSIGN_STOCK;
   stationId: string;
@@ -103,6 +111,7 @@ export type StructureCommand =
   | AddVenueItemCommand
   | RenameCashRegisterCommand
   | AddGeneralWarehouseCommand
+  | AddPointCommand
   | AssignStockCommand;
 
 export interface UpdateStructureInput {
@@ -173,6 +182,9 @@ const applyCommand = (
       return;
     case STRUCTURE_COMMAND.ADD_GENERAL_WAREHOUSE:
       organization.addGeneralWarehouse(command);
+      return;
+    case STRUCTURE_COMMAND.ADD_POINT:
+      organization.addPoint(command);
       return;
     case STRUCTURE_COMMAND.ASSIGN_STOCK:
       organization.assignStock(command);
