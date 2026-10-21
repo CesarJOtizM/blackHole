@@ -56,7 +56,7 @@ Chain strategy: feature-branch-chain
 
 ## Phase 5: Node 403
 
-- [ ] 5.1 RED `apps/local-node/src/update-structure.controller.test.ts`: POST → 403 `StructureEditRejected`; nothing stored.
-- [ ] 5.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
-- [ ] 5.3 `apps/local-node/src/bootstrap.test.ts`: drop `(empty tree)`. No `listen`, health, or dialect.
-- [ ] 5.4 `tools/skeleton/skeleton.test.ts`: allow new files. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.
+- [x] 5.1 RED `apps/local-node/src/update-structure.controller.test.ts`: POST → 403 `StructureEditRejected`; nothing stored.
+- [x] 5.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
+- [x] 5.3 `apps/local-node/src/bootstrap.test.ts`: drop `(empty tree)`. No `listen`, health, or dialect.
+- [x] 5.4 `tools/skeleton/skeleton.test.ts`: allow new files. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.

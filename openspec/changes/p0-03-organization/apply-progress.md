@@ -1,8 +1,8 @@
 # Apply progress: p0-03-organization
 
-Work units 1, 2, 3, and 4. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+Work units 1, 2, 3, 4, and 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
 
-Delivery: feature-branch-chain. Unit 1 stayed on `p0-03-organization-domain`. Unit 2 stays on `p0-03-organization-usecase`. Unit 3 stays on `p0-03-organization-postgres`. Unit 4 stays on `p0-03-organization-http`. Not committed.
+Delivery: feature-branch-chain. Unit 1 stayed on `p0-03-organization-domain`. Unit 2 stays on `p0-03-organization-usecase`. Unit 3 stays on `p0-03-organization-postgres`. Unit 4 stays on `p0-03-organization-http`. Unit 5 stays on `p0-03-organization-node`. Not committed.
 
 ## Completed tasks
 
@@ -20,6 +20,10 @@ Delivery: feature-branch-chain. Unit 1 stayed on `p0-03-organization-domain`. Un
 - [x] 4.2 GREEN `update-structure.controller.ts`, `create-application.ts`, `application-module.ts`, `shared/contracts/update-structure.ts`, `index.ts`. Zod; the contract does not import platform
 - [x] 4.3 RED: six venues, `SAMPLE-NIT-01` through `SAMPLE-NIT-06`, label `sample`, mode `cloud`
 - [x] 4.4 GREEN `apps/api-cloud/src/sample-pilot-structure.ts`, `postgres-organizations.ts`. Postgres binding is typed. HTTP tests keep the in-memory repository
+- [x] 5.1 RED `apps/local-node/src/update-structure.controller.test.ts`: inject `POST /tenants/:tenantId/structure` → 403 `StructureEditRejected`; nothing stored. No `listen`
+- [x] 5.2 GREEN `update-structure.controller.ts` and `application-module.ts`. The controller returns the rejection and does not save. No organization repository. No SQLite
+- [x] 5.3 `bootstrap.test.ts` drops `(empty tree)`. No `listen`, no health route, no persistence dialect
+- [x] 5.4 `tools/skeleton/skeleton.test.ts` allows the new local-node files. `shared/sync`, SQLite, cursor, outbox, pairing, and `apps/admin-web` stay absent
 
 ## Work Unit Evidence
 
@@ -55,6 +59,14 @@ Delivery: feature-branch-chain. Unit 1 stayed on `p0-03-organization-domain`. Un
 | Runtime harness command/scenario and exact result | Nest `inject` of `POST /tenants/:tenantId/structure`. No `listen()`. 200 stores `registerCompany`. 400 on a Zod rejection stores nothing. 409 for `DuplicateNit`, `InvoicingTaxpayerAlreadyAssigned`, `StockNotHeld`, and `PointAlreadyOpen` leaves the previous events unchanged. The sample fixture posts six venues and the last response plus `load` read back six `cloud` venues with `SAMPLE-NIT-01` through `SAMPLE-NIT-06`. The in-memory repository is the one injected. `pnpm vitest run --project api-cloud` — exit 0. `Test Files  3 passed (3)`. `Tests  15 passed (15)`, including the existing case that the server is not listening. |
 | Rollback boundary | `apps/api-cloud/src/update-structure.controller.ts`, `apps/api-cloud/src/update-structure.controller.test.ts`, `apps/api-cloud/src/sample-pilot-structure.ts`, `apps/api-cloud/src/postgres-organizations.ts`, the organization provider in `apps/api-cloud/src/application-module.ts` and `apps/api-cloud/src/create-application.ts`, the call-site updates in `accept-cloud-write.controller.test.ts` and `bootstrap.test.ts`, `shared/contracts/update-structure.ts`, its export in `shared/contracts/index.ts`, the `update-structure.ts` include in `shared/contracts/tsconfig.json`, the domain-error re-exports in `contexts/platform/application/entry-port.ts`, and the `addPoint` command added to `contexts/platform/application/update-structure/update-structure.ts`. |
 
+### Unit 5
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm vitest run --project local-node src/update-structure.controller.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  1 passed (1)`. |
+| Runtime harness command/scenario and exact result | Nest `inject` of `POST /tenants/organization_tenant_1/structure` with a `registerCompany` body. No `listen()`. Response 403 and body `{ "error": "StructureEditRejected" }`. Module `providers` and `imports` stay `[]`, so nothing is stored. No organization repository and no SQLite. `pnpm vitest run --project local-node` — exit 0. `Test Files  2 passed (2)`. `Tests  4 passed (4)`, including the existing case that the server is not listening and the case that there is no persistence dialect. `pnpm vitest run --project skeleton` — exit 0. `Test Files  1 passed (1)`. `Tests  8 passed (8)`. |
+| Rollback boundary | `apps/local-node/src/update-structure.controller.ts`, `apps/local-node/src/update-structure.controller.test.ts`, the controller registration in `apps/local-node/src/application-module.ts`, the `init()` call in `apps/local-node/src/create-application.ts`, the dropped `(empty tree)` expectation in `apps/local-node/src/bootstrap.test.ts`, and the local-node source allowlist plus the `shared/sync`, `apps/admin-web`, sqlite, cursor, outbox, and pairing absences in `tools/skeleton/skeleton.test.ts`. |
+
 ### RED then GREEN
 
 | Task | RED (command and result) | GREEN |
@@ -67,10 +79,15 @@ Delivery: feature-branch-chain. Unit 1 stayed on `p0-03-organization-domain`. Un
 | 3.3 | The new repository class was not yet in the skeleton declaration list. | `pnpm vitest run --project skeleton` exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. |
 | 4.1 → 4.2 | `pnpm vitest run --project api-cloud src/update-structure.controller.test.ts` exit 1. Six tests failed with 404. The accepted command expected 200 and the invalid body expected 400. `Test Files  1 failed (1)`. `Tests  6 failed (6)`. | Same command after the controller, Zod contract, module, and `createApplication` binding: exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. |
 | 4.3 → 4.4 | Same command exit 1. `Cannot find module '#src/sample-pilot-structure.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `sample-pilot-structure.ts` and `postgres-organizations.ts`: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. |
+| 5.1 → 5.2 | `pnpm vitest run --project local-node src/update-structure.controller.test.ts` exit 1. `expected 404 to be 403`. `Test Files  1 failed (1)`. `Tests  1 failed (1)`. | Same command after the reject controller, the module registration, and `init()`: exit 0. `Test Files  1 passed (1)`. `Tests  1 passed (1)`. |
+| 5.3 | With the route mounted, `(empty tree)` would no longer hold. | `pnpm vitest run --project local-node` exit 0. `Test Files  2 passed (2)`. `Tests  4 passed (4)`. The route list still rejects a health route. No `listen()`. Providers and imports stay empty. |
+| 5.4 | The new local-node files were not yet in the skeleton allowlist. | `pnpm vitest run --project skeleton` exit 0. `Test Files  1 passed (1)`. `Tests  8 passed (8)`. |
 
 `pnpm exec tsc -b apps/api-cloud contexts/platform shared/contracts` — exit 0.
 
 `pnpm architecture` — exit 0. `no dependency violations found (59 modules, 106 dependencies cruised)`. The TypeScript 7 transpiler warning is the existing cruiser notice.
+
+`pnpm architecture` after unit 5 — exit 0. `no dependency violations found (61 modules, 110 dependencies cruised)`. The same TypeScript 7 transpiler warning remains.
 
 `pnpm vitest run --project platform contexts/platform/application/update-structure` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. The `addPoint` case did not change the existing use-case results.
 
@@ -88,14 +105,16 @@ Domain rejection classes are re-exported from `application/entry-port.ts`, the s
 
 `postgresOrganizations` binds `DrizzleOrganizationRepository` the same way `postgresVenueOperations` binds the venue repository. HTTP tests inject the in-memory repository. The factory is not called, so no database and no port are opened.
 
-Skeleton assertions already allow Zod under `shared/contracts` and check the contracts index with `toContain`. No skeleton edit was required. `apps/admin-web`, `adapters/sqlite`, and `shared/sync` were not added.
+Skeleton assertions already allow Zod under `shared/contracts` and check the contracts index with `toContain`. No skeleton edit was required for unit 4. `apps/admin-web`, `adapters/sqlite`, and `shared/sync` were not added.
+
+`createApplication` on local-node calls `init()` after `NestFactory.create`. Nest 12 does not mount Fastify routes inside `create`, so `inject` returned 404 and `printRoutes()` stayed `(empty tree)` until `init()`. The call does not `listen()`, does not accept a repository, and does not save. The node controller returns `{ error: "StructureEditRejected" }` with status 403 and does not call `UpdateStructure` or `OrganizationRepository`.
 
 ## Remaining tasks
 
-- [ ] 5.1–5.4 Node 403
+None. 18/18 tasks complete. Ready for verify.
 
 ## Workload / PR boundary
 
-- Mode: feature-branch-chain, work unit 4 of 5
-- Boundary: cloud `POST /tenants/:tenantId/structure`, the Zod command and `OrganizationChanged` event, the sample pilot fixture, and the typed Postgres organization binding. local-node stays in unit 5
-- Estimated review budget impact: HTTP slice. The contract and controller are the bulk of this PR; the sample fixture and the Postgres factory are small. The use-case `addPoint` arm is the only platform behavior added here
+- Mode: feature-branch-chain, work unit 5 of 5
+- Boundary: local-node `POST /tenants/:tenantId/structure` returns 403 `StructureEditRejected` and stores nothing. No repository, no SQLite, no `listen()`
+- Estimated review budget impact: small node slice. The controller, its test, the module registration, `init()`, the bootstrap expectation, and the skeleton allowlist
