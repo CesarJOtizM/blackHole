@@ -28,9 +28,13 @@ const absent = [
   "apps/venue",
   "apps/deliveries",
   "apps/web-admin",
+  "apps/admin-web",
   "apps/customer-portal",
+  "contexts/platform/adapters/sqlite",
   "infra",
 ] as const;
+
+const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
 
 const skippedDirectories = new Set([
   "node_modules",
@@ -129,26 +133,58 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
     declarations.map((filePath) => path.relative(platform, filePath)).sort(),
   ).toEqual(
     [
+      path.join("adapters", "memory", "in-memory-organization-repository.ts"),
       path.join(
         "adapters",
         "memory",
         "in-memory-venue-operation-repository.ts",
       ),
+      path.join("adapters", "postgres", "drizzle-organization-repository.ts"),
       path.join(
         "adapters",
         "postgres",
         "drizzle-venue-operation-repository.ts",
       ),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
+      path.join("application", "ports", "organization-repository.ts"),
+      path.join("application", "ports", "organization-repository.contract.ts"),
       path.join("application", "ports", "venue-operation-repository.ts"),
       path.join(
         "application",
         "ports",
         "venue-operation-repository.contract.ts",
       ),
+      path.join("application", "update-structure", "update-structure.ts"),
+      path.join("domain", "organization.ts"),
       path.join("domain", "venue-operation.ts"),
     ].sort(),
   );
+});
+
+it("given local-node, when its sources are listed, then the structure rejection is allowed and deferred copies stay absent", () => {
+  const nodeRoot = path.join(root, "apps", "local-node", "src");
+  const sources = listFiles(nodeRoot, isSource).map((filePath) =>
+    path.relative(nodeRoot, filePath),
+  );
+  const sourcePaths = sourceTrees.flatMap((tree) =>
+    listFiles(path.join(root, tree), () => true),
+  );
+  const deferredCopies = sourcePaths.filter((filePath) =>
+    namesDeferredCopy(path.relative(root, filePath)),
+  );
+
+  expect(sources.sort()).toEqual(
+    [
+      "application-module.ts",
+      "bootstrap.test.ts",
+      "create-application.ts",
+      "update-structure.controller.test.ts",
+      "update-structure.controller.ts",
+    ].sort(),
+  );
+  expect(existsSync(path.join(root, "shared/sync"))).toBe(false);
+  expect(existsSync(path.join(root, "apps/admin-web"))).toBe(false);
+  expect(deferredCopies).toEqual([]);
 });
 
 it("given the platform package, when its layers are listed, then domain, application, and adapters exist", () => {
@@ -165,12 +201,24 @@ it("given the platform package, when its layers are listed, then domain, applica
   expect(adaptersDependsOn).toBe("application");
 });
 
-it("given domain, when the module is analyzed, then it exports the layer and the venue operation", () => {
+it("given domain, when the module is analyzed, then it exports the layer, the venue operation, and the organization", () => {
   const module = domain;
 
   const keys = Object.keys(module).sort();
 
-  expect(keys).toEqual(["StaleGeneration", "VenueOperation", "layer"]);
+  expect(keys).toEqual([
+    "DuplicateNit",
+    "DuplicateOrganizationId",
+    "InvalidOrganizationId",
+    "InvoicingTaxpayerAlreadyAssigned",
+    "Organization",
+    "PointAlreadyOpen",
+    "StaleGeneration",
+    "StockNotHeld",
+    "UnknownOrganizationReference",
+    "VenueOperation",
+    "layer",
+  ]);
 });
 
 it("given the contracts package, when its published contents are inspected, then it publishes the cloud write schemas", () => {
@@ -268,6 +316,16 @@ function isSource(filePath: string): boolean {
 
 function namesUseCase(name: string): boolean {
   return /use-cases?|usecase/i.test(name);
+}
+
+function namesDeferredCopy(relativePath: string): boolean {
+  return relativePath.split(path.sep).some((segment) => {
+    const stem = segment.replace(/\.[^.]+$/, "").toLowerCase();
+
+    return deferredCopyNames.some(
+      (name) => segment.toLowerCase() === name || stem === name,
+    );
+  });
 }
 
 function importsPackage(code: string, packageName: string): boolean {
