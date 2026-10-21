@@ -129,6 +129,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
     declarations.map((filePath) => path.relative(platform, filePath)).sort(),
   ).toEqual(
     [
+      path.join("adapters", "memory", "in-memory-organization-repository.ts"),
       path.join(
         "adapters",
         "memory",
@@ -140,12 +141,15 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "drizzle-venue-operation-repository.ts",
       ),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
+      path.join("application", "ports", "organization-repository.ts"),
+      path.join("application", "ports", "organization-repository.contract.ts"),
       path.join("application", "ports", "venue-operation-repository.ts"),
       path.join(
         "application",
         "ports",
         "venue-operation-repository.contract.ts",
       ),
+      path.join("application", "update-structure", "update-structure.ts"),
       path.join("domain", "organization.ts"),
       path.join("domain", "venue-operation.ts"),
     ].sort(),
