@@ -29,9 +29,9 @@ import { SignatureVerifier } from "@blackhole/platform/application/ports/signatu
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { authorizationDependencies } from "#src/authorization-access.js";
-import { ApplicationModule } from "#src/application-module.js";
-import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { ApplicationModule } from "#src/composition/application-module.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication(cloudDependencies());

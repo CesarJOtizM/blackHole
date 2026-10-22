@@ -16,12 +16,12 @@ import { SignatureVerifier } from "@blackhole/platform/application/ports/signatu
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { type DynamicModule, Module } from "@nestjs/common";
 
-import { AcceptCloudWriteController } from "#src/accept-cloud-write.controller.js";
-import { AuthorizationController } from "#src/authorization.controller.js";
-import { HealthController } from "#src/health.controller.js";
-import { OperateDevicesController } from "#src/operate-devices.controller.js";
-import { OperateIdentityController } from "#src/operate-identity.controller.js";
-import { UpdateStructureController } from "#src/update-structure.controller.js";
+import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
+import { AuthorizationController } from "#src/http/authorization.controller.js";
+import { HealthController } from "#src/http/health.controller.js";
+import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
+import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
+import { UpdateStructureController } from "#src/http/update-structure.controller.js";
 
 export interface CloudApplicationDependencies {
   venueOperations: VenueOperationRepository;

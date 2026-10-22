@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#src/*": "./src/*"
+    "#src/composition/*": "./src/composition/*",
+    "#src/http/*": "./src/http/*",
+    "#src/postgres/*": "./src/postgres/*",
+    "#test/composition/*": "./test/composition/*",
+    "#test/http/*": "./test/http/*"
   },
   "dependencies": {
     "@blackhole/contracts": "workspace:*",

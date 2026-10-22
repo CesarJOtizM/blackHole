@@ -1,7 +1,7 @@
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { expect, it } from "vitest";
 
-import { observeQueue } from "#src/worker.js";
+import { observeQueue } from "#src/composition/worker.js";
 
 it("given waiting jobs and their age, when the worker publishes, then metrics receive both and no handler is registered", async () => {
   const calls: string[] = [];

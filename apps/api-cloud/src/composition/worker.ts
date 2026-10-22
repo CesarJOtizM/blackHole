@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import type { RuntimeMetrics } from "@blackhole/platform/application/ports/runtime-metrics";
 import { PgBoss } from "pg-boss";
 
-import { infrastructureFromEnv } from "#src/main.js";
+import { infrastructureFromEnv } from "#src/composition/main.js";
 
 export interface QueueSnapshotSource {
   queuedCount: number;

@@ -13,8 +13,8 @@ import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-s
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { authorizationDependencies } from "#src/authorization-access.js";
-import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 it("given the api, when health is requested, then the body is ok and nothing is listening", async () => {
   const identities = new InMemoryIdentityRepository();

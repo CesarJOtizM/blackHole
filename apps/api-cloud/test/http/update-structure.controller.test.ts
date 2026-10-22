@@ -14,14 +14,14 @@ import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-s
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { createApplication } from "#src/create-application.js";
-import { authorizationDependencies } from "#src/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import {
   samplePilotActorId,
   samplePilotCommands,
   samplePilotLabel,
   samplePilotTenantId,
-} from "#src/sample-pilot-structure.js";
+} from "#test/http/sample-pilot-structure.js";
 
 const tenantId = "organization_tenant_1";
 const actorId = "organization_actor_1";

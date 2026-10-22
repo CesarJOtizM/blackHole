@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 
-import { ApplicationModule } from "#src/application-module.js";
-import { createApplication } from "#src/create-application.js";
+import { ApplicationModule } from "#src/composition/application-module.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 it("given local-node, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication();

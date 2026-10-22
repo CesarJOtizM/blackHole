@@ -2,6 +2,7 @@ export const layer = "domain" as const;
 
 export {
   Authorization,
+  AuthorizerRejected,
   DuplicateAuthorizationId,
   LastOwnerRemains,
   LimitRaised,

@@ -273,6 +273,13 @@ export class SelfAuthorizationDenied extends Error {
   }
 }
 
+export class AuthorizerRejected extends Error {
+  constructor() {
+    super("The authorizer permission does not cover the value.");
+    this.name = "AuthorizerRejected";
+  }
+}
+
 export class UnknownAuthorizationReference extends Error {
   constructor() {
     super("The authorization does not include that reference.");
@@ -546,6 +553,14 @@ export class Authorization {
     if (input.at >= request.expiresAt) {
       throw new RequestExpired();
     }
+
+    this.assertAuthorizerCovers(
+      input.authorizerId,
+      request.permission,
+      request.venueId,
+      request.value,
+      input.at,
+    );
 
     const selfRequest = input.authorizerId === request.requesterId;
     let selfAuthorized = false;
@@ -829,6 +844,77 @@ export class Authorization {
     if (!covered) {
       throw new ScopeRejected();
     }
+  }
+
+  private assertAuthorizerCovers(
+    userId: string,
+    permission: PermissionCode,
+    venueId: string,
+    value: number | null,
+    at: number,
+  ): void {
+    const target: CoverageTarget = { kind: "site", id: venueId, brandId: null };
+    let unlimited = false;
+    let bestCap: number | null = null;
+
+    for (const assignment of this.assignmentList) {
+      if (assignment.userId !== userId || !covers(assignment, target, at)) {
+        continue;
+      }
+
+      const grant = authorizeGrant(this.roleGrant(assignment.roleId, permission));
+
+      if (grant === GRANT.YES) {
+        unlimited = true;
+        break;
+      }
+
+      if (grant !== GRANT.WITH_LIMIT) {
+        continue;
+      }
+
+      const cap = this.assignmentCap(assignment.roleId, permission, venueId);
+
+      if (cap === null) {
+        unlimited = true;
+        break;
+      }
+
+      if (bestCap === null || cap > bestCap) {
+        bestCap = cap;
+      }
+    }
+
+    if (unlimited || (bestCap !== null && (value === null || value <= bestCap))) {
+      return;
+    }
+
+    throw new AuthorizerRejected();
+  }
+
+  private assignmentCap(
+    roleId: string,
+    permission: PermissionCode,
+    venueId: string,
+  ): number | null {
+    const limit = permissionLimit[permission];
+
+    if (!limit) {
+      return null;
+    }
+
+    const roleCap = this.companyCap(roleId, limit);
+    const venueCap = this.venueLimit(venueId, roleId, limit);
+
+    if (roleCap === null) {
+      return venueCap;
+    }
+
+    if (venueCap === null) {
+      return roleCap;
+    }
+
+    return Math.min(roleCap, venueCap);
   }
 
   private assertOwner(actorUserId: string, at: number): void {

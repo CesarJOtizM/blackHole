@@ -11,7 +11,7 @@ it("given a route that changes data, when it declares no permission, then the su
   const missing: string[] = [];
 
   for (const app of apps) {
-    const directory = path.join(root, "apps", app, "src");
+    const directory = path.join(root, "apps", app, "src", "http");
 
     for (const file of readdirSync(directory)) {
       if (!file.endsWith(".controller.ts")) {

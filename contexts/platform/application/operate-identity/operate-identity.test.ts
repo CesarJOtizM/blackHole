@@ -19,6 +19,7 @@ import {
   PinRejected,
   SecondFactorRejected,
   SecondFactorRequired,
+  type Session,
   UnknownIdentityReference,
   UserDeactivated,
 } from "#domain/identity.js";
@@ -68,7 +69,7 @@ const expectNoSecrets = (value: unknown) => {
 };
 
 const expectSession = (
-  session: Record<string, string> | undefined,
+  session: Session | undefined,
   expected: Record<string, string>,
 ) => {
   expect(session).toEqual(expected);

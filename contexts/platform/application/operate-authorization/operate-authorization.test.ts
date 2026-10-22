@@ -16,6 +16,7 @@ import {
 import {
   Authorization,
   PredefinedRoleRevision,
+  AuthorizerRejected,
   SelfAuthorizationDenied,
 } from "#domain/authorization.js";
 import { LIMIT, PERMISSION } from "#domain/permission-catalog.js";
@@ -387,6 +388,151 @@ it("given a cashier over the discount cap, when a supervisor resolves it, then t
   });
 });
 
+it("given a discount above the supervisor authorize cap, when that supervisor resolves it, then the request stays pending and nothing new is saved", async () => {
+  const { authorizations, sessions, identities, operate } = harness();
+  const authorization = Authorization.open(TENANT_ID);
+  authorization.appointOwner({
+    assignmentId: "assignment_owner",
+    userId: OWNER_ID,
+  });
+  authorization.assign({
+    assignmentId: "assignment_cashier",
+    userId: CASHIER_ID,
+    roleId: "cashier",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: AT,
+  });
+  authorization.assign({
+    assignmentId: "assignment_supervisor",
+    userId: SUPERVISOR_ID,
+    roleId: "shiftSupervisor",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: AT,
+  });
+  await authorizations.save(authorization, {
+    before: Authorization.open(TENANT_ID).snapshot(),
+    after: authorization.snapshot(),
+  });
+  remember(identities, CASHIER_ID);
+  remember(identities, SUPERVISOR_ID);
+  seat(sessions, {
+    sessionId: "session_cashier",
+    userId: CASHIER_ID,
+    deviceId: "device_cashier",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+  seat(sessions, {
+    sessionId: "session_supervisor",
+    userId: SUPERVISOR_ID,
+    deviceId: "device_supervisor",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+  await operate.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_cashier",
+    command: {
+      type: "request",
+      requestId: "request_discount",
+      permission: PERMISSION.SALE_DISCOUNT,
+      venueId: SITE_1,
+      value: 20,
+      reason: "regular",
+      expiresAt: AT + 60_000,
+    },
+  });
+  const recorded = await authorizations.eventsFor(TENANT_ID);
+
+  const act = operate.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_supervisor",
+    command: {
+      type: "resolve",
+      requestId: "request_discount",
+      pin: "2468",
+      shiftId: "shift_1",
+      approved: true,
+    },
+  });
+
+  await expect(act).rejects.toBeInstanceOf(AuthorizerRejected);
+  expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
+  const snapshot = (await authorizations.load(TENANT_ID))?.snapshot();
+  expect(snapshot?.resolutions).toEqual([]);
+  expect(snapshot?.requests[0]?.status).toBe("pending");
+});
+
+it("given a supervisor without the comp authorize grant, when they resolve a comp, then the request stays pending and nothing new is saved", async () => {
+  const { authorizations, sessions, identities, operate } = harness();
+  const opened = Authorization.open(TENANT_ID);
+  const authorization = Authorization.restore({
+    ...opened.snapshot(),
+    assignments: [
+      {
+        id: "assignment_supervisor",
+        userId: SUPERVISOR_ID,
+        roleId: "shiftSupervisor",
+        scopeKind: "site",
+        scopeId: SITE_1,
+        validFrom: null,
+        validUntil: null,
+      },
+    ],
+    requests: [
+      {
+        id: "request_comp",
+        requesterId: CASHIER_ID,
+        permission: PERMISSION.SALE_COMP,
+        venueId: SITE_1,
+        value: 1_000,
+        reason: "guest",
+        expiresAt: AT + 60_000,
+        status: "pending",
+      },
+    ],
+  });
+  await authorizations.save(authorization, {
+    before: opened.snapshot(),
+    after: authorization.snapshot(),
+  });
+  remember(identities, SUPERVISOR_ID);
+  seat(sessions, {
+    sessionId: "session_supervisor",
+    userId: SUPERVISOR_ID,
+    deviceId: "device_supervisor",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+  const recorded = await authorizations.eventsFor(TENANT_ID);
+
+  const act = operate.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_supervisor",
+    command: {
+      type: "resolve",
+      requestId: "request_comp",
+      pin: "2468",
+      shiftId: "shift_1",
+      approved: true,
+    },
+  });
+
+  await expect(act).rejects.toBeInstanceOf(AuthorizerRejected);
+  expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
+  expect(
+    (await authorizations.load(TENANT_ID))?.snapshot().resolutions,
+  ).toEqual([]);
+});
+
 it("given no self-authorization for the shift, when the supervisor enters their own PIN, then it is denied and nothing new is saved", async () => {
   const { authorizations, sessions, identities, operate } = harness();
   const opened = Authorization.open(TENANT_ID);
@@ -409,7 +555,7 @@ it("given no self-authorization for the shift, when the supervisor enters their 
         requesterId: SUPERVISOR_ID,
         permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
         venueId: SITE_1,
-        value: 80_000,
+        value: 40_000,
         reason: "spilled",
         expiresAt: AT + 60_000,
         status: "pending",
@@ -471,7 +617,7 @@ it("given a sole authorizer and the shift flag, when they resolve their own requ
         requesterId: SUPERVISOR_ID,
         permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
         venueId: SITE_1,
-        value: 80_000,
+        value: 40_000,
         reason: "spilled",
         expiresAt: AT + 60_000,
         status: "pending",

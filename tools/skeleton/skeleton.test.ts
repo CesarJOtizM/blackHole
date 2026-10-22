@@ -226,17 +226,12 @@ it("given local-node, when its sources are listed, then the structure rejection 
 
   expect(sources.sort()).toEqual(
     [
-      "application-module.ts",
-      "bootstrap.test.ts",
-      "create-application.ts",
-      "operate-devices.controller.test.ts",
-      "operate-devices.controller.ts",
-      "operate-identity.controller.test.ts",
-      "operate-identity.controller.ts",
-      "authorization.controller.test.ts",
-      "authorization.controller.ts",
-      "update-structure.controller.test.ts",
-      "update-structure.controller.ts",
+      path.join("composition", "application-module.ts"),
+      path.join("composition", "create-application.ts"),
+      path.join("http", "authorization.controller.ts"),
+      path.join("http", "operate-devices.controller.ts"),
+      path.join("http", "operate-identity.controller.ts"),
+      path.join("http", "update-structure.controller.ts"),
     ].sort(),
   );
   expect(existsSync(path.join(root, "shared/sync"))).toBe(false);
@@ -276,6 +271,7 @@ it("given domain, when the module is analyzed, then it exports the layer, the ve
 
   expect(keys).toEqual([
     "Authorization",
+    "AuthorizerRejected",
     "DeviceRevoked",
     "DuplicateAuthorizationId",
     "DuplicateIdentityId",

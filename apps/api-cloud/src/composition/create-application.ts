@@ -9,7 +9,7 @@ import {
 import {
   ApplicationModule,
   type CloudApplicationDependencies,
-} from "#src/application-module.js";
+} from "#src/composition/application-module.js";
 
 export async function createApplication(
   dependencies: CloudApplicationDependencies,

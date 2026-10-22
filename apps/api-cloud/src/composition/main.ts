@@ -35,8 +35,8 @@ import type { RuntimeMetrics } from "@blackhole/platform/application/ports/runti
 import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
 import type { Secrets } from "@blackhole/platform/application/ports/secrets";
 
-import { authorizationDependencies } from "#src/authorization-access.js";
-import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 const scrypt = promisify(scryptCallback);
 const fileStorageAdapters = ["s3", "gcs", "blob", "disk"] as const;

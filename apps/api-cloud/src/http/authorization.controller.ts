@@ -19,6 +19,7 @@ import {
   PinConfirmationRejected,
   PredefinedRoleRevision,
   PrivilegeEscalation,
+  AuthorizerRejected,
   ReasonRequired,
   RequestExpired,
   ScopeRejected,
@@ -68,6 +69,7 @@ const CONFLICT = [
 ] as const;
 
 const DENIED = [
+  AuthorizerRejected,
   ForeignPinSession,
   InactiveUser,
   PermissionDenied,

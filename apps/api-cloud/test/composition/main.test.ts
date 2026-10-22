@@ -5,7 +5,7 @@ import { AwsSecrets } from "@blackhole/platform/adapters/secrets-aws/aws-secrets
 import { FileSecrets } from "@blackhole/platform/adapters/secrets-file/file-secrets";
 import { expect, it } from "vitest";
 
-import { infrastructureFromEnv } from "#src/main.js";
+import { infrastructureFromEnv } from "#src/composition/main.js";
 
 const databaseUrl = "postgres://blackhole:blackhole@postgres:5432/blackhole";
 

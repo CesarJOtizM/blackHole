@@ -6,7 +6,7 @@ import {
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
 
-import { ApplicationModule } from "#src/application-module.js";
+import { ApplicationModule } from "#src/composition/application-module.js";
 
 export async function createApplication(): Promise<NestFastifyApplication> {
   const application = await NestFactory.create<NestFastifyApplication>(

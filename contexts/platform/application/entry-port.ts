@@ -47,6 +47,7 @@ export {
   ScopeRejected,
   SecondFactorRejected,
   SecondFactorRequired,
+  AuthorizerRejected,
   SelfAuthorizationDenied,
   StaleGeneration,
   StationRefused,

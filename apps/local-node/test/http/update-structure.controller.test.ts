@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 
-import { ApplicationModule } from "#src/application-module.js";
-import { createApplication } from "#src/create-application.js";
+import { ApplicationModule } from "#src/composition/application-module.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 const tenantId = "organization_tenant_1";
 

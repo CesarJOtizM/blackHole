@@ -14,8 +14,8 @@ import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/m
 import { Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
 
-import { createApplication } from "#src/create-application.js";
-import { authorizationDependencies } from "#src/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
 
 const tenantId = "organization_company_1";
 const userId = "user_owner";

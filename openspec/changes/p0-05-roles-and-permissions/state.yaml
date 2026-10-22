@@ -6,7 +6,7 @@ modules: [M0]
 bounded_contexts: [platform, contracts]
 apps: [api-cloud, local-node, venue-app, admin-web]
 status: applied
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: pending, archive: pending}
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: partial, archive: pending}
 depends_on: [p0-04-identity-and-devices]
 source_docs:
   - docs/roadmap.md

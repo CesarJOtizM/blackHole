@@ -13,8 +13,8 @@ import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-s
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { authorizationDependencies } from "#src/authorization-access.js";
-import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 const venueId = "venue-1";
 const writeId = "6f1e1b5a-7c3d-4e2f-9a1b-2c3d4e5f6071";
