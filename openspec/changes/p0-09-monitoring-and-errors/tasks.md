@@ -34,8 +34,8 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 
 ## Phase 3: Worker issue-pending
 
-- [ ] 3.1 Failing test first. `apps/api-cloud/src/factus-simulator.ts` (`#src/*`): `issue()` returns `200` or `429` plus `retryAfterSeconds`. Real Factus HTTP and D-19 stay in delivery 1.5.
-- [ ] 3.2 Failing test first. `worker.test.ts`: `issue-pending` keeps sale order; over 80 or `429` reschedules in order; `factus.responses` records `429`, `rejected`, or `server_error`. Ports on `application-module.ts`. `publishQueue` stays depth and age, not Grafana.
+- [x] 3.1 Failing test first. `apps/api-cloud/src/factus-simulator.ts` (`#src/*`): `issue()` returns `200` or `429` plus `retryAfterSeconds`. Real Factus HTTP and D-19 stay in delivery 1.5.
+- [x] 3.2 Failing test first. `worker.test.ts`: `issue-pending` keeps sale order; over 80 or `429` reschedules in order; `factus.responses` records `429`, `rejected`, or `server_error`. Ports on `application-module.ts`. `publishQueue` stays depth and age, not Grafana.
 
 ## Phase 4: OTLP and Sentry wiring
 

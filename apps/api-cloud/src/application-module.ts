@@ -1,3 +1,5 @@
+import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
+import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
@@ -6,8 +8,10 @@ import { IdentityReader } from "@blackhole/platform/application/ports/identity-r
 import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 import { PasswordHasher } from "@blackhole/platform/application/ports/password-hasher";
+import { PendingIssuance } from "@blackhole/platform/application/ports/pending-issuance";
 import { PinHasher } from "@blackhole/platform/application/ports/pin-hasher";
 import { PinVerifier } from "@blackhole/platform/application/ports/pin-verifier";
+import { ProviderRateGate } from "@blackhole/platform/application/ports/provider-rate-gate";
 import { RuntimeMetrics } from "@blackhole/platform/application/ports/runtime-metrics";
 import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
 import { Secrets } from "@blackhole/platform/application/ports/secrets";
@@ -18,6 +22,7 @@ import { type DynamicModule, Module } from "@nestjs/common";
 
 import { AcceptCloudWriteController } from "#src/accept-cloud-write.controller.js";
 import { AuthorizationController } from "#src/authorization.controller.js";
+import { FactusSimulator } from "#src/factus-simulator.js";
 import { HealthController } from "#src/health.controller.js";
 import { OperateDevicesController } from "#src/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/operate-identity.controller.js";
@@ -40,6 +45,9 @@ export interface CloudApplicationDependencies {
   fileStorage: FileStorage;
   secrets: Secrets;
   metrics: RuntimeMetrics;
+  providerRate?: ProviderRateGate;
+  pendingIssuance?: PendingIssuance;
+  factus?: FactusSimulator;
 }
 
 @Module({})
@@ -120,6 +128,20 @@ export class ApplicationModule {
         {
           provide: RuntimeMetrics,
           useValue: dependencies.metrics,
+        },
+        {
+          provide: ProviderRateGate,
+          useValue: dependencies.providerRate ?? new InMemoryProviderRateGate(),
+        },
+        {
+          provide: PendingIssuance,
+          useValue:
+            dependencies.pendingIssuance ??
+            new InMemoryPendingIssuance(dependencies.clock),
+        },
+        {
+          provide: FactusSimulator,
+          useValue: dependencies.factus ?? new FactusSimulator(),
         },
       ],
     };

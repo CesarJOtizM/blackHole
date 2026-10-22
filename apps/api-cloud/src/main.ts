@@ -11,6 +11,8 @@ import {
 import { GcsFileStorage } from "@blackhole/platform/adapters/gcs/gcs-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
+import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { AwsRuntimeMetrics } from "@blackhole/platform/adapters/metrics-aws/aws-runtime-metrics";
 import { AzureRuntimeMetrics } from "@blackhole/platform/adapters/metrics-azure/azure-runtime-metrics";
@@ -37,6 +39,7 @@ import type { Secrets } from "@blackhole/platform/application/ports/secrets";
 
 import { authorizationDependencies } from "#src/authorization-access.js";
 import { createApplication } from "#src/create-application.js";
+import { FactusSimulator } from "#src/factus-simulator.js";
 
 const scrypt = promisify(scryptCallback);
 const fileStorageAdapters = ["s3", "gcs", "blob", "disk"] as const;
@@ -218,6 +221,9 @@ export const startApi = async (
     fileStorage: runtime.fileStorage,
     secrets: runtime.secrets,
     metrics: runtime.metrics,
+    providerRate: new InMemoryProviderRateGate(),
+    pendingIssuance: new InMemoryPendingIssuance(clock),
+    factus: new FactusSimulator(),
   });
 
   await application.listen({ host: "0.0.0.0", port: runtime.port });
