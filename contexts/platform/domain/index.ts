@@ -1,6 +1,20 @@
 export const layer = "domain" as const;
 
 export {
+  Authorization,
+  DuplicateAuthorizationId,
+  LastOwnerRemains,
+  LimitRaised,
+  PredefinedRoleRevision,
+  PrivilegeEscalation,
+  ReasonRequired,
+  RequestExpired,
+  ScopeRejected,
+  SelfAuthorizationDenied,
+  UnknownAuthorizationReference,
+} from "#domain/authorization.js";
+export { evaluate } from "#domain/evaluate.js";
+export {
   DeviceRevoked,
   DuplicateIdentityId,
   Identity,

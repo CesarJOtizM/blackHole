@@ -10,6 +10,7 @@ import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/mem
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
+import { authorizationDependencies } from "#src/authorization-access.js";
 import { createApplication } from "#src/create-application.js";
 
 const venueId = "venue-1";
@@ -161,14 +162,18 @@ it("given an accepted write, when the same writeId is posted again, then the res
 function cloudDependencies(
   venueOperations: InMemoryVenueOperationRepository,
 ) {
+  const identities = new InMemoryIdentityRepository();
+  const clock = new FakeClock(0);
+
   return {
     venueOperations,
     organizations: new InMemoryOrganizationRepository(),
-    identities: new InMemoryIdentityRepository(),
+    identities,
     passwords: new FastPasswordHasher(),
     pins: new FastPinHasher(),
     secondFactor: new FastSecondFactor(),
-    clock: new FakeClock(0),
+    clock,
     signatures: new FastSignatureVerifier(),
+    ...authorizationDependencies(identities, clock),
   };
 }

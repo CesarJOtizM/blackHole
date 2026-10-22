@@ -29,6 +29,10 @@ import {
 
 const ACTOR_HEADER = "x-actor-id";
 
+export const routePermissions = {
+  "POST structure": "organization.structure",
+} as const;
+
 const DOMAIN_REJECTION = [
   DuplicateNit,
   DuplicateOrganizationId,

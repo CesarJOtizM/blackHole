@@ -47,6 +47,10 @@ const DOMAIN_REJECTION = [
   UserDeactivated,
 ] as const;
 
+export const routePermissions = {
+  "POST devices": "device.register",
+} as const;
+
 @Controller("tenants/:tenantId")
 export class OperateDevicesController {
   constructor(

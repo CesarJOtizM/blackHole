@@ -13,6 +13,7 @@ import { Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
 
 import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/authorization-access.js";
 
 const tenantId = "organization_company_1";
 const venueId = "organization_venue_1";
@@ -222,6 +223,7 @@ async function openCloud(identity: Identity) {
 
   await identities.save(identity, { before: snapshot, after: snapshot });
 
+  const clock = new FakeClock(issuedAt);
   const application = await createApplication({
     venueOperations: new InMemoryVenueOperationRepository(),
     organizations: new InMemoryOrganizationRepository(),
@@ -229,8 +231,9 @@ async function openCloud(identity: Identity) {
     passwords: new FastPasswordHasher(),
     pins: new FastPinHasher(),
     secondFactor: new FastSecondFactor(),
-    clock: new FakeClock(issuedAt),
+    clock,
     signatures: new FastSignatureVerifier(),
+    ...authorizationDependencies(identities, clock),
   });
 
   return { application, identities };

@@ -4,6 +4,10 @@ const STRUCTURE_REJECTION = {
   ERROR: "StructureEditRejected",
 } as const;
 
+export const routePermissions = {
+  "POST structure": "organization.structure",
+} as const;
+
 interface StructureEditRejection {
   error: typeof STRUCTURE_REJECTION.ERROR;
 }

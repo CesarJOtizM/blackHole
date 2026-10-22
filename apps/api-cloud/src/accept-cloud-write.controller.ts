@@ -19,6 +19,10 @@ import {
   Post,
 } from "@nestjs/common";
 
+export const routePermissions = {
+  "POST writes": "operation.accept-cloud-write",
+} as const;
+
 @Controller("venues/:venueId")
 export class AcceptCloudWriteController {
   constructor(
