@@ -16,6 +16,7 @@ variable "private_subnet_ids" { type = list(string) }
 variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
+variable "collector_endpoint" { type = string }
 
 locals {
   production    = var.environment == "production"
@@ -50,6 +51,10 @@ resource "google_cloud_run_v2_service" "this" {
       image = var.image
       ports {
         container_port = var.role == "api" ? 4310 : 8080
+      }
+      env {
+        name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+        value = var.collector_endpoint
       }
     }
   }
