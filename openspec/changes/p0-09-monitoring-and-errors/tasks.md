@@ -29,8 +29,8 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 
 ## Phase 2: Provider-rate gate and pending issuance
 
-- [ ] 2.1 Failing test first. Off `entry-port.ts`. `acquire(taxId, at)` allows 80 per tax id per minute, else `{ allowed: false, retryAfterSeconds }`. `snapshot()` returns `venueId`, `status`, `ageSeconds` for `pending_issuance` or `uncertain`. Contract on `in-memory-provider-rate-gate.ts` and `in-memory-pending-issuance.ts`. `#application/ports/*`, `#adapters/memory/*`.
-- [ ] 2.2 Failing PGlite test first: two callers, one window. `drizzle-provider-rate-gate.ts`, `drizzle-pending-issuance.ts`, `0005_provider_rate.sql` (window, synthetic rows). Do not edit `0001`–`0004`. Renumber only if `0005` is taken when apply starts. Export `contexts/platform/package.json`. `#adapters/postgres/*`.
+- [x] 2.1 Failing test first. Off `entry-port.ts`. `acquire(taxId, at)` allows 80 per tax id per minute, else `{ allowed: false, retryAfterSeconds }`. `snapshot()` returns `venueId`, `status`, `ageSeconds` for `pending_issuance` or `uncertain`. Contract on `in-memory-provider-rate-gate.ts` and `in-memory-pending-issuance.ts`. `#application/ports/*`, `#adapters/memory/*`.
+- [x] 2.2 Failing PGlite test first: two callers, one window. `drizzle-provider-rate-gate.ts`, `drizzle-pending-issuance.ts`, `0005_provider_rate.sql` (window, synthetic rows). Do not edit `0001`–`0004`. Renumber only if `0005` is taken when apply starts. Export `contexts/platform/package.json`. `#adapters/postgres/*`.
 
 ## Phase 3: Worker issue-pending
 
