@@ -6,8 +6,11 @@ import {
   signFast,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
+import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
@@ -91,7 +94,9 @@ it("given a device command with an invalid body, when it is posted, then the res
 });
 
 it("given a used registration code, when it is redeemed again, then the response is 409 and nothing is saved", async () => {
-  const { application, identities } = await openCloud(await registeredIdentity());
+  const { application, identities } = await openCloud(
+    await registeredIdentity(),
+  );
   const recorded = await identities.eventsFor(tenantId);
   const register = {
     type: "registerDevice" as const,
@@ -234,6 +239,9 @@ async function openCloud(identity: Identity) {
     clock,
     signatures: new FastSignatureVerifier(),
     ...authorizationDependencies(identities, clock),
+    fileStorage: new InMemoryFileStorage(),
+    secrets: new InMemorySecrets({}),
+    metrics: new InMemoryRuntimeMetrics(),
   });
 
   return { application, identities };

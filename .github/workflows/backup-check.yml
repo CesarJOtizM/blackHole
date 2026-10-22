@@ -1,0 +1,57 @@
+name: backup-check
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Copy the encrypted dump to the other of AWS or GCP
+        env:
+          PRODUCTION_CLOUD: ${{ vars.PRODUCTION_CLOUD }}
+          BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+          BACKUP_KEY: ${{ vars.BACKUP_KEY }}
+        run: |
+          if [ "$PRODUCTION_CLOUD" = "aws" ]; then
+            OTHER=gcp
+          elif [ "$PRODUCTION_CLOUD" = "gcp" ]; then
+            OTHER=aws
+          else
+            echo "Backup stays on AWS or GCP"
+            exit 1
+          fi
+          echo "other=${OTHER}" >> "$GITHUB_ENV"
+      - name: Authenticate to AWS
+        if: env.other == 'aws' || vars.PRODUCTION_CLOUD == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Authenticate to GCP
+        if: env.other == 'gcp' || vars.PRODUCTION_CLOUD == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Fail when the encrypted dump is missing
+        env:
+          BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+          BACKUP_KEY: ${{ vars.BACKUP_KEY }}
+        run: |
+          if [ -z "$BACKUP_BUCKET" ] || [ -z "$BACKUP_KEY" ]; then
+            echo "backup object is missing"
+            exit 1
+          fi
+          if [ "$other" = "aws" ]; then
+            aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$BACKUP_KEY"
+          else
+            gcloud storage objects describe "gs://${BACKUP_BUCKET}/${BACKUP_KEY}"
+          fi

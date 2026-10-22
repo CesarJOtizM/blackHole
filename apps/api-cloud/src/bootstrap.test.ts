@@ -5,19 +5,25 @@ import {
   FastSecondFactor,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
+import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
+import { FileStorage } from "@blackhole/platform/application/ports/file-storage";
 import { IdentityReader } from "@blackhole/platform/application/ports/identity-reader";
 import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 import { PasswordHasher } from "@blackhole/platform/application/ports/password-hasher";
 import { PinHasher } from "@blackhole/platform/application/ports/pin-hasher";
 import { PinVerifier } from "@blackhole/platform/application/ports/pin-verifier";
+import { RuntimeMetrics } from "@blackhole/platform/application/ports/runtime-metrics";
 import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
+import { Secrets } from "@blackhole/platform/application/ports/secrets";
 import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
@@ -41,13 +47,13 @@ it("given api-cloud, when it is created and closed, then no port is listening", 
   expect(listening).toBe(false);
 });
 
-it("given the created application, when its routes are listed, then there is no health route", async () => {
+it("given the created application, when its routes are listed, then health is available", async () => {
   const application = await createApplication(cloudDependencies());
 
   try {
     const routes = application.getHttpAdapter().getInstance().printRoutes();
 
-    expect(routes).not.toMatch(/health/i);
+    expect(routes).toMatch(/health/i);
   } finally {
     await application.close();
   }
@@ -92,31 +98,43 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: Clock,
         useValue: dependencies.clock,
       },
-        {
-          provide: SignatureVerifier,
-          useValue: dependencies.signatures,
-        },
-        {
-          provide: AuthorizationRepository,
-          useValue: dependencies.authorizations,
-        },
-        {
-          provide: SessionReader,
-          useValue: dependencies.sessions,
-        },
-        {
-          provide: IdentityReader,
-          useValue: dependencies.identityViews,
-        },
-        {
-          provide: PinVerifier,
-          useValue: dependencies.pinConfirmations,
-        },
-        {
-          provide: AuthorizationClock,
-          useValue: dependencies.authorizationClock,
-        },
-      ]);
+      {
+        provide: SignatureVerifier,
+        useValue: dependencies.signatures,
+      },
+      {
+        provide: AuthorizationRepository,
+        useValue: dependencies.authorizations,
+      },
+      {
+        provide: SessionReader,
+        useValue: dependencies.sessions,
+      },
+      {
+        provide: IdentityReader,
+        useValue: dependencies.identityViews,
+      },
+      {
+        provide: PinVerifier,
+        useValue: dependencies.pinConfirmations,
+      },
+      {
+        provide: AuthorizationClock,
+        useValue: dependencies.authorizationClock,
+      },
+      {
+        provide: FileStorage,
+        useValue: dependencies.fileStorage,
+      },
+      {
+        provide: Secrets,
+        useValue: dependencies.secrets,
+      },
+      {
+        provide: RuntimeMetrics,
+        useValue: dependencies.metrics,
+      },
+    ]);
     expect(repository).toBe(dependencies.venueOperations);
     expect(repository).toBeInstanceOf(InMemoryVenueOperationRepository);
     expect(organizationRepository).toBe(dependencies.organizations);
@@ -144,5 +162,8 @@ function cloudDependencies() {
     clock,
     signatures: new FastSignatureVerifier(),
     ...authorizationDependencies(identities, clock),
+    fileStorage: new InMemoryFileStorage(),
+    secrets: new InMemorySecrets({}),
+    metrics: new InMemoryRuntimeMetrics(),
   };
 }

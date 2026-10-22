@@ -8,6 +8,9 @@ import {
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
+import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
+import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { Authorization } from "@blackhole/platform/domain";
 import { Identity } from "@blackhole/platform/domain";
@@ -112,6 +115,9 @@ const openCloud = async () => {
     signatures: new FastSignatureVerifier(),
     ...authorizationDependencies(identities, clock),
     authorizations,
+    fileStorage: new InMemoryFileStorage(),
+    secrets: new InMemorySecrets({}),
+    metrics: new InMemoryRuntimeMetrics(),
   });
 
   return { application, authorizations };
