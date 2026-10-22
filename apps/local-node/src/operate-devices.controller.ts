@@ -8,6 +8,10 @@ interface DeviceCommandRejection {
   error: typeof DEVICE_REJECTION.ERROR;
 }
 
+export const routePermissions = {
+  "POST devices": "device.register",
+} as const;
+
 @Controller("tenants/:tenantId")
 export class OperateDevicesController {
   @Post("devices")

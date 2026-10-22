@@ -12,6 +12,7 @@ import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/m
 import { expect, it } from "vitest";
 
 import { createApplication } from "#src/create-application.js";
+import { authorizationDependencies } from "#src/authorization-access.js";
 import {
   samplePilotActorId,
   samplePilotCommands,
@@ -266,15 +267,18 @@ it("given the sample pilot fixture, when it is posted, then six cloud venues are
 
 async function openCloud() {
   const organizations = new InMemoryOrganizationRepository();
+  const identities = new InMemoryIdentityRepository();
+  const clock = new FakeClock(0);
   const application = await createApplication({
     venueOperations: new InMemoryVenueOperationRepository(),
     organizations,
-    identities: new InMemoryIdentityRepository(),
+    identities,
     passwords: new FastPasswordHasher(),
     pins: new FastPinHasher(),
     secondFactor: new FastSecondFactor(),
-    clock: new FakeClock(0),
+    clock,
     signatures: new FastSignatureVerifier(),
+    ...authorizationDependencies(identities, clock),
   });
 
   return { application, organizations };

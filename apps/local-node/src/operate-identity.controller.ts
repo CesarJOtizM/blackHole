@@ -4,6 +4,10 @@ const IDENTITY_REJECTION = {
   ERROR: "IdentityCommandRejected",
 } as const;
 
+export const routePermissions = {
+  "POST identity": "identity.session",
+} as const;
+
 interface IdentityCommandRejection {
   error: typeof IDENTITY_REJECTION.ERROR;
 }

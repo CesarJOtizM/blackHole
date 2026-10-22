@@ -10,6 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { OrganizationSnapshot } from "#application/ports/organization-repository.js";
+import type { AuthorizationSnapshot } from "#application/ports/authorization-repository.js";
 import type { IdentitySnapshot } from "#domain/identity.js";
 
 export const venueOperations = pgTable("venue_operations", {
@@ -167,4 +168,155 @@ export const identityChanges = pgTable("identity_changes", {
   position: integer("position").notNull(),
   beforeSnapshot: jsonb("before_snapshot").$type<IdentitySnapshot>().notNull(),
   afterSnapshot: jsonb("after_snapshot").$type<IdentitySnapshot>().notNull(),
+});
+
+export const authorizations = pgTable("authorizations", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+});
+
+export const authorizationRoles = pgTable("authorization_roles", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  sourceRoleId: text("source_role_id").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationRolePermissions = pgTable(
+  "authorization_role_permissions",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    roleId: text("role_id").notNull(),
+    permission: text("permission").notNull(),
+    grantValue: text("grant_value").notNull(),
+    position: integer("position").notNull(),
+  },
+);
+
+export const authorizationRoleLimits = pgTable("authorization_role_limits", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  roleId: text("role_id").notNull(),
+  limitCode: text("limit_code").notNull(),
+  cap: integer("cap").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationAssignments = pgTable("authorization_assignments", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  userId: text("user_id").notNull(),
+  roleId: text("role_id").notNull(),
+  scopeKind: text("scope_kind").notNull(),
+  scopeId: text("scope_id").notNull(),
+  validFrom: bigint("valid_from", { mode: "number" }),
+  validUntil: bigint("valid_until", { mode: "number" }),
+  position: integer("position").notNull(),
+});
+
+export const authorizationVenueLimits = pgTable("authorization_venue_limits", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  roleId: text("role_id").notNull(),
+  limitCode: text("limit_code").notNull(),
+  cap: integer("cap").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationBartenderFlags = pgTable(
+  "authorization_bartender_flags",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    enabled: boolean("enabled").notNull(),
+    position: integer("position").notNull(),
+  },
+);
+
+export const authorizationRequests = pgTable("authorization_requests", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  requesterId: text("requester_id").notNull(),
+  permission: text("permission").notNull(),
+  venueId: text("venue_id").notNull(),
+  value: integer("value"),
+  reason: text("reason").notNull(),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+  status: text("status").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationResolutions = pgTable("authorization_resolutions", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  requestId: text("request_id").notNull(),
+  requesterId: text("requester_id").notNull(),
+  authorizerId: text("authorizer_id").notNull(),
+  action: text("action").notNull(),
+  value: integer("value"),
+  reason: text("reason").notNull(),
+  deviceId: text("device_id").notNull(),
+  occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
+  selfAuthorized: boolean("self_authorized").notNull(),
+  approved: boolean("approved").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationSupportGrants = pgTable(
+  "authorization_support_grants",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+    expired: boolean("expired").notNull(),
+    revoked: boolean("revoked").notNull(),
+    position: integer("position").notNull(),
+  },
+);
+
+export const authorizationSupportActions = pgTable(
+  "authorization_support_actions",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    grantId: text("grant_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    permission: text("permission").notNull(),
+    occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
+    position: integer("position").notNull(),
+  },
+);
+
+export const authorizationShiftFlags = pgTable("authorization_shift_flags", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  shiftId: text("shift_id").notNull(),
+  selfAuthorization: boolean("self_authorization").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationNotices = pgTable("authorization_notices", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  ownerUserId: text("owner_user_id").notNull(),
+  kind: text("kind").notNull(),
+  occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationChanges = pgTable("authorization_changes", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  position: integer("position").notNull(),
+  beforeSnapshot: jsonb("before_snapshot")
+    .$type<AuthorizationSnapshot>()
+    .notNull(),
+  afterSnapshot: jsonb("after_snapshot")
+    .$type<AuthorizationSnapshot>()
+    .notNull(),
 });

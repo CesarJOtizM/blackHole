@@ -38,6 +38,10 @@ import {
 
 const SESSION_HEADER = "x-session-id";
 
+export const routePermissions = {
+  "POST identity": "identity.session",
+} as const;
+
 const DOMAIN_REJECTION = [
   DuplicateIdentityId,
   InvalidIdentityId,

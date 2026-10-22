@@ -8,16 +8,22 @@ import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
+import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
+import { IdentityReader } from "@blackhole/platform/application/ports/identity-reader";
 import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 import { PasswordHasher } from "@blackhole/platform/application/ports/password-hasher";
 import { PinHasher } from "@blackhole/platform/application/ports/pin-hasher";
+import { PinVerifier } from "@blackhole/platform/application/ports/pin-verifier";
 import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
+import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
 
+import { authorizationDependencies } from "#src/authorization-access.js";
 import { ApplicationModule } from "#src/application-module.js";
 import { createApplication } from "#src/create-application.js";
 
@@ -86,11 +92,31 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: Clock,
         useValue: dependencies.clock,
       },
-      {
-        provide: SignatureVerifier,
-        useValue: dependencies.signatures,
-      },
-    ]);
+        {
+          provide: SignatureVerifier,
+          useValue: dependencies.signatures,
+        },
+        {
+          provide: AuthorizationRepository,
+          useValue: dependencies.authorizations,
+        },
+        {
+          provide: SessionReader,
+          useValue: dependencies.sessions,
+        },
+        {
+          provide: IdentityReader,
+          useValue: dependencies.identityViews,
+        },
+        {
+          provide: PinVerifier,
+          useValue: dependencies.pinConfirmations,
+        },
+        {
+          provide: AuthorizationClock,
+          useValue: dependencies.authorizationClock,
+        },
+      ]);
     expect(repository).toBe(dependencies.venueOperations);
     expect(repository).toBeInstanceOf(InMemoryVenueOperationRepository);
     expect(organizationRepository).toBe(dependencies.organizations);
@@ -105,14 +131,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
 });
 
 function cloudDependencies() {
+  const identities = new InMemoryIdentityRepository();
+  const clock = new FakeClock(0);
+
   return {
     venueOperations: new InMemoryVenueOperationRepository(),
     organizations: new InMemoryOrganizationRepository(),
-    identities: new InMemoryIdentityRepository(),
+    identities,
     passwords: new FastPasswordHasher(),
     pins: new FastPinHasher(),
     secondFactor: new FastSecondFactor(),
-    clock: new FakeClock(0),
+    clock,
     signatures: new FastSignatureVerifier(),
+    ...authorizationDependencies(identities, clock),
   };
 }
