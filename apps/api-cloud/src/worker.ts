@@ -17,6 +17,7 @@ import type {
   FactusSimulator,
 } from "#src/factus-simulator.js";
 import { infrastructureFromEnv } from "#src/main.js";
+import { startTelemetry } from "#src/telemetry.js";
 
 export interface QueueSnapshotSource {
   queuedCount: number;
@@ -157,6 +158,7 @@ export const startWorker = async (
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<void> => {
   const runtime = infrastructureFromEnv(env);
+  startTelemetry(env);
   const boss = new PgBoss(runtime.databaseUrl);
 
   await boss.start();

@@ -39,7 +39,7 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 
 ## Phase 4: OTLP and Sentry wiring
 
-- [ ] 4.1 Failing test first. `telemetry.test.ts`: empty `OTEL_EXPORTER_OTLP_ENDPOINT` or `SENTRY_DSN` skips export. Failure does not fail the request or `GET /health` `{ "status": "ok" }`. Scrub first. Project `api-cloud`, release `service.version`, optional `SENTRY_ENVIRONMENT`. `telemetry.ts` from `main.ts` and `worker.ts`. SDK deps in `apps/api-cloud/package.json`. No browser SDK.
+- [x] 4.1 Failing test first. `telemetry.test.ts`: empty `OTEL_EXPORTER_OTLP_ENDPOINT` or `SENTRY_DSN` skips export. Failure does not fail the request or `GET /health` `{ "status": "ok" }`. Scrub first. Project `api-cloud`, release `service.version`, optional `SENTRY_ENVIRONMENT`. `telemetry.ts` from `main.ts` and `worker.ts`. SDK deps in `apps/api-cloud/package.json`. No browser SDK.
 
 ## Phase 5: Collector, Grafana, and Sentry
 
