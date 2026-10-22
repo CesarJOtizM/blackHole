@@ -21,8 +21,10 @@
     "#application/ports/*": "./application/ports/*",
     "#application/accept-cloud-write/*": "./application/accept-cloud-write/*",
     "#application/update-structure/*": "./application/update-structure/*",
+    "#application/operate-identity/*": "./application/operate-identity/*",
     "#adapters/*": "./adapters/*",
     "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/crypto/*": "./adapters/crypto/*",
     "#adapters/postgres/*": "./adapters/postgres/*"
   },
   "dependencies": {
