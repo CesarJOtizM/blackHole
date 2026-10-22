@@ -44,7 +44,7 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 ## Phase 5: Collector, Grafana, and Sentry
 
 - [x] 5.1 `infra/modules/common/collector`: pinned contrib image, same redaction. Endpoint only on `infra/modules/{aws,gcp,azure}/service`. Azure plan-only. No `terraform apply`. PWAs stay in `static_bucket`. Cloudflare DNS only (D-40). Leave `common/dns`.
-- [ ] 5.2 `infra/modules/common/grafana`: dashboards site, invoices, cloud, deployment; one panel per catalog metric. Alarms, owner `blackhole`: under 99.5% this month or silent 5 minutes; invoice age over 30 minutes; over 3 rejections in 10 minutes per tax id; first production Sentry issue. No node, sync, wallet, platform-order, or cost panels. No retention (PA-41, p0-06), budget, or wallet source (PA-39).
+- [x] 5.2 `infra/modules/common/grafana`: dashboards site, invoices, cloud, deployment; one panel per catalog metric. Alarms, owner `blackhole`: under 99.5% this month or silent 5 minutes; invoice age over 30 minutes; over 3 rejections in 10 minutes per tax id; first production Sentry issue. No node, sync, wallet, platform-order, or cost panels. No retention (PA-41, p0-06), budget, or wallet source (PA-39).
 - [ ] 5.3 `infra/modules/common/sentry`: free-plan project `api-cloud`. `terraform fmt -check` and `validate` only. Rollout stays the load-balancer 5xx ratio and p95. Sentry does not replace that signal.
 
 ## Phase 6: Catalog check and Factus rate in CI
