@@ -39,29 +39,29 @@ PR 1 base = `p0-04-identity-and-devices`. Later PRs chain.
 
 ## Phase 3: Devices
 
-- [ ] 3.1 RED `application/operate-devices/operate-devices.test.ts`: `issueRegistrationCode`, `registerDevice`, `revokeDevice`, `openFixedStation`, `authorizeOperation`. Sign minus signature. Unsigned, bad, revoked, `siteOffline` do not save. One station. Other station refused. No queue.
-- [ ] 3.2 GREEN `operate-devices.ts`, `application/ports/signature-verifier.ts`, fast verifier, `adapters/crypto/node-public-key-verifier.ts`, `#application/operate-devices/*`. Store `public_key`. Update skeleton.
+- [x] 3.1 RED `application/operate-devices/operate-devices.test.ts`: `issueRegistrationCode`, `registerDevice`, `revokeDevice`, `openFixedStation`, `authorizeOperation`. Sign minus signature. Unsigned, bad, revoked, `siteOffline` do not save. One station. Other station refused. No queue.
+- [x] 3.2 GREEN `operate-devices.ts`, `application/ports/signature-verifier.ts`, fast verifier, `adapters/crypto/node-public-key-verifier.ts`, `#application/operate-devices/*`. Store `public_key`. Update skeleton.
 
 ## Phase 4: Postgres RLS
 
-- [ ] 4.1 RED `adapters/postgres/drizzle-identity-repository.contract.test.ts`: PGlite, `0003_identity.sql`. `identity_app` SELECT without `tenant_id` returns one tenant. No mock. No secrets.
-- [ ] 4.2 GREEN `schema.ts`, `0003_identity.sql`, `drizzle-identity-repository.ts`. `users`, `devices`, `registration_codes`, `sessions`, `identity_changes`. Forced RLS. `save` sets `identity_app` and `app.tenant_id`. Hash and `public_key` columns.
-- [ ] 4.3 Export from `contexts/platform/package.json`. Update skeleton.
+- [x] 4.1 RED `adapters/postgres/drizzle-identity-repository.contract.test.ts`: PGlite, `0003_identity.sql`. `identity_app` SELECT without `tenant_id` returns one tenant. No mock. No secrets.
+- [x] 4.2 GREEN `schema.ts`, `0003_identity.sql`, `drizzle-identity-repository.ts`. `users`, `devices`, `registration_codes`, `sessions`, `identity_changes`. Forced RLS. `save` sets `identity_app` and `app.tenant_id`. Hash and `public_key` columns.
+- [x] 4.3 Export from `contexts/platform/package.json`. Update skeleton.
 
 ## Phase 5: Identity HTTP
 
-- [ ] 5.1 RED `apps/api-cloud/src/operate-identity.controller.test.ts`: inject `POST /tenants/:tenantId/identity`, `x-session-id` → 200; 400 and 409 write nothing. Six keys only. No `listen`.
-- [ ] 5.2 GREEN controller, `create-application.ts`, `application-module.ts`, `shared/contracts/identity.ts`, `index.ts`, `postgres-identity.ts`. Zod. Memory in tests.
+- [x] 5.1 RED `apps/api-cloud/src/operate-identity.controller.test.ts`: inject `POST /tenants/:tenantId/identity`, `x-session-id` → 200; 400 and 409 write nothing. Six keys only. No `listen`.
+- [x] 5.2 GREEN controller, `create-application.ts`, `application-module.ts`, `shared/contracts/identity.ts`, `index.ts`, `postgres-identity.ts`. Zod. Memory in tests.
 
 ## Phase 6: Devices HTTP
 
-- [ ] 6.1 RED `apps/api-cloud/src/operate-devices.controller.test.ts`: inject `POST /tenants/:tenantId/devices` → 200; 400 and 409 write nothing. Unsigned and `siteOffline` do not save.
-- [ ] 6.2 GREEN controller, `shared/contracts/devices.ts`, `index.ts`. Zod. No platform import.
+- [x] 6.1 RED `apps/api-cloud/src/operate-devices.controller.test.ts`: inject `POST /tenants/:tenantId/devices` → 200; 400 and 409 write nothing. Unsigned and `siteOffline` do not save.
+- [x] 6.2 GREEN controller, `shared/contracts/devices.ts`, `index.ts`. Zod. No platform import.
 
 ## Phase 7: Node 403
 
-- [ ] 7.1 RED `apps/local-node/src/operate-identity.controller.test.ts`: POST → 403 `IdentityCommandRejected`; nothing stored.
-- [ ] 7.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
-- [ ] 7.3 RED `apps/local-node/src/operate-devices.controller.test.ts`: POST → 403 `DeviceCommandRejected`; nothing stored.
-- [ ] 7.4 GREEN reject controller.
-- [ ] 7.5 `tools/skeleton/skeleton.test.ts`: allow new files. `apps/venue-app` absent. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.
+- [x] 7.1 RED `apps/local-node/src/operate-identity.controller.test.ts`: POST → 403 `IdentityCommandRejected`; nothing stored.
+- [x] 7.2 GREEN reject controller and `application-module.ts`. No repository. No SQLite.
+- [x] 7.3 RED `apps/local-node/src/operate-devices.controller.test.ts`: POST → 403 `DeviceCommandRejected`; nothing stored.
+- [x] 7.4 GREEN reject controller.
+- [x] 7.5 `tools/skeleton/skeleton.test.ts`: allow new files. `apps/venue-app` absent. Keep `shared/sync`, SQLite, cursor, outbox, pairing, `apps/admin-web` absent.

@@ -1,6 +1,20 @@
+import {
+  FakeClock,
+  FastPasswordHasher,
+  FastPinHasher,
+  FastSecondFactor,
+} from "@blackhole/platform/adapters/memory/fast-identity-doubles";
+import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import { Clock } from "@blackhole/platform/application/ports/clock";
+import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
+import { PasswordHasher } from "@blackhole/platform/application/ports/password-hasher";
+import { PinHasher } from "@blackhole/platform/application/ports/pin-hasher";
+import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
+import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
 
@@ -8,10 +22,7 @@ import { ApplicationModule } from "#src/application-module.js";
 import { createApplication } from "#src/create-application.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
-  const application = await createApplication({
-    venueOperations: new InMemoryVenueOperationRepository(),
-    organizations: new InMemoryOrganizationRepository(),
-  });
+  const application = await createApplication(cloudDependencies());
 
   let listening = true;
 
@@ -25,10 +36,7 @@ it("given api-cloud, when it is created and closed, then no port is listening", 
 });
 
 it("given the created application, when its routes are listed, then there is no health route", async () => {
-  const application = await createApplication({
-    venueOperations: new InMemoryVenueOperationRepository(),
-    organizations: new InMemoryOrganizationRepository(),
-  });
+  const application = await createApplication(cloudDependencies());
 
   try {
     const routes = application.getHttpAdapter().getInstance().printRoutes();
@@ -40,33 +48,71 @@ it("given the created application, when its routes are listed, then there is no 
 });
 
 it("given startup, when it is inspected, then there is no persistence dialect", async () => {
-  const venueOperations = new InMemoryVenueOperationRepository();
-  const organizations = new InMemoryOrganizationRepository();
-  const dependencies = { venueOperations, organizations };
+  const dependencies = cloudDependencies();
   const application = await createApplication(dependencies);
 
   try {
     const registered = ApplicationModule.register(dependencies);
     const repository = application.get(VenueOperationRepository);
     const organizationRepository = application.get(OrganizationRepository);
+    const identityRepository = application.get(IdentityRepository);
 
     expect(registered.providers).toEqual([
       {
         provide: VenueOperationRepository,
-        useValue: venueOperations,
+        useValue: dependencies.venueOperations,
       },
       {
         provide: OrganizationRepository,
-        useValue: organizations,
+        useValue: dependencies.organizations,
+      },
+      {
+        provide: IdentityRepository,
+        useValue: dependencies.identities,
+      },
+      {
+        provide: PasswordHasher,
+        useValue: dependencies.passwords,
+      },
+      {
+        provide: PinHasher,
+        useValue: dependencies.pins,
+      },
+      {
+        provide: SecondFactor,
+        useValue: dependencies.secondFactor,
+      },
+      {
+        provide: Clock,
+        useValue: dependencies.clock,
+      },
+      {
+        provide: SignatureVerifier,
+        useValue: dependencies.signatures,
       },
     ]);
-    expect(repository).toBe(venueOperations);
+    expect(repository).toBe(dependencies.venueOperations);
     expect(repository).toBeInstanceOf(InMemoryVenueOperationRepository);
-    expect(organizationRepository).toBe(organizations);
+    expect(organizationRepository).toBe(dependencies.organizations);
     expect(organizationRepository).toBeInstanceOf(
       InMemoryOrganizationRepository,
     );
+    expect(identityRepository).toBe(dependencies.identities);
+    expect(identityRepository).toBeInstanceOf(InMemoryIdentityRepository);
   } finally {
     await application.close();
   }
 });
+
+function cloudDependencies() {
+  return {
+    venueOperations: new InMemoryVenueOperationRepository(),
+    organizations: new InMemoryOrganizationRepository(),
+    identities: new InMemoryIdentityRepository(),
+    passwords: new FastPasswordHasher(),
+    pins: new FastPinHasher(),
+    secondFactor: new FastSecondFactor(),
+    clock: new FakeClock(0),
+    signatures: new FastSignatureVerifier(),
+  };
+}

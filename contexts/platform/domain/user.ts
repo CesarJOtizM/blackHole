@@ -13,6 +13,16 @@ export interface PublicUser {
   failedFactorAttempts: number;
 }
 
+export interface UserRecord {
+  id: string;
+  displayName: string;
+  passwordHash: string;
+  pinHash: string;
+  factorHash: string | null;
+  failedFactorAttempts: number;
+  active: boolean;
+}
+
 export class User {
   readonly id: string;
   readonly displayName: string;
@@ -41,6 +51,20 @@ export class User {
       input.passwordHash,
       input.pinHash,
     );
+  }
+
+  static restore(record: UserRecord): User {
+    const user = new User(
+      record.id,
+      record.displayName,
+      record.passwordHash,
+      record.pinHash,
+    );
+    user.factorHash = record.factorHash;
+    user.factorFailures = record.failedFactorAttempts;
+    user.deactivated = !record.active;
+
+    return user;
   }
 
   get active(): boolean {
@@ -77,6 +101,18 @@ export class User {
 
   recordFailedFactor(): void {
     this.factorFailures += 1;
+  }
+
+  toRecord(): UserRecord {
+    return {
+      id: this.id,
+      displayName: this.displayName,
+      passwordHash: this.passwordHash,
+      pinHash: this.pinHash,
+      factorHash: this.factorHash,
+      failedFactorAttempts: this.factorFailures,
+      active: this.active,
+    };
   }
 
   toPublic(): PublicUser {

@@ -1,4 +1,16 @@
 export {
+  type DeviceRequest,
+  type DeviceResult,
+  deviceRequest,
+  deviceResult,
+} from "#contracts/devices.js";
+export {
+  type IdentityChanged,
+  identityChanged,
+  identityRequest,
+  type IdentityRequest,
+} from "#contracts/identity.js";
+export {
   type AcceptCloudWriteCommand,
   type AcceptedCloudWrite,
   acceptCloudWriteCommand,

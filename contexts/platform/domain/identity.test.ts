@@ -85,6 +85,7 @@ const personalDevice = (pinAttemptsLocked: boolean) => ({
   publicKey: PUBLIC_KEY,
   pinAttemptsLocked,
   pinFailures: pinAttemptsLocked ? 5 : 0,
+  revoked: false,
 });
 
 it("given an owner who enrolls a second factor, when they sign in without it, then no new administration session starts", () => {
@@ -266,6 +267,7 @@ it("given a registration code hash, when the code is issued, then it expires fiv
       id: REGISTRATION_ID,
       venueId: VENUE_ID,
       expiresAt: ISSUED_AT + FIVE_MINUTES,
+      failedRedeems: 0,
       locked: false,
       used: false,
     },
@@ -366,6 +368,7 @@ it("given five wrong registration redeems, when the fifth is entered, then the c
       id: REGISTRATION_ID,
       venueId: VENUE_ID,
       expiresAt: ISSUED_AT + FIVE_MINUTES,
+      failedRedeems: 5,
       locked: true,
       used: false,
     },
@@ -431,6 +434,7 @@ it("given a TV registered as the grill station, when it opens, then the grill se
       publicKey: STATION_PUBLIC_KEY,
       pinAttemptsLocked: false,
       pinFailures: 0,
+      revoked: false,
     },
   ]);
 
@@ -453,6 +457,59 @@ it("given a TV registered as the grill station, when it opens, then the grill se
   expect(openBar).toThrow(StationRefused);
   expect(startWithPin).toThrow(StationRefused);
   expect(identity.snapshot().sessions).toEqual([session]);
+});
+
+it("given a phone with an open session, when the phone is revoked, then the session ends and a later authorization is refused", () => {
+  const identity = openStaffIdentity();
+  identity.startPinSession({
+    userId: CASHIER_ID,
+    deviceId: DEVICE_ID,
+    pinHash: PIN_HASH,
+    sessionId: "session_cashier",
+  });
+
+  identity.revokeDevice({ deviceId: DEVICE_ID });
+
+  expect(identity.snapshot().sessions).toEqual([]);
+  expect(identity.snapshot().devices[0]?.revoked).toBe(true);
+
+  const authorize = () => {
+    identity.authorizeOperation({
+      deviceId: DEVICE_ID,
+      stationId: null,
+    });
+  };
+
+  expect(authorize).toThrow(/revoked/i);
+  expect(identity.snapshot().sessions).toEqual([]);
+});
+
+it("given a grill station, when it authorizes the grill and then the bar, then the bar is refused and no queue is stored", () => {
+  const identity = Identity.open(TENANT_ID);
+  identity.registerFixedStation({
+    id: STATION_DEVICE_ID,
+    venueId: VENUE_ID,
+    stationId: GRILL_ID,
+    displayName: "Grill",
+    publicKey: STATION_PUBLIC_KEY,
+  });
+  const before = identity.snapshot();
+
+  identity.authorizeOperation({
+    deviceId: STATION_DEVICE_ID,
+    stationId: GRILL_ID,
+  });
+
+  const authorizeBar = () => {
+    identity.authorizeOperation({
+      deviceId: STATION_DEVICE_ID,
+      stationId: BAR_ID,
+    });
+  };
+
+  expect(authorizeBar).toThrow(StationRefused);
+  expect(identity.snapshot()).toEqual(before);
+  expect(JSON.stringify(identity.snapshot())).not.toContain("queue");
 });
 
 it("given a user with open sessions, when the user is deactivated, then those sessions end and a later PIN is denied", () => {

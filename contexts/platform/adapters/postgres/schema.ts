@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
+  boolean,
   integer,
   jsonb,
   pgTable,
@@ -8,6 +10,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { OrganizationSnapshot } from "#application/ports/organization-repository.js";
+import type { IdentitySnapshot } from "#domain/identity.js";
 
 export const venueOperations = pgTable("venue_operations", {
   venueId: text("venue_id").primaryKey(),
@@ -107,4 +110,61 @@ export const organizationChanges = pgTable("organization_changes", {
   afterSnapshot: jsonb("after_snapshot")
     .$type<OrganizationSnapshot>()
     .notNull(),
+});
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  displayName: text("display_name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  pinHash: text("pin_hash").notNull(),
+  factorHash: text("factor_hash"),
+  failedFactorAttempts: integer("failed_factor_attempts").notNull(),
+  active: boolean("active").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const devices = pgTable("devices", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  kind: text("kind").notNull(),
+  stationId: text("station_id"),
+  publicKey: text("public_key").notNull(),
+  displayName: text("display_name").notNull(),
+  pinFailures: integer("pin_failures").notNull(),
+  pinAttemptsLocked: boolean("pin_attempts_locked").notNull(),
+  revoked: boolean("revoked").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const registrationCodes = pgTable("registration_codes", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+  failedRedeems: integer("failed_redeems").notNull(),
+  locked: boolean("locked").notNull(),
+  used: boolean("used").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const sessions = pgTable("sessions", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  userId: text("user_id").notNull(),
+  displayName: text("display_name").notNull(),
+  deviceId: text("device_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  kind: text("kind").notNull(),
+  position: integer("position").notNull(),
+});
+
+export const identityChanges = pgTable("identity_changes", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  position: integer("position").notNull(),
+  beforeSnapshot: jsonb("before_snapshot").$type<IdentitySnapshot>().notNull(),
+  afterSnapshot: jsonb("after_snapshot").$type<IdentitySnapshot>().notNull(),
 });

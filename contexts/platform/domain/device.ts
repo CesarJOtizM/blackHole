@@ -30,6 +30,18 @@ interface DeviceState {
   displayName: string;
 }
 
+export interface DeviceRecord {
+  id: string;
+  venueId: string;
+  kind: DeviceKind;
+  stationId: string | null;
+  publicKey: string;
+  displayName: string;
+  pinFailures: number;
+  pinAttemptsLocked: boolean;
+  revoked: boolean;
+}
+
 export interface PublicDevice {
   id: string;
   venueId: string;
@@ -38,6 +50,7 @@ export interface PublicDevice {
   publicKey: string;
   pinAttemptsLocked: boolean;
   pinFailures: number;
+  revoked: boolean;
 }
 
 export class Device {
@@ -49,6 +62,7 @@ export class Device {
   readonly displayName: string;
   private pinFailures = 0;
   private locked = false;
+  private revokedAt = false;
 
   private constructor(input: DeviceState) {
     this.id = input.id;
@@ -81,6 +95,22 @@ export class Device {
     });
   }
 
+  static restore(record: DeviceRecord): Device {
+    const device = new Device({
+      id: record.id,
+      venueId: record.venueId,
+      kind: record.kind,
+      stationId: record.stationId,
+      publicKey: record.publicKey,
+      displayName: record.displayName,
+    });
+    device.pinFailures = record.pinFailures;
+    device.locked = record.pinAttemptsLocked;
+    device.revokedAt = record.revoked;
+
+    return device;
+  }
+
   get isPersonal(): boolean {
     return this.kind === DEVICE_KIND.PERSONAL;
   }
@@ -91,6 +121,14 @@ export class Device {
 
   get pinAttemptsLocked(): boolean {
     return this.locked;
+  }
+
+  get revoked(): boolean {
+    return this.revokedAt;
+  }
+
+  revoke(): void {
+    this.revokedAt = true;
   }
 
   recordFailedPin(): void {
@@ -106,6 +144,20 @@ export class Device {
     this.locked = false;
   }
 
+  toRecord(): DeviceRecord {
+    return {
+      id: this.id,
+      venueId: this.venueId,
+      kind: this.kind,
+      stationId: this.stationId,
+      publicKey: this.publicKey,
+      displayName: this.displayName,
+      pinFailures: this.pinFailures,
+      pinAttemptsLocked: this.locked,
+      revoked: this.revokedAt,
+    };
+  }
+
   toPublic(): PublicDevice {
     return {
       id: this.id,
@@ -115,6 +167,7 @@ export class Device {
       publicKey: this.publicKey,
       pinAttemptsLocked: this.locked,
       pinFailures: this.pinFailures,
+      revoked: this.revokedAt,
     };
   }
 }

@@ -134,8 +134,10 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
     declarations.map((filePath) => path.relative(platform, filePath)).sort(),
   ).toEqual(
     [
+      path.join("adapters", "crypto", "node-public-key-verifier.ts"),
       path.join("adapters", "crypto", "slow-salted-hasher.ts"),
       path.join("adapters", "memory", "fast-identity-doubles.ts"),
+      path.join("adapters", "memory", "fast-signature-verifier.ts"),
       path.join("adapters", "memory", "in-memory-identity-repository.ts"),
       path.join("adapters", "memory", "in-memory-organization-repository.ts"),
       path.join(
@@ -143,6 +145,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "memory",
         "in-memory-venue-operation-repository.ts",
       ),
+      path.join("adapters", "postgres", "drizzle-identity-repository.ts"),
       path.join("adapters", "postgres", "drizzle-organization-repository.ts"),
       path.join(
         "adapters",
@@ -150,6 +153,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "drizzle-venue-operation-repository.ts",
       ),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
+      path.join("application", "operate-devices", "operate-devices.ts"),
       path.join("application", "operate-identity", "operate-identity.ts"),
       path.join("application", "ports", "clock.ts"),
       path.join("application", "ports", "identity-repository.ts"),
@@ -159,6 +163,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
       path.join("application", "ports", "password-hasher.ts"),
       path.join("application", "ports", "pin-hasher.ts"),
       path.join("application", "ports", "second-factor.ts"),
+      path.join("application", "ports", "signature-verifier.ts"),
       path.join("application", "ports", "venue-operation-repository.ts"),
       path.join(
         "application",
@@ -192,6 +197,10 @@ it("given local-node, when its sources are listed, then the structure rejection 
       "application-module.ts",
       "bootstrap.test.ts",
       "create-application.ts",
+      "operate-devices.controller.test.ts",
+      "operate-devices.controller.ts",
+      "operate-identity.controller.test.ts",
+      "operate-identity.controller.ts",
       "update-structure.controller.test.ts",
       "update-structure.controller.ts",
     ].sort(),
@@ -221,6 +230,7 @@ it("given domain, when the module is analyzed, then it exports the layer, the ve
   const keys = Object.keys(module).sort();
 
   expect(keys).toEqual([
+    "DeviceRevoked",
     "DuplicateIdentityId",
     "DuplicateNit",
     "DuplicateOrganizationId",

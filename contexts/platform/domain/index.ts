@@ -1,6 +1,7 @@
 export const layer = "domain" as const;
 
 export {
+  DeviceRevoked,
   DuplicateIdentityId,
   Identity,
   InvalidIdentityId,

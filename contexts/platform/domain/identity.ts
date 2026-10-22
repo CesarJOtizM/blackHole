@@ -1,5 +1,5 @@
-import { Device } from "#domain/device.js";
-import { User } from "#domain/user.js";
+import { type DeviceRecord, Device } from "#domain/device.js";
+import { type UserRecord, User } from "#domain/user.js";
 
 const USER_ID_PREFIX = "user_";
 const DEVICE_ID_PREFIX = "device_";
@@ -25,7 +25,16 @@ export interface Session {
   kind: SessionKind;
 }
 
-interface RegistrationCode {
+interface PublicRegistrationCode {
+  id: string;
+  venueId: string;
+  expiresAt: number;
+  failedRedeems: number;
+  locked: boolean;
+  used: boolean;
+}
+
+export interface RegistrationCodeRecord {
   id: string;
   venueId: string;
   codeHash: string;
@@ -35,12 +44,12 @@ interface RegistrationCode {
   used: boolean;
 }
 
-interface PublicRegistrationCode {
-  id: string;
-  venueId: string;
-  expiresAt: number;
-  locked: boolean;
-  used: boolean;
+export interface IdentityRecord {
+  tenantId: string;
+  users: UserRecord[];
+  devices: DeviceRecord[];
+  registrationCodes: RegistrationCodeRecord[];
+  sessions: Session[];
 }
 
 export interface IdentitySnapshot {
@@ -111,6 +120,15 @@ interface OpenFixedStation {
   deviceId: string;
   sessionId: string;
   stationId: string;
+}
+
+interface RevokeDevice {
+  deviceId: string;
+}
+
+interface AuthorizeOperation {
+  deviceId: string;
+  stationId: string | null;
 }
 
 interface DeactivateUser {
@@ -196,6 +214,13 @@ export class RegistrationCodeExpired extends Error {
   }
 }
 
+export class DeviceRevoked extends Error {
+  constructor() {
+    super("The device is revoked.");
+    this.name = "DeviceRevoked";
+  }
+}
+
 export class StationRefused extends Error {
   constructor() {
     super("The fixed station device cannot open that station.");
@@ -228,7 +253,7 @@ export class Identity {
   private readonly takenIds = new Set<string>();
   private readonly userList: User[] = [];
   private readonly deviceList: Device[] = [];
-  private readonly codeList: RegistrationCode[] = [];
+  private readonly codeList: RegistrationCodeRecord[] = [];
   private sessionList: Session[] = [];
 
   private constructor(tenantId: string) {
@@ -237,6 +262,29 @@ export class Identity {
 
   static open(tenantId: string): Identity {
     return new Identity(tenantId);
+  }
+
+  static restore(record: IdentityRecord): Identity {
+    const identity = new Identity(record.tenantId);
+
+    for (const user of record.users) {
+      identity.takenIds.add(user.id);
+      identity.userList.push(User.restore(user));
+    }
+
+    for (const device of record.devices) {
+      identity.takenIds.add(device.id);
+      identity.deviceList.push(Device.restore(device));
+    }
+
+    for (const code of record.registrationCodes) {
+      identity.takenIds.add(code.id);
+      identity.codeList.push({ ...code });
+    }
+
+    identity.sessionList = record.sessions.map((session) => ({ ...session }));
+
+    return identity;
   }
 
   registerUser(input: RegisterUser): void {
@@ -275,6 +323,7 @@ export class Identity {
     const user = this.userById(input.userId);
     this.assertActive(user);
     const device = this.deviceById(input.deviceId);
+    this.assertOperable(device);
     this.assertPersonalDevice(device);
     this.assertPin(user, device, input.pinHash);
     device.resetPinAttempts();
@@ -340,6 +389,7 @@ export class Identity {
     assertPrefixed(input.deviceId, DEVICE_ID_PREFIX);
     assertPrefixed(input.sessionId, SESSION_ID_PREFIX);
     const device = this.deviceById(input.deviceId);
+    this.assertOperable(device);
 
     if (!device.isFixedStation || device.stationId !== input.stationId) {
       throw new StationRefused();
@@ -355,6 +405,30 @@ export class Identity {
     });
   }
 
+  revokeDevice(input: RevokeDevice): void {
+    assertPrefixed(input.deviceId, DEVICE_ID_PREFIX);
+    const device = this.deviceById(input.deviceId);
+
+    if (device.revoked) {
+      throw new DeviceRevoked();
+    }
+
+    device.revoke();
+    this.sessionList = this.sessionList.filter(
+      (session) => session.deviceId !== device.id,
+    );
+  }
+
+  authorizeOperation(input: AuthorizeOperation): void {
+    assertPrefixed(input.deviceId, DEVICE_ID_PREFIX);
+    const device = this.deviceById(input.deviceId);
+    this.assertOperable(device);
+
+    if (device.stationId !== input.stationId) {
+      throw new StationRefused();
+    }
+  }
+
   deactivateUser(input: DeactivateUser): void {
     assertPrefixed(input.userId, USER_ID_PREFIX);
     const user = this.userById(input.userId);
@@ -362,6 +436,16 @@ export class Identity {
     this.sessionList = this.sessionList.filter(
       (session) => session.userId !== user.id,
     );
+  }
+
+  toRecord(): IdentityRecord {
+    return {
+      tenantId: this.tenantId,
+      users: this.userList.map((user) => user.toRecord()),
+      devices: this.deviceList.map((device) => device.toRecord()),
+      registrationCodes: this.codeList.map((code) => ({ ...code })),
+      sessions: this.sessionList.map((session) => ({ ...session })),
+    };
   }
 
   snapshot(): IdentitySnapshot {
@@ -373,6 +457,7 @@ export class Identity {
         id: code.id,
         venueId: code.venueId,
         expiresAt: code.expiresAt,
+        failedRedeems: code.failedRedeems,
         locked: code.locked,
         used: code.used,
       })),
@@ -408,7 +493,7 @@ export class Identity {
     return device;
   }
 
-  private codeById(id: string): RegistrationCode {
+  private codeById(id: string): RegistrationCodeRecord {
     const code = this.codeList.find((item) => item.id === id);
 
     if (!code) {
@@ -445,6 +530,12 @@ export class Identity {
     }
   }
 
+  private assertOperable(device: Device): void {
+    if (device.revoked) {
+      throw new DeviceRevoked();
+    }
+  }
+
   private assertPersonalDevice(device: Device): void {
     if (!device.isPersonal) {
       throw new StationRefused();
@@ -470,7 +561,7 @@ export class Identity {
   }
 
   private assertCodeAccepts(
-    code: RegistrationCode,
+    code: RegistrationCodeRecord,
     input: RegisterDevice,
   ): void {
     if (code.used) {
@@ -490,7 +581,7 @@ export class Identity {
     }
   }
 
-  private recordFailedRedeem(code: RegistrationCode): never {
+  private recordFailedRedeem(code: RegistrationCodeRecord): never {
     code.failedRedeems += 1;
 
     if (code.failedRedeems >= REDEEM_ATTEMPT_LIMIT) {

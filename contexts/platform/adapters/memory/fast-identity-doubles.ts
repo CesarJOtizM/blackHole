@@ -3,6 +3,9 @@ import { PasswordHasher } from "#application/ports/password-hasher.js";
 import { PinHasher } from "#application/ports/pin-hasher.js";
 import { SecondFactor } from "#application/ports/second-factor.js";
 
+export const signFast = (publicKey: string, payload: string): string =>
+  `signature:${publicKey}:${payload}`;
+
 export class FastPasswordHasher extends PasswordHasher {
   override async hash(password: string): Promise<string> {
     return `password-hash:${password}`;
