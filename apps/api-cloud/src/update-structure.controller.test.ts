@@ -1,4 +1,12 @@
 import type { OrganizationChanged } from "@blackhole/contracts";
+import {
+  FakeClock,
+  FastPasswordHasher,
+  FastPinHasher,
+  FastSecondFactor,
+} from "@blackhole/platform/adapters/memory/fast-identity-doubles";
+import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
@@ -261,6 +269,12 @@ async function openCloud() {
   const application = await createApplication({
     venueOperations: new InMemoryVenueOperationRepository(),
     organizations,
+    identities: new InMemoryIdentityRepository(),
+    passwords: new FastPasswordHasher(),
+    pins: new FastPinHasher(),
+    secondFactor: new FastSecondFactor(),
+    clock: new FakeClock(0),
+    signatures: new FastSignatureVerifier(),
   });
 
   return { application, organizations };
