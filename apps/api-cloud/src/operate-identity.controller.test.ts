@@ -5,8 +5,11 @@ import {
   FastSecondFactor,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
+import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
@@ -59,9 +62,9 @@ it("given an owner, when signInAdministration is posted with x-session-id, then 
         kind: "administration",
       },
     ]);
-    expect(
-      (await identities.load(tenantId))?.snapshot().sessions,
-    ).toHaveLength(1);
+    expect((await identities.load(tenantId))?.snapshot().sessions).toHaveLength(
+      1,
+    );
     expect(await identities.eventsFor(tenantId)).toHaveLength(2);
   } finally {
     await application.close();
@@ -136,6 +139,9 @@ async function openCloud() {
     clock,
     signatures: new FastSignatureVerifier(),
     ...authorizationDependencies(identities, clock),
+    fileStorage: new InMemoryFileStorage(),
+    secrets: new InMemorySecrets({}),
+    metrics: new InMemoryRuntimeMetrics(),
   });
 
   return { application, identities };

@@ -5,8 +5,11 @@ import {
   FastSecondFactor,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
+import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
 
@@ -159,9 +162,7 @@ it("given an accepted write, when the same writeId is posted again, then the res
   }
 });
 
-function cloudDependencies(
-  venueOperations: InMemoryVenueOperationRepository,
-) {
+function cloudDependencies(venueOperations: InMemoryVenueOperationRepository) {
   const identities = new InMemoryIdentityRepository();
   const clock = new FakeClock(0);
 
@@ -175,5 +176,8 @@ function cloudDependencies(
     clock,
     signatures: new FastSignatureVerifier(),
     ...authorizationDependencies(identities, clock),
+    fileStorage: new InMemoryFileStorage(),
+    secrets: new InMemorySecrets({}),
+    metrics: new InMemoryRuntimeMetrics(),
   };
 }

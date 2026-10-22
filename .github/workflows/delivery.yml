@@ -1,0 +1,185 @@
+name: delivery
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PRODUCTION_CLOUD: ${{ vars.PRODUCTION_CLOUD }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome check .
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm architecture
+
+  release:
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: staging-${{ vars.PRODUCTION_CLOUD }}
+    outputs:
+      digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse Azure
+        run: |
+          case "$PRODUCTION_CLOUD" in
+            aws|gcp) ;;
+            *) echo "Apply stays on AWS or GCP"; exit 1 ;;
+          esac
+      - name: Build one image
+        id: image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --file apps/api-cloud/Dockerfile \
+            --tag blackhole-api \
+            --metadata-file /tmp/image.json \
+            --load \
+            .
+          echo "digest=$(jq -r '."containerimage.digest"' /tmp/image.json)" >> "$GITHUB_OUTPUT"
+      - name: Block a critical vulnerability
+        run: trivy image --exit-code 1 --severity CRITICAL "blackhole-api@${{ steps.image.outputs.digest }}"
+      - name: Authenticate to AWS
+        if: env.PRODUCTION_CLOUD == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Authenticate to GCP
+        if: env.PRODUCTION_CLOUD == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Publish the same digest
+        env:
+          REGISTRY: ${{ vars.REGISTRY_URL }}
+        run: docker buildx imagetools create --tag "$REGISTRY/blackhole-api@${{ steps.image.outputs.digest }}" "blackhole-api@${{ steps.image.outputs.digest }}"
+      - name: Upload source maps with the Sentry release token
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: npx @sentry/cli releases files "${{ steps.image.outputs.digest }}" upload-sourcemaps dist
+      - name: Upload PWAs to the static bucket
+        env:
+          STATIC_BUCKET: ${{ vars.STATIC_BUCKET }}
+        run: |
+          if [ "$PRODUCTION_CLOUD" = "aws" ]; then
+            aws s3 sync dist "s3://${STATIC_BUCKET}" --exclude "*.map"
+          else
+            gcloud storage rsync dist "gs://${STATIC_BUCKET}" --exclude ".*\\.map"
+          fi
+
+  staging:
+    needs: release
+    runs-on: ubuntu-latest
+    environment: staging-${{ vars.PRODUCTION_CLOUD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Authenticate to AWS
+        if: env.PRODUCTION_CLOUD == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Authenticate to GCP
+        if: env.PRODUCTION_CLOUD == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Migrate staging and deploy the digest
+        working-directory: infra/environments/staging-${{ vars.PRODUCTION_CLOUD }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}"
+      - name: Smoke
+        env:
+          SMOKE_BASE_URL: ${{ vars.STAGING_API_URL }}
+        run: node tools/delivery/smoke.mjs
+
+  production:
+    needs: [release, staging]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Authenticate to AWS
+        if: env.PRODUCTION_CLOUD == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Authenticate to GCP
+        if: env.PRODUCTION_CLOUD == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Record the previous digest
+        id: previous
+        run: echo "digest=${{ vars.PRODUCTION_DIGEST }}" >> "$GITHUB_OUTPUT"
+      - name: Migrate production and shift part of the instances
+        working-directory: infra/environments/production-${{ vars.PRODUCTION_CLOUD }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}"
+      - name: Read the load balancer 5xx ratio and p95
+        id: signals
+        run: |
+          set -euo pipefail
+          end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          middle=$(date -u -d "5 minutes ago" +%Y-%m-%dT%H:%M:%SZ)
+          start=$(date -u -d "10 minutes ago" +%Y-%m-%dT%H:%M:%SZ)
+          window() {
+            local window_start="$1"
+            local window_end="$2"
+            if [ "$PRODUCTION_CLOUD" = "aws" ]; then
+              arn=$(aws elbv2 describe-load-balancers --names production-aws-api --query "LoadBalancers[0].LoadBalancerArn" --output text)
+              dimension=${arn#*loadbalancer/}
+              errors=$(aws cloudwatch get-metric-statistics --namespace AWS/ApplicationELB --metric-name HTTPCode_Target_5XX_Count --dimensions Name=LoadBalancer,Value="$dimension" --start-time "$window_start" --end-time "$window_end" --period 300 --statistics Sum --query "Datapoints[0].Sum" --output text)
+              requests=$(aws cloudwatch get-metric-statistics --namespace AWS/ApplicationELB --metric-name RequestCount --dimensions Name=LoadBalancer,Value="$dimension" --start-time "$window_start" --end-time "$window_end" --period 300 --statistics Sum --query "Datapoints[0].Sum" --output text)
+              latency=$(aws cloudwatch get-metric-statistics --namespace AWS/ApplicationELB --metric-name TargetResponseTime --dimensions Name=LoadBalancer,Value="$dimension" --start-time "$window_start" --end-time "$window_end" --period 300 --extended-statistics p95 --query "Datapoints[0].ExtendedStatistics.p95" --output text)
+            else
+              filter="resource.labels.service_name=\"production-gcp-api\" AND metric.type=\"run.googleapis.com/request_count\""
+              errors=$(gcloud monitoring time-series list --filter "$filter AND metric.labels.response_code_class=\"5xx\"" --interval-start-time="$window_start" --interval-end-time="$window_end" --format="value(points[0].value.int64Value)")
+              requests=$(gcloud monitoring time-series list --filter "$filter" --interval-start-time="$window_start" --interval-end-time="$window_end" --format="value(points[0].value.int64Value)")
+              latency=$(gcloud monitoring time-series list --filter "resource.labels.service_name=\"production-gcp-api\" AND metric.type=\"run.googleapis.com/request_latencies\"" --interval-start-time="$window_start" --interval-end-time="$window_end" --format="value(points[0].value.distributionValue.mean)")
+            fi
+            if [ "$requests" = "None" ] || [ -z "$requests" ] || [ "$requests" = "0" ]; then
+              echo "nan nan"
+            else
+              echo "$(node -e "console.log(Number(process.argv[1]) / Number(process.argv[2]))" "$errors" "$requests") $latency"
+            fi
+          }
+          read -r previous_error previous_p95 <<<"$(window "$start" "$middle")"
+          read -r current_error current_p95 <<<"$(window "$middle" "$end")"
+          node tools/delivery/compare-signals.mjs \
+            --previous-error "$previous_error" \
+            --current-error "$current_error" \
+            --previous-p95 "$previous_p95" \
+            --current-p95 "$current_p95" >> "$GITHUB_OUTPUT"
+      - name: Return to the previous digest without a database change
+        if: steps.signals.outputs.worsened == 'true'
+        working-directory: infra/environments/production-${{ vars.PRODUCTION_CLOUD }}
+        run: terraform apply -auto-approve -input=false -var "git_ref=${{ steps.previous.outputs.digest }}"
+      - name: Finish the rollout when 5xx and p95 hold
+        if: steps.signals.outputs.worsened != 'true'
+        working-directory: infra/environments/production-${{ vars.PRODUCTION_CLOUD }}
+        run: terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}"

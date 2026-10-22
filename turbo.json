@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": ["SMOKE_BASE_URL"],
   "tasks": {
     "test": {},
     "typecheck": {},

@@ -1,0 +1,60 @@
+name: rehearsal
+
+on:
+  schedule:
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-latest
+    environment: rehearsal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Choose the non-production AWS or GCP cloud
+        id: target
+        env:
+          PRODUCTION_CLOUD: ${{ vars.PRODUCTION_CLOUD }}
+        run: |
+          if [ "$PRODUCTION_CLOUD" = "aws" ]; then
+            echo "cloud=gcp" >> "$GITHUB_OUTPUT"
+          elif [ "$PRODUCTION_CLOUD" = "gcp" ]; then
+            echo "cloud=aws" >> "$GITHUB_OUTPUT"
+          else
+            echo "Rehearsal stays on AWS or GCP"
+            exit 1
+          fi
+      - name: Authenticate to AWS
+        if: steps.target.outputs.cloud == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Authenticate to GCP
+        if: steps.target.outputs.cloud == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Apply non-production staging
+        id: apply
+        working-directory: infra/environments/staging-${{ steps.target.outputs.cloud }}
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false -var "git_ref=${{ github.sha }}"
+          echo "api_hostname=$(terraform output -raw api_hostname)" >> "$GITHUB_OUTPUT"
+      - name: Restore the encrypted dump
+        run: echo "restore the latest encrypted dump into staging-${{ steps.target.outputs.cloud }}"
+      - name: Smoke
+        env:
+          SMOKE_BASE_URL: https://${{ steps.apply.outputs.api_hostname }}
+        run: node tools/delivery/smoke.mjs
+      - name: Destroy the rehearsal
+        if: always()
+        working-directory: infra/environments/staging-${{ steps.target.outputs.cloud }}
+        run: terraform destroy -auto-approve -input=false -var "git_ref=${{ github.sha }}"

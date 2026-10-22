@@ -32,7 +32,6 @@ const absent = [
   "apps/venue-app",
   "apps/customer-portal",
   "contexts/platform/adapters/sqlite",
-  "infra",
 ] as const;
 
 const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
@@ -134,13 +133,19 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
     declarations.map((filePath) => path.relative(platform, filePath)).sort(),
   ).toEqual(
     [
+      path.join("adapters", "blob", "blob-file-storage.ts"),
       path.join("adapters", "crypto", "node-public-key-verifier.ts"),
       path.join("adapters", "crypto", "slow-salted-hasher.ts"),
+      path.join("adapters", "disk", "disk-file-storage.ts"),
+      path.join("adapters", "gcs", "gcs-file-storage.ts"),
       path.join("adapters", "memory", "authorization-doubles.ts"),
       path.join("adapters", "memory", "fast-identity-doubles.ts"),
       path.join("adapters", "memory", "fast-signature-verifier.ts"),
       path.join("adapters", "memory", "in-memory-authorization-repository.ts"),
+      path.join("adapters", "memory", "in-memory-file-storage.ts"),
       path.join("adapters", "memory", "in-memory-identity-repository.ts"),
+      path.join("adapters", "memory", "in-memory-runtime-metrics.ts"),
+      path.join("adapters", "memory", "in-memory-secrets.ts"),
       path.join("adapters", "memory", "in-memory-organization-repository.ts"),
       path.join(
         "adapters",
@@ -155,6 +160,15 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
         "postgres",
         "drizzle-venue-operation-repository.ts",
       ),
+      path.join("adapters", "s3", "s3-file-storage.ts"),
+      path.join("adapters", "secrets-aws", "aws-secrets.ts"),
+      path.join("adapters", "secrets-azure", "azure-secrets.ts"),
+      path.join("adapters", "secrets-file", "file-secrets.ts"),
+      path.join("adapters", "secrets-gcp", "gcp-secrets.ts"),
+      path.join("adapters", "metrics-aws", "aws-runtime-metrics.ts"),
+      path.join("adapters", "metrics-azure", "azure-runtime-metrics.ts"),
+      path.join("adapters", "metrics-gcp", "gcp-runtime-metrics.ts"),
+      path.join("adapters", "metrics-log", "log-runtime-metrics.ts"),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
       path.join("application", "evaluate-permission", "evaluate-permission.ts"),
       path.join("application", "operate-authorization", "operate-authorization.ts"),
@@ -164,6 +178,8 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
       path.join("application", "ports", "authorization-repository.ts"),
       path.join("application", "ports", "authorization-repository.contract.ts"),
       path.join("application", "ports", "clock.ts"),
+      path.join("application", "ports", "file-storage.contract.ts"),
+      path.join("application", "ports", "file-storage.ts"),
       path.join("application", "ports", "identity-reader.ts"),
       path.join("application", "ports", "identity-repository.ts"),
       path.join("application", "ports", "identity-repository.contract.ts"),
@@ -172,7 +188,11 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
       path.join("application", "ports", "password-hasher.ts"),
       path.join("application", "ports", "pin-hasher.ts"),
       path.join("application", "ports", "pin-verifier.ts"),
+      path.join("application", "ports", "runtime-metrics.contract.ts"),
+      path.join("application", "ports", "runtime-metrics.ts"),
       path.join("application", "ports", "second-factor.ts"),
+      path.join("application", "ports", "secrets.contract.ts"),
+      path.join("application", "ports", "secrets.ts"),
       path.join("application", "ports", "session-reader.ts"),
       path.join("application", "ports", "signature-verifier.ts"),
       path.join("application", "ports", "venue-operation-repository.ts"),
@@ -222,6 +242,17 @@ it("given local-node, when its sources are listed, then the structure rejection 
   expect(existsSync(path.join(root, "shared/sync"))).toBe(false);
   expect(existsSync(path.join(root, "apps/admin-web"))).toBe(false);
   expect(deferredCopies).toEqual([]);
+});
+
+it("given compose, when its services are listed, then only postgres, api, and worker exist", () => {
+  const compose = readFileSync(path.join(root, "docker-compose.yml"), "utf8");
+  const services = compose.split(/^services:\r?\n/m)[1] ?? "";
+  const names = [...services.matchAll(/^ {2}([a-z0-9-]+):\r?$/gm)].map(
+    (match) => match[1],
+  );
+
+  expect(names).toEqual(["postgres", "api", "worker"]);
+  expect(compose).not.toMatch(/local-node|sqlite/i);
 });
 
 it("given the platform package, when its layers are listed, then domain, application, and adapters exist", () => {
