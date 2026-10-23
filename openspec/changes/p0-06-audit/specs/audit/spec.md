@@ -48,39 +48,6 @@ Each event MUST include the hash of the previous event of the same device and a 
 - WHEN each chain is verified
 - THEN both are valid independently
 
-### Requirement: Cloud Detects Tampering
-
-When a batch arrives, the cloud MUST verify each device chain against the last verified hash it holds. An altered event, a deleted event or a reordered sequence MUST produce a finding for the tenant. A finding MUST NOT be deletable or dismissable without leaving its own audit event.
-
-#### Scenario: Altered event
-- GIVEN a node where a void amount was changed in SQLite
-- WHEN its batch reaches the cloud
-- THEN the chain fails and a finding names device and sequence
-
-#### Scenario: Deleted event
-- GIVEN a node where one event was deleted
-- WHEN the batch arrives
-- THEN the sequence gap produces a finding
-
-#### Scenario: Rewritten confirmed history
-- GIVEN events already verified by the cloud
-- WHEN the node later sends a rebuilt chain for them
-- THEN a finding is produced and the stored events are kept
-
-### Requirement: Offline Continuity
-
-In hybrid mode the node MUST keep appending events during a cut and upload them later in sync priority, after invoice documents and confirmed QR payments and before sales. In cloud mode no audit event is produced by the site during a cut because no operation occurs.
-
-#### Scenario: Cut of two hours
-- GIVEN a hybrid node offline for 2 hours with 40 audit events
-- WHEN internet returns
-- THEN all 40 reach the cloud and verify
-
-#### Scenario: Cloud site during a cut
-- GIVEN a cloud-mode site offline
-- WHEN staff try an action
-- THEN nothing runs and no event is produced
-
 ### Requirement: Scoped Read Access
 
 Audit MUST be readable by owner and general manager for the company, by a site administrator only for their site, and by the auditor role read-only. Nobody else MUST read it.
@@ -94,3 +61,15 @@ Audit MUST be readable by owner and general manager for the company, by a site a
 - GIVEN an auditor
 - WHEN they read company audit
 - THEN it is shown with no write action available
+
+## Deferred to the hybrid phase (D-37)
+
+These notes are not scenarios of this cloud change.
+
+### Cloud detects tampering on a node batch
+
+When a batch arrives, the cloud verifies each device chain against the last verified hash. An altered event, a deleted event, or a reordered sequence produces a finding. A finding is not deletable or dismissable without its own audit event. The node batch, the last verified hash, and a rewritten confirmed history wait for the hybrid phase.
+
+### Offline continuity
+
+In hybrid mode the node keeps appending during a cut and uploads later, after invoice documents and confirmed QR payments and before sales. In cloud mode a cut produces no audit event because no operation occurs.

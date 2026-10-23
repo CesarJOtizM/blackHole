@@ -10,10 +10,13 @@ import type {
 } from "#application/ports/audit-repository.js";
 import type { Clock } from "#application/ports/clock.js";
 import {
+  AuditSequenceConflict,
   DeviceChain,
   GENESIS_PREVIOUS_HASH,
   MissingActor,
 } from "#domain/audit.js";
+
+const ATTEMPTS = 4;
 
 export interface RecordAuditCommand {
   tenantId: string;
@@ -40,6 +43,23 @@ export class RecordAuditEvent {
       throw new MissingActor();
     }
 
+    for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
+      try {
+        return await this.record(command);
+      } catch (error: unknown) {
+        if (
+          !(error instanceof AuditSequenceConflict) ||
+          attempt === ATTEMPTS - 1
+        ) {
+          throw error;
+        }
+      }
+    }
+
+    throw new AuditSequenceConflict();
+  }
+
+  private async record(command: RecordAuditCommand): Promise<AuditEvent> {
     const stored = await this.audits.list(command.tenantId, command.deviceId);
     const finding = await inspectDevice(
       this.digests,

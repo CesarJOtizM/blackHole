@@ -57,3 +57,8 @@ CREATE TRIGGER audit_events_reject_delete
   BEFORE DELETE ON audit_events
   FOR EACH ROW
   EXECUTE FUNCTION audit_events_reject_mutation();
+
+CREATE TRIGGER audit_events_reject_truncate
+  BEFORE TRUNCATE ON audit_events
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION audit_events_reject_mutation();

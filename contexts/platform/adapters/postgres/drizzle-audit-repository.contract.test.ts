@@ -87,7 +87,7 @@ it("given audit_app, when it inserts a row for the current tenant, then the inse
   expect(selected.rows.map((row) => row.id)).toEqual(["audit_insert"]);
 });
 
-it("given a stored audit event, when the table owner updates or deletes it, then the trigger rejects both and the row stays", async () => {
+it("given a stored audit event, when the table owner updates, deletes, or truncates it, then the trigger rejects each and the row stays", async () => {
   const client = await open();
   await client.exec(`
     INSERT INTO audit_events (
@@ -105,6 +105,9 @@ it("given a stored audit event, when the table owner updates or deletes it, then
     client.exec("UPDATE audit_events SET reason = 'tampered'"),
   ).rejects.toThrow(/append-only/);
   await expect(client.exec("DELETE FROM audit_events")).rejects.toThrow(
+    /append-only/,
+  );
+  await expect(client.exec("TRUNCATE audit_events")).rejects.toThrow(
     /append-only/,
   );
 

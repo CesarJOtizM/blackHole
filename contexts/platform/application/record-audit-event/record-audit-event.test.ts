@@ -125,3 +125,19 @@ it("given a tail whose digest was altered, when another event is recorded, then 
     }),
   );
 });
+
+it("given two different events for one device at the same time, when both are recorded, then both stay stored", async () => {
+  const { audits, record } = harness();
+
+  await Promise.all([
+    record.execute(command),
+    record.execute({ ...command, entity: "check_2", action: "sale.comp" }),
+  ]);
+
+  const stored = await audits.list(TENANT_ID, DEVICE_ID);
+  expect(stored).toHaveLength(2);
+  expect(stored.map((event) => event.sequence).sort()).toEqual([1, 2]);
+  expect(new Set(stored.map((event) => event.entity))).toEqual(
+    new Set(["check_1", "check_2"]),
+  );
+});
