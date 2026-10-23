@@ -125,36 +125,36 @@ locals {
 
   alarms = {
     availability = {
-      metric    = "http.server.requests"
-      summary   = "availability under 99.5% this month or silent for 5 minutes"
-      expr      = "(sum(increase(http_server_requests_total{status!~\"5..\"}[30d])) / sum(increase(http_server_requests_total[30d])) < bool 0.995) or absent_over_time(http_server_requests_total[5m])"
-      from      = 2592000
-      no_data   = "OK"
-      exec_err  = "Alerting"
+      metric   = "http.server.requests"
+      summary  = "availability under 99.5% this month or silent for 5 minutes"
+      expr     = "(sum(increase(http_server_requests_total{status!~\"5..\"}[30d])) / sum(increase(http_server_requests_total[30d])) < bool 0.995) or absent_over_time(http_server_requests_total[5m])"
+      from     = 2592000
+      no_data  = "OK"
+      exec_err = "Alerting"
     }
     invoice_age = {
-      metric    = "invoices.max_age_seconds"
-      summary   = "invoice age over 30 minutes"
-      expr      = "max(invoices_max_age_seconds) > bool 1800"
-      from      = 600
-      no_data   = "OK"
-      exec_err  = "Error"
+      metric   = "invoices.max_age_seconds"
+      summary  = "invoice age over 30 minutes"
+      expr     = "max(invoices_max_age_seconds) > bool 1800"
+      from     = 600
+      no_data  = "OK"
+      exec_err = "Error"
     }
     rejections = {
-      metric    = "factus.responses"
-      summary   = "more than 3 rejections in 10 minutes per tax id"
-      expr      = "sum by (tax_id) (increase(factus_responses_total{status=\"rejected\"}[10m])) > bool 3"
-      from      = 600
-      no_data   = "OK"
-      exec_err  = "Error"
+      metric   = "factus.responses"
+      summary  = "more than 3 rejections in 10 minutes per tax id"
+      expr     = "sum by (tax_id) (increase(factus_responses_total{status=\"rejected\"}[10m])) > bool 3"
+      from     = 600
+      no_data  = "OK"
+      exec_err = "Error"
     }
     first_production_sentry_issue = {
-      metric    = ""
-      summary   = "first production Sentry issue"
-      expr      = "max(sentry_issues{environment=\"production\"}) >= bool 1"
-      from      = 600
-      no_data   = "OK"
-      exec_err  = "Error"
+      metric   = ""
+      summary  = "first production Sentry issue"
+      expr     = "max(sentry_issues{environment=\"production\"}) >= bool 1"
+      from     = 600
+      no_data  = "OK"
+      exec_err = "Error"
     }
   }
 }
@@ -165,8 +165,8 @@ resource "grafana_folder" "blackhole" {
 }
 
 resource "grafana_dashboard" "catalog" {
-  for_each    = local.dashboards
-  folder      = grafana_folder.blackhole.uid
+  for_each = local.dashboards
+  folder   = grafana_folder.blackhole.uid
   config_json = jsonencode({
     title = each.key
     uid   = each.key

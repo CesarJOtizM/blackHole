@@ -46,22 +46,22 @@ resource "aws_security_group" "postgres" {
 }
 
 resource "aws_db_instance" "this" {
-  identifier                 = var.name
-  engine                     = "postgres"
-  engine_version             = "16"
-  instance_class             = "db.t4g.micro"
-  allocated_storage          = 20
-  db_name                    = var.database_name
-  username                   = "blackhole"
-  password                   = random_password.database.result
-  db_subnet_group_name       = aws_db_subnet_group.this.name
-  vpc_security_group_ids     = [aws_security_group.postgres.id]
-  publicly_accessible        = false
-  multi_az                   = var.high_availability
-  storage_encrypted          = true
-  skip_final_snapshot        = false
-  backup_retention_period    = 7
-  tags                       = { Region = var.region }
+  identifier              = var.name
+  engine                  = "postgres"
+  engine_version          = "16"
+  instance_class          = "db.t4g.micro"
+  allocated_storage       = 20
+  db_name                 = var.database_name
+  username                = "blackhole"
+  password                = random_password.database.result
+  db_subnet_group_name    = aws_db_subnet_group.this.name
+  vpc_security_group_ids  = [aws_security_group.postgres.id]
+  publicly_accessible     = false
+  multi_az                = var.high_availability
+  storage_encrypted       = true
+  skip_final_snapshot     = false
+  backup_retention_period = 7
+  tags                    = { Region = var.region }
 }
 
 output "postgres_endpoint" { value = aws_db_instance.this.address }

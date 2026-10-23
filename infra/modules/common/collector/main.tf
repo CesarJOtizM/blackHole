@@ -5,8 +5,8 @@ terraform {
 variable "name" { type = string }
 
 locals {
-  image     = "otel/opentelemetry-collector-contrib:0.163.2"
-  endpoint  = "http://${var.name}-collector:4318"
+  image    = "otel/opentelemetry-collector-contrib:0.163.2"
+  endpoint = "http://${var.name}-collector:4318"
   drop_keys = [
     "authorization",
     "cookie",
@@ -18,13 +18,13 @@ locals {
     "address",
     "identification",
   ]
-  sensitive_key   = "(?i)(^|[._-])(${join("|", local.drop_keys)})($|[._-])"
-  bearer          = "(?i)\\bbearer\\s+\\S+"
-  assignment      = "(?i)\\b(${join("|", local.drop_keys)})\\b\\s*[:=]\\s*(?:\"[^\"]*\"|'[^']*'|\\S+)"
-  phone           = "(?:\\+?57[\\s-]?)?3\\d{2}(?:[\\s.-]?\\d{3})[\\s.-]?\\d{4}"
-  dotted_id       = "\\d{1,3}(?:[.\\s]\\d{3}){2,3}"
-  digit_run       = "\\b\\d{7,10}\\b"
-  delete_keys     = "delete_matching_keys(attributes, \"${local.sensitive_key}\")"
+  sensitive_key = "(?i)(^|[._-])(${join("|", local.drop_keys)})($|[._-])"
+  bearer        = "(?i)\\bbearer\\s+\\S+"
+  assignment    = "(?i)\\b(${join("|", local.drop_keys)})\\b\\s*[:=]\\s*(?:\"[^\"]*\"|'[^']*'|\\S+)"
+  phone         = "(?:\\+?57[\\s-]?)?3\\d{2}(?:[\\s.-]?\\d{3})[\\s.-]?\\d{4}"
+  dotted_id     = "\\d{1,3}(?:[.\\s]\\d{3}){2,3}"
+  digit_run     = "\\b\\d{7,10}\\b"
+  delete_keys   = "delete_matching_keys(attributes, \"${local.sensitive_key}\")"
   body_statements = [
     "replace_pattern(body, \"${local.bearer}\", \"[redacted]\")",
     "replace_pattern(body, \"${replace(local.assignment, "\"", "\\\"")}\", \"$1=[redacted]\")",
@@ -32,7 +32,7 @@ locals {
     "replace_pattern(body, \"${local.dotted_id}\", \"[redacted]\")",
     "replace_pattern(body, \"${local.digit_run}\", \"[redacted]\")",
   ]
-  config          = jsonencode({
+  config = jsonencode({
     receivers = {
       otlp = {
         protocols = {
@@ -62,7 +62,7 @@ locals {
         ]
       }
       "redaction/scrub" = {
-        allow_all_keys = true
+        allow_all_keys       = true
         blocked_key_patterns = [local.sensitive_key]
         blocked_values = [
           local.bearer,
