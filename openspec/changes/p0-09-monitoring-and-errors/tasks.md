@@ -49,7 +49,7 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 
 ## Phase 6: Catalog check and Factus rate in CI
 
-- [ ] 6.1 `tools/observability/check-catalog.mjs` fails device, user, or order labels, off-catalog metrics, a missing panel, and a collector mismatch. `tools/load/factus-rate.mjs` holds 80 per tax id per minute on the simulator, not cloud scale-out. Add both to `ci.yml`. Do not change the bake or `tools/delivery/smoke.mjs`.
+- [x] 6.1 `tools/observability/check-catalog.mjs` fails device, user, or order labels, off-catalog metrics, a missing panel, and a collector mismatch. `tools/load/factus-rate.mjs` holds 80 per tax id per minute on the simulator, not cloud scale-out. Add both to `ci.yml`. Do not change the bake or `tools/delivery/smoke.mjs`.
 
 ## Leave untouched
 
