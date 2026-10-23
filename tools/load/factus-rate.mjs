@@ -89,7 +89,7 @@ const {
   fileUrl("contexts/platform/application/ports/provider-rate-gate.ts")
 );
 const { FactusSimulator } = await import(
-  fileUrl("apps/api-cloud/src/factus-simulator.ts")
+  fileUrl("apps/api-cloud/src/composition/factus-simulator.ts")
 );
 
 if (

@@ -8,12 +8,12 @@ import {
 } from "#adapters/memory/fast-identity-doubles.js";
 import { FastSignatureVerifier } from "#adapters/memory/fast-signature-verifier.js";
 import { InMemoryIdentityRepository } from "#adapters/memory/in-memory-identity-repository.js";
-import { SiteOffline } from "#application/operate-identity/operate-identity.js";
 import {
   BadSignature,
   OperateDevices,
   UnsignedSignature,
 } from "#application/operate-devices/operate-devices.js";
+import { SiteOffline } from "#application/operate-identity/operate-identity.js";
 import {
   DeviceRevoked,
   Identity,
@@ -185,11 +185,13 @@ it("given a registration code, when it is issued and the phone signs its registr
     payload: signedPayload(registerCommand),
     signature: signed.signature,
   });
-  expect(JSON.parse(String(verify.mock.calls[0]?.[0].payload))).not.toHaveProperty(
-    "signature",
-  );
+  expect(
+    JSON.parse(String(verify.mock.calls[0]?.[0].payload)),
+  ).not.toHaveProperty("signature");
   expectNoSecrets(registered.event);
-  expect(await repository.eventsFor(TENANT_ID)).toContainEqual(registered.event);
+  expect(await repository.eventsFor(TENANT_ID)).toContainEqual(
+    registered.event,
+  );
 });
 
 it("given an unsigned registration, when the phone redeems a code, then nothing is saved", async () => {

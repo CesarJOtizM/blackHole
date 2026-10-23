@@ -80,9 +80,7 @@ it("given identities A and B, when identity_app selects devices without a tenant
     "tenant_a",
   ]);
 
-  const selected = await client.query<{ id: string }>(
-    "SELECT id FROM devices",
-  );
+  const selected = await client.query<{ id: string }>("SELECT id FROM devices");
 
   expect(selected.rows.map((row) => row.id)).toEqual(["device_a"]);
 });

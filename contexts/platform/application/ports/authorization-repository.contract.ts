@@ -129,9 +129,9 @@ export function authorizationRepositoryContract(
     expect(loadedA.snapshot().assignments.map((item) => item.userId)).toEqual([
       "user_owner_a",
     ]);
-    expect(loadedA.snapshot().assignments.map((item) => item.userId)).not.toContain(
-      "user_owner_b",
-    );
+    expect(
+      loadedA.snapshot().assignments.map((item) => item.userId),
+    ).not.toContain("user_owner_b");
     expect(loadedB.snapshot().customRoles.map((role) => role.id)).toEqual([
       "role_copy_b",
     ]);

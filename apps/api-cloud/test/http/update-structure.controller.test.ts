@@ -13,9 +13,8 @@ import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-m
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { expect, it } from "vitest";
-
-import { createApplication } from "#src/composition/create-application.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
 import {
   samplePilotActorId,
   samplePilotCommands,

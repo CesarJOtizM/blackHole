@@ -14,8 +14,8 @@ import {
   authorizationShiftFlags,
   authorizationSupportActions,
   authorizationSupportGrants,
-  authorizationVenueLimits,
   authorizations,
+  authorizationVenueLimits,
 } from "#adapters/postgres/schema.js";
 import type { AuthorizationChanged } from "#application/ports/authorization-repository.js";
 import { AuthorizationRepository } from "#application/ports/authorization-repository.js";
@@ -28,8 +28,8 @@ import {
   type Grant,
   type LimitCode,
   type PermissionCode,
-  type ScopeKind,
   permissionCodes,
+  type ScopeKind,
 } from "#domain/permission-catalog.js";
 
 type Database = PgliteDatabase;

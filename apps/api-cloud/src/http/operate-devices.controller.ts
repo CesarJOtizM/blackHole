@@ -1,4 +1,8 @@
-import { type DeviceResult, deviceRequest, deviceResult } from "@blackhole/contracts";
+import {
+  type DeviceResult,
+  deviceRequest,
+  deviceResult,
+} from "@blackhole/contracts";
 import {
   BadSignature,
   DeviceRevoked,

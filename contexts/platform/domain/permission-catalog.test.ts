@@ -1,20 +1,20 @@
 import { expect, it } from "vitest";
 
 import {
-  BARTENDER_CHARGE_DEFAULT,
-  GRANT,
-  LIMIT,
-  MATRIX_ROLE,
-  MATRIX_ROLES,
-  PERMISSION,
-  type Grant,
-  type LimitCode,
-  type MatrixRole,
-  type PermissionCode,
   authorizeGrant,
   authorizePermission,
+  BARTENDER_CHARGE_DEFAULT,
   defaultLimit,
+  GRANT,
+  type Grant,
+  LIMIT,
+  type LimitCode,
   limitUnit,
+  MATRIX_ROLE,
+  MATRIX_ROLES,
+  type MatrixRole,
+  PERMISSION,
+  type PermissionCode,
   permissionMatrix,
   proseRoles,
 } from "#domain/permission-catalog.js";
@@ -115,9 +115,7 @@ for (const permission of Object.values(PERMISSION)) {
       const grant = expectedMatrix[permission][role];
       const authorize = authorizeGrant(grant);
 
-      expect(authorize).toBe(
-        grant === Y || grant === L ? grant : GRANT.NO,
-      );
+      expect(authorize).toBe(grant === Y || grant === L ? grant : GRANT.NO);
     }
   });
 }

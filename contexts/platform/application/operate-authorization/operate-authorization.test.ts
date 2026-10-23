@@ -14,16 +14,16 @@ import {
   UnknownSession,
 } from "#application/operate-authorization/operate-authorization.js";
 import {
-  Authorization,
-  PredefinedRoleRevision,
-  AuthorizerRejected,
-  SelfAuthorizationDenied,
-} from "#domain/authorization.js";
-import { LIMIT, PERMISSION } from "#domain/permission-catalog.js";
-import {
   PinConfirmationLocked,
   PinConfirmationRejected,
 } from "#application/ports/pin-verifier.js";
+import {
+  Authorization,
+  AuthorizerRejected,
+  PredefinedRoleRevision,
+  SelfAuthorizationDenied,
+} from "#domain/authorization.js";
+import { LIMIT, PERMISSION } from "#domain/permission-catalog.js";
 
 const TENANT_ID = "organization_company_1";
 const OWNER_ID = "user_owner";
@@ -57,10 +57,7 @@ const harness = () => {
   return { authorizations, sessions, identities, pins, clock, operate };
 };
 
-const remember = (
-  identities: InMemoryIdentityReader,
-  userId: string,
-): void => {
+const remember = (identities: InMemoryIdentityReader, userId: string): void => {
   identities.put(TENANT_ID, { userId, active: true });
 };
 
@@ -141,9 +138,9 @@ it("given a predefined role, when an owner revises it, then the refusal saves no
 
   await expect(act).rejects.toBeInstanceOf(PredefinedRoleRevision);
   expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
-  expect((await authorizations.load(TENANT_ID))?.snapshot().customRoles).toEqual(
-    [],
-  );
+  expect(
+    (await authorizations.load(TENANT_ID))?.snapshot().customRoles,
+  ).toEqual([]);
 });
 
 it("given a PIN session at site 1, when it changes site 2, then nothing is saved", async () => {
@@ -181,9 +178,9 @@ it("given a PIN session at site 1, when it changes site 2, then nothing is saved
 
   await expect(act).rejects.toBeInstanceOf(ForeignPinSession);
   expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
-  expect((await authorizations.load(TENANT_ID))?.snapshot().venueLimits).toEqual(
-    [],
-  );
+  expect(
+    (await authorizations.load(TENANT_ID))?.snapshot().venueLimits,
+  ).toEqual([]);
 });
 
 it("given an administration session with a venue id, when that venue is not an assignment, then the venue is not a grant", async () => {
@@ -215,9 +212,9 @@ it("given an administration session with a venue id, when that venue is not an a
 
   await expect(act).rejects.toBeInstanceOf(PermissionDenied);
   expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
-  expect(
-    (await authorizations.load(TENANT_ID))?.bartenderCharge(SITE_1),
-  ).toBe(false);
+  expect((await authorizations.load(TENANT_ID))?.bartenderCharge(SITE_1)).toBe(
+    false,
+  );
 });
 
 it("given an owner, when they copy cashier, then the change stores before and after", async () => {
@@ -252,7 +249,9 @@ it("given an owner, when they copy cashier, then the change stores before and af
 
   const event = (await authorizations.eventsFor(TENANT_ID)).at(-1);
   expect(event?.before.customRoles).toEqual([]);
-  expect(event?.after.customRoles.map((role) => role.id)).toEqual(["role_copy"]);
+  expect(event?.after.customRoles.map((role) => role.id)).toEqual([
+    "role_copy",
+  ]);
 });
 
 it("given an owner, when a site limit is lowered, then the owner is notified", async () => {
@@ -373,8 +372,7 @@ it("given a cashier over the discount cap, when a supervisor resolves it, then t
     },
   });
 
-  const resolution = (await authorizations.load(TENANT_ID))
-    ?.snapshot()
+  const resolution = (await authorizations.load(TENANT_ID))?.snapshot()
     .resolutions[0];
   expect(resolution).toMatchObject({
     requesterId: CASHIER_ID,

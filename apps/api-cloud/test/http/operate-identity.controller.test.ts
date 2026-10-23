@@ -13,9 +13,8 @@ import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-s
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
-
-import { createApplication } from "#src/composition/create-application.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { createApplication } from "#src/composition/create-application.js";
 
 const tenantId = "organization_company_1";
 const userId = "user_owner";

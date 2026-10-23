@@ -1,14 +1,14 @@
 import { AuthorizationClock } from "#application/ports/authorization-clock.js";
-import { IdentityReader } from "#application/ports/identity-reader.js";
 import type { IdentityView } from "#application/ports/identity-reader.js";
+import { IdentityReader } from "#application/ports/identity-reader.js";
+import type { PinConfirmation } from "#application/ports/pin-verifier.js";
 import {
   PinConfirmationLocked,
   PinConfirmationRejected,
   PinVerifier,
 } from "#application/ports/pin-verifier.js";
-import type { PinConfirmation } from "#application/ports/pin-verifier.js";
-import { SessionReader } from "#application/ports/session-reader.js";
 import type { SessionView } from "#application/ports/session-reader.js";
+import { SessionReader } from "#application/ports/session-reader.js";
 
 const FAILURE_LIMIT = 5;
 

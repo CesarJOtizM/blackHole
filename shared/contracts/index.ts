@@ -1,4 +1,10 @@
 export {
+  type AcceptCloudWriteCommand,
+  type AcceptedCloudWrite,
+  acceptCloudWriteCommand,
+  acceptedCloudWrite,
+} from "#contracts/accept-cloud-write.js";
+export {
   type AuthorizationCommand,
   type AuthorizationResult,
   authorizationCommand,
@@ -16,16 +22,10 @@ export {
 } from "#contracts/devices.js";
 export {
   type IdentityChanged,
+  type IdentityRequest,
   identityChanged,
   identityRequest,
-  type IdentityRequest,
 } from "#contracts/identity.js";
-export {
-  type AcceptCloudWriteCommand,
-  type AcceptedCloudWrite,
-  acceptCloudWriteCommand,
-  acceptedCloudWrite,
-} from "#contracts/accept-cloud-write.js";
 export {
   type OrganizationChanged,
   organizationChanged,

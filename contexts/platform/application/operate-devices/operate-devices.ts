@@ -6,10 +6,7 @@ import type {
 } from "#application/ports/identity-repository.js";
 import type { PasswordHasher } from "#application/ports/password-hasher.js";
 import type { SignatureVerifier } from "#application/ports/signature-verifier.js";
-import {
-  type Identity,
-  UnknownIdentityReference,
-} from "#domain/identity.js";
+import { type Identity, UnknownIdentityReference } from "#domain/identity.js";
 
 const DEVICE_COMMAND = {
   ISSUE_REGISTRATION_CODE: "issueRegistrationCode",

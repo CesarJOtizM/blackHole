@@ -1,4 +1,3 @@
-import { InMemoryAuthorizationRepository } from "@blackhole/platform/adapters/memory/in-memory-authorization-repository";
 import {
   FakeClock,
   FastPasswordHasher,
@@ -6,14 +5,14 @@ import {
   FastSecondFactor,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryAuthorizationRepository } from "@blackhole/platform/adapters/memory/in-memory-authorization-repository";
+import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
-import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
-import { Authorization } from "@blackhole/platform/domain";
-import { Identity } from "@blackhole/platform/domain";
+import { Authorization, Identity } from "@blackhole/platform/domain";
 import { expect, it } from "vitest";
 
 import { authorizationDependencies } from "#src/composition/authorization-access.js";

@@ -3,17 +3,17 @@ import type {
   VenueLimitRecord,
 } from "#domain/authorization.js";
 import {
+  defaultLimit,
   GRANT,
   type Grant,
-  type LimitCode,
-  type PermissionCode,
-  type ScopeKind,
-  defaultLimit,
   grantRank,
   isMatrixRole,
+  type LimitCode,
   limitUnit,
+  type PermissionCode,
   permissionLimit,
   permissionMatrix,
+  type ScopeKind,
 } from "#domain/permission-catalog.js";
 
 export interface EvaluationAssignment {
@@ -71,15 +71,16 @@ export const evaluate = (input: EvaluateInput): Evaluation => {
   let bestCap: number | null = null;
 
   for (const assignment of applicable) {
-    const grant = grantOf(assignment.roleId, input.permission, input.customRoles);
+    const grant = grantOf(
+      assignment.roleId,
+      input.permission,
+      input.customRoles,
+    );
 
     if (grantRank(grant) > grantRank(bestGrant)) {
       bestGrant = grant;
       bestCap = capOf(assignment, input);
-    } else if (
-      grant === GRANT.WITH_LIMIT &&
-      bestGrant === GRANT.WITH_LIMIT
-    ) {
+    } else if (grant === GRANT.WITH_LIMIT && bestGrant === GRANT.WITH_LIMIT) {
       const cap = capOf(assignment, input);
 
       if (cap !== null && (bestCap === null || cap > bestCap)) {
@@ -97,10 +98,7 @@ export const evaluate = (input: EvaluateInput): Evaluation => {
     return outcome;
   }
 
-  if (
-    !input.shiftSelfAuthorization ||
-    input.authorizerAssignmentCount !== 1
-  ) {
+  if (!input.shiftSelfAuthorization || input.authorizerAssignmentCount !== 1) {
     return denied();
   }
 

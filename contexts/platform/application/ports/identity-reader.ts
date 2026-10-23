@@ -4,8 +4,5 @@ export interface IdentityView {
 }
 
 export abstract class IdentityReader {
-  abstract find(
-    tenantId: string,
-    userId: string,
-  ): Promise<IdentityView | null>;
+  abstract find(tenantId: string, userId: string): Promise<IdentityView | null>;
 }

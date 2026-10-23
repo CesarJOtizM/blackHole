@@ -1,12 +1,12 @@
-import { InMemoryAuthorizationRepository } from "@blackhole/platform/adapters/memory/in-memory-authorization-repository";
 import { MemoryPinVerifier } from "@blackhole/platform/adapters/memory/authorization-doubles";
-import { Clock } from "@blackhole/platform/application/ports/clock";
+import { InMemoryAuthorizationRepository } from "@blackhole/platform/adapters/memory/in-memory-authorization-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
-import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
-import { IdentityReader } from "@blackhole/platform/application/ports/identity-reader";
+import type { Clock } from "@blackhole/platform/application/ports/clock";
 import type { IdentityView } from "@blackhole/platform/application/ports/identity-reader";
-import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
+import { IdentityReader } from "@blackhole/platform/application/ports/identity-reader";
+import type { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import type { SessionView } from "@blackhole/platform/application/ports/session-reader";
+import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
 
 export class RepositorySessionReader extends SessionReader {
   constructor(private readonly identities: IdentityRepository) {
