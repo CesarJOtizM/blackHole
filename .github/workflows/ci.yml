@@ -29,6 +29,8 @@ jobs:
       - run: node tools/infra/compare-module-outputs.mjs
       - run: node tools/infra/check-postgres-extensions.mjs
       - run: node tools/infra/check-forward-migrations.mjs
+      - run: node tools/observability/check-catalog.mjs
+      - run: node tools/load/factus-rate.mjs
 
   plan:
     needs: checks
