@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#src/*": "./src/*"
+    "#src/composition/*": "./src/composition/*",
+    "#src/http/*": "./src/http/*"
   },
   "dependencies": {
     "@nestjs/common": "12.1.3",

@@ -14,8 +14,8 @@ import {
   authorizationShiftFlags,
   authorizationSupportActions,
   authorizationSupportGrants,
-  authorizationVenueLimits,
   authorizations,
+  authorizationVenueLimits,
 } from "#adapters/postgres/schema.js";
 import type { AuthorizationChanged } from "#application/ports/authorization-repository.js";
 import { AuthorizationRepository } from "#application/ports/authorization-repository.js";
@@ -28,8 +28,8 @@ import {
   type Grant,
   type LimitCode,
   type PermissionCode,
-  type ScopeKind,
   permissionCodes,
+  type ScopeKind,
 } from "#domain/permission-catalog.js";
 
 type Database = PgliteDatabase;
@@ -501,53 +501,63 @@ const insertEvent = async (
 };
 
 const asGrant = (value: string): Grant => {
-  if (GRANTS.some((grant) => grant === value)) {
-    return value;
+  const grant = GRANTS.find((item) => item === value);
+
+  if (grant === undefined) {
+    throw new Error("Stored grant is not supported.");
   }
 
-  throw new Error("Stored grant is not supported.");
+  return grant;
 };
 
 const asScope = (value: string): ScopeKind => {
-  if (SCOPES.some((scope) => scope === value)) {
-    return value;
+  const scope = SCOPES.find((item) => item === value);
+
+  if (scope === undefined) {
+    throw new Error("Stored scope is not supported.");
   }
 
-  throw new Error("Stored scope is not supported.");
+  return scope;
 };
 
 const asLimit = (value: string): LimitCode => {
-  if (LIMITS.some((limit) => limit === value)) {
-    return value;
+  const limit = LIMITS.find((item) => item === value);
+
+  if (limit === undefined) {
+    throw new Error("Stored limit is not supported.");
   }
 
-  throw new Error("Stored limit is not supported.");
+  return limit;
 };
 
 const asPermission = (value: string): PermissionCode => {
-  if (permissionCodes.some((permission) => permission === value)) {
-    return value;
+  const permission = permissionCodes.find((item) => item === value);
+
+  if (permission === undefined) {
+    throw new Error("Stored permission is not supported.");
   }
 
-  throw new Error("Stored permission is not supported.");
+  return permission;
 };
 
-const asStatus = (
-  value: string,
-): "pending" | "resolved" | "expired" => {
-  if (STATUSES.some((status) => status === value)) {
-    return value;
+const asStatus = (value: string): "pending" | "resolved" | "expired" => {
+  const status = STATUSES.find((item) => item === value);
+
+  if (status === undefined) {
+    throw new Error("Stored request status is not supported.");
   }
 
-  throw new Error("Stored request status is not supported.");
+  return status;
 };
 
 const asNoticeKind = (
   value: string,
 ): "role" | "limit" | "self-authorization" => {
-  if (NOTICE_KINDS.some((kind) => kind === value)) {
-    return value;
+  const kind = NOTICE_KINDS.find((item) => item === value);
+
+  if (kind === undefined) {
+    throw new Error("Stored notice kind is not supported.");
   }
 
-  throw new Error("Stored notice kind is not supported.");
+  return kind;
 };

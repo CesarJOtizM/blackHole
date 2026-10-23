@@ -14,7 +14,7 @@ services:
     command:
       - node
       - --experimental-strip-types
-      - apps/api-cloud/src/main.ts
+      - apps/api-cloud/src/composition/main.ts
     depends_on:
       - postgres
   worker:
@@ -26,6 +26,6 @@ services:
     command:
       - node
       - --experimental-strip-types
-      - apps/api-cloud/src/worker.ts
+      - apps/api-cloud/src/composition/worker.ts
     depends_on:
       - postgres

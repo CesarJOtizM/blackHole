@@ -13,8 +13,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-ENV API_COMMAND="apps/api-cloud/src/main.ts" \
-    WORKER_COMMAND="apps/api-cloud/src/worker.ts"
+ENV API_COMMAND="apps/api-cloud/src/composition/main.ts" \
+    WORKER_COMMAND="apps/api-cloud/src/composition/worker.ts"
 
 ENTRYPOINT ["node", "--experimental-strip-types"]
-CMD ["apps/api-cloud/src/main.ts"]
+CMD ["apps/api-cloud/src/composition/main.ts"]

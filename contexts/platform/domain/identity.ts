@@ -1,5 +1,5 @@
-import { type DeviceRecord, Device } from "#domain/device.js";
-import { type UserRecord, User } from "#domain/user.js";
+import { Device, type DeviceRecord } from "#domain/device.js";
+import { User, type UserRecord } from "#domain/user.js";
 
 const USER_ID_PREFIX = "user_";
 const DEVICE_ID_PREFIX = "device_";

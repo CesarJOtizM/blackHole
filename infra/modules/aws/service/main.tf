@@ -16,6 +16,7 @@ variable "private_subnet_ids" { type = list(string) }
 variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
+variable "collector_endpoint" { type = string }
 
 locals {
   production    = var.environment == "production"
@@ -50,6 +51,10 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode([{
     name  = var.role
     image = var.image
+    environment = [{
+      name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+      value = var.collector_endpoint
+    }]
     portMappings = var.role == "api" ? [{ containerPort = 4310, protocol = "tcp" }] : []
   }])
 }

@@ -7,14 +7,14 @@ export default defineConfig({
         test: {
           name: "api-cloud",
           root: "./apps/api-cloud",
-          include: ["src/**/*.test.ts"],
+          include: ["test/**/*.test.ts"],
         },
       },
       {
         test: {
           name: "local-node",
           root: "./apps/local-node",
-          include: ["src/**/*.test.ts"],
+          include: ["test/**/*.test.ts"],
         },
       },
       {

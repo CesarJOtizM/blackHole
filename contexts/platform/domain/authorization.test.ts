@@ -101,12 +101,12 @@ it("given a company discount cap of 15 percent, when a site sets 10, then the lo
     at: AT,
   });
 
-  expect(authorization.venueLimit(SITE_1, "shiftSupervisor", LIMIT.DISCOUNT_PERCENT)).toBe(
-    10,
+  expect(
+    authorization.venueLimit(SITE_1, "shiftSupervisor", LIMIT.DISCOUNT_PERCENT),
+  ).toBe(10);
+  expect(authorization.snapshot().notices.map((notice) => notice.kind)).toEqual(
+    ["limit"],
   );
-  expect(authorization.snapshot().notices.map((notice) => notice.kind)).toEqual([
-    "limit",
-  ]);
 });
 
 it("given one active owner, when that owner is removed, then the removal is rejected", () => {

@@ -17,12 +17,12 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_storage_account" "this" {
-  name                            = replace(var.name, "-", "")
-  resource_group_name             = azurerm_resource_group.this.name
-  location                        = var.region
-  account_tier                    = "Standard"
-  account_replication_type        = "LRS"
-  min_tls_version                 = "TLS1_2"
+  name                              = replace(var.name, "-", "")
+  resource_group_name               = azurerm_resource_group.this.name
+  location                          = var.region
+  account_tier                      = "Standard"
+  account_replication_type          = "LRS"
+  min_tls_version                   = "TLS1_2"
   infrastructure_encryption_enabled = true
 }
 

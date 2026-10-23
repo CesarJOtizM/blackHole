@@ -19,6 +19,7 @@ import {
   PinRejected,
   SecondFactorRejected,
   SecondFactorRequired,
+  type Session,
   UnknownIdentityReference,
   UserDeactivated,
 } from "#domain/identity.js";
@@ -68,7 +69,7 @@ const expectNoSecrets = (value: unknown) => {
 };
 
 const expectSession = (
-  session: Record<string, string> | undefined,
+  session: Session | undefined,
   expected: Record<string, string>,
 ) => {
   expect(session).toEqual(expected);
@@ -295,7 +296,9 @@ it("given a required second factor, when the code is wrong, then no session star
 
   await expect(signIn).rejects.toThrow(SecondFactorRejected);
   expect(save).toHaveBeenCalledOnce();
-  expect(await repository.eventsFor(TENANT_ID)).toHaveLength(recorded.length + 1);
+  expect(await repository.eventsFor(TENANT_ID)).toHaveLength(
+    recorded.length + 1,
+  );
   expect(
     (await repository.load(TENANT_ID))?.snapshot().users[0]
       ?.failedFactorAttempts,

@@ -46,6 +46,11 @@ module "postgres" {
   high_availability  = true
 }
 
+module "collector" {
+  source = "../../modules/common/collector"
+  name   = "production-azure"
+}
+
 module "api" {
   source             = "../../modules/azure/service"
   name               = "production-azure-api"
@@ -56,6 +61,7 @@ module "api" {
   public_subnet_ids  = module.network.public_subnet_ids
   role               = "api"
   environment        = "production"
+  collector_endpoint = module.collector.endpoint
 }
 
 module "worker" {
@@ -68,6 +74,7 @@ module "worker" {
   public_subnet_ids  = module.network.public_subnet_ids
   role               = "worker"
   environment        = "production"
+  collector_endpoint = module.collector.endpoint
 }
 
 module "dns" {

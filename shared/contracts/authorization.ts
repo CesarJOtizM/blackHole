@@ -1,13 +1,7 @@
 import { z } from "zod";
 
 const grant = z.enum(["yes", "with_limit", "with_authorization", "no"]);
-const scopeKind = z.enum([
-  "company",
-  "brand",
-  "site",
-  "warehouse",
-  "taxpayer",
-]);
+const scopeKind = z.enum(["company", "brand", "site", "warehouse", "taxpayer"]);
 const limitCode = z.enum([
   "discountPercent",
   "voidCop",

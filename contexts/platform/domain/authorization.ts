@@ -1,20 +1,20 @@
-import { evaluate, type Evaluation } from "#domain/evaluate.js";
+import { type Evaluation, evaluate } from "#domain/evaluate.js";
 import {
-  BARTENDER_CHARGE_DEFAULT,
-  GRANT,
-  MATRIX_ROLE,
-  type Grant,
-  type LimitCode,
-  type MatrixRole,
-  type PermissionCode,
-  type ScopeKind,
   authorizeGrant,
+  BARTENDER_CHARGE_DEFAULT,
   defaultLimit,
+  GRANT,
+  type Grant,
   grantRank,
   isMatrixRole,
+  type LimitCode,
+  MATRIX_ROLE,
+  type MatrixRole,
+  type PermissionCode,
   permissionCodes,
   permissionLimit,
   permissionMatrix,
+  type ScopeKind,
 } from "#domain/permission-catalog.js";
 
 export interface RoleGrantRecord {
@@ -273,6 +273,13 @@ export class SelfAuthorizationDenied extends Error {
   }
 }
 
+export class AuthorizerRejected extends Error {
+  constructor() {
+    super("The authorizer permission does not cover the value.");
+    this.name = "AuthorizerRejected";
+  }
+}
+
 export class UnknownAuthorizationReference extends Error {
   constructor() {
     super("The authorization does not include that reference.");
@@ -389,7 +396,12 @@ export class Authorization {
   copyRole(input: CopyRole): void {
     this.reserve(input.roleId);
     const source = this.materialize(input.sourceRoleId);
-    this.assertSubset(input.actorUserId, source.grants, source.limits, input.at);
+    this.assertSubset(
+      input.actorUserId,
+      source.grants,
+      source.limits,
+      input.at,
+    );
     this.customRoleList.push({
       id: input.roleId,
       sourceRoleId: input.sourceRoleId,
@@ -447,7 +459,12 @@ export class Authorization {
 
   assign(input: AssignRole): void {
     this.reserve(input.assignmentId);
-    this.assertCovers(input.actorUserId, input.scopeKind, input.scopeId, input.at);
+    this.assertCovers(
+      input.actorUserId,
+      input.scopeKind,
+      input.scopeId,
+      input.at,
+    );
     const role = this.materialize(input.roleId);
     this.assertSubset(input.actorUserId, role.grants, role.limits, input.at);
     this.assignmentList.push({
@@ -537,7 +554,9 @@ export class Authorization {
   }
 
   resolveAuthorization(input: ResolveAuthorization): void {
-    const request = this.requestList.find((item) => item.id === input.requestId);
+    const request = this.requestList.find(
+      (item) => item.id === input.requestId,
+    );
 
     if (!request || request.status !== "pending") {
       throw new UnknownAuthorizationReference();
@@ -546,6 +565,14 @@ export class Authorization {
     if (input.at >= request.expiresAt) {
       throw new RequestExpired();
     }
+
+    this.assertAuthorizerCovers(
+      input.authorizerId,
+      request.permission,
+      request.venueId,
+      request.value,
+      input.at,
+    );
 
     const selfRequest = input.authorizerId === request.requesterId;
     let selfAuthorized = false;
@@ -634,9 +661,11 @@ export class Authorization {
   }
 
   roleGrant(roleId: string, permission: PermissionCode): Grant {
-    return this.materialize(roleId).grants.find(
-      (grant) => grant.permission === permission,
-    )?.grant ?? GRANT.NO;
+    return (
+      this.materialize(roleId).grants.find(
+        (grant) => grant.permission === permission,
+      )?.grant ?? GRANT.NO
+    );
   }
 
   venueLimit(venueId: string, roleId: string, limit: LimitCode): number | null {
@@ -652,8 +681,8 @@ export class Authorization {
 
   bartenderCharge(venueId: string): boolean {
     return (
-      this.bartenderFlagList.find((flag) => flag.venueId === venueId)?.enabled ??
-      BARTENDER_CHARGE_DEFAULT
+      this.bartenderFlagList.find((flag) => flag.venueId === venueId)
+        ?.enabled ?? BARTENDER_CHARGE_DEFAULT
     );
   }
 
@@ -670,7 +699,9 @@ export class Authorization {
     target: CoverageTarget,
     at: number,
   ): Grant {
-    return this.effective(userId, at, target).grants.get(permission) ?? GRANT.NO;
+    return (
+      this.effective(userId, at, target).grants.get(permission) ?? GRANT.NO
+    );
   }
 
   authorizerCount(
@@ -685,7 +716,9 @@ export class Authorization {
         return false;
       }
 
-      const grant = authorizeGrant(this.roleGrant(assignment.roleId, permission));
+      const grant = authorizeGrant(
+        this.roleGrant(assignment.roleId, permission),
+      );
 
       return grant === GRANT.YES || grant === GRANT.WITH_LIMIT;
     }).length;
@@ -820,7 +853,11 @@ export class Authorization {
     scopeId: string,
     at: number,
   ): void {
-    const target: CoverageTarget = { kind: scopeKind, id: scopeId, brandId: null };
+    const target: CoverageTarget = {
+      kind: scopeKind,
+      id: scopeId,
+      brandId: null,
+    };
     const covered = this.assignmentList.some(
       (assignment) =>
         assignment.userId === actorUserId && covers(assignment, target, at),
@@ -829,6 +866,82 @@ export class Authorization {
     if (!covered) {
       throw new ScopeRejected();
     }
+  }
+
+  private assertAuthorizerCovers(
+    userId: string,
+    permission: PermissionCode,
+    venueId: string,
+    value: number | null,
+    at: number,
+  ): void {
+    const target: CoverageTarget = { kind: "site", id: venueId, brandId: null };
+    let unlimited = false;
+    let bestCap: number | null = null;
+
+    for (const assignment of this.assignmentList) {
+      if (assignment.userId !== userId || !covers(assignment, target, at)) {
+        continue;
+      }
+
+      const grant = authorizeGrant(
+        this.roleGrant(assignment.roleId, permission),
+      );
+
+      if (grant === GRANT.YES) {
+        unlimited = true;
+        break;
+      }
+
+      if (grant !== GRANT.WITH_LIMIT) {
+        continue;
+      }
+
+      const cap = this.assignmentCap(assignment.roleId, permission, venueId);
+
+      if (cap === null) {
+        unlimited = true;
+        break;
+      }
+
+      if (bestCap === null || cap > bestCap) {
+        bestCap = cap;
+      }
+    }
+
+    if (
+      unlimited ||
+      (bestCap !== null && (value === null || value <= bestCap))
+    ) {
+      return;
+    }
+
+    throw new AuthorizerRejected();
+  }
+
+  private assignmentCap(
+    roleId: string,
+    permission: PermissionCode,
+    venueId: string,
+  ): number | null {
+    const limit = permissionLimit[permission];
+
+    if (!limit) {
+      return null;
+    }
+
+    const roleCap = this.companyCap(roleId, limit);
+    const venueCap = this.venueLimit(venueId, roleId, limit);
+
+    if (roleCap === null) {
+      return venueCap;
+    }
+
+    if (venueCap === null) {
+      return roleCap;
+    }
+
+    return Math.min(roleCap, venueCap);
   }
 
   private assertOwner(actorUserId: string, at: number): void {
@@ -929,7 +1042,9 @@ const mergeGrants = (
   current: readonly RoleGrantRecord[],
   changes: readonly RoleGrantRecord[],
 ): RoleGrantRecord[] => {
-  const merged = new Map(current.map((grant) => [grant.permission, grant.grant]));
+  const merged = new Map(
+    current.map((grant) => [grant.permission, grant.grant]),
+  );
 
   for (const change of changes) {
     merged.set(change.permission, change.grant);
@@ -966,5 +1081,7 @@ const covers = (
     return target.kind === "site" && target.brandId === assignment.scopeId;
   }
 
-  return assignment.scopeKind === target.kind && assignment.scopeId === target.id;
+  return (
+    assignment.scopeKind === target.kind && assignment.scopeId === target.id
+  );
 };

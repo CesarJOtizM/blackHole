@@ -5,8 +5,10 @@ import type {
 } from "#application/ports/authorization-repository.js";
 import type { IdentityReader } from "#application/ports/identity-reader.js";
 import type { PinVerifier } from "#application/ports/pin-verifier.js";
-import type { SessionReader } from "#application/ports/session-reader.js";
-import type { SessionView } from "#application/ports/session-reader.js";
+import type {
+  SessionReader,
+  SessionView,
+} from "#application/ports/session-reader.js";
 import type { Authorization } from "#domain/authorization.js";
 import type { ExceededLimit } from "#domain/evaluate.js";
 import type {
@@ -38,7 +40,10 @@ interface CopyRoleCommand {
 interface ReviseRoleCommand {
   type: typeof AUTHORIZATION_COMMAND.REVISE_ROLE;
   roleId: string;
-  grants: readonly { permission: PermissionCode; grant: "yes" | "with_limit" | "with_authorization" | "no" }[];
+  grants: readonly {
+    permission: PermissionCode;
+    grant: "yes" | "with_limit" | "with_authorization" | "no";
+  }[];
 }
 
 interface AssignCommand {
@@ -311,7 +316,13 @@ export class OperateAuthorization {
       case AUTHORIZATION_COMMAND.REQUEST:
         return this.request(authorization, session, command, at);
       case AUTHORIZATION_COMMAND.RESOLVE:
-        return this.resolve(authorization, session, input.tenantId, command, at);
+        return this.resolve(
+          authorization,
+          session,
+          input.tenantId,
+          command,
+          at,
+        );
       case AUTHORIZATION_COMMAND.GRANT_SUPPORT:
         this.assertManager(authorization, session.userId, at);
         authorization.grantSupport({

@@ -1,6 +1,6 @@
 export { AcceptCloudWrite } from "#application/accept-cloud-write/accept-cloud-write.js";
-export type { AuthorizationCommand } from "#application/operate-authorization/operate-authorization.js";
 export { EvaluatePermission } from "#application/evaluate-permission/evaluate-permission.js";
+export type { AuthorizationCommand } from "#application/operate-authorization/operate-authorization.js";
 export {
   ForeignPinSession,
   InactiveUser,
@@ -19,9 +19,14 @@ export {
   SessionIdle,
   SiteOffline,
 } from "#application/operate-identity/operate-identity.js";
+export {
+  PinConfirmationLocked,
+  PinConfirmationRejected,
+} from "#application/ports/pin-verifier.js";
 export { UpdateStructure } from "#application/update-structure/update-structure.js";
 export {
   Authorization,
+  AuthorizerRejected,
   DeviceRevoked,
   DuplicateAuthorizationId,
   DuplicateIdentityId,
@@ -56,7 +61,3 @@ export {
   UnknownOrganizationReference,
   UserDeactivated,
 } from "#domain/index.js";
-export {
-  PinConfirmationLocked,
-  PinConfirmationRejected,
-} from "#application/ports/pin-verifier.js";

@@ -11,7 +11,7 @@ it("given a route that changes data, when it declares no permission, then the su
   const missing: string[] = [];
 
   for (const app of apps) {
-    const directory = path.join(root, "apps", app, "src");
+    const directory = path.join(root, "apps", app, "src", "http");
 
     for (const file of readdirSync(directory)) {
       if (!file.endsWith(".controller.ts")) {
@@ -23,9 +23,9 @@ it("given a route that changes data, when it declares no permission, then the su
         ...code.matchAll(/@(Post|Put|Patch|Delete)\(\s*"([^"]+)"\s*\)/g),
       ];
       const declared = new Map(
-        [...code.matchAll(/"(POST|PUT|PATCH|DELETE) ([^"]+)":\s*"([^"]+)"/g)].map(
-          (match) => [`${match[1]} ${match[2]}`, match[3] ?? ""],
-        ),
+        [
+          ...code.matchAll(/"(POST|PUT|PATCH|DELETE) ([^"]+)":\s*"([^"]+)"/g),
+        ].map((match) => [`${match[1]} ${match[2]}`, match[3] ?? ""]),
       );
 
       for (const match of mutations) {
