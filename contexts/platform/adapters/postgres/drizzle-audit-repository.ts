@@ -1,5 +1,5 @@
 import type { PGlite } from "@electric-sql/pglite";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 
 import { auditEvents } from "#adapters/postgres/schema.js";
@@ -8,6 +8,7 @@ import {
   type AuditRecordKind,
   AuditRepository,
 } from "#application/ports/audit-repository.js";
+import { AuditSequenceConflict } from "#domain/audit.js";
 
 type Database = PgliteDatabase;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -94,8 +95,10 @@ export class DrizzleAuditRepository extends AuditRepository {
 
   override async append(event: AuditEvent): Promise<void> {
     await inTenant(this.database, event.tenantId, async (tx) => {
+      let inserted: { id: string }[] = [];
+
       try {
-        await tx.insert(auditEvents).values({
+        inserted = await tx.insert(auditEvents).values({
           id: `${event.tenantId}:${event.deviceId}:${event.sequence}:${event.kind}`,
           tenantId: event.tenantId,
           actorId: event.actorId,
@@ -112,11 +115,39 @@ export class DrizzleAuditRepository extends AuditRepository {
           previousHash: event.previousHash,
           digest: event.digest,
           recordKind: event.kind,
-        });
+        })
+          .onConflictDoNothing({
+            target: [
+              auditEvents.tenantId,
+              auditEvents.deviceId,
+              auditEvents.sequence,
+              auditEvents.recordKind,
+            ],
+          })
+          .returning({ id: auditEvents.id });
       } catch (error: unknown) {
         if (!isUniqueViolation(error)) {
           throw error;
         }
+      }
+
+      if (inserted.length > 0) {
+        return;
+      }
+
+      const [row] = await tx
+        .select()
+        .from(auditEvents)
+        .where(
+          and(
+            eq(auditEvents.deviceId, event.deviceId),
+            eq(auditEvents.sequence, event.sequence),
+            eq(auditEvents.recordKind, event.kind),
+          ),
+        );
+
+      if (!row || toEvent(row).digest !== event.digest) {
+        throw new AuditSequenceConflict();
       }
     });
   }

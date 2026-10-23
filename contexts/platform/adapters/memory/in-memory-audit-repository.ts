@@ -1,5 +1,6 @@
 import type { AuditEvent } from "#application/ports/audit-repository.js";
 import { AuditRepository } from "#application/ports/audit-repository.js";
+import { AuditSequenceConflict } from "#domain/audit.js";
 
 const clone = (event: AuditEvent): AuditEvent =>
   JSON.parse(JSON.stringify(event)) as AuditEvent;
@@ -8,7 +9,7 @@ export class InMemoryAuditRepository extends AuditRepository {
   private readonly events: AuditEvent[] = [];
 
   override async append(event: AuditEvent): Promise<void> {
-    const duplicate = this.events.some(
+    const duplicate = this.events.find(
       (stored) =>
         stored.tenantId === event.tenantId &&
         stored.deviceId === event.deviceId &&
@@ -17,6 +18,10 @@ export class InMemoryAuditRepository extends AuditRepository {
     );
 
     if (duplicate) {
+      if (duplicate.digest !== event.digest) {
+        throw new AuditSequenceConflict();
+      }
+
       return;
     }
 

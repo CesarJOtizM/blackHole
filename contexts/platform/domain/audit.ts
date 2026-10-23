@@ -7,6 +7,13 @@ export class MissingActor extends Error {
   }
 }
 
+export class AuditSequenceConflict extends Error {
+  constructor() {
+    super("An audit sequence already stores a different event.");
+    this.name = "AuditSequenceConflict";
+  }
+}
+
 export interface AuditLink {
   actorId: string;
   authorizerId: string | null;

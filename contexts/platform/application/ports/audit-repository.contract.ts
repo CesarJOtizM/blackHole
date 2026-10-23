@@ -4,6 +4,7 @@ import {
   type AuditEvent,
   AuditRepository,
 } from "#application/ports/audit-repository.js";
+import { AuditSequenceConflict } from "#domain/audit.js";
 
 const GENESIS = "0".repeat(64);
 
@@ -75,5 +76,27 @@ export function auditRepositoryContract(
     expect(operations).toEqual(["append", "list"]);
     expect(AuditRepository.prototype).not.toHaveProperty("update");
     expect(AuditRepository.prototype).not.toHaveProperty("delete");
+  });
+
+  it("given a stored audit event, when the same body is repeated and a different body reuses its sequence, then the first body stays", async () => {
+    const repository = await createRepository();
+    const stored = event(
+      "organization_company_conflict",
+      "device_phone_conflict",
+      "organization_venue_conflict",
+    );
+
+    await repository.append(stored);
+    await repository.append(stored);
+    await expect(
+      repository.append({
+        ...stored,
+        action: "sale.comp",
+        digest: "cd".repeat(32),
+      }),
+    ).rejects.toBeInstanceOf(AuditSequenceConflict);
+    expect(await repository.list(stored.tenantId, stored.deviceId)).toEqual([
+      stored,
+    ]);
   });
 }

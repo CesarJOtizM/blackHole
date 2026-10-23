@@ -4,7 +4,10 @@ import type {
 } from "#application/ports/audit-repository.js";
 import type { AuthorizationClock } from "#application/ports/authorization-clock.js";
 import type { AuthorizationRepository } from "#application/ports/authorization-repository.js";
-import type { SessionReader } from "#application/ports/session-reader.js";
+import type {
+  SessionReader,
+  SessionView,
+} from "#application/ports/session-reader.js";
 import type { Authorization } from "#domain/authorization.js";
 import { evaluate } from "#domain/evaluate.js";
 import { PERMISSION, type PermissionCode } from "#domain/permission-catalog.js";
@@ -50,7 +53,7 @@ export class ReadAudit {
 
     const scope = this.scope(
       authorization,
-      session.userId,
+      session,
       this.clock.now(),
       input.tenantId,
       input.siteId,
@@ -71,14 +74,17 @@ export class ReadAudit {
 
   private scope(
     authorization: Authorization,
-    userId: string,
+    session: SessionView,
     at: number,
     tenantId: string,
     siteId: string | null,
   ): "company" | { siteId: string } | "denied" {
-    const auditor = authorization
-      .snapshot()
-      .assignments.some(
+    const userId = session.userId;
+    const snapshot = authorization.snapshot();
+    const copiedAuditor = snapshot.customRoles.some((role) => role.id === "auditor");
+    const predefinedAuditor =
+      !copiedAuditor &&
+      snapshot.assignments.some(
         (assignment) =>
           assignment.userId === userId &&
           assignment.roleId === "auditor" &&
@@ -87,7 +93,25 @@ export class ReadAudit {
           (assignment.validUntil === null || at < assignment.validUntil),
       );
 
-    if (auditor) {
+    if (session.kind === "pin") {
+      const venueId = session.venueId;
+
+      if (venueId === null || (siteId !== null && siteId !== venueId)) {
+        return "denied";
+      }
+
+      const venue =
+        predefinedAuditor ||
+        this.evaluate(authorization, userId, at, {
+          kind: "site",
+          id: venueId,
+          brandId: null,
+        });
+
+      return venue ? { siteId: venueId } : "denied";
+    }
+
+    if (predefinedAuditor) {
       return "company";
     }
 
