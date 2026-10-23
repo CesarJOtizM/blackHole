@@ -345,3 +345,33 @@ export const syntheticPendingIssuances = pgTable(
     requestedAt: bigint("requested_at", { mode: "number" }).notNull(),
   },
 );
+
+export const auditEvents = pgTable(
+  "audit_events",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    authorizerId: text("authorizer_id"),
+    deviceId: text("device_id").notNull(),
+    siteId: text("site_id").notNull(),
+    action: text("action").notNull(),
+    entity: text("entity").notNull(),
+    beforeValue: jsonb("before_value").$type<unknown>(),
+    afterValue: jsonb("after_value").$type<unknown>(),
+    reason: text("reason").notNull(),
+    occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
+    sequence: integer("sequence").notNull(),
+    previousHash: text("previous_hash").notNull(),
+    digest: text("digest").notNull(),
+    recordKind: text("record_kind").notNull(),
+  },
+  (table) => [
+    unique("audit_events_device_sequence_kind").on(
+      table.tenantId,
+      table.deviceId,
+      table.sequence,
+      table.recordKind,
+    ),
+  ],
+);

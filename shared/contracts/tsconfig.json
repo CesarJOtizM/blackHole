@@ -9,6 +9,7 @@
   "include": [
     "index.ts",
     "accept-cloud-write.ts",
+    "audit.ts",
     "authorization.ts",
     "devices.ts",
     "identity.ts",

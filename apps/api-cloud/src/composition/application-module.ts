@@ -1,5 +1,7 @@
+import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
 import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
 import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
+import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
@@ -26,6 +28,7 @@ import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
+import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { UpdateStructureController } from "#src/http/update-structure.controller.js";
 
 export interface CloudApplicationDependencies {
@@ -48,6 +51,7 @@ export interface CloudApplicationDependencies {
   providerRate?: ProviderRateGate;
   pendingIssuance?: PendingIssuance;
   factus?: FactusSimulator;
+  audits?: AuditRepository;
 }
 
 @Module({})
@@ -62,6 +66,7 @@ export class ApplicationModule {
         OperateIdentityController,
         OperateDevicesController,
         AuthorizationController,
+        ReadAuditController,
         HealthController,
       ],
       providers: [
@@ -100,6 +105,10 @@ export class ApplicationModule {
         {
           provide: AuthorizationRepository,
           useValue: dependencies.authorizations,
+        },
+        {
+          provide: AuditRepository,
+          useValue: dependencies.audits ?? new InMemoryAuditRepository(),
         },
         {
           provide: SessionReader,

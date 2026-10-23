@@ -1,5 +1,6 @@
 export const layer = "domain" as const;
 
+export { DeviceChain, MissingActor } from "#domain/audit.js";
 export {
   Authorization,
   AuthorizerRejected,

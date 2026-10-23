@@ -5,6 +5,7 @@ import {
   FastSecondFactor,
 } from "@blackhole/platform/adapters/memory/fast-identity-doubles";
 import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-signature-verifier";
+import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
 import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
@@ -13,6 +14,7 @@ import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
@@ -110,6 +112,10 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: AuthorizationRepository,
         useValue: dependencies.authorizations,
+      },
+      {
+        provide: AuditRepository,
+        useValue: new InMemoryAuditRepository(),
       },
       {
         provide: SessionReader,

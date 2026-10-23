@@ -5,8 +5,8 @@ phase: 0
 modules: [M0]
 bounded_contexts: [platform, contracts, sync]
 apps: [api-cloud, local-node]
-status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+status: verified
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: done, archive: pending}
 depends_on: [p0-02-skeleton-and-sync, p0-04-identity-and-devices]
 source_docs:
   - docs/roadmap.md

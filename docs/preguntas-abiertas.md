@@ -41,7 +41,6 @@ El MVP es 100 % modo nube (D-37). Hay que responder las que bloquean la fundaci�
 
 | Código | Pregunta | Origen | Bloquea |
 |--------|----------|--------|---------|
-| PA-41 | Retención y archivo de la auditoría a largo plazo | openspec `p0-06` | 0.6 |
 | PA-37 | Proveedor independiente de correo, SMS y WhatsApp, incluido el código de un solo uso del portal. No es el servicio nativo de la nube (D-47). Queda pendiente: se revisa después y no se elige ahora. El código del portal bloquea 1.8; los avisos de la entrega 5.1 usan el mismo proveedor | PRD-M3 §9, C4 | 1.8, 5.1 |
 
 #### Pueden esperar
@@ -50,6 +49,7 @@ No frenan la fundación ni el salón. Se responden cuando arranque la entrega qu
 
 | Código | Pregunta | Origen | Bloquea |
 |--------|----------|--------|---------|
+| PA-41 | Retención y archivo de la auditoría a largo plazo | openspec `p0-06` | Ninguna entrega |
 | PA-42 | ¿El conteo de inventario es a ciegas, como el arqueo? | openspec `p2-06` | 2.6 |
 | PA-48 | Si una reserva pagada en efectivo termina en conflicto, ¿la devolución se hace en efectivo o por transferencia? | PRD-M9, TRD-M9 | 3.7 |
 | PA-38 | Pasarela de la suscripción | PRD-M7 §9, TRD-M7 | 4.3 |
