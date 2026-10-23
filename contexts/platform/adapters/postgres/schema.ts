@@ -5,12 +5,13 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import type { OrganizationSnapshot } from "#application/ports/organization-repository.js";
 import type { AuthorizationSnapshot } from "#application/ports/authorization-repository.js";
+import type { OrganizationSnapshot } from "#application/ports/organization-repository.js";
 import type { IdentitySnapshot } from "#domain/identity.js";
 
 export const venueOperations = pgTable("venue_operations", {
@@ -320,3 +321,27 @@ export const authorizationChanges = pgTable("authorization_changes", {
     .$type<AuthorizationSnapshot>()
     .notNull(),
 });
+
+export const providerRateWindows = pgTable(
+  "provider_rate_windows",
+  {
+    taxId: text("tax_id").notNull(),
+    windowStartedAt: bigint("window_started_at", { mode: "number" }).notNull(),
+    requestCount: integer("request_count").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.taxId, table.windowStartedAt],
+    }),
+  ],
+);
+
+export const syntheticPendingIssuances = pgTable(
+  "synthetic_pending_issuances",
+  {
+    id: text("id").primaryKey(),
+    venueId: text("venue_id").notNull(),
+    status: text("status").notNull(),
+    requestedAt: bigint("requested_at", { mode: "number" }).notNull(),
+  },
+);

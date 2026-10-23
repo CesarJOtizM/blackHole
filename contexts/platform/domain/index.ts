@@ -34,6 +34,15 @@ export {
   UserDeactivated,
 } from "#domain/identity.js";
 export {
+  FACTUS_RESPONSE_STATUS,
+  INVOICE_LABELS,
+  METRIC_NAME,
+  metricNames,
+  RELEASE_DIGEST,
+  reviewMetric,
+  SERVICE_INSTANCES,
+} from "#domain/metric-catalog.js";
+export {
   DuplicateNit,
   DuplicateOrganizationId,
   InvalidOrganizationId,
@@ -43,4 +52,5 @@ export {
   StockNotHeld,
   UnknownOrganizationReference,
 } from "#domain/organization.js";
+export { scrubTelemetry } from "#domain/telemetry-scrub.js";
 export { StaleGeneration, VenueOperation } from "#domain/venue-operation.js";

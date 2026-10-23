@@ -16,6 +16,7 @@ variable "private_subnet_ids" { type = list(string) }
 variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
+variable "collector_endpoint" { type = string }
 
 locals {
   production    = var.environment == "production"
@@ -55,6 +56,10 @@ resource "azurerm_container_app" "this" {
       image  = var.image
       cpu    = 0.5
       memory = "1Gi"
+      env {
+        name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+        value = var.collector_endpoint
+      }
     }
 
     dynamic "custom_scale_rule" {

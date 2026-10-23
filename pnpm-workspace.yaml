@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   '@swc/core': true
+  protobufjs: false
 
 catalog:
   typescript: 7.0.2

@@ -8,6 +8,8 @@ import { FastSignatureVerifier } from "@blackhole/platform/adapters/memory/fast-
 import { InMemoryFileStorage } from "@blackhole/platform/adapters/memory/in-memory-file-storage";
 import { InMemoryIdentityRepository } from "@blackhole/platform/adapters/memory/in-memory-identity-repository";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
+import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
+import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
@@ -19,8 +21,10 @@ import { IdentityReader } from "@blackhole/platform/application/ports/identity-r
 import { IdentityRepository } from "@blackhole/platform/application/ports/identity-repository";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 import { PasswordHasher } from "@blackhole/platform/application/ports/password-hasher";
+import { PendingIssuance } from "@blackhole/platform/application/ports/pending-issuance";
 import { PinHasher } from "@blackhole/platform/application/ports/pin-hasher";
 import { PinVerifier } from "@blackhole/platform/application/ports/pin-verifier";
+import { ProviderRateGate } from "@blackhole/platform/application/ports/provider-rate-gate";
 import { RuntimeMetrics } from "@blackhole/platform/application/ports/runtime-metrics";
 import { SecondFactor } from "@blackhole/platform/application/ports/second-factor";
 import { Secrets } from "@blackhole/platform/application/ports/secrets";
@@ -29,9 +33,10 @@ import { SignatureVerifier } from "@blackhole/platform/application/ports/signatu
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
 
-import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { ApplicationModule } from "#src/composition/application-module.js";
+import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
+import { FactusSimulator } from "#src/composition/factus-simulator.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication(cloudDependencies());
@@ -134,6 +139,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: RuntimeMetrics,
         useValue: dependencies.metrics,
       },
+      {
+        provide: ProviderRateGate,
+        useValue: dependencies.providerRate,
+      },
+      {
+        provide: PendingIssuance,
+        useValue: dependencies.pendingIssuance,
+      },
+      {
+        provide: FactusSimulator,
+        useValue: dependencies.factus,
+      },
     ]);
     expect(repository).toBe(dependencies.venueOperations);
     expect(repository).toBeInstanceOf(InMemoryVenueOperationRepository);
@@ -165,5 +182,8 @@ function cloudDependencies() {
     fileStorage: new InMemoryFileStorage(),
     secrets: new InMemorySecrets({}),
     metrics: new InMemoryRuntimeMetrics(),
+    providerRate: new InMemoryProviderRateGate(),
+    pendingIssuance: new InMemoryPendingIssuance(clock),
+    factus: new FactusSimulator(),
   };
 }
