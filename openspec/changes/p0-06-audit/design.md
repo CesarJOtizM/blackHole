@@ -60,7 +60,7 @@ sequenceDiagram
 
 ## Interfaces / Contracts
 
-`append(event)` and `list(tenantId, deviceId)`. No update or delete. Fields: actor, authorizer or null, device, site, action, entity, before, after, reason, `occurredAt`, `sequence`, `previousHash`, `digest`. `before` and `after` use `z.json()`.
+`append(event)` and `list(tenantId, deviceId: string | null)`. A null device lists every device of that tenant so a company read can use the same port. No update or delete. Fields: actor, authorizer or null, device, site, action, entity, before, after, reason, `occurredAt`, `sequence`, `previousHash`, `digest`. `before` and `after` use `z.json()`.
 
 Digest input: UTF-8 JSON, sorted keys, no whitespace, including `previousHash`. First link: 64 zero hex digits. Sequence starts at 1 and steps by 1.
 
@@ -83,7 +83,7 @@ N/A — no routing, shell, subprocess, VCS/PR automation, executable-file classi
 
 ## Migration / Rollout
 
-Apply adds the next unused `NNNN_*.sql` in `contexts/platform/adapters/postgres` (tables, `audit_app`, forced RLS, trigger). Do not hardcode `0006`: `0006_pin_lock.sql` may already exist. Rollback drops them.
+Apply adds the next unused `NNNN_*.sql` in `contexts/platform/adapters/postgres` (tables, `audit_app`, forced RLS, row triggers for update and delete, and a statement trigger for truncate). Do not hardcode `0006`: `0006_pin_lock.sql` may already exist. Rollback does not drop the tables. The proposal keeps production audit tables: revert the application commit and leave the stored events.
 
 ## Deferred to the hybrid phase (D-37)
 

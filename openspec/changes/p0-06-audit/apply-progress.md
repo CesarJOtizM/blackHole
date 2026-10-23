@@ -31,7 +31,6 @@ Post-format confirmation:
 ## Deviations
 
 - Migration file is `contexts/platform/adapters/postgres/0007_audit.sql`. `0006` was not created. `0001` through `0005` were not edited.
-- `list(tenantId, deviceId)` accepts `null` for the device so a company read can use the same append/list port.
 - `application/audit-chain.ts` is shared by record and verify so a finding is appended once and does not extend the device chain.
 - The entry port also exports `ReadAudit` and `AuditReadDenied`. The controller calls the use case through that package boundary.
 - `ReadAudit` calls `evaluate` for the caller's assignments. `evaluateFor` walks every covering assignment and throws on the prose `auditor` role.
