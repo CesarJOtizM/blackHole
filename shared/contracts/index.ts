@@ -5,6 +5,12 @@ export {
   acceptedCloudWrite,
 } from "#contracts/accept-cloud-write.js";
 export {
+  type AuditEventRecord,
+  type AuditReadResult,
+  auditEventRecord,
+  auditReadResult,
+} from "#contracts/audit.js";
+export {
   type AuthorizationCommand,
   type AuthorizationResult,
   authorizationCommand,
