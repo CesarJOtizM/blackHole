@@ -98,24 +98,26 @@ export class DrizzleAuditRepository extends AuditRepository {
       let inserted: { id: string }[] = [];
 
       try {
-        inserted = await tx.insert(auditEvents).values({
-          id: `${event.tenantId}:${event.deviceId}:${event.sequence}:${event.kind}`,
-          tenantId: event.tenantId,
-          actorId: event.actorId,
-          authorizerId: event.authorizerId,
-          deviceId: event.deviceId,
-          siteId: event.siteId,
-          action: event.action,
-          entity: event.entity,
-          beforeValue: event.before,
-          afterValue: event.after,
-          reason: event.reason,
-          occurredAt: event.occurredAt,
-          sequence: event.sequence,
-          previousHash: event.previousHash,
-          digest: event.digest,
-          recordKind: event.kind,
-        })
+        inserted = await tx
+          .insert(auditEvents)
+          .values({
+            id: `${event.tenantId}:${event.deviceId}:${event.sequence}:${event.kind}`,
+            tenantId: event.tenantId,
+            actorId: event.actorId,
+            authorizerId: event.authorizerId,
+            deviceId: event.deviceId,
+            siteId: event.siteId,
+            action: event.action,
+            entity: event.entity,
+            beforeValue: event.before,
+            afterValue: event.after,
+            reason: event.reason,
+            occurredAt: event.occurredAt,
+            sequence: event.sequence,
+            previousHash: event.previousHash,
+            digest: event.digest,
+            recordKind: event.kind,
+          })
           .onConflictDoNothing({
             target: [
               auditEvents.tenantId,

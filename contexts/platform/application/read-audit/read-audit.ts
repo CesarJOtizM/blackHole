@@ -81,7 +81,9 @@ export class ReadAudit {
   ): "company" | { siteId: string } | "denied" {
     const userId = session.userId;
     const snapshot = authorization.snapshot();
-    const copiedAuditor = snapshot.customRoles.some((role) => role.id === "auditor");
+    const copiedAuditor = snapshot.customRoles.some(
+      (role) => role.id === "auditor",
+    );
     const predefinedAuditor =
       !copiedAuditor &&
       snapshot.assignments.some(

@@ -245,13 +245,53 @@ it("given a copied role named auditor without audit.view, when that session read
   const authorizations = new InMemoryAuthorizationRepository();
   const sessions = new InMemorySessionReader();
   const authorization = Authorization.open(TENANT_ID);
-  authorization.appointOwner({ assignmentId: "assignment_owner", userId: OWNER_ID });
-  authorization.copyRole({ roleId: "auditor", sourceRoleId: "cashier", actorUserId: OWNER_ID, at: 0 });
-  authorization.assign({ assignmentId: "assignment_copy", userId: "user_copy", roleId: "auditor", scopeKind: "company", scopeId: TENANT_ID, validFrom: null, validUntil: null, actorUserId: OWNER_ID, at: 0 });
-  await authorizations.save(authorization, { before: Authorization.open(TENANT_ID).snapshot(), after: authorization.snapshot() });
-  sessions.put(TENANT_ID, { sessionId: "session_copy", userId: "user_copy", displayName: "copy", deviceId: "device_phone_1", venueId: null, kind: "administration" });
-  const read = new ReadAudit(new InMemoryAuditRepository(), authorizations, sessions, new FakeAuthorizationClock(0));
-  await expect(read.execute({ tenantId: TENANT_ID, sessionId: "session_copy", siteId: null, permission: PERMISSION.AUDIT_VIEW })).rejects.toBeInstanceOf(AuditReadDenied);
+  authorization.appointOwner({
+    assignmentId: "assignment_owner",
+    userId: OWNER_ID,
+  });
+  authorization.copyRole({
+    roleId: "auditor",
+    sourceRoleId: "cashier",
+    actorUserId: OWNER_ID,
+    at: 0,
+  });
+  authorization.assign({
+    assignmentId: "assignment_copy",
+    userId: "user_copy",
+    roleId: "auditor",
+    scopeKind: "company",
+    scopeId: TENANT_ID,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: 0,
+  });
+  await authorizations.save(authorization, {
+    before: Authorization.open(TENANT_ID).snapshot(),
+    after: authorization.snapshot(),
+  });
+  sessions.put(TENANT_ID, {
+    sessionId: "session_copy",
+    userId: "user_copy",
+    displayName: "copy",
+    deviceId: "device_phone_1",
+    venueId: null,
+    kind: "administration",
+  });
+  const read = new ReadAudit(
+    new InMemoryAuditRepository(),
+    authorizations,
+    sessions,
+    new FakeAuthorizationClock(0),
+  );
+  await expect(
+    read.execute({
+      tenantId: TENANT_ID,
+      sessionId: "session_copy",
+      siteId: null,
+      permission: PERMISSION.AUDIT_VIEW,
+    }),
+  ).rejects.toBeInstanceOf(AuditReadDenied);
 });
 
 it("given a cashier session, when they read audit.view, then it is denied", async () => {
