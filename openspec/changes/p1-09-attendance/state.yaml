@@ -5,8 +5,8 @@ phase: 1
 modules: [M8, M0]
 bounded_contexts: [attendance, platform, contracts, sync]
 apps: [api-cloud, local-node, venue-app, admin-web]
-status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+status: designed
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-02-skeleton-and-sync, p0-03-organization, p0-04-identity-and-devices, p0-05-roles-and-permissions, p0-06-audit]
 source_docs:
   - docs/roadmap.md
