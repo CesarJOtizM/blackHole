@@ -15,8 +15,10 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.4 GREEN `correct-clock-entry.ts` via the platform entry port only.
 - [x] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`.
 - [x] 2.6 GREEN `close-open-shifts.ts`.
+- [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
+- [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the close slice: tasks 1.1–2.6 are complete. `size:exception` was not granted. Next task is 2.7. Units 1–3 and the correction batch stay below. This batch is only the close.
+Cumulative through the policy slice: tasks 1.1–2.8 are complete. `size:exception` was not granted. Next task is 2.9.
 
 ## TDD cycle
 
@@ -156,3 +158,160 @@ Line count for this slice: 454 additions and 4 deletions (458 changed lines). Ne
 A `clock_out` with `pendingReview` true is legal from `on_break` and ends in `pending_review`. A `clock_out` from `on_break` without `pendingReview` still throws `ShiftTransitionRejected`. The design did not name this transition. The new close row copies `deviceId` from the latest matched clock-in; the design did not name that field. There is no transaction port, so a throw from a later `append` is not rolled back. The check-first path still appends nobody when one worker cannot be closed.
 
 Stacked PR for this slice targets the correction slice's branch. Start: correction green. Finish: close green. Policy, read, export, entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / policy only
+
+Tasks 2.7–2.8. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Read, export, the attendance entry port, adapters, Postgres, xlsx, and HTTP were not started. The forecast groups policy, read, export, and the entry port as unit 5. This batch is only the policy.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.7 | Test before `set-venue-attendance-policy.ts`. Exit 1, `Cannot find module '#application/set-venue-attendance-policy/set-venue-attendance-policy.js'`, 0 tests | — | — |
+| 2.8 | Same command | Exit 0, 1 file, 2 tests | Biome, then `pnpm vitest run --project attendance set-venue-attendance-policy record-clock-entry` still exit 0 |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance set-venue-attendance-policy record-clock-entry correct-clock-entry close-open-shifts` → exit 0, 4 files, 19 passed |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud contexts/attendance --pretty false` → exit 0 |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/set-venue-attendance-policy/`, the `#application/set-venue-attendance-policy/*` import key, `save` on `AttendancePolicyRepository`, and the empty `save` on the record-clock test double |
+
+`SetVenueAttendancePolicy` rejects a negative tolerance, or a close time that is not `HH:mm`, before save and before audit. A missing policy is the default, so the rule is off until someone sets it. Enabling the rule stores `operationRuleEnabled: true` and audits action `attendance.policy`. `before` is the default with the rule off. `after` is the stored policy. `siteId` and `entity` are the venue. A scheduled policy also requires `HH:mm` bounds. No HTTP and no permission check in this slice.
+
+## Deviations
+
+The audit action is `attendance.policy`. The design says a rule change is audited and does not name the action. `AttendancePolicyRepository.save` is new. The record-clock tests never call it. A later adapter has to implement it. There is no transaction: a throw from the audit leaves the policy stored.
+
+Stacked PR for this slice targets the close slice's branch. Start: close green. Finish: policy green. Read, export, entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / read only
+
+Tasks 2.9–2.10. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Export, the attendance entry port, adapters, Postgres, xlsx, and HTTP were not started. The forecast groups policy, read, export, and the entry port as unit 5. This batch is only the read.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.9 | Test before `read-attendance.ts`. Exit 1, `Cannot find module '#application/read-attendance/read-attendance.js'`, 0 tests | — | — |
+| 2.10 | Same command | Exit 0, 1 file, 2 tests | Biome, then the same command still exit 0, 2 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance read-attendance` → exit 0, 1 file, 2 passed. Regression: `pnpm vitest run --project attendance --project local-node` → exit 0, 13 files, 52 passed |
+| Typecheck | `pnpm exec tsc -b apps/local-node contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (312 modules, 810 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/read-attendance/` and the `#application/read-attendance/*` import key |
+
+`ReadAttendance` asks `AttendanceSiteAccess` for `attendance.correct` on the venue. A reader of another site throws `AttendanceReadDenied` before any list. A scheduled policy of `08:00`–`16:00` with 10 minutes of tolerance reports 7h30 for a day with a 30-minute break, 25 minutes of lateness for an 08:25 clock-in, and an absence when the only clock-in is `flagged`. A correction replaces the projected clock-out and the original row stays. An open matched clock-in is `on_shift`. A flagged clock-in stays `off_shift`.
+
+484 physical lines: `read-attendance.ts` 240, the test 243, and one import key. Over the 400-line default. `size:exception` was not granted. The two tasks are one slice and were finished together.
+
+## Deviations
+
+`AttendanceReadDenied` and `AttendanceSiteAccess` are not named in the design. The use case does not call `EvaluatePermission`: attendance may import another context only through its entry port, and the HTTP task is the later permission check. The gate always receives `attendance.correct`. The stored schedule is `HH:mm`, which `projectHours` cannot parse. The read anchors those bounds to the Bogota date of the worker's earliest mark. `America/Bogota` is treated as a fixed UTC−5 offset. An end at or before the start rolls to the next calendar day.
+
+Stacked PR for this slice targets the policy slice's branch. Start: policy green. Finish: read green. Export, entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / export only
+
+Tasks 2.11–2.12. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. The entry port, adapters, Postgres, xlsx, and HTTP were not started. The forecast groups policy, read, export, and the entry port as unit 5. This batch is only the export.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.11 | Test before `export-hours.ts`. Exit 1, `Cannot find module '#application/export-hours/export-hours.js'`, 0 tests | — | — |
+| 2.12 | Same command | Exit 0, 1 file, 2 tests | Biome, then the same command still exit 0, 2 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance export-hours` → exit 0, 1 file, 2 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 8 files, 46 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (315 modules, 825 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/export-hours/`, `application/ports/hours-workbook.ts`, and the `#application/export-hours/*` import key |
+
+`ExportHours` asks `AttendanceSiteAccess` for `attendance.correct`. Another site throws `AttendanceExportDenied` before any list or write. The week is `[from, to)` on `occurredAt`. A clock-out auto-closed at 22:00 and corrected to 16:00 exports 8 hours, not the 14 hours of the stored row. The previous week's worker stays out of the sheet. `HoursWorkbookRow` is the projection plus `userId`. It has no salary field. The port returns the bytes. SheetJS stays in the later xlsx adapter.
+
+431 physical lines: `export-hours.ts` 210, the test 200, `hours-workbook.ts` 20, and one import key. Over the 400-line default. `size:exception` was not granted. The two tasks are one slice and were finished together.
+
+## Deviations
+
+`AttendanceExportDenied` is not named in the design. The use case reuses `AttendanceSiteAccess` and does not call `EvaluatePermission`. The week bounds are ISO instants supplied by the caller. The Bogota `HH:mm` anchor is copied from `ReadAttendance` so a scheduled policy still reaches `projectHours`. No workbook bytes are produced inside the use case.
+
+Stacked PR for this slice targets the read slice's branch. Start: read green. Finish: export green. Entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / entry port only
+
+Tasks 2.13–2.14. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Adapters, Postgres, xlsx, and HTTP were not started in this slice. The slice ran in a separate worktree from `0362fe3` and was copied back onto the uncommitted tree.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.13 | Test before `entry-port.ts`. Exit 1, `Cannot find module '#application/entry-port.js'`, 0 tests | — | — |
+| 2.14 | Same command | Exit 0, 1 file, 8 tests | Biome, then the same command still exit 0, 8 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance entry-port` → exit 0, 1 file, 8 passed. Together with the memory contract: 2 files, 14 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 10 files, 60 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (320 modules, 835 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/entry-port.ts`, `entry-port.test.ts`, and the `./application/entry-port` export |
+
+`HasOpenClockIn` returns `{ ruleEnabled, counting }`. A missing policy keeps the rule off. Counting is `on_shift` or `on_break`. A flagged clock-in does not count. `HasClockedInCashier` is true only when that open matched clock-in has a `cashRegisterId`. A later matched clock-out clears both. The file exports only those two classes. It does not call `EvaluatePermission`.
+
+285 physical lines: `entry-port.ts` 98, the test 186, and one export. Under the 400-line default.
+
+## Deviations
+
+The worktree started at `0362fe3`, before `AttendancePolicyRepository.save`. The copied test double gained an empty `save` so it implements the port that already exists on this tree. Callers still decide the block: the use case returns the two booleans and does not throw when the rule is on and counting is false.
+
+## Work unit 6 slice / memory repository only
+
+Tasks 3.1–3.2. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Postgres, xlsx, and HTTP were not started. The slice ran in a separate worktree from `0362fe3` and was copied back onto the uncommitted tree.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 3.1 | Test before the memory repository. Exit 1, `Cannot find module '#adapters/memory/in-memory-clock-entry-repository.js'`, 0 tests | — | — |
+| 3.2 | Same command | Exit 0, 1 file, 6 tests | Biome, then the same command still exit 0, 6 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance in-memory-clock-entry-repository` → exit 0, 1 file, 6 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (320 modules, 835 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory port, no process boundary |
+| Rollback | `contexts/attendance/adapters/memory/`, `application/ports/clock-entry-repository.contract.ts`, the `#adapters/memory/*` import, and `adapters` in the attendance tsconfig `include` |
+
+`InMemoryClockEntryRepository` clones on write and on read. A second append with the same `tenantId` and `commandId` keeps the first row. Tenant B cannot list tenant A's row. `list` hides another user; `listByVenue` returns that row. The class has no `update` and no `delete`.
+
+About 172 physical lines: the contract 124, the repository 42, the test 4, plus the import and the tsconfig include. Under the 400-line default.
+
+## Deviations
+
+The idempotency key is `tenantId` plus `commandId`. A different payload on the retry is ignored and the first row stays. `tsconfig.json` now includes `adapters` so the new folder typechecks.
+
+Stacked PR for these two slices targets the export slice's branch. Start: export green. Finish: entry port and memory repository green. Postgres, xlsx, and HTTP stay out.
+
+## Work unit 6 slice / Postgres only
+
+Tasks 3.3–3.4. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. xlsx and HTTP were not started. The migration stays inside `contexts/attendance`. Platform files `0001`–`0007` were not edited. `0006` stays unused. This file is `0008_attendance.sql`.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 3.3 | Test before the Drizzle repositories. Exit 1, `Cannot find module '#adapters/postgres/drizzle-attendance-policy-repository.js'`, 0 tests | — | — |
+| 3.4 | Same command | Exit 0, 1 file, 11 tests | Biome, then the same command still exit 0, 11 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance drizzle-attendance-repository` → exit 0, 1 file, 11 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 11 files, 71 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (324 modules, 850 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: PGlite in process, no `listen`. Each test opens a client and `afterAll` closes it |
+| Rollback | `contexts/attendance/adapters/postgres/`, the `#adapters/postgres/*` import, the PGlite and Drizzle dependencies, and `"types": ["node"]` |
+
+`attendance_app` receives `SELECT` and `INSERT`. Row security is enabled and forced on `app.tenant_id`. A select as that role returns only the current tenant. `UPDATE`, `DELETE`, and `TRUNCATE` on `clock_entries` and `attendance_policies` raise `attendance rows are append-only`, and the stored row stays. The shared clock-entry contract passes on PGlite: hidden tenant, one row per `tenantId` and `commandId`, no `update` or `delete` method. A second policy save inserts the next `position`. `find` returns that latest row. Another tenant stays hidden.
+
+588 physical lines in the five new files: SQL 123, schema 53, clock repository 103, policy repository 130, contract test 179. Package, tsconfig, and the lockfile add the dependencies. Over the 400-line default. `size:exception` was not granted. The two tasks are one slice and were finished together.
+
+## Deviations
+
+`ClockEntryCorrection` has no Postgres table in this slice. The task names entries and policy. A policy change cannot update the old row, so `save` appends a version and `find` reads the highest `position`. The migration is `0008` inside attendance, not a platform migration. `0006` remains unused because `0001`–`0007` stay untouched.
+
+Stacked PR for this slice targets the memory slice's branch. Start: memory repository green. Finish: Postgres green. xlsx and HTTP stay out.

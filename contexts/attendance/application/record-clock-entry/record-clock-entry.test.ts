@@ -101,6 +101,8 @@ class MemoryPolicies extends AttendancePolicyRepository {
 
     return this.policy;
   }
+
+  override async save(_policy: AttendancePolicy): Promise<void> {}
 }
 
 class AcceptingPinCheck extends PinCheck {

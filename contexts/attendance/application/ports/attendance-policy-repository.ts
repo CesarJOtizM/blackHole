@@ -43,4 +43,6 @@ export abstract class AttendancePolicyRepository {
     tenantId: string,
     venueId: string,
   ): Promise<AttendancePolicy | null>;
+
+  abstract save(policy: AttendancePolicy): Promise<void>;
 }

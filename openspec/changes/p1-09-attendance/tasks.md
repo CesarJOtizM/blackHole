@@ -48,8 +48,8 @@ Cloud slice (D-37, D-43, D-33). RED then GREEN (ADR-017). Threat matrix N/A. Spl
 - [x] 2.4 GREEN `correct-clock-entry.ts` via platform `entry-port` only.
 - [x] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`: `pending_review` clock-out; failed cut is not queued.
 - [x] 2.6 GREEN `close-open-shifts.ts`.
-- [ ] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`: audited change; rule off until set.
-- [ ] 2.8 GREEN `set-venue-attendance-policy.ts`.
+- [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`: audited change; rule off until set.
+- [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 - [ ] 2.9 RED `application/read-attendance/read-attendance.test.ts`: hours, lateness, absences, corrections, presence; skip `flagged`; deny other site.
 - [ ] 2.10 GREEN `read-attendance.ts`. `attendance.correct`.
 - [ ] 2.11 RED `application/export-hours/export-hours.test.ts`: corrected hours; no salary.
