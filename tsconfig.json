@@ -3,6 +3,7 @@
   "references": [
     { "path": "contexts/platform" },
     { "path": "contexts/orders" },
+    { "path": "contexts/attendance" },
     { "path": "shared/contracts" },
     { "path": "apps/api-cloud" },
     { "path": "apps/local-node" }

@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm vitest run --project platform
       - run: pnpm vitest run --project orders
+      - run: pnpm vitest run --project attendance
       - run: pnpm vitest run --project api-cloud
       - run: pnpm vitest run --project skeleton
       - run: pnpm architecture
