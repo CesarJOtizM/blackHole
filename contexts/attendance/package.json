@@ -16,6 +16,7 @@
     "#application/record-clock-entry/*": "./application/record-clock-entry/*",
     "#application/correct-clock-entry/*": "./application/correct-clock-entry/*",
     "#application/close-open-shifts/*": "./application/close-open-shifts/*",
-    "#application/set-venue-attendance-policy/*": "./application/set-venue-attendance-policy/*"
+    "#application/set-venue-attendance-policy/*": "./application/set-venue-attendance-policy/*",
+    "#application/read-attendance/*": "./application/read-attendance/*"
   }
 }
