@@ -11,8 +11,12 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 1.5 GREEN `domain/project-hours.ts`, exported from `domain/index.ts`.
 - [x] 2.1 RED `application/record-clock-entry/record-clock-entry.test.ts`.
 - [x] 2.2 GREEN `record-clock-entry.ts` and its ports.
+- [x] 2.3 RED `application/correct-clock-entry/correct-clock-entry.test.ts`.
+- [x] 2.4 GREEN `correct-clock-entry.ts` via the platform entry port only.
+- [x] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`.
+- [x] 2.6 GREEN `close-open-shifts.ts`.
 
-Cumulative through work unit 3: tasks 1.1–2.2 are complete. Next task is 2.3. `size:exception` was not granted.
+Cumulative through the close slice: tasks 1.1–2.6 are complete. `size:exception` was not granted. Next task is 2.7. Units 1–3 and the correction batch stay below. This batch is only the close.
 
 ## TDD cycle
 
@@ -95,3 +99,29 @@ Tasks 2.1–2.2. stacked-to-main. `size:exception` was not granted. Standard mod
 This unit adds 676 lines under `contexts/attendance/application` (230 use case, 326 test, 120 ports) plus the three `#application` import keys and `application` on the tsconfig `include`. That is over the 400-line review budget. The unit stayed together because it is one work unit. Task 2.3 was not started.
 
 Stacked PR 3 targets the PR 2 branch. Start: domain green. Finish: record green. Correct, close, policy setter, read, export, and HTTP stay out.
+
+## Work unit 4 slice / correction only
+
+Tasks 2.3–2.4. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Close-open-shifts (2.5–2.6) was not started. The forecast groups correct and close as unit 4; this batch is only the correction.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.3 | Test before `correct-clock-entry.ts`. Exit 1, `Cannot find module '#application/correct-clock-entry/correct-clock-entry.js'`, 0 tests | — | — |
+| 2.4 | Same command | Exit 0, 1 file, 3 tests | Biome check, then the same command still exit 0, 1 file, 3 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance correct-clock-entry` → exit 0, 1 file, 3 passed |
+| Domain and record regression | `pnpm vitest run --project attendance record-clock-entry worker-shift project-hours` → exit 0, 3 files, 31 passed |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (285 modules, 697 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler` (TypeScript 7 is outside dependency-cruiser 18.6.0's supported compiler). Cruiser rules were not changed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/correct-clock-entry/`, `contexts/attendance/application/ports/attendance-audit.ts`, `contexts/attendance/application/ports/clock-entry-correction-repository.ts`, the `#application/correct-clock-entry/*` import key, the `@blackhole/platform` workspace dependency, the platform tsconfig reference, and the attendance importer in `pnpm-lock.yaml` |
+
+`CorrectClockEntry` appends a correction and leaves the original `ClockEntry` unchanged, including `occurredAt`. The stored fact is `entryId`, replacement `occurredAt`, and reason. The test lists the original time, then `projectHours` with the entries plus that correction: 08:00 in and a corrected 16:00 out is 8 hours. An empty or blank reason throws `CorrectionReasonRequired` before append and before audit. An unknown entry throws `UnknownClockEntry`; nothing is appended and the audit is not called. After a successful append, the narrow audit port receives action `attendance.correct`, entity the original entry id, `siteId` the venue, the correction reason, `before` the original `occurredAt`, and `after` the replacement. `actorId`, `deviceId`, and `tenantId` come from the command. `authorizerId` may be null. The audit fake sees the correction already stored. `RecordClockEntry` was not changed and does not call the audit port.
+
+`PlatformAttendanceAudit` is the only attendance file that imports `RecordAuditEvent`, and only from `@blackhole/platform/application/entry-port`. `verbatimModuleSyntax` keeps that import type-only because the class is injected. The use-case test fakes `AttendanceAudit` and does not construct `RecordAuditEvent`. No attendance entry port. No role check.
+
+New attendance TypeScript files are 360 physical lines: test 219, use case 81, platform adapter 27, audit port 16, correction port 17. Under the 400-line review budget. `size:exception` was not granted.
+
+Stacked PR for this slice targets the PR 3 branch. Start: record green. Finish: correction green. Close, policy, read, export, adapters, and HTTP stay out.

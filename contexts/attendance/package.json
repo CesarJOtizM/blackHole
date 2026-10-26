@@ -6,10 +6,14 @@
   "exports": {
     "./domain": "./domain/index.js"
   },
+  "dependencies": {
+    "@blackhole/platform": "workspace:*"
+  },
   "imports": {
     "#domain/*": "./domain/*",
     "#application/*": "./application/*",
     "#application/ports/*": "./application/ports/*",
-    "#application/record-clock-entry/*": "./application/record-clock-entry/*"
+    "#application/record-clock-entry/*": "./application/record-clock-entry/*",
+    "#application/correct-clock-entry/*": "./application/correct-clock-entry/*"
   }
 }
