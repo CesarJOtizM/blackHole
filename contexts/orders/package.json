@@ -1,0 +1,15 @@
+{
+  "name": "@blackhole/orders",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": "./domain/index.js"
+  },
+  "imports": {
+    "#domain/*": "./domain/*",
+    "#application/update-menu/*": "./application/update-menu/*",
+    "#application/ports/*": "./application/ports/*",
+    "#adapters/memory/*": "./adapters/memory/*"
+  }
+}

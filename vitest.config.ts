@@ -25,6 +25,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "orders",
+          include: ["contexts/orders/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "spikes",
           include: ["tools/spikes/**/*.test.ts"],
         },
