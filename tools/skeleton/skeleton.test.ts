@@ -36,6 +36,8 @@ const absent = [
 
 const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
 
+const allowedContexts = ["orders", "platform"] as const;
+
 const skippedDirectories = new Set([
   "node_modules",
   "dist",
@@ -101,7 +103,7 @@ it("given Zod declared in the catalog, when imports are reviewed, then Zod stays
   expect(nestjsZodDependencies).toEqual([]);
 });
 
-it("given this change tree, when sync, PWAs, other contexts, or a use case are sought, then none exist", () => {
+it("given this change tree, when sync, PWAs, or a use case are sought, then none exist and orders is an allowed context", () => {
   const contexts = path.join(root, "contexts");
   const platform = path.join(contexts, "platform");
   const directories = readdirSync(contexts, { withFileTypes: true })
@@ -122,7 +124,7 @@ it("given this change tree, when sync, PWAs, other contexts, or a use case are s
     /\b(?:class|function)\b/.test(readFileSync(filePath, "utf8")),
   );
 
-  expect(directories).toEqual(["platform"]);
+  expect(directories.sort()).toEqual([...allowedContexts]);
   for (const relativePath of absent) {
     expect(existsSync(path.join(root, relativePath)), relativePath).toBe(false);
   }
