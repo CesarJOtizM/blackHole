@@ -263,6 +263,12 @@ importers:
         specifier: 7.8.2
         version: 7.8.2
 
+  contexts/attendance:
+    dependencies:
+      '@blackhole/platform':
+        specifier: workspace:*
+        version: link:../platform
+
   contexts/platform:
     dependencies:
       '@electric-sql/pglite':
