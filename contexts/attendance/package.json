@@ -8,7 +8,12 @@
     "./application/entry-port": "./application/entry-port.js"
   },
   "dependencies": {
-    "@blackhole/platform": "workspace:*"
+    "@blackhole/platform": "workspace:*",
+    "@electric-sql/pglite": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   },
   "imports": {
     "#domain/*": "./domain/*",
@@ -20,6 +25,7 @@
     "#application/set-venue-attendance-policy/*": "./application/set-venue-attendance-policy/*",
     "#application/read-attendance/*": "./application/read-attendance/*",
     "#application/export-hours/*": "./application/export-hours/*",
-    "#adapters/memory/*": "./adapters/memory/*"
+    "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/postgres/*": "./adapters/postgres/*"
   }
 }
