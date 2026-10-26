@@ -82,6 +82,7 @@ const toMark = (entry: ClockEntry): ClockMark => ({
   kind: entry.kind,
   presence: entry.presence,
   occurredAt: entry.occurredAt,
+  pendingReview: entry.pendingReview,
 });
 
 const shiftFor = (
@@ -205,6 +206,7 @@ export class RecordClockEntry {
       occurredAt: new Date(this.clock.now()).toISOString(),
       commandId: command.commandId,
       cashRegisterId: registerFor(command, presence),
+      pendingReview: false,
     };
   }
 
