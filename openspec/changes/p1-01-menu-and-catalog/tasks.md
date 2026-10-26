@@ -45,8 +45,8 @@ Cloud slice (D-37). RED/GREEN. `strict_tdd` false. Threat matrix N/A.
 
 ## 5. Postgres
 
-- [ ] 5.1 RED `drizzle-menu-repository.contract.test.ts`: PGlite, `orders_app`, forced RLS, hidden tenant, round-trip. No mock.
-- [ ] 5.2 GREEN `0001_menu.sql`, `schema.ts`, `drizzle-menu-repository.ts`. Not a platform migration.
+- [x] 5.1 RED `drizzle-menu-repository.contract.test.ts`: PGlite, `orders_app`, forced RLS, hidden tenant, round-trip. No mock.
+- [x] 5.2 GREEN `0001_menu.sql`, `schema.ts`, `drizzle-menu-repository.ts`. Not a platform migration.
 
 ## 6. Cloud HTTP
 

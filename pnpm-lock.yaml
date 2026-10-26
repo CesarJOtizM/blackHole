@@ -269,6 +269,15 @@ importers:
         specifier: workspace:*
         version: link:../platform
 
+  contexts/orders:
+    dependencies:
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.10
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.4(@electric-sql/pglite@0.5.10)(@opentelemetry/api@1.10.0)(pg@8.23.1)
+
   contexts/platform:
     dependencies:
       '@electric-sql/pglite':
