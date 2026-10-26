@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": "./domain/index.js"
+    "./domain": "./domain/index.js",
+    "./application/entry-port": "./application/entry-port.js"
   },
   "imports": {
     "#domain/*": "./domain/*",
     "#application/update-menu/*": "./application/update-menu/*",
+    "#application/view-venue-menu/*": "./application/view-venue-menu/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*"
   }

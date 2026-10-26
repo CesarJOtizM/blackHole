@@ -1,8 +1,8 @@
 # Apply progress: p1-01-menu-and-catalog
 
-Work units 1, 2, and 3. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+Work units 1, 2, 3, 4, and 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tasks 2.1–2.2). This batch is PR 3 and stops at tasks 3.1–3.4. Not committed. `size:exception` was not granted.
+Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tasks 2.1–2.2). Unit 3 is PR 3 (tasks 3.1–3.4). Unit 4 is PR 4 (tasks 4.1–4.2). This batch is PR 5 and stops at tasks 5.1–5.2. Not committed. `size:exception` was not granted.
 
 ## Completed tasks
 
@@ -14,6 +14,10 @@ Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tas
 - [x] 3.2 GREEN `update-menu.ts`, `ports/menu-repository.ts` (`load`, `save`), `ports/venue-directory.ts`.
 - [x] 3.3 RED `ports/menu-repository.contract.ts` and `adapters/memory/in-memory-menu-repository.contract.test.ts`: round-trip; a hidden tenant is not visible.
 - [x] 3.4 GREEN `adapters/memory/in-memory-menu-repository.ts`. Imports `#application/update-menu/*`, `#application/ports/*`, and `#adapters/memory/*`.
+- [x] 4.1 RED `application/view-venue-menu/view-venue-menu.test.ts`: other brand hidden; 12:00 not orderable. Bogota minute via `Intl`.
+- [x] 4.2 GREEN `view-venue-menu.ts`, `adapters/memory/in-memory-venue-directory.ts`, `application/entry-port.ts`. Callers outside the context use `entry-port.ts` only.
+- [x] 5.1 RED `adapters/postgres/drizzle-menu-repository.contract.test.ts`: PGlite, `orders_app`, forced RLS, hidden tenant, round-trip. No Drizzle mock. The test calls `menuRepositoryContract(...)`.
+- [x] 5.2 GREEN `adapters/postgres/0001_menu.sql`, `schema.ts`, `drizzle-menu-repository.ts`. Not a platform migration. `Menu.venuePrices` is the read-only list the adapter replays.
 
 ## Work Unit Evidence
 
@@ -41,6 +45,22 @@ Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tas
 | Runtime harness command/scenario and exact result | N/A, memory ports. `UpdateMenu` and `InMemoryMenuRepository` do not open files, sockets, or a database. |
 | Rollback boundary | `contexts/orders/application/update-menu`, `contexts/orders/application/ports/menu-repository.ts`, `menu-repository.contract.ts`, `venue-directory.ts`, `contexts/orders/adapters/memory`, the three new `package.json` import patterns, and the `application`/`adapters` entries in `contexts/orders/tsconfig.json`. Domain `menu.ts` stays. |
 
+### Unit 4
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm vitest run --project orders view-venue-menu` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Same command after `pnpm biome check --write` on the touched files — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Regression `pnpm vitest run --project orders menu.test update-menu in-memory-menu` — exit 0. `Test Files  4 passed (4)`. `Tests  21 passed (21)`. The `menu.test` filter also collected `view-venue-menu.test.ts`. |
+| Runtime harness command/scenario and exact result | N/A, memory Clock. `ViewVenueMenu` and `InMemoryVenueDirectory` do not open files, sockets, or a database. `Clock.now()` becomes the `America/Bogota` `HH:mm` minute inside the use case via `Intl`. The domain receives that minute. |
+| Rollback boundary | `contexts/orders/application/view-venue-menu`, `contexts/orders/application/entry-port.ts`, `contexts/orders/application/ports/clock.ts`, `contexts/orders/adapters/memory/in-memory-venue-directory.ts`, the `#application/view-venue-menu/*` import, and the `./application/entry-port` package export. Domain `menu.ts` and the `UpdateMenu` test double stay. |
+
+### Unit 5
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm vitest run --project orders drizzle-menu-repository` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. Same command after `pnpm biome check --write` on the touched files — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. Regression `pnpm vitest run --project orders menu.test update-menu in-memory-menu view-venue-menu` — exit 0. `Test Files  4 passed (4)`. `Tests  21 passed (21)`. |
+| Runtime harness command/scenario and exact result | N/A, PGlite, no listen. Each test opens an in-process PGlite database, applies `0001_menu.sql`, and closes the client in `afterAll`. There is no live Postgres and no Drizzle mock. |
+| Rollback boundary | `contexts/orders/adapters/postgres/0001_menu.sql`, `schema.ts`, `drizzle-menu-repository.ts`, `drizzle-menu-repository.contract.test.ts`, the `#adapters/postgres/*` import, the `catalog:` dependencies in `contexts/orders/package.json`, the orders importer lines in `pnpm-lock.yaml`, and the `venuePrices` getter in `contexts/orders/domain/menu.ts`. |
+
 ### RED then GREEN
 
 | Task | RED (command and result) | GREEN |
@@ -49,6 +69,7 @@ Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tas
 | 2.1 → 2.2 | `pnpm vitest run --project orders menu.test` exit 1. `Test Files  1 failed (1)`. `Tests  4 failed \| 6 passed (10)`. `menu.quote is not a function` and `menu.setVenuePrice is not a function`. | Same command after `VenuePrice` and `Menu.quote`: exit 0. `Test Files  1 passed (1)`. `Tests  10 passed (10)`. |
 | 3.1 → 3.2 | `pnpm vitest run --project orders update-menu` exit 1. `FAIL contexts/orders/application/update-menu/update-menu.test.ts` — `Cannot find module '#adapters/memory/in-memory-menu-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | The use case test imports the memory adapter from 3.4, so this file stayed red until that adapter existed. After 3.4, `pnpm vitest run --project orders update-menu in-memory-menu` exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. |
 | 3.3 → 3.4 | `pnpm vitest run --project orders in-memory-menu` exit 1. `FAIL contexts/orders/adapters/memory/in-memory-menu-repository.contract.test.ts` — `Cannot find module '#adapters/memory/in-memory-menu-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same filter inside `pnpm vitest run --project orders update-menu in-memory-menu` after `in-memory-menu-repository.ts`: exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. |
+| 4.1 → 4.2 | `pnpm vitest run --project orders view-venue-menu` exit 1. `FAIL contexts/orders/application/view-venue-menu/view-venue-menu.test.ts` — `Cannot find module '#adapters/memory/in-memory-venue-directory.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. `view-venue-menu.ts` and `clock.ts` were also absent; Vitest stopped at the first missing import. | Same command after `view-venue-menu.ts`, `in-memory-venue-directory.ts`, `clock.ts`, and `entry-port.ts`: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Repeated after Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
 
 ## Deviations from Design
 
@@ -66,17 +87,27 @@ PR 3 adds these choices the design does not name:
 
 The use case test keeps its venue directory in the test file. `in-memory-venue-directory.ts` stays in task 4.2.
 
+PR 4 adds these choices the design does not name:
+
+- `application/ports/clock.ts` is `now(): number`, the same shape as attendance. Orders had no clock port. `Intl` stays in `ViewVenueMenu`. The domain still receives `HH:mm` and was not changed.
+- Input is `tenantId` and `venueId` only. The brand comes from `VenueDirectory.brandOf`. An unknown venue returns `null` and does not load a menu. A venue of another brand loads only that brand. A read does not save.
+- The noon case also publishes an item sold only at `12:00` and expects it orderable. Breakfast stays listed with `orderable: false`. A UTC minute of `17:00` fails that case. `2026-10-26T17:00:00.000Z` is 12:00 in `America/Bogota`.
+- `entry-port.ts` re-exports `UpdateMenu` and `ViewVenueMenu`, plus `ForeignVenue` and the input types, so a later caller does not import the use case modules. The new test imports `ViewVenueMenu` from its module, matching `update-menu.test.ts`. Existing update-menu tests were not moved. There is no HTTP caller in this slice.
+- The read test uses `InMemoryVenueDirectory`. `UpdateMenu`'s `MapVenueDirectory` stays in its own test.
+
 ## Issues Found
 
-None in this slice. This work unit is about 537 physical lines under `contexts/orders/application` and `contexts/orders/adapters`, plus the import map and the tsconfig include. That is over the 400-line default. The four tasks are one work unit and were finished together. `size:exception` was not granted. Engram was reported down in earlier batches; the file remains the source of progress.
+Unit 3 is about 537 physical lines under `contexts/orders/application` and `contexts/orders/adapters`, plus the import map and the tsconfig include. That is over the 400-line default. The four tasks are one work unit and were finished together. `size:exception` was not granted. Engram was reported down in earlier batches; the file remains the source of progress.
+
+Unit 4 has no implementation issue. The new files are 295 physical lines, plus the import pattern and the `entry-port` export. That stays under the 400-line default. `size:exception` was not granted.
 
 ## Remaining Tasks
 
-- [ ] 4.1 through 7.3, including venue read, Postgres, cloud HTTP, and the node 403.
+- [ ] 5.1 through 7.3, including Postgres, cloud HTTP, and the node 403.
 
 ## Workload / PR Boundary
 
 - Mode: stacked PR slice (`stacked-to-main`)
-- Current work unit: 3 — save path and memory contract
-- Boundary: starts from quote and `VenuePrice` (tasks 2.1–2.2) and ends when `UpdateMenu` and the in-memory menu repository are green. Does not include `ViewVenueMenu`, Postgres, or HTTP.
-- Estimated review budget impact: about 537 physical lines in the new application and adapter files, plus the import map and tsconfig include. Over the 400-line default. `size:exception` was not granted.
+- Current work unit: 4 — venue read
+- Boundary: starts after the in-memory menu repository and ends when `ViewVenueMenu` is green. Does not include Postgres, HTTP, the node 403, SQLite, or UI.
+- Estimated review budget impact: 295 physical lines in the new files, plus the package export and import pattern. Under 400. `size:exception` was not granted.
