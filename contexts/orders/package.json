@@ -5,7 +5,12 @@
   "type": "module",
   "exports": {
     "./domain": "./domain/index.js",
-    "./application/entry-port": "./application/entry-port.js"
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/ports/clock": "./application/ports/clock.js",
+    "./application/ports/menu-repository": "./application/ports/menu-repository.js",
+    "./application/ports/venue-directory": "./application/ports/venue-directory.js",
+    "./adapters/memory/in-memory-menu-repository": "./adapters/memory/in-memory-menu-repository.js",
+    "./adapters/postgres/drizzle-menu-repository": "./adapters/postgres/drizzle-menu-repository.js"
   },
   "imports": {
     "#domain/*": "./domain/*",
@@ -18,5 +23,8 @@
   "dependencies": {
     "@electric-sql/pglite": "catalog:",
     "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   }
 }

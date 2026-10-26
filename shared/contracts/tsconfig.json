@@ -13,6 +13,7 @@
     "authorization.ts",
     "devices.ts",
     "identity.ts",
+    "menu.ts",
     "update-structure.ts"
   ]
 }
