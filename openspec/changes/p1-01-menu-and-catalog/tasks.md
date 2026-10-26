@@ -40,8 +40,8 @@ Cloud slice (D-37). RED/GREEN. `strict_tdd` false. Threat matrix N/A.
 
 ## 4. ViewVenueMenu
 
-- [ ] 4.1 RED `view-venue-menu.test.ts`: other brand hidden; 12:00 not orderable. Bogota minute via `Intl`.
-- [ ] 4.2 GREEN `view-venue-menu.ts`, `in-memory-venue-directory.ts`, `entry-port.ts`. Callers use `entry-port.ts` only.
+- [x] 4.1 RED `view-venue-menu.test.ts`: other brand hidden; 12:00 not orderable. Bogota minute via `Intl`.
+- [x] 4.2 GREEN `view-venue-menu.ts`, `in-memory-venue-directory.ts`, `entry-port.ts`. Callers use `entry-port.ts` only.
 
 ## 5. Postgres
 
