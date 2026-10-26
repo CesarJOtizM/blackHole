@@ -18,7 +18,7 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
 - [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the Postgres adapter: tasks 1.1–2.14 and 3.1–3.4 are complete. `size:exception` was not granted. Next task is 3.5.
+Cumulative through the xlsx adapter: tasks 1.1–2.14 and 3.1–3.6 are complete. `size:exception` was not granted. Next task is 4.1.
 
 ## TDD cycle
 
@@ -315,3 +315,30 @@ Tasks 3.3–3.4. stacked-to-main. `size:exception` was not granted. Standard mod
 `ClockEntryCorrection` has no Postgres table in this slice. The task names entries and policy. A policy change cannot update the old row, so `save` appends a version and `find` reads the highest `position`. The migration is `0008` inside attendance, not a platform migration. `0006` remains unused because `0001`–`0007` stay untouched.
 
 Stacked PR for this slice targets the memory slice's branch. Start: memory repository green. Finish: Postgres green. xlsx and HTTP stay out.
+
+## Work unit 7 slice / xlsx only
+
+Tasks 3.5–3.6. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. HTTP was not started. SheetJS stays in the adapter. The domain does not import it.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 3.5 | Test before `hours-workbook.ts`. Exit 1, `Cannot find module '#adapters/xlsx/hours-workbook.js'`, 0 tests | — | — |
+| 3.6 | Same command | Exit 0, 1 file, 1 test | Biome, then the same command still exit 0, 1 test |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance hours-workbook` → exit 0, 1 file, 1 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 12 files, 72 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (327 modules, 854 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: SheetJS writes bytes in process. No `listen` |
+| Rollback | `contexts/attendance/adapters/xlsx/`, the `#adapters/xlsx/*` import, and the `xlsx` dependency |
+
+`SheetJsHoursWorkbook` writes one sheet. The columns are `userId`, `workedMinutes`, `latenessMinutes`, `earlyLeaveMinutes`, `offScheduleMinutes`, and `absent`. A worker with 480 worked minutes and 7 minutes of lateness is those cells. The sheet has no salary column.
+
+The adapter and its test are under the 400-line default. `size:exception` was not granted.
+
+## Deviations
+
+The column names are the workbook row fields. The design says the file has no salary and does not name the headers. HTTP stays out.
+
+Stacked PR for this slice targets the Postgres slice's branch. Start: Postgres green. Finish: xlsx green. HTTP stays out.
