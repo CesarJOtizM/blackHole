@@ -54,7 +54,7 @@ Unit 1 waits for `p0-04-identity-and-devices`. It alone edits `contexts/platform
 - [x] 3.2 `infra/modules/common/dns`: Cloudflare records. No Pages.
 - [x] 3.3 `infra/environments/{staging,production}-{aws,gcp,azure}`: separate accounts, remote state, lock, git `ref`. Azure plan-only.
 - [x] 3.4 `infra/bootstrap/{aws,gcp,azure}`: state, lock, OIDC. No keys.
-- [ ] 3.5 Fmt and validate. No apply. Needs 1.9.
+- [x] 3.5 Fmt and validate. No apply. Needs 1.9.
 
 ## Phase 4: Pipeline (PR 4)
 
