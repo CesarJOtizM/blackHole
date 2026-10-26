@@ -12,6 +12,11 @@
     "#application/update-menu/*": "./application/update-menu/*",
     "#application/view-venue-menu/*": "./application/view-venue-menu/*",
     "#application/ports/*": "./application/ports/*",
-    "#adapters/memory/*": "./adapters/memory/*"
+    "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/postgres/*": "./adapters/postgres/*"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "drizzle-orm": "catalog:"
   }
 }

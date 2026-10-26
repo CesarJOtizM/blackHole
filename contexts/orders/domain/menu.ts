@@ -192,6 +192,23 @@ export class Menu {
     }));
   }
 
+  get venuePrices(): readonly VenuePrice[] {
+    return this.venuePriceList.map((venuePrice) => ({
+      venueId: venuePrice.venueId,
+      itemId: venuePrice.itemId,
+      price: venuePrice.price,
+      available: venuePrice.available,
+      ...(venuePrice.window
+        ? {
+            window: {
+              start: venuePrice.window.start,
+              end: venuePrice.window.end,
+            },
+          }
+        : {}),
+    }));
+  }
+
   publishProduct(input: PublishProduct): void {
     const variants = (input.variants ?? []).map((variant) => ({
       id: variant.id,

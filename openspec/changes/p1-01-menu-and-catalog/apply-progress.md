@@ -70,6 +70,7 @@ Delivery: stacked-to-main. Unit 1 is PR 1 (tasks 1.1–1.2). Unit 2 is PR 2 (tas
 | 3.1 → 3.2 | `pnpm vitest run --project orders update-menu` exit 1. `FAIL contexts/orders/application/update-menu/update-menu.test.ts` — `Cannot find module '#adapters/memory/in-memory-menu-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | The use case test imports the memory adapter from 3.4, so this file stayed red until that adapter existed. After 3.4, `pnpm vitest run --project orders update-menu in-memory-menu` exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. |
 | 3.3 → 3.4 | `pnpm vitest run --project orders in-memory-menu` exit 1. `FAIL contexts/orders/adapters/memory/in-memory-menu-repository.contract.test.ts` — `Cannot find module '#adapters/memory/in-memory-menu-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same filter inside `pnpm vitest run --project orders update-menu in-memory-menu` after `in-memory-menu-repository.ts`: exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. |
 | 4.1 → 4.2 | `pnpm vitest run --project orders view-venue-menu` exit 1. `FAIL contexts/orders/application/view-venue-menu/view-venue-menu.test.ts` — `Cannot find module '#adapters/memory/in-memory-venue-directory.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. `view-venue-menu.ts` and `clock.ts` were also absent; Vitest stopped at the first missing import. | Same command after `view-venue-menu.ts`, `in-memory-venue-directory.ts`, `clock.ts`, and `entry-port.ts`: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Repeated after Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+| 5.1 → 5.2 | `pnpm vitest run --project orders drizzle-menu-repository` exit 1. `FAIL contexts/orders/adapters/postgres/drizzle-menu-repository.contract.test.ts` — `Cannot find module '#adapters/postgres/drizzle-menu-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. The import map already existed, so the failure is the missing module. | Same command after `0001_menu.sql`, `schema.ts`, `drizzle-menu-repository.ts`, and `Menu.venuePrices`: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. Repeated after Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
 
 ## Deviations from Design
 
@@ -95,19 +96,28 @@ PR 4 adds these choices the design does not name:
 - `entry-port.ts` re-exports `UpdateMenu` and `ViewVenueMenu`, plus `ForeignVenue` and the input types, so a later caller does not import the use case modules. The new test imports `ViewVenueMenu` from its module, matching `update-menu.test.ts`. Existing update-menu tests were not moved. There is no HTTP caller in this slice.
 - The read test uses `InMemoryVenueDirectory`. `UpdateMenu`'s `MapVenueDirectory` stays in its own test.
 
+PR 5 adds these choices the design does not name:
+
+- `Menu.venuePrices` is a read-only copy of the stored `VenuePrice` list. `products` and `combos` were already public. The in-memory repository keeps the same instance, so it never read the list. Postgres deletes and inserts rows, then rebuilds with `Menu.open`, `publishProduct`, `publishCombo`, and `setVenuePrice`. `quote`, `viewAt`, windows, and price rules are unchanged.
+- Primary keys include `tenant_id` (and `menu_id` on child tables). Organization uses a single global `id`. Two tenants can store the same menu-scoped id. `menus` also has `UNIQUE (tenant_id, brand_id)`.
+- `GRANT SELECT, INSERT, DELETE` to `orders_app`. Save replaces a menu by deleting its rows and inserting the current tree, so `UPDATE` is not granted. The statement shape matches organization.
+- `venue_prices` checks that `window_start` and `window_end` are both null or both set.
+
 ## Issues Found
 
 Unit 3 is about 537 physical lines under `contexts/orders/application` and `contexts/orders/adapters`, plus the import map and the tsconfig include. That is over the 400-line default. The four tasks are one work unit and were finished together. `size:exception` was not granted. Engram was reported down in earlier batches; the file remains the source of progress.
 
 Unit 4 has no implementation issue. The new files are 295 physical lines, plus the import pattern and the `entry-port` export. That stays under the 400-line default. `size:exception` was not granted.
 
+Unit 5 is 663 changed lines (661 additions, 2 deletions): 620 physical lines in the four new Postgres files (`0001_menu.sql` 142, `schema.ts` 118, `drizzle-menu-repository.ts` 313, contract test 47), plus 17 lines for `venuePrices`, 9 additions and 2 deletions in `package.json`, and 15 lockfile lines. That is over the 400-line default. The two tasks are one work unit and were finished together. `size:exception` was not granted. `pnpm architecture` exit 0: `no dependency violations found (288 modules, 707 dependencies cruised)`. The TypeScript 7 `missing-typescript-transpiler` warning is the existing cruiser notice. Cruiser rules were not changed.
+
 ## Remaining Tasks
 
-- [ ] 5.1 through 7.3, including Postgres, cloud HTTP, and the node 403.
+- [ ] 6.1 through 7.3, including cloud HTTP and the node 403. Tasks 5.1 and 5.2 are complete.
 
 ## Workload / PR Boundary
 
 - Mode: stacked PR slice (`stacked-to-main`)
-- Current work unit: 4 — venue read
-- Boundary: starts after the in-memory menu repository and ends when `ViewVenueMenu` is green. Does not include Postgres, HTTP, the node 403, SQLite, or UI.
-- Estimated review budget impact: 295 physical lines in the new files, plus the package export and import pattern. Under 400. `size:exception` was not granted.
+- Current work unit: 5 — Postgres menu repository
+- Boundary: starts after `ViewVenueMenu` (tasks 4.1–4.2) and ends when the PGlite contract is green. Does not include HTTP, the node 403, SQLite, or UI. Tasks 6.x and 7.x stay open.
+- Estimated review budget impact: 663 changed lines (661 additions, 2 deletions). Over the 400-line default. `size:exception` was not granted. The unit was finished because these two tasks are the assigned slice.
