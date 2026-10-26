@@ -125,3 +125,34 @@ Tasks 2.3–2.4. stacked-to-main. `size:exception` was not granted. Standard mod
 New attendance TypeScript files are 360 physical lines: test 219, use case 81, platform adapter 27, audit port 16, correction port 17. Under the 400-line review budget. `size:exception` was not granted.
 
 Stacked PR for this slice targets the PR 3 branch. Start: record green. Finish: correction green. Close, policy, read, export, adapters, and HTTP stay out.
+
+## Work unit 4 slice / close only
+
+Tasks 2.5–2.6. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Policy, read, export, the attendance entry port, adapters, Postgres, xlsx, HTTP, and pg-boss were not started. The forecast groups correct and close as unit 4; correction is already done. This batch is only the close.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.5 | Test before `close-open-shifts.ts`. Exit 1, `Cannot find module '#application/close-open-shifts/close-open-shifts.js'`, 0 tests | — | — |
+| 2.6 | Same command. Domain review-close from `on_break` was also RED first: `pnpm vitest run --project attendance worker-shift` → exit 1, 1 failed, 14 passed. `ShiftTransitionRejected` at `applyMark` | Exit 0, 1 file, 4 tests | `pnpm exec biome check --write` on the touched files (9 files, 7 fixed), then the same close command still exit 0, 1 file, 4 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance close-open-shifts` → exit 0, 1 file, 4 passed |
+| Regression | `pnpm vitest run --project attendance correct-clock-entry record-clock-entry worker-shift project-hours` → exit 0, 4 files, 36 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/close-open-shifts/`, the `#application/close-open-shifts/*` import key, `pendingReview` on `ClockEntry`, `listByVenue`, `pendingReview` threaded through `toMark` with `false` on the record path, the `on_break` review close in `worker-shift.ts`, the two new domain cases, and `listByVenue` on the record and correction fakes |
+
+`CloseOpenShifts` lists the venue, replays each worker, and appends one `clock_out` for `on_shift` and `on_break`. `presence` is `matched`. `pendingReview` is true. `occurredAt` is `new Date(clock.now()).toISOString()`. `cashRegisterId` is null and the original cashier row stays. `id` is `clock_entry_` plus `commandId`. `commandId` is `close_${userId}_${venueId}_${occurredAt}`. A second run at the same instant sees `pending_review` and does not append again. Replaying the stored rows through `WorkerShift` derives `pending_review`. Flagged rows, `off_shift`, and an existing `pending_review` are left unchanged. The new row copies `deviceId` from the latest matched clock-in.
+
+A worker whose stored marks throw `ShiftTransitionRejected` fails the cut before any append, so the open coworker is not closed. If `append` throws, the use case throws. The failing fake stores nothing and its `queuedJobs` array stays empty. There is no queue port and no `RecordAuditEvent`.
+
+`ClockEntry.pendingReview` is required. `RecordClockEntry` stores `false` and passes it through `toMark`. `listByVenue(tenantId, venueId)` is append-only. `list` is unchanged. No update or delete.
+
+Line count for this slice: 454 additions and 4 deletions (458 changed lines). New files are 377 physical lines: test 230, use case 147. Supporting edits are `worker-shift.test.ts` +40, `worker-shift.ts` +9/−4, `clock-entry-repository.ts` +6, `record-clock-entry.test.ts` +9, `record-clock-entry.ts` +2, `correct-clock-entry.test.ts` +10, and one import key in `package.json`. That is over the 400-line review budget. `size:exception` was not granted. The slice stayed together because the prompt required finishing 2.5–2.6, including the port and the domain transition the close needs.
+
+## Deviations
+
+A `clock_out` with `pendingReview` true is legal from `on_break` and ends in `pending_review`. A `clock_out` from `on_break` without `pendingReview` still throws `ShiftTransitionRejected`. The design did not name this transition. The new close row copies `deviceId` from the latest matched clock-in; the design did not name that field. There is no transaction port, so a throw from a later `append` is not rolled back. The check-first path still appends nobody when one worker cannot be closed.
+
+Stacked PR for this slice targets the correction slice's branch. Start: correction green. Finish: close green. Policy, read, export, entry port, adapters, and HTTP stay out.

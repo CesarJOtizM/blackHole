@@ -11,6 +11,7 @@ export interface ClockEntry {
   occurredAt: string;
   commandId: string;
   cashRegisterId: string | null;
+  pendingReview: boolean;
 }
 
 export interface ListClockEntries {
@@ -23,4 +24,9 @@ export abstract class ClockEntryRepository {
   abstract append(entry: ClockEntry): Promise<void>;
 
   abstract list(query: ListClockEntries): Promise<readonly ClockEntry[]>;
+
+  abstract listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly ClockEntry[]>;
 }

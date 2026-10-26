@@ -190,6 +190,46 @@ it("given a shift closed for review, when the worker clocks in again, then the s
   expect(shift.state).toBe("on_shift");
 });
 
+it("given the worker is on a break, when the shift is closed for review, then the state is pending_review", () => {
+  const shift = openShift();
+  clockIn(shift);
+  shift.record({
+    kind: "break_start",
+    presence: "matched",
+    occurredAt: BREAK_AT,
+  });
+
+  shift.record({
+    kind: "clock_out",
+    presence: "matched",
+    occurredAt: OUT_AT,
+    pendingReview: true,
+  });
+
+  expect(shift.state).toBe("pending_review");
+});
+
+it("given the worker is on a break, when they clock out without review, then it is rejected and the state stays on_break", () => {
+  const shift = openShift();
+  clockIn(shift);
+  shift.record({
+    kind: "break_start",
+    presence: "matched",
+    occurredAt: BREAK_AT,
+  });
+
+  const clockOut = () => {
+    shift.record({
+      kind: "clock_out",
+      presence: "matched",
+      occurredAt: OUT_AT,
+    });
+  };
+
+  expect(clockOut).toThrow(ShiftTransitionRejected);
+  expect(shift.state).toBe("on_break");
+});
+
 it("given the worker is off shift, when they start a break, then it is rejected and the state stays off_shift", () => {
   const shift = openShift();
 

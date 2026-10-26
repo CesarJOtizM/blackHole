@@ -46,8 +46,8 @@ Cloud slice (D-37, D-43, D-33). RED then GREEN (ADR-017). Threat matrix N/A. Spl
 - [x] 2.2 GREEN `record-clock-entry.ts`. Ports: `clock.ts`, `pin-check.ts` adapts `PinVerifier`, `clock-entry-repository.ts` `append`/`list`, policy geofence, tolerance, close time, `hours_only` or `scheduled`, `ScheduledShift`. `#application/*`, `#application/ports/*`, and each use-case folder key.
 - [x] 2.3 RED `application/correct-clock-entry/correct-clock-entry.test.ts`: keep original; project the correction; `RecordAuditEvent` only then.
 - [x] 2.4 GREEN `correct-clock-entry.ts` via platform `entry-port` only.
-- [ ] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`: `pending_review` clock-out; failed cut is not queued.
-- [ ] 2.6 GREEN `close-open-shifts.ts`.
+- [x] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`: `pending_review` clock-out; failed cut is not queued.
+- [x] 2.6 GREEN `close-open-shifts.ts`.
 - [ ] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`: audited change; rule off until set.
 - [ ] 2.8 GREEN `set-venue-attendance-policy.ts`.
 - [ ] 2.9 RED `application/read-attendance/read-attendance.test.ts`: hours, lateness, absences, corrections, presence; skip `flagged`; deny other site.

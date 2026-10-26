@@ -71,6 +71,15 @@ class MemoryClockEntries extends ClockEntryRepository {
       )
       .map((row) => ({ ...row }));
   }
+
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly ClockEntry[]> {
+    return this.rows
+      .filter((row) => row.tenantId === tenantId && row.venueId === venueId)
+      .map((row) => ({ ...row }));
+  }
 }
 
 class MemoryPolicies extends AttendancePolicyRepository {

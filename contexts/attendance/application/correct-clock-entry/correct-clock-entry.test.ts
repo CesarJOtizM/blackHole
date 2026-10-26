@@ -51,6 +51,15 @@ class MemoryClockEntries extends ClockEntryRepository {
       )
       .map((row) => ({ ...row }));
   }
+
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly ClockEntry[]> {
+    return this.rows
+      .filter((row) => row.tenantId === tenantId && row.venueId === venueId)
+      .map((row) => ({ ...row }));
+  }
 }
 
 class MemoryCorrections extends ClockEntryCorrectionRepository {
@@ -104,6 +113,7 @@ const entry = (
   occurredAt,
   commandId: `command_${id}`,
   cashRegisterId: null,
+  pendingReview: false,
 });
 
 const scope = {

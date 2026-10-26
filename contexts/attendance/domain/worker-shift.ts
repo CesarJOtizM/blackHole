@@ -111,11 +111,16 @@ function applyMark(state: ShiftState, mark: ClockMark): ShiftState {
     return SHIFT_STATE.ON_SHIFT;
   }
 
-  if (mark.kind === CLOCK_KIND.CLOCK_OUT && state === SHIFT_STATE.ON_SHIFT) {
-    if (mark.pendingReview) {
-      return SHIFT_STATE.PENDING_REVIEW;
-    }
+  const closesForReview =
+    mark.kind === CLOCK_KIND.CLOCK_OUT &&
+    mark.pendingReview === true &&
+    (state === SHIFT_STATE.ON_SHIFT || state === SHIFT_STATE.ON_BREAK);
 
+  if (closesForReview) {
+    return SHIFT_STATE.PENDING_REVIEW;
+  }
+
+  if (mark.kind === CLOCK_KIND.CLOCK_OUT && state === SHIFT_STATE.ON_SHIFT) {
     return SHIFT_STATE.OFF_SHIFT;
   }
 
