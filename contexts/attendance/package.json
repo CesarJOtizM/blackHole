@@ -10,7 +10,8 @@
   "dependencies": {
     "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/node": "catalog:"
@@ -26,6 +27,7 @@
     "#application/read-attendance/*": "./application/read-attendance/*",
     "#application/export-hours/*": "./application/export-hours/*",
     "#adapters/memory/*": "./adapters/memory/*",
-    "#adapters/postgres/*": "./adapters/postgres/*"
+    "#adapters/postgres/*": "./adapters/postgres/*",
+    "#adapters/xlsx/*": "./adapters/xlsx/*"
   }
 }
