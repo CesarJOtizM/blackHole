@@ -113,7 +113,7 @@ Unit 5 is 663 changed lines (661 additions, 2 deletions): 620 physical lines in 
 
 ## Remaining Tasks
 
-- [ ] 7.1 through 7.3. The node returns 403 `MenuRejected` and stores nothing. Tasks 6.1–6.4 are complete.
+- [x] 7.1 through 7.3. The node returns 403 `MenuRejected` and stores nothing. Tasks 1.1–7.3 are complete. Hybrid copy, SQLite, the node clock, admin-web, and venue-app stay out of scope.
 
 ## Workload / PR Boundary
 
@@ -145,6 +145,28 @@ Tasks 6.1–6.4. stacked-to-main. `size:exception` was not granted. Standard mod
 
 `GET /tenants/:tenantId/venues/:venueId/menu` requires a session and does not require `menu.edit`. A pin session at 12:00 in `America/Bogota` sees Breakfast at 15,000 with `orderable: false` and the site burger at 22,000 with `orderable: true`. The same pin session reading another venue receives 403 `{ error: "MenuReadDenied" }`. A missing session is 400. A cashier administration session, which has no `menu.edit`, still receives 200.
 
+## Work unit 7
+
+Tasks 7.1–7.3. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`) with ADR-017 RED then GREEN. Threat matrix N/A. No SQLite and no menu store.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 7.1 | Test before `update-menu.controller.ts`. Exit 1, `Cannot find module '#src/http/update-menu.controller.js'`, 0 tests | — | — |
+| 7.2 | Same command | Exit 0, 1 file, 1 test | Biome, then the same command still exit 0, 1 test |
+| 7.3 | Skeleton list omitted the new controller | `pnpm vitest run --project skeleton skeleton.test.ts` exit 0, 1 file, 9 tests | — |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project local-node update-menu.controller` → exit 0, 1 file, 1 passed. Regression: `pnpm vitest run --project attendance --project local-node` → exit 0, 13 files, 52 passed |
+| Typecheck | `pnpm exec tsc -b apps/local-node contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (312 modules, 810 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A, `inject`, no `listen`. The test builds the Nest app and closes it. No port is opened and nothing is stored |
+| Rollback | `apps/local-node/src/http/update-menu.controller.ts`, its registration in `application-module.ts`, and the skeleton allow-list entry |
+
+`POST /tenants/:tenantId/menu` and `GET /tenants/:tenantId/venues/:venueId/menu` both return 403 `{ error: "MenuRejected" }`. `routePermissions["POST menu"]` is `menu.edit`. `ApplicationModule` providers and imports stay empty. The controller has no repository and no Zod.
+
+About 75 physical lines: controller 28, test 42, module registration 4, skeleton 1. Under the 400-line default. `size:exception` was not granted.
+
 ## Deviations
 
-`create-application.ts` is unchanged. `createApplication` already calls `ApplicationModule.register`, and the new `menus` and `digests` fields live on that dependency type. `postgresMenus` matches `postgresOrganizations`: it is a factory and `startApi` does not call it yet. Orders gained `"types": ["node"]` and `@types/node` so the new api-cloud project reference can compile the existing Postgres contract test. The controller imports use cases and domain rejections only from `@blackhole/orders/application/entry-port`. Ports and adapters stay package exports, the same shape platform already uses. `MenuEditDenied` and `MenuReadDenied` are the HTTP error names. The design requires 403 and does not name them.
+`create-application.ts` is unchanged. `createApplication` already calls `ApplicationModule.register`, and the new `menus` and `digests` fields live on that dependency type. `postgresMenus` matches `postgresOrganizations`: it is a factory and `startApi` does not call it yet. Orders gained `"types": ["node"]` and `@types/node` so the new api-cloud project reference can compile the existing Postgres contract test. The controller imports use cases and domain rejections only from `@blackhole/orders/application/entry-port`. Ports and adapters stay package exports, the same shape platform already uses. `MenuEditDenied` and `MenuReadDenied` are the HTTP error names. The design requires 403 and does not name them. On the node, GET is rejected with the same `MenuRejected` body and is absent from `routePermissions`. Only `POST menu` is `menu.edit`.

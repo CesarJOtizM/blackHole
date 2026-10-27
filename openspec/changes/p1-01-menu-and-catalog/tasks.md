@@ -57,9 +57,9 @@ Cloud slice (D-37). RED/GREEN. `strict_tdd` false. Threat matrix N/A.
 
 ## 7. Node rejection
 
-- [ ] 7.1 RED `apps/local-node/test/http/update-menu.controller.test.ts`: POST and GET 403 `MenuRejected`; nothing stored.
-- [ ] 7.2 GREEN `src/http/update-menu.controller.ts`, `application-module.ts`. `POST menu` = `menu.edit`. No SQLite.
-- [ ] 7.3 `tools/skeleton/skeleton.test.ts`: allow that controller.
+- [x] 7.1 RED `apps/local-node/test/http/update-menu.controller.test.ts`: POST and GET 403 `MenuRejected`; nothing stored.
+- [x] 7.2 GREEN `src/http/update-menu.controller.ts`, `application-module.ts`. `POST menu` = `menu.edit`. No SQLite.
+- [x] 7.3 `tools/skeleton/skeleton.test.ts`: allow that controller.
 
 ## Out of scope
 
