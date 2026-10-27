@@ -18,7 +18,7 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
 - [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the policy slice: tasks 1.1–2.8 are complete. `size:exception` was not granted. Next task is 2.9.
+Cumulative through the read slice: tasks 1.1–2.10 are complete. `size:exception` was not granted. Next task is 2.11.
 
 ## TDD cycle
 
@@ -182,3 +182,30 @@ Tasks 2.7–2.8. stacked-to-main. `size:exception` was not granted. Standard mod
 The audit action is `attendance.policy`. The design says a rule change is audited and does not name the action. `AttendancePolicyRepository.save` is new. The record-clock tests never call it. A later adapter has to implement it. There is no transaction: a throw from the audit leaves the policy stored.
 
 Stacked PR for this slice targets the close slice's branch. Start: close green. Finish: policy green. Read, export, entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / read only
+
+Tasks 2.9–2.10. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Export, the attendance entry port, adapters, Postgres, xlsx, and HTTP were not started. The forecast groups policy, read, export, and the entry port as unit 5. This batch is only the read.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.9 | Test before `read-attendance.ts`. Exit 1, `Cannot find module '#application/read-attendance/read-attendance.js'`, 0 tests | — | — |
+| 2.10 | Same command | Exit 0, 1 file, 2 tests | Biome, then the same command still exit 0, 2 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance read-attendance` → exit 0, 1 file, 2 passed. Regression: `pnpm vitest run --project attendance --project local-node` → exit 0, 13 files, 52 passed |
+| Typecheck | `pnpm exec tsc -b apps/local-node contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (312 modules, 810 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/read-attendance/` and the `#application/read-attendance/*` import key |
+
+`ReadAttendance` asks `AttendanceSiteAccess` for `attendance.correct` on the venue. A reader of another site throws `AttendanceReadDenied` before any list. A scheduled policy of `08:00`–`16:00` with 10 minutes of tolerance reports 7h30 for a day with a 30-minute break, 25 minutes of lateness for an 08:25 clock-in, and an absence when the only clock-in is `flagged`. A correction replaces the projected clock-out and the original row stays. An open matched clock-in is `on_shift`. A flagged clock-in stays `off_shift`.
+
+484 physical lines: `read-attendance.ts` 240, the test 243, and one import key. Over the 400-line default. `size:exception` was not granted. The two tasks are one slice and were finished together.
+
+## Deviations
+
+`AttendanceReadDenied` and `AttendanceSiteAccess` are not named in the design. The use case does not call `EvaluatePermission`: attendance may import another context only through its entry port, and the HTTP task is the later permission check. The gate always receives `attendance.correct`. The stored schedule is `HH:mm`, which `projectHours` cannot parse. The read anchors those bounds to the Bogota date of the worker's earliest mark. `America/Bogota` is treated as a fixed UTC−5 offset. An end at or before the start rolls to the next calendar day.
+
+Stacked PR for this slice targets the policy slice's branch. Start: policy green. Finish: read green. Export, entry port, adapters, and HTTP stay out.
