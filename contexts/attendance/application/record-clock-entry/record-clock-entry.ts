@@ -16,6 +16,13 @@ import { WorkerShift } from "#domain/worker-shift.js";
 
 const EARTH_RADIUS_METERS = 6_371_000;
 
+export class CommandIdTaken extends Error {
+  constructor() {
+    super("This command already belongs to another clock entry.");
+    this.name = "CommandIdTaken";
+  }
+}
+
 export interface RecordClockEntryCommand {
   tenantId: string;
   venueId: string;
@@ -160,10 +167,20 @@ export class RecordClockEntry {
       userId: command.userId,
     });
     const policy = await this.policyFor(command.tenantId, command.venueId);
-    const prior = listed.find((row) => row.commandId === command.commandId);
+    const taken = await this.entries.findByCommand(
+      command.tenantId,
+      command.commandId,
+    );
 
-    if (prior) {
-      return this.view(command, listed, prior, policy);
+    if (taken) {
+      if (
+        taken.userId !== command.userId ||
+        taken.venueId !== command.venueId
+      ) {
+        throw new CommandIdTaken();
+      }
+
+      return this.view(command, listed, taken, policy);
     }
 
     const entry = this.entryFor(command, policy);
@@ -175,8 +192,20 @@ export class RecordClockEntry {
     );
     shift.record(toMark(entry));
     await this.entries.append(entry);
+    const stored = await this.entries.findByCommand(
+      command.tenantId,
+      command.commandId,
+    );
 
-    return this.view(command, [...listed, entry], entry, policy);
+    if (
+      !stored ||
+      stored.userId !== command.userId ||
+      stored.venueId !== command.venueId
+    ) {
+      throw new CommandIdTaken();
+    }
+
+    return this.view(command, [...listed, stored], stored, policy);
   }
 
   private async policyFor(

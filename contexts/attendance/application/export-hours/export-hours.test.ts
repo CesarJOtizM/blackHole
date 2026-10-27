@@ -83,6 +83,10 @@ class MemoryEntries extends ClockEntryRepository {
       (row) => row.tenantId === tenantId && row.venueId === venueId,
     );
   }
+
+  override async findByCommand(): Promise<ClockEntry | null> {
+    return null;
+  }
 }
 
 class MemoryCorrections extends ClockEntryCorrectionRepository {

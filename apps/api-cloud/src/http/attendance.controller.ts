@@ -20,7 +20,10 @@ import {
   AttendanceReadDenied,
   ReadAttendance,
 } from "@blackhole/attendance/application/read-attendance";
-import { RecordClockEntry } from "@blackhole/attendance/application/record-clock-entry";
+import {
+  CommandIdTaken,
+  RecordClockEntry,
+} from "@blackhole/attendance/application/record-clock-entry";
 import {
   InvalidAttendancePolicy,
   SetVenueAttendancePolicy,
@@ -96,6 +99,7 @@ const DOMAIN_REJECTION = [
   InvalidAttendancePolicy,
   CorrectionReasonRequired,
   UnknownClockEntry,
+  CommandIdTaken,
 ] as const;
 
 const CLOCK_REJECTION = [

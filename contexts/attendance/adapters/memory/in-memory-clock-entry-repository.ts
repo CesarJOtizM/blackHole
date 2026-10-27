@@ -20,6 +20,17 @@ export class InMemoryClockEntryRepository extends ClockEntryRepository {
     this.rows.push(clone(entry));
   }
 
+  override async findByCommand(
+    tenantId: string,
+    commandId: string,
+  ): Promise<ClockEntry | null> {
+    const row = this.rows.find(
+      (item) => item.tenantId === tenantId && item.commandId === commandId,
+    );
+
+    return row === undefined ? null : clone(row);
+  }
+
   override async list(query: ListClockEntries): Promise<readonly ClockEntry[]> {
     return this.rows
       .filter(

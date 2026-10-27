@@ -61,6 +61,17 @@ class MemoryClockEntries extends ClockEntryRepository {
       .filter((row) => row.tenantId === tenantId && row.venueId === venueId)
       .map((row) => ({ ...row }));
   }
+
+  override async findByCommand(
+    tenantId: string,
+    commandId: string,
+  ): Promise<ClockEntry | null> {
+    const row = this.rows.find(
+      (item) => item.tenantId === tenantId && item.commandId === commandId,
+    );
+
+    return row === undefined ? null : { ...row };
+  }
 }
 
 class FailingCut extends MemoryClockEntries {

@@ -368,7 +368,7 @@ New files are 1,310 lines and the wiring diff adds 106. Together that is over th
 
 ## Deviations
 
-`PERMISSION` is not exported from `@blackhole/platform/domain`, so the route map uses the existing string `attendance.correct`. Clock is declared `pin`, which is not a catalog code, so a cashier can clock without `attendance.correct`. `cashRegisterId` is taken from the venue cash register, not from the body, and only while the cashier assignment is active. A correction stores `tenantId`, and a list returns that tenant's rows. The close queue is registered on pg-boss with `retryLimit: 0` and an in-memory clock repository inside the worker process. That repository is not the API process store. `startApi` is still in-memory, same as menus. A failed close is not sent again.
+`PERMISSION` is not exported from `@blackhole/platform/domain`, so the route map uses the existing string `attendance.correct`. Clock is declared `pin`, which is not a catalog code, so a cashier can clock without `attendance.correct`. `cashRegisterId` is taken from the venue cash register, not from the body, and only while the cashier assignment is active. A correction stores `tenantId`, and a list returns that tenant's rows. A `commandId` that already belongs to another worker or another site is rejected and the first row stays. The close queue is registered on pg-boss with `retryLimit: 0` and an in-memory clock repository inside the worker process. That repository is not the API process store. `startApi` is still in-memory, same as menus. A failed close is not sent again.
 
 Phase 4 is complete. The change lists no task after 4.3. Local-node attendance stays out.
 

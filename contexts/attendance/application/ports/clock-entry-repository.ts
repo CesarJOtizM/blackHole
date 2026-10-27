@@ -23,6 +23,11 @@ export interface ListClockEntries {
 export abstract class ClockEntryRepository {
   abstract append(entry: ClockEntry): Promise<void>;
 
+  abstract findByCommand(
+    tenantId: string,
+    commandId: string,
+  ): Promise<ClockEntry | null>;
+
   abstract list(query: ListClockEntries): Promise<readonly ClockEntry[]>;
 
   abstract listByVenue(
