@@ -54,8 +54,8 @@ Cloud slice (D-37, D-43, D-33). RED then GREEN (ADR-017). Threat matrix N/A. Spl
 - [x] 2.10 GREEN `read-attendance.ts`. `attendance.correct`.
 - [x] 2.11 RED `application/export-hours/export-hours.test.ts`: corrected hours; no salary.
 - [x] 2.12 GREEN `export-hours.ts`, `ports/hours-workbook.ts`.
-- [ ] 2.13 RED `application/entry-port.test.ts`: `{ ruleEnabled, counting }`; block only when rule on and `counting` is false; cashier needs `cashRegisterId`; `flagged` excluded.
-- [ ] 2.14 GREEN `entry-port.ts`: only `HasOpenClockIn` and `HasClockedInCashier`. Admins are not callers. Not `EvaluatePermission`.
+- [x] 2.13 RED `application/entry-port.test.ts`: `{ ruleEnabled, counting }`; block only when rule on and `counting` is false; cashier needs `cashRegisterId`; `flagged` excluded.
+- [x] 2.14 GREEN `entry-port.ts`: only `HasOpenClockIn` and `HasClockedInCashier`. Admins are not callers. Not `EvaluatePermission`.
 
 ## Phase 3: Adapters (unit 6; 3.5–3.6 in unit 7)
 

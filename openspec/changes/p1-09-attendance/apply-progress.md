@@ -18,7 +18,7 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
 - [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the export slice: tasks 1.1–2.12 are complete. `size:exception` was not granted. Next task is 2.13.
+Cumulative through the entry port: tasks 1.1–2.14 are complete. `size:exception` was not granted. Next task is 3.1.
 
 ## TDD cycle
 
@@ -236,3 +236,28 @@ Tasks 2.11–2.12. stacked-to-main. `size:exception` was not granted. Standard m
 `AttendanceExportDenied` is not named in the design. The use case reuses `AttendanceSiteAccess` and does not call `EvaluatePermission`. The week bounds are ISO instants supplied by the caller. The Bogota `HH:mm` anchor is copied from `ReadAttendance` so a scheduled policy still reaches `projectHours`. No workbook bytes are produced inside the use case.
 
 Stacked PR for this slice targets the read slice's branch. Start: read green. Finish: export green. Entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / entry port only
+
+Tasks 2.13–2.14. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Adapters, Postgres, xlsx, and HTTP were not started in this slice. The slice ran in a separate worktree from `0362fe3` and was copied back onto the uncommitted tree.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.13 | Test before `entry-port.ts`. Exit 1, `Cannot find module '#application/entry-port.js'`, 0 tests | — | — |
+| 2.14 | Same command | Exit 0, 1 file, 8 tests | Biome, then the same command still exit 0, 8 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance entry-port` → exit 0, 1 file, 8 passed. Together with the memory contract: 2 files, 14 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 10 files, 60 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (320 modules, 835 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/entry-port.ts`, `entry-port.test.ts`, and the `./application/entry-port` export |
+
+`HasOpenClockIn` returns `{ ruleEnabled, counting }`. A missing policy keeps the rule off. Counting is `on_shift` or `on_break`. A flagged clock-in does not count. `HasClockedInCashier` is true only when that open matched clock-in has a `cashRegisterId`. A later matched clock-out clears both. The file exports only those two classes. It does not call `EvaluatePermission`.
+
+285 physical lines: `entry-port.ts` 98, the test 186, and one export. Under the 400-line default.
+
+## Deviations
+
+The worktree started at `0362fe3`, before `AttendancePolicyRepository.save`. The copied test double gained an empty `save` so it implements the port that already exists on this tree. Callers still decide the block: the use case returns the two booleans and does not throw when the rule is on and counting is false.

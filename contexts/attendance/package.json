@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": "./domain/index.js"
+    "./domain": "./domain/index.js",
+    "./application/entry-port": "./application/entry-port.js"
   },
   "dependencies": {
     "@blackhole/platform": "workspace:*"
