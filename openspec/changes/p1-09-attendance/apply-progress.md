@@ -18,7 +18,7 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
 - [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the memory repository: tasks 1.1–2.14 and 3.1–3.2 are complete. `size:exception` was not granted. Next task is 3.3.
+Cumulative through the Postgres adapter: tasks 1.1–2.14 and 3.1–3.4 are complete. `size:exception` was not granted. Next task is 3.5.
 
 ## TDD cycle
 
@@ -288,3 +288,30 @@ About 172 physical lines: the contract 124, the repository 42, the test 4, plus 
 The idempotency key is `tenantId` plus `commandId`. A different payload on the retry is ignored and the first row stays. `tsconfig.json` now includes `adapters` so the new folder typechecks.
 
 Stacked PR for these two slices targets the export slice's branch. Start: export green. Finish: entry port and memory repository green. Postgres, xlsx, and HTTP stay out.
+
+## Work unit 6 slice / Postgres only
+
+Tasks 3.3–3.4. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. xlsx and HTTP were not started. The migration stays inside `contexts/attendance`. Platform files `0001`–`0007` were not edited. `0006` stays unused. This file is `0008_attendance.sql`.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 3.3 | Test before the Drizzle repositories. Exit 1, `Cannot find module '#adapters/postgres/drizzle-attendance-policy-repository.js'`, 0 tests | — | — |
+| 3.4 | Same command | Exit 0, 1 file, 11 tests | Biome, then the same command still exit 0, 11 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance drizzle-attendance-repository` → exit 0, 1 file, 11 passed. Regression: `pnpm vitest run --project attendance` → exit 0, 11 files, 71 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (324 modules, 850 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: PGlite in process, no `listen`. Each test opens a client and `afterAll` closes it |
+| Rollback | `contexts/attendance/adapters/postgres/`, the `#adapters/postgres/*` import, the PGlite and Drizzle dependencies, and `"types": ["node"]` |
+
+`attendance_app` receives `SELECT` and `INSERT`. Row security is enabled and forced on `app.tenant_id`. A select as that role returns only the current tenant. `UPDATE`, `DELETE`, and `TRUNCATE` on `clock_entries` and `attendance_policies` raise `attendance rows are append-only`, and the stored row stays. The shared clock-entry contract passes on PGlite: hidden tenant, one row per `tenantId` and `commandId`, no `update` or `delete` method. A second policy save inserts the next `position`. `find` returns that latest row. Another tenant stays hidden.
+
+588 physical lines in the five new files: SQL 123, schema 53, clock repository 103, policy repository 130, contract test 179. Package, tsconfig, and the lockfile add the dependencies. Over the 400-line default. `size:exception` was not granted. The two tasks are one slice and were finished together.
+
+## Deviations
+
+`ClockEntryCorrection` has no Postgres table in this slice. The task names entries and policy. A policy change cannot update the old row, so `save` appends a version and `find` reads the highest `position`. The migration is `0008` inside attendance, not a platform migration. `0006` remains unused because `0001`–`0007` stay untouched.
+
+Stacked PR for this slice targets the memory slice's branch. Start: memory repository green. Finish: Postgres green. xlsx and HTTP stay out.
