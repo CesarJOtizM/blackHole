@@ -44,11 +44,12 @@ import {
 } from "@nestjs/common";
 
 const SESSION_HEADER = "x-session-id";
-const ACTION = "menu.edit";
 
 export const routePermissions = {
-  "POST menu": ACTION,
+  "POST menu": "menu.edit",
 } as const;
+
+const ACTION = routePermissions["POST menu"];
 
 const DOMAIN_REJECTION = [
   DuplicateMenuId,
