@@ -1,3 +1,7 @@
+import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
+import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
+import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
+import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import {
   FakeClock,
   FastPasswordHasher,
@@ -14,6 +18,7 @@ import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
 import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
@@ -39,6 +44,7 @@ import { ApplicationModule } from "#src/composition/application-module.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication(cloudDependencies());
@@ -156,6 +162,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: FactusSimulator,
         useValue: dependencies.factus,
+      },
+      {
+        provide: MenuRepository,
+        useValue: new InMemoryMenuRepository(),
+      },
+      {
+        provide: VenueDirectory,
+        useValue: new OrganizationVenueDirectory(dependencies.organizations),
+      },
+      {
+        provide: AuditDigest,
+        useValue: new Sha256AuditDigest(),
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

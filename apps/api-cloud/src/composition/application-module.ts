@@ -1,6 +1,11 @@
+import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
+import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
+import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
+import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
 import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
 import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
+import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
 import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
@@ -23,13 +28,16 @@ import { VenueOperationRepository } from "@blackhole/platform/application/ports/
 import { type DynamicModule, Module } from "@nestjs/common";
 
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
+import { UpdateMenuController } from "#src/http/update-menu.controller.js";
 import { UpdateStructureController } from "#src/http/update-structure.controller.js";
+import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
 
 export interface CloudApplicationDependencies {
   venueOperations: VenueOperationRepository;
@@ -52,6 +60,8 @@ export interface CloudApplicationDependencies {
   pendingIssuance?: PendingIssuance;
   factus?: FactusSimulator;
   audits?: AuditRepository;
+  menus?: MenuRepository;
+  digests?: AuditDigest;
 }
 
 @Module({})
@@ -67,6 +77,8 @@ export class ApplicationModule {
         OperateDevicesController,
         AuthorizationController,
         ReadAuditController,
+        UpdateMenuController,
+        ViewVenueMenuController,
         HealthController,
       ],
       providers: [
@@ -151,6 +163,18 @@ export class ApplicationModule {
         {
           provide: FactusSimulator,
           useValue: dependencies.factus ?? new FactusSimulator(),
+        },
+        {
+          provide: MenuRepository,
+          useValue: dependencies.menus ?? new InMemoryMenuRepository(),
+        },
+        {
+          provide: VenueDirectory,
+          useValue: new OrganizationVenueDirectory(dependencies.organizations),
+        },
+        {
+          provide: AuditDigest,
+          useValue: dependencies.digests ?? new Sha256AuditDigest(),
         },
       ],
     };

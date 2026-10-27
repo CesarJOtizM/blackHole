@@ -33,6 +33,14 @@ export {
   identityRequest,
 } from "#contracts/identity.js";
 export {
+  type MenuCommand,
+  type MenuUpdated,
+  menuCommand,
+  menuUpdated,
+  type VenueMenu,
+  venueMenu,
+} from "#contracts/menu.js";
+export {
   type OrganizationChanged,
   organizationChanged,
   type StructureCommand,

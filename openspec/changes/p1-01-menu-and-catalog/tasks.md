@@ -50,10 +50,10 @@ Cloud slice (D-37). RED/GREEN. `strict_tdd` false. Threat matrix N/A.
 
 ## 6. Cloud HTTP
 
-- [ ] 6.1 RED `apps/api-cloud/test/http/update-menu.controller.test.ts`: inject POST, `x-session-id`. 200; 403 with no save; 400; 409. `menu.edit`. No `listen`.
-- [ ] 6.2 GREEN `shared/contracts/menu.ts`, `index.ts`, update controller, `organization-venue-directory.ts`, `postgres-menus.ts`, module, `create-application.ts`, `package.json`, `tsconfig.json`. Audit before/after. Entry-port only.
-- [ ] 6.3 RED `view-venue-menu.controller.test.ts`: `GET /tenants/:tenantId/venues/:venueId/menu` 200 with price and `orderable`; pin session only its venue.
-- [ ] 6.4 GREEN view controller. Session required. Read skips `menu.edit`.
+- [x] 6.1 RED `apps/api-cloud/test/http/update-menu.controller.test.ts`: inject POST, `x-session-id`. 200; 403 with no save; 400; 409. `menu.edit`. No `listen`.
+- [x] 6.2 GREEN `shared/contracts/menu.ts`, `index.ts`, update controller, `organization-venue-directory.ts`, `postgres-menus.ts`, module, `create-application.ts`, `package.json`, `tsconfig.json`. Audit before/after. Entry-port only.
+- [x] 6.3 RED `view-venue-menu.controller.test.ts`: `GET /tenants/:tenantId/venues/:venueId/menu` 200 with price and `orderable`; pin session only its venue.
+- [x] 6.4 GREEN view controller. Session required. Read skips `menu.edit`.
 
 ## 7. Node rejection
 

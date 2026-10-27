@@ -113,11 +113,38 @@ Unit 5 is 663 changed lines (661 additions, 2 deletions): 620 physical lines in 
 
 ## Remaining Tasks
 
-- [ ] 6.1 through 7.3, including cloud HTTP and the node 403. Tasks 5.1 and 5.2 are complete.
+- [ ] 7.1 through 7.3. The node returns 403 `MenuRejected` and stores nothing. Tasks 6.1–6.4 are complete.
 
 ## Workload / PR Boundary
 
 - Mode: stacked PR slice (`stacked-to-main`)
-- Current work unit: 5 — Postgres menu repository
-- Boundary: starts after `ViewVenueMenu` (tasks 4.1–4.2) and ends when the PGlite contract is green. Does not include HTTP, the node 403, SQLite, or UI. Tasks 6.x and 7.x stay open.
-- Estimated review budget impact: 663 changed lines (661 additions, 2 deletions). Over the 400-line default. `size:exception` was not granted. The unit was finished because these two tasks are the assigned slice.
+- Current work unit: 6 — cloud POST and GET
+- Boundary: starts after the PGlite menu repository (tasks 5.1–5.2) and ends when cloud publish and venue read are green. Does not include the node 403, SQLite, or UI. Tasks 7.x stay open.
+- Estimated review budget impact: about 1100 changed lines. Over the 400-line default. `size:exception` was not granted. The unit was finished because tasks 6.1–6.4 are the assigned slice.
+
+## Work unit 6
+
+Tasks 6.1–6.4. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`) with ADR-017 RED then GREEN. Threat matrix N/A. The node 403 was not started.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 6.1 | Test before `update-menu.controller.ts`. Exit 1, `Cannot find module '#src/http/update-menu.controller.js'`, 0 tests | — | — |
+| 6.2 | Same command | Exit 0, 1 file, 6 tests | Biome, then the same command still exit 0, 6 tests |
+| 6.3 | Test before `view-venue-menu.controller.ts`. Exit 1, `Cannot find module '#src/http/view-venue-menu.controller.js'`, 0 tests | — | — |
+| 6.4 | Same command | Exit 0, 1 file, 4 tests | Biome, then POST and GET together exit 0, 2 files, 10 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project api-cloud update-menu.controller view-venue-menu.controller` → exit 0, 2 files, 10 passed. Bootstrap included in the later run: `pnpm vitest run --project api-cloud update-menu.controller view-venue-menu.controller bootstrap.test` → exit 0, 3 files, 13 passed |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (308 modules, 793 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A, `inject`, no `listen`. Each test builds the Nest app and closes it. No port is opened |
+| Rollback | `apps/api-cloud` menu controllers, `organization-venue-directory.ts`, `postgres-menus.ts`, the module providers, `shared/contracts/menu.ts`, the orders package exports, and the domain error re-exports on `entry-port.ts` |
+
+`POST /tenants/:tenantId/menu` requires `x-session-id` and `menu.edit`. An owner publishes a product and receives 200 `{ menuId, brandId }`. The audit action is `menu.edit`. `before` and `after` are `{ price }`. A brand edit uses the brand id as `siteId`. A site price uses the venue id. A cashier, and a site administrator editing another site, receive 403 `{ error: "MenuEditDenied" }` and nothing is saved. A body without a command is 400. A fractional price is 409 `{ error: "InvalidMenuPrice" }` and nothing is saved. The price is read before `UpdateMenu.execute`, because the memory repository keeps one menu instance.
+
+`GET /tenants/:tenantId/venues/:venueId/menu` requires a session and does not require `menu.edit`. A pin session at 12:00 in `America/Bogota` sees Breakfast at 15,000 with `orderable: false` and the site burger at 22,000 with `orderable: true`. The same pin session reading another venue receives 403 `{ error: "MenuReadDenied" }`. A missing session is 400. A cashier administration session, which has no `menu.edit`, still receives 200.
+
+## Deviations
+
+`create-application.ts` is unchanged. `createApplication` already calls `ApplicationModule.register`, and the new `menus` and `digests` fields live on that dependency type. `postgresMenus` matches `postgresOrganizations`: it is a factory and `startApi` does not call it yet. Orders gained `"types": ["node"]` and `@types/node` so the new api-cloud project reference can compile the existing Postgres contract test. The controller imports use cases and domain rejections only from `@blackhole/orders/application/entry-port`. Ports and adapters stay package exports, the same shape platform already uses. `MenuEditDenied` and `MenuReadDenied` are the HTTP error names. The design requires 403 and does not name them.

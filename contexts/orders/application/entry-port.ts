@@ -8,3 +8,11 @@ export {
 } from "#application/update-menu/update-menu.js";
 export type { ViewVenueMenuInput } from "#application/view-venue-menu/view-venue-menu.js";
 export { ViewVenueMenu } from "#application/view-venue-menu/view-venue-menu.js";
+export {
+  DuplicateMenuId,
+  ForeignModifier,
+  InvalidMenuId,
+  InvalidMenuPrice,
+  MissingTaxClassification,
+  UnknownMenuReference,
+} from "#domain/menu.js";

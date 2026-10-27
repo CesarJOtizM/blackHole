@@ -208,6 +208,9 @@ importers:
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts
+      '@blackhole/orders':
+        specifier: workspace:*
+        version: link:../../contexts/orders
       '@blackhole/platform':
         specifier: workspace:*
         version: link:../../contexts/platform
@@ -277,6 +280,10 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.4(@electric-sql/pglite@0.5.10)(@opentelemetry/api@1.10.0)(pg@8.23.1)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
 
   contexts/platform:
     dependencies:
