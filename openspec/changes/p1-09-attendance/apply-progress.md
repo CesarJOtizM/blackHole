@@ -18,7 +18,7 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
 - [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the entry port: tasks 1.1–2.14 are complete. `size:exception` was not granted. Next task is 3.1.
+Cumulative through the memory repository: tasks 1.1–2.14 and 3.1–3.2 are complete. `size:exception` was not granted. Next task is 3.3.
 
 ## TDD cycle
 
@@ -261,3 +261,30 @@ Tasks 2.13–2.14. stacked-to-main. `size:exception` was not granted. Standard m
 ## Deviations
 
 The worktree started at `0362fe3`, before `AttendancePolicyRepository.save`. The copied test double gained an empty `save` so it implements the port that already exists on this tree. Callers still decide the block: the use case returns the two booleans and does not throw when the rule is on and counting is false.
+
+## Work unit 6 slice / memory repository only
+
+Tasks 3.1–3.2. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Postgres, xlsx, and HTTP were not started. The slice ran in a separate worktree from `0362fe3` and was copied back onto the uncommitted tree.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 3.1 | Test before the memory repository. Exit 1, `Cannot find module '#adapters/memory/in-memory-clock-entry-repository.js'`, 0 tests | — | — |
+| 3.2 | Same command | Exit 0, 1 file, 6 tests | Biome, then the same command still exit 0, 6 tests |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance in-memory-clock-entry-repository` → exit 0, 1 file, 6 passed |
+| Typecheck | `pnpm exec tsc -b contexts/attendance --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (320 modules, 835 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | N/A: in-memory port, no process boundary |
+| Rollback | `contexts/attendance/adapters/memory/`, `application/ports/clock-entry-repository.contract.ts`, the `#adapters/memory/*` import, and `adapters` in the attendance tsconfig `include` |
+
+`InMemoryClockEntryRepository` clones on write and on read. A second append with the same `tenantId` and `commandId` keeps the first row. Tenant B cannot list tenant A's row. `list` hides another user; `listByVenue` returns that row. The class has no `update` and no `delete`.
+
+About 172 physical lines: the contract 124, the repository 42, the test 4, plus the import and the tsconfig include. Under the 400-line default.
+
+## Deviations
+
+The idempotency key is `tenantId` plus `commandId`. A different payload on the retry is ignored and the first row stays. `tsconfig.json` now includes `adapters` so the new folder typechecks.
+
+Stacked PR for these two slices targets the export slice's branch. Start: export green. Finish: entry port and memory repository green. Postgres, xlsx, and HTTP stay out.

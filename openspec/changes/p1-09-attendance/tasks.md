@@ -59,8 +59,8 @@ Cloud slice (D-37, D-43, D-33). RED then GREEN (ADR-017). Threat matrix N/A. Spl
 
 ## Phase 3: Adapters (unit 6; 3.5–3.6 in unit 7)
 
-- [ ] 3.1 RED `ports/clock-entry-repository.contract.ts`, `adapters/memory/*contract.test.ts`: hidden tenant; same `commandId`; no update or delete.
-- [ ] 3.2 GREEN memory repository. `#adapters/memory/*`.
+- [x] 3.1 RED `ports/clock-entry-repository.contract.ts`, `adapters/memory/*contract.test.ts`: hidden tenant; same `commandId`; no update or delete.
+- [x] 3.2 GREEN memory repository. `#adapters/memory/*`.
 - [ ] 3.3 RED PGlite `adapters/postgres/*.contract.test.ts`: `attendance_app`, forced RLS, UPDATE/DELETE/TRUNCATE refused. No Drizzle mock. Next unused `NNNN_attendance.sql`. Leave `0001`–`0007`.
 - [ ] 3.4 GREEN that SQL, `schema.ts`, `drizzle-*-repository.ts` (entries and policy). `#adapters/postgres/*`.
 - [ ] 3.5 RED `adapters/xlsx/hours-workbook.test.ts`: no salary column.
