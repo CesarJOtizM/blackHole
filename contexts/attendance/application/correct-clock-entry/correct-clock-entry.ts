@@ -59,6 +59,7 @@ export class CorrectClockEntry {
     }
 
     const correction: ClockEntryCorrection = {
+      tenantId: command.tenantId,
       entryId: original.id,
       occurredAt: command.occurredAt,
       reason,

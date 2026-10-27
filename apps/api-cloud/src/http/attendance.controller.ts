@@ -176,6 +176,7 @@ export class AttendanceController {
           tenantId,
           session.userId,
           venueId,
+          this.clock.now(),
         ),
       });
 

@@ -47,6 +47,8 @@ export class InMemoryClockEntryCorrectionRepository extends ClockEntryCorrection
   ): Promise<readonly ClockEntryCorrection[]> {
     const ids = new Set(query.entryIds);
 
-    return this.rows.filter((row) => ids.has(row.entryId)).map(copyCorrection);
+    return this.rows
+      .filter((row) => row.tenantId === query.tenantId && ids.has(row.entryId))
+      .map(copyCorrection);
   }
 }

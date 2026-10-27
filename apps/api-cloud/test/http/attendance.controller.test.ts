@@ -68,7 +68,12 @@ const clockBody = (commandId: string) => ({
   commandId,
 });
 
-const openCloud = async () => {
+const openCloud = async (
+  cashierAssignment: { validFrom: number | null; validUntil: number | null } = {
+    validFrom: null,
+    validUntil: null,
+  },
+) => {
   const identities = new InMemoryIdentityRepository();
   const organizations = new InMemoryOrganizationRepository();
   const authorizations = new InMemoryAuthorizationRepository();
@@ -174,8 +179,8 @@ const openCloud = async () => {
         roleId: "cashier",
         scopeKind: "site",
         scopeId: venueId,
-        validFrom: null,
-        validUntil: null,
+        validFrom: cashierAssignment.validFrom,
+        validUntil: cashierAssignment.validUntil,
       },
     ],
     venueLimits: [],
@@ -511,6 +516,41 @@ it("given an administration session, when it clocks in without a pin device, the
 
     expect(response.statusCode).toBe(403);
     expect(response.json()).toEqual({ error: "ClockRejected" });
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a cashier assignment that has already ended, when the cashier clocks in, then the register is not recorded", async () => {
+  const application = await openCloud({ validFrom: null, validUntil: now });
+
+  try {
+    const policy = await inject(
+      application,
+      "PUT",
+      venueId,
+      "attendance/policy",
+      "session_admin",
+      policyBody,
+    );
+    const response = await inject(
+      application,
+      "POST",
+      venueId,
+      "clock-entries",
+      "session_cashier",
+      clockBody("command_expired"),
+    );
+
+    expect(policy.statusCode).toBe(200);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: "clock_entry_command_expired",
+      kind: "clock_in",
+      presence: "matched",
+      occurredAt: new Date(now).toISOString(),
+      cashRegisterId: null,
+    });
   } finally {
     await application.close();
   }

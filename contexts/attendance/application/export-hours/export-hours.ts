@@ -190,6 +190,7 @@ export class ExportHours {
       rows.length === 0
         ? []
         : await this.corrections.listCorrections({
+            tenantId: command.tenantId,
             entryIds: rows.map((row) => row.id),
           });
     const groups = byUser(rows);

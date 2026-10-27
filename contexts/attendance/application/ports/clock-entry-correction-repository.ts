@@ -1,10 +1,12 @@
 export interface ClockEntryCorrection {
+  tenantId: string;
   entryId: string;
   occurredAt: string;
   reason: string;
 }
 
 export interface ListClockEntryCorrections {
+  tenantId: string;
   entryIds: readonly string[];
 }
 

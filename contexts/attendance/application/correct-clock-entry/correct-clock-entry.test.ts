@@ -75,7 +75,11 @@ class MemoryCorrections extends ClockEntryCorrectionRepository {
     query: ListClockEntryCorrections,
   ): Promise<readonly ClockEntryCorrection[]> {
     return this.rows
-      .filter((row) => query.entryIds.includes(row.entryId))
+      .filter(
+        (row) =>
+          row.tenantId === query.tenantId &&
+          query.entryIds.includes(row.entryId),
+      )
       .map((row) => ({ ...row }));
   }
 }
@@ -90,6 +94,7 @@ class RecordingAudit extends AttendanceAudit {
 
   override async record(command: AttendanceAuditCommand): Promise<void> {
     const stored = await this.corrections.listCorrections({
+      tenantId: command.tenantId,
       entryIds: [command.entity],
     });
 
@@ -156,7 +161,10 @@ it("given an auto-closed clock-out, when an administrator corrects it with a rea
   await correct.execute(command());
 
   const listed = await entries.list(scope);
-  const stored = await corrections.listCorrections({ entryIds: [ENTRY_ID] });
+  const stored = await corrections.listCorrections({
+    tenantId: TENANT_ID,
+    entryIds: [ENTRY_ID],
+  });
   const projection = projectHours({
     mode: "hours_only",
     entries: listed.map((row) => ({
@@ -175,6 +183,7 @@ it("given an auto-closed clock-out, when an administrator corrects it with a rea
   );
   expect(stored).toEqual([
     {
+      tenantId: TENANT_ID,
       entryId: ENTRY_ID,
       occurredAt: REPLACEMENT_AT,
       reason: REASON,
@@ -208,9 +217,12 @@ it("given an empty or blank reason, when an administrator corrects a clock entry
   await expect(empty).rejects.toBeInstanceOf(CorrectionReasonRequired);
   await expect(blank).rejects.toBeInstanceOf(CorrectionReasonRequired);
   expect(await entries.list(scope)).toEqual(before);
-  expect(await corrections.listCorrections({ entryIds: [ENTRY_ID] })).toEqual(
-    [],
-  );
+  expect(
+    await corrections.listCorrections({
+      tenantId: TENANT_ID,
+      entryIds: [ENTRY_ID],
+    }),
+  ).toEqual([]);
   expect(audit.calls).toEqual([]);
 });
 
@@ -222,8 +234,11 @@ it("given an unknown clock entry, when an administrator corrects it, then nothin
 
   await expect(act).rejects.toBeInstanceOf(UnknownClockEntry);
   expect(await entries.list(scope)).toEqual(before);
-  expect(await corrections.listCorrections({ entryIds: [ENTRY_ID] })).toEqual(
-    [],
-  );
+  expect(
+    await corrections.listCorrections({
+      tenantId: TENANT_ID,
+      entryIds: [ENTRY_ID],
+    }),
+  ).toEqual([]);
   expect(audit.calls).toEqual([]);
 });

@@ -63,12 +63,21 @@ export const assertPinDevice = async (
   }
 };
 
+const assignmentActive = (
+  validFrom: number | null,
+  validUntil: number | null,
+  at: number,
+): boolean =>
+  (validFrom === null || at >= validFrom) &&
+  (validUntil === null || at < validUntil);
+
 export const cashRegisterIdFor = async (
   authorizations: AuthorizationRepository,
   organizations: OrganizationRepository,
   tenantId: string,
   userId: string,
   venueId: string,
+  at: number,
 ): Promise<string | undefined> => {
   const authorization = await authorizations.load(tenantId);
   const cashier = authorization
@@ -78,7 +87,8 @@ export const cashRegisterIdFor = async (
         assignment.userId === userId &&
         assignment.roleId === "cashier" &&
         assignment.scopeKind === "site" &&
-        assignment.scopeId === venueId,
+        assignment.scopeId === venueId &&
+        assignmentActive(assignment.validFrom, assignment.validUntil, at),
     );
 
   if (!cashier) {
