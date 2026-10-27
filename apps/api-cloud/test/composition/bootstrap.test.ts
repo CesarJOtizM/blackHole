@@ -1,3 +1,9 @@
+import { InMemoryClockEntryRepository } from "@blackhole/attendance/adapters/memory/in-memory-clock-entry-repository";
+import { SheetJsHoursWorkbook } from "@blackhole/attendance/adapters/xlsx/hours-workbook";
+import { AttendancePolicyRepository } from "@blackhole/attendance/application/ports/attendance-policy-repository";
+import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
+import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
+import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
@@ -39,8 +45,11 @@ import { SessionReader } from "@blackhole/platform/application/ports/session-rea
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
-
 import { ApplicationModule } from "#src/composition/application-module.js";
+import {
+  InMemoryAttendancePolicyRepository,
+  InMemoryClockEntryCorrectionRepository,
+} from "#src/composition/attendance-memory.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
@@ -174,6 +183,22 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: AuditDigest,
         useValue: new Sha256AuditDigest(),
+      },
+      {
+        provide: ClockEntryRepository,
+        useValue: new InMemoryClockEntryRepository(),
+      },
+      {
+        provide: ClockEntryCorrectionRepository,
+        useValue: new InMemoryClockEntryCorrectionRepository(),
+      },
+      {
+        provide: AttendancePolicyRepository,
+        useValue: new InMemoryAttendancePolicyRepository(),
+      },
+      {
+        provide: HoursWorkbook,
+        useValue: new SheetJsHoursWorkbook(),
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

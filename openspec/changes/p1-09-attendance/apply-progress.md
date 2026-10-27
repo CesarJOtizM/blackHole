@@ -342,3 +342,34 @@ The adapter and its test are under the 400-line default. `size:exception` was no
 The column names are the workbook row fields. The design says the file has no salary and does not name the headers. HTTP stays out.
 
 Stacked PR for this slice targets the Postgres slice's branch. Start: Postgres green. Finish: xlsx green. HTTP stays out.
+
+## Work unit 7 slice / HTTP
+
+Tasks 4.1–4.3. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Local-node, SQLite, sync, photo, tips, payroll, admin-web, and venue-app were not started. The catalog already has `attendance.correct`. No new permission was added.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 4.1 | Test before the controller. Exit 1, `Cannot find module '#src/http/attendance.controller.js'`, 0 tests | — | — |
+| 4.2 | Same command, contracts added with the controller | Exit 0, 1 file, 6 tests | Biome, then the same command still exit 0, 6 tests |
+| 4.3 | Same command | Controller, access, memory, pg-boss registration, and wiring | Biome and `tsc -b apps/api-cloud` exit 0 |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project api-cloud attendance.controller` → exit 0, 1 file, 6 passed. Bootstrap: `pnpm vitest run --project api-cloud bootstrap.test` → exit 0, 1 file, 3 passed |
+| Skeleton | `pnpm vitest run --project skeleton` → exit 0, 2 files, 10 passed. The clock route declares `pin`; corrections, policy, and export declare `attendance.correct` |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud --pretty false` → exit 0 |
+| Architecture | `pnpm architecture` → exit 0. `no dependency violations found (349 modules, 932 dependencies cruised)`. Pre-existing warning: `missing-typescript-transpiler`. Cruiser rules were not changed |
+| Runtime harness | Nest `inject` only. `createApplication` does not `listen`. The export body is the xlsx bytes |
+| Rollback | `apps/api-cloud/src/http/attendance.controller.ts`, `attendance-access.ts`, `attendance-memory.ts`, `close-open-shifts.ts`, the HTTP test, `shared/contracts/attendance.ts`, the attendance exports, and the api-cloud dependency |
+
+A cashier with PIN `2468` on a registered personal device clocks in at `200`. The server stamps `occurredAt`. The body cannot send that timestamp. The entry id is `clock_entry_${commandId}`, presence is `matched` inside the geofence, and `cashRegisterId` is the venue register only because the session role is cashier on that site. A second open clock-in is `409` `{ error: "SecondClockIn" }`. A cashier correction, policy, read, or export is `403`. A site administrator on another site gets `403` for policy, read, and export. Read JSON and the export have no `salary`. The export starts with `PK`. An administration session without a pin device is `403` `{ error: "ClockRejected" }`.
+
+New files are 1,310 lines and the wiring diff adds 106. Together that is over the 400-line default. `size:exception` was not granted. The three tasks are one slice and were finished together.
+
+## Deviations
+
+`PERMISSION` is not exported from `@blackhole/platform/domain`, so the route map uses the existing string `attendance.correct`. Clock is declared `pin`, which is not a catalog code, so a cashier can clock without `attendance.correct`. `cashRegisterId` is taken from the venue cash register, not from the body. The close queue is registered on pg-boss with `retryLimit: 0` and an in-memory clock repository inside the worker process. That repository is not the API process store. `startApi` is still in-memory, same as menus. A failed close is not sent again.
+
+Phase 4 is complete. The change lists no task after 4.3. Local-node attendance stays out.
+
+Stacked PR for this slice targets `master` after the xlsx merge. Start: xlsx green on master. Finish: HTTP green. The branch is `feat/attendance-http`.

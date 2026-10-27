@@ -11,6 +11,7 @@
     "#test/http/*": "./test/http/*"
   },
   "dependencies": {
+    "@blackhole/attendance": "workspace:*",
     "@blackhole/contracts": "workspace:*",
     "@blackhole/orders": "workspace:*",
     "@blackhole/platform": "workspace:*",

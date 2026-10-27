@@ -184,6 +184,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.15
         version: 2.5.15
+      '@blackhole/attendance':
+        specifier: workspace:*
+        version: link:contexts/attendance
       '@blackhole/platform':
         specifier: workspace:*
         version: link:contexts/platform
@@ -205,6 +208,9 @@ importers:
 
   apps/api-cloud:
     dependencies:
+      '@blackhole/attendance':
+        specifier: workspace:*
+        version: link:../../contexts/attendance
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts
