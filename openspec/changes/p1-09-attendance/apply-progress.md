@@ -15,8 +15,10 @@ Work unit 1 / PR 1. Tasks 1.1–1.3. Chain strategy: stacked-to-main. `size:exce
 - [x] 2.4 GREEN `correct-clock-entry.ts` via the platform entry port only.
 - [x] 2.5 RED `application/close-open-shifts/close-open-shifts.test.ts`.
 - [x] 2.6 GREEN `close-open-shifts.ts`.
+- [x] 2.7 RED `application/set-venue-attendance-policy/set-venue-attendance-policy.test.ts`.
+- [x] 2.8 GREEN `set-venue-attendance-policy.ts`.
 
-Cumulative through the close slice: tasks 1.1–2.6 are complete. `size:exception` was not granted. Next task is 2.7. Units 1–3 and the correction batch stay below. This batch is only the close.
+Cumulative through the policy slice: tasks 1.1–2.8 are complete. `size:exception` was not granted. Next task is 2.9.
 
 ## TDD cycle
 
@@ -156,3 +158,27 @@ Line count for this slice: 454 additions and 4 deletions (458 changed lines). Ne
 A `clock_out` with `pendingReview` true is legal from `on_break` and ends in `pending_review`. A `clock_out` from `on_break` without `pendingReview` still throws `ShiftTransitionRejected`. The design did not name this transition. The new close row copies `deviceId` from the latest matched clock-in; the design did not name that field. There is no transaction port, so a throw from a later `append` is not rolled back. The check-first path still appends nobody when one worker cannot be closed.
 
 Stacked PR for this slice targets the correction slice's branch. Start: correction green. Finish: close green. Policy, read, export, entry port, adapters, and HTTP stay out.
+
+## Work unit 5 slice / policy only
+
+Tasks 2.7–2.8. stacked-to-main. `size:exception` was not granted. Standard mode (`strict_tdd: false`); ADR-017 RED then GREEN. Threat matrix N/A. Read, export, the attendance entry port, adapters, Postgres, xlsx, and HTTP were not started. The forecast groups policy, read, export, and the entry port as unit 5. This batch is only the policy.
+
+| Task | RED | GREEN | REFACTOR |
+|------|-----|-------|----------|
+| 2.7 | Test before `set-venue-attendance-policy.ts`. Exit 1, `Cannot find module '#application/set-venue-attendance-policy/set-venue-attendance-policy.js'`, 0 tests | — | — |
+| 2.8 | Same command | Exit 0, 1 file, 2 tests | Biome, then `pnpm vitest run --project attendance set-venue-attendance-policy record-clock-entry` still exit 0 |
+
+| Evidence | Result |
+|----------|--------|
+| Focused test | `pnpm vitest run --project attendance set-venue-attendance-policy record-clock-entry correct-clock-entry close-open-shifts` → exit 0, 4 files, 19 passed |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud contexts/attendance --pretty false` → exit 0 |
+| Runtime harness | N/A: in-memory ports, no process boundary |
+| Rollback | `contexts/attendance/application/set-venue-attendance-policy/`, the `#application/set-venue-attendance-policy/*` import key, `save` on `AttendancePolicyRepository`, and the empty `save` on the record-clock test double |
+
+`SetVenueAttendancePolicy` rejects a negative tolerance, or a close time that is not `HH:mm`, before save and before audit. A missing policy is the default, so the rule is off until someone sets it. Enabling the rule stores `operationRuleEnabled: true` and audits action `attendance.policy`. `before` is the default with the rule off. `after` is the stored policy. `siteId` and `entity` are the venue. A scheduled policy also requires `HH:mm` bounds. No HTTP and no permission check in this slice.
+
+## Deviations
+
+The audit action is `attendance.policy`. The design says a rule change is audited and does not name the action. `AttendancePolicyRepository.save` is new. The record-clock tests never call it. A later adapter has to implement it. There is no transaction: a throw from the audit leaves the policy stored.
+
+Stacked PR for this slice targets the close slice's branch. Start: close green. Finish: policy green. Read, export, entry port, adapters, and HTTP stay out.
