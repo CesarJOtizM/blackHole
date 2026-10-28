@@ -106,6 +106,19 @@ export function clockEntryRepositoryContract(
     expect(await repository.listByVenue(TENANT_A, VENUE_ID)).toEqual([first]);
   });
 
+  it("given a stored command, when another user appends it and a tenant looks it up, then the first row stays and the other tenant sees nothing", async () => {
+    const repository = await createRepository();
+    const first = entry({ id: "clock_entry_first" });
+    await repository.append(first);
+    await repository.append(
+      entry({ id: "clock_entry_other", userId: USER_B, kind: "clock_out" }),
+    );
+
+    expect(await repository.findByCommand(TENANT_A, COMMAND_ID)).toEqual(first);
+    expect(await repository.findByCommand(TENANT_B, COMMAND_ID)).toBeNull();
+    expect(await repository.list(queryFor(TENANT_A, USER_B))).toEqual([]);
+  });
+
   it("given an entry for one user, when another user in the same tenant and venue lists, then list omits the row and list by venue returns it", async () => {
     const repository = await createRepository();
     const stored = entry({ userId: USER_A });

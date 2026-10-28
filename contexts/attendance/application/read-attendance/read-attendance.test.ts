@@ -75,6 +75,10 @@ class MemoryEntries extends ClockEntryRepository {
       (row) => row.tenantId === tenantId && row.venueId === venueId,
     );
   }
+
+  override async findByCommand(): Promise<ClockEntry | null> {
+    return null;
+  }
 }
 
 class MemoryCorrections extends ClockEntryCorrectionRepository {
@@ -89,11 +93,14 @@ class MemoryCorrections extends ClockEntryCorrectionRepository {
   ): Promise<void> {}
 
   override async listCorrections(query: {
+    tenantId: string;
     entryIds: readonly string[];
   }): Promise<readonly ClockEntryCorrection[]> {
     this.calls += 1;
     const ids = new Set(query.entryIds);
-    return this.rows.filter((row) => ids.has(row.entryId));
+    return this.rows.filter(
+      (row) => row.tenantId === query.tenantId && ids.has(row.entryId),
+    );
   }
 }
 
@@ -132,6 +139,7 @@ class OwnSite extends AttendanceSiteAccess {
 }
 
 const correction: ClockEntryCorrection = {
+  tenantId: TENANT,
   entryId: "clock_entry_corrected_out",
   occurredAt: OUT_AT,
   reason: "Worker forgot to clock out",

@@ -1,3 +1,9 @@
+import { InMemoryClockEntryRepository } from "@blackhole/attendance/adapters/memory/in-memory-clock-entry-repository";
+import { SheetJsHoursWorkbook } from "@blackhole/attendance/adapters/xlsx/hours-workbook";
+import { AttendancePolicyRepository } from "@blackhole/attendance/application/ports/attendance-policy-repository";
+import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
+import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
+import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
@@ -26,10 +32,14 @@ import { SessionReader } from "@blackhole/platform/application/ports/session-rea
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { type DynamicModule, Module } from "@nestjs/common";
-
+import {
+  InMemoryAttendancePolicyRepository,
+  InMemoryClockEntryCorrectionRepository,
+} from "#src/composition/attendance-memory.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
+import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
@@ -62,6 +72,10 @@ export interface CloudApplicationDependencies {
   audits?: AuditRepository;
   menus?: MenuRepository;
   digests?: AuditDigest;
+  clockEntries?: ClockEntryRepository;
+  corrections?: ClockEntryCorrectionRepository;
+  policies?: AttendancePolicyRepository;
+  workbook?: HoursWorkbook;
 }
 
 @Module({})
@@ -79,6 +93,7 @@ export class ApplicationModule {
         ReadAuditController,
         UpdateMenuController,
         ViewVenueMenuController,
+        AttendanceController,
         HealthController,
       ],
       providers: [
@@ -175,6 +190,26 @@ export class ApplicationModule {
         {
           provide: AuditDigest,
           useValue: dependencies.digests ?? new Sha256AuditDigest(),
+        },
+        {
+          provide: ClockEntryRepository,
+          useValue:
+            dependencies.clockEntries ?? new InMemoryClockEntryRepository(),
+        },
+        {
+          provide: ClockEntryCorrectionRepository,
+          useValue:
+            dependencies.corrections ??
+            new InMemoryClockEntryCorrectionRepository(),
+        },
+        {
+          provide: AttendancePolicyRepository,
+          useValue:
+            dependencies.policies ?? new InMemoryAttendancePolicyRepository(),
+        },
+        {
+          provide: HoursWorkbook,
+          useValue: dependencies.workbook ?? new SheetJsHoursWorkbook(),
         },
       ],
     };

@@ -5,7 +5,22 @@
   "type": "module",
   "exports": {
     "./domain": "./domain/index.js",
-    "./application/entry-port": "./application/entry-port.js"
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/record-clock-entry": "./application/record-clock-entry/record-clock-entry.js",
+    "./application/correct-clock-entry": "./application/correct-clock-entry/correct-clock-entry.js",
+    "./application/correct-clock-entry/platform-attendance-audit": "./application/correct-clock-entry/platform-attendance-audit.js",
+    "./application/close-open-shifts": "./application/close-open-shifts/close-open-shifts.js",
+    "./application/set-venue-attendance-policy": "./application/set-venue-attendance-policy/set-venue-attendance-policy.js",
+    "./application/read-attendance": "./application/read-attendance/read-attendance.js",
+    "./application/export-hours": "./application/export-hours/export-hours.js",
+    "./application/ports/clock": "./application/ports/clock.js",
+    "./application/ports/pin-check": "./application/ports/pin-check.js",
+    "./application/ports/attendance-policy-repository": "./application/ports/attendance-policy-repository.js",
+    "./application/ports/clock-entry-repository": "./application/ports/clock-entry-repository.js",
+    "./application/ports/clock-entry-correction-repository": "./application/ports/clock-entry-correction-repository.js",
+    "./application/ports/hours-workbook": "./application/ports/hours-workbook.js",
+    "./adapters/memory/in-memory-clock-entry-repository": "./adapters/memory/in-memory-clock-entry-repository.js",
+    "./adapters/xlsx/hours-workbook": "./adapters/xlsx/hours-workbook.js"
   },
   "dependencies": {
     "@blackhole/platform": "workspace:*",

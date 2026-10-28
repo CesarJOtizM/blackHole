@@ -11,6 +11,7 @@
     "accept-cloud-write.ts",
     "audit.ts",
     "authorization.ts",
+    "attendance.ts",
     "devices.ts",
     "identity.ts",
     "menu.ts",

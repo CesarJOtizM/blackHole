@@ -57,6 +57,22 @@ export class DrizzleClockEntryRepository extends ClockEntryRepository {
     });
   }
 
+  override async findByCommand(
+    tenantId: string,
+    commandId: string,
+  ): Promise<ClockEntry | null> {
+    return this.inTenant(tenantId, async (tx) => {
+      const rows = await tx
+        .select()
+        .from(clockEntries)
+        .where(eq(clockEntries.commandId, commandId))
+        .limit(1);
+      const row = rows[0];
+
+      return row === undefined ? null : toEntry(row);
+    });
+  }
+
   override async list(query: ListClockEntries): Promise<readonly ClockEntry[]> {
     return this.inTenant(query.tenantId, async (tx) => {
       const rows = await tx

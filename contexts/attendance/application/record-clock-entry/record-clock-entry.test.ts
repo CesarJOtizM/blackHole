@@ -18,6 +18,7 @@ import {
   type PlatformPinConfirmation,
 } from "#application/ports/pin-check.js";
 import {
+  CommandIdTaken,
   RecordClockEntry,
   type RecordClockEntryCommand,
 } from "#application/record-clock-entry/record-clock-entry.js";
@@ -79,6 +80,17 @@ class MemoryClockEntries extends ClockEntryRepository {
     return this.rows
       .filter((row) => row.tenantId === tenantId && row.venueId === venueId)
       .map((row) => ({ ...row }));
+  }
+
+  override async findByCommand(
+    tenantId: string,
+    commandId: string,
+  ): Promise<ClockEntry | null> {
+    const row = this.rows.find(
+      (item) => item.tenantId === tenantId && item.commandId === commandId,
+    );
+
+    return row === undefined ? null : { ...row };
   }
 }
 
@@ -193,6 +205,17 @@ it("given the same commandId, when the clock-in is retried, then the same row is
   expect(entries.rows).toHaveLength(1);
   expect(retry.entry).toEqual(first.entry);
   expect(retry.entry.occurredAt).toBe(SERVER_AT);
+});
+
+it("given another worker reuses a commandId, when that worker clocks in, then the call is rejected and the first row stays", async () => {
+  const { entries, record } = harness(scheduledPolicy());
+  await record.execute(command());
+
+  const reused = record.execute(command({ userId: "user_other" }));
+
+  await expect(reused).rejects.toBeInstanceOf(CommandIdTaken);
+  expect(entries.rows).toHaveLength(1);
+  expect(entries.rows[0]?.userId).toBe(USER_ID);
 });
 
 it("given an open clock-in, when the worker clocks in again, then it is rejected and only one row is stored", async () => {

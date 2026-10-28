@@ -12,6 +12,7 @@ import {
 } from "@blackhole/platform/domain";
 import { PgBoss } from "pg-boss";
 
+import { registerCloseOpenShifts } from "#src/composition/close-open-shifts.js";
 import type {
   FactusIssueResult,
   FactusSimulator,
@@ -162,6 +163,7 @@ export const startWorker = async (
   const boss = new PgBoss(runtime.databaseUrl);
 
   await boss.start();
+  await registerCloseOpenShifts(boss);
 
   const publish = async (): Promise<void> => {
     await runtime.metrics.publishQueue(queueDepth(await boss.getQueues()));

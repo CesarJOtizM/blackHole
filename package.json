@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@blackhole/attendance": "workspace:*",
     "@blackhole/platform": "workspace:*",
     "@swc/core": "1.16.18",
     "dependency-cruiser": "18.6.0",

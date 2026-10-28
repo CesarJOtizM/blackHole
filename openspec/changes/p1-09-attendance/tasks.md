@@ -68,9 +68,9 @@ Cloud slice (D-37, D-43, D-33). RED then GREEN (ADR-017). Threat matrix N/A. Spl
 
 ## Phase 4: HTTP (unit 7)
 
-- [ ] 4.1 RED `apps/api-cloud/test/http/attendance.controller.test.ts`: `inject` and `x-session-id`; `POST /tenants/:tenantId/venues/:venueId/clock-entries` 200; second open 409; cashier correction 403; policy, read, and export need `attendance.correct` on the own site, else 403; no salary; PIN and a registered device; no `listen`; no new permission.
-- [ ] 4.2 GREEN `shared/contracts/attendance.ts`, `index.ts`. `z.enum` kind and presence. No trusted timestamp.
-- [ ] 4.3 GREEN controller, `attendance-access.ts` (cashier `cashRegisterId` only), `application-module.ts`, pg-boss `close-open-shifts.ts`. Wire api-cloud and root `package.json`, plus both `tsconfig.json` references.
+- [x] 4.1 RED `apps/api-cloud/test/http/attendance.controller.test.ts`: `inject` and `x-session-id`; `POST /tenants/:tenantId/venues/:venueId/clock-entries` 200; second open 409; cashier correction 403; policy, read, and export need `attendance.correct` on the own site, else 403; no salary; PIN and a registered device; no `listen`; no new permission.
+- [x] 4.2 GREEN `shared/contracts/attendance.ts`, `index.ts`. `z.enum` kind and presence. No trusted timestamp.
+- [x] 4.3 GREEN controller, `attendance-access.ts` (cashier `cashRegisterId` only), `application-module.ts`, pg-boss `close-open-shifts.ts`. Wire api-cloud and root `package.json`, plus both `tsconfig.json` references.
 
 ## Out of scope
 

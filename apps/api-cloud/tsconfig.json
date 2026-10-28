@@ -11,6 +11,7 @@
   },
   "include": ["src", "test"],
   "references": [
+    { "path": "../../contexts/attendance" },
     { "path": "../../contexts/orders" },
     { "path": "../../contexts/platform" },
     { "path": "../../shared/contracts" }
