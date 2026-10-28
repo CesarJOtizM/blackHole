@@ -1,6 +1,7 @@
 import {
   boolean,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -113,6 +114,111 @@ export const venuePrices = pgTable(
   (table) => [
     primaryKey({
       columns: [table.tenantId, table.menuId, table.venueId, table.itemId],
+    }),
+  ],
+);
+
+export const diningTables = pgTable(
+  "dining_tables",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    zone: text("zone").notNull(),
+    state: text("state").notNull(),
+    diners: integer("diners").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const checks = pgTable(
+  "checks",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    tableId: text("table_id").notNull(),
+    openedAt: text("opened_at").notNull(),
+    firstSentAt: text("first_sent_at"),
+    tableState: text("table_state").notNull(),
+    preBillRequestedAt: text("pre_bill_requested_at"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    checkId: text("check_id").notNull(),
+    channel: text("channel").notNull(),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const orderLines = pgTable(
+  "order_lines",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    checkId: text("check_id").notNull(),
+    orderId: text("order_id").notNull(),
+    productId: text("product_id").notNull(),
+    name: text("name").notNull(),
+    course: integer("course").notNull(),
+    price: integer("price").notNull(),
+    state: text("state").notNull(),
+    originTableId: text("origin_table_id").notNull(),
+    note: text("note"),
+    variantIds: jsonb("variant_ids").notNull().$type<readonly string[]>(),
+    modifierIds: jsonb("modifier_ids").notNull().$type<readonly string[]>(),
+    sentAt: text("sent_at"),
+    inPreparationAt: text("in_preparation_at"),
+    readyAt: text("ready_at"),
+    deliveredAt: text("delivered_at"),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const stationRoutes = pgTable(
+  "station_routes",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    name: text("name").notNull(),
+    output: text("output").notNull(),
+    redThresholdMinutes: integer("red_threshold_minutes").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const stationRouteProducts = pgTable(
+  "station_route_products",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    stationId: text("station_id").notNull(),
+    productId: text("product_id").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.venueId, table.productId],
     }),
   ],
 );

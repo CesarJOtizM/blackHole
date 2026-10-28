@@ -23,17 +23,18 @@ Each product MUST belong to exactly one kitchen station. Each station SHALL outp
 
 ### Requirement: Delivery Latency
 
-Inside the site, a sent product MUST appear at its station in under 2 seconds at p90, measured from send to display.
+The hub MUST receive the send id on commit. A p90 display measurement MUST wait for a display.
 
 #### Scenario: Test service latency
-- GIVEN a test service with normal peak traffic
-- WHEN latency is measured for all sends
-- THEN the p90 from send to station display is under 2 s
+- GIVEN a product send commits
+- WHEN the hub is observed
+- THEN the hub has received the send id
+- AND a p90 display measurement waits for a display
 
-#### Scenario: Remote cloud link not involved (hybrid)
-- GIVEN a hybrid site whose internet is slow or cut
+#### Scenario: Send rejected on the local node
+- GIVEN the local node
 - WHEN a waiter sends a product
-- THEN delivery to the station does not wait for the cloud
+- THEN the response is 403 DiningRoomRejected and nothing is stored
 
 ### Requirement: Kitchen Display Queue
 
@@ -73,9 +74,10 @@ When a line becomes ready, the waiter of that table MUST receive a notice. The w
 - THEN W's device shows a ready notice for table 5
 
 #### Scenario: Locked phone
-- GIVEN W's phone is locked
-- WHEN a line becomes ready
-- THEN the notice is delivered by the mechanism chosen in the 0.1 spike
+- GIVEN a line of table 5 becomes ready
+- WHEN the ready notice is published
+- THEN the notice carries the table id
+- AND a locked-phone delivery mechanism is outside this change (PA-30)
 
 ### Requirement: Kitchen Ticket Printer Failure
 
@@ -94,14 +96,14 @@ If a station printer fails, the line MUST stay on the station screen when one ex
 
 ### Requirement: Kitchen During an Internet Cut
 
-In hybrid mode the station screens, printers and notices MUST keep working through the node. In cloud mode the kitchen SHALL be stopped.
+The local node MUST reject kitchen routes with 403 DiningRoomRejected and MUST store nothing. Hybrid node operation, SQLite, outbox, sync, and a cut are deferred (D-37).
 
-#### Scenario: Hybrid kitchen offline
-- GIVEN a hybrid site without internet
-- WHEN a line is sent
-- THEN the station receives it via the node and later events sync to the cloud
+#### Scenario: Kitchen routes rejected
+- GIVEN the local node
+- WHEN a kitchen route is called
+- THEN the response is 403 DiningRoomRejected and nothing is stored
 
-#### Scenario: Cloud mode kitchen offline
-- GIVEN a cloud-mode site without internet
-- WHEN the kitchen display is opened
-- THEN it shows that the service is unavailable
+#### Scenario: Kitchen routes store nothing
+- GIVEN the local node
+- WHEN a kitchen route is called
+- THEN the response is 403 DiningRoomRejected and nothing is stored

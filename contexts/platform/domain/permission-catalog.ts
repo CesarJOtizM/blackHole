@@ -77,6 +77,7 @@ export const PERMISSION = {
   CUSTOMER_EXPORT: "customer.export",
   AUDIT_VIEW: "audit.view",
   TAX_CONFIGURE: "tax.configure",
+  ORGANIZATION_STRUCTURE: "organization.structure",
 } as const;
 
 export type PermissionCode = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -195,6 +196,7 @@ export const permissionMatrix = {
   [PERMISSION.CUSTOMER_EXPORT]: cells(Y, A, N, N, N, N, N, N),
   [PERMISSION.AUDIT_VIEW]: cells(Y, Y, L, N, N, N, N, N),
   [PERMISSION.TAX_CONFIGURE]: cells(Y, N, N, N, N, N, N, N),
+  [PERMISSION.ORGANIZATION_STRUCTURE]: cells(Y, N, N, N, N, N, N, N),
 } as const satisfies Record<PermissionCode, Record<MatrixRole, Grant>>;
 
 const DEFAULT_CAPS: Record<LimitCode, Partial<Record<MatrixRole, number>>> = {

@@ -1,0 +1,420 @@
+import type { Clock } from "#application/ports/clock.js";
+import type { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
+import type { MenuRepository } from "#application/ports/menu-repository.js";
+import type { Printer } from "#application/ports/printer.js";
+import type { RealtimeHub } from "#application/ports/realtime-hub.js";
+import type { StationDirectory } from "#application/ports/station-directory.js";
+import {
+  type Check,
+  ComboNotSent,
+  EmptyOrder,
+  InvalidLineId,
+  TableNotOpen,
+} from "#domain/check.js";
+import { KitchenTicket } from "#domain/kitchen-ticket.js";
+import type { Menu } from "#domain/menu.js";
+import { MissingStation } from "#domain/station-router.js";
+
+const BOGOTA_TIME_ZONE = "America/Bogota";
+const LINE_KIND = {
+  COMBO: "combo",
+} as const;
+
+export class ProductNotOrderable extends Error {
+  constructor() {
+    super("The product is outside its schedule.");
+    this.name = "ProductNotOrderable";
+  }
+}
+
+export interface TakeOrderLine {
+  orderId: string;
+  lineId: string;
+  productId: string;
+  name: string;
+  course: number;
+  channel: string;
+  kind?: string;
+  variantIds?: readonly string[];
+  modifierIds?: readonly string[];
+  note?: string;
+}
+
+export interface TakeOrderInput {
+  tenantId: string;
+  brandId: string;
+  venueId: string;
+  checkId: string;
+  course: number;
+  lines: readonly TakeOrderLine[];
+}
+
+export interface ResendOrderInput {
+  tenantId: string;
+  venueId: string;
+  checkId: string;
+  lineId: string;
+}
+
+export interface HoldOrderLineInput {
+  tenantId: string;
+  brandId: string;
+  venueId: string;
+  checkId: string;
+  line: TakeOrderLine;
+}
+
+export interface FireCourseInput {
+  tenantId: string;
+  brandId: string;
+  venueId: string;
+  checkId: string;
+  course: number;
+}
+
+interface RoutedTicket {
+  stationId: string;
+  stationName: string;
+  lineId: string;
+  productName: string;
+  note?: string;
+  screen: boolean;
+}
+
+const bogotaMinute = (instant: number): string => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BOGOTA_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  const minute = parts.find((part) => part.type === "minute")?.value;
+
+  return `${hour}:${minute}`;
+};
+
+const isCombo = (line: TakeOrderLine, menu: Menu): boolean =>
+  line.kind === LINE_KIND.COMBO ||
+  menu.combos.some((combo) => combo.id === line.productId);
+
+export class TakeOrder {
+  constructor(
+    private readonly diningRoom: DiningRoomRepository,
+    private readonly menus: MenuRepository,
+    private readonly stations: StationDirectory,
+    private readonly printer: Printer,
+    private readonly clock: Clock,
+    private readonly hub: RealtimeHub,
+  ) {}
+
+  async execute(input: TakeOrderInput): Promise<Check> {
+    const firing = input.lines.filter((line) => line.course === input.course);
+
+    if (firing.length === 0) {
+      throw new EmptyOrder();
+    }
+
+    const check = await this.diningRoom.loadCheck(
+      input.tenantId,
+      input.venueId,
+      input.checkId,
+    );
+
+    if (check === null) {
+      throw new TableNotOpen();
+    }
+
+    const menu = await this.menus.load(input.tenantId, input.brandId);
+
+    if (menu === null) {
+      throw new ProductNotOrderable();
+    }
+
+    const view = menu.viewAt({
+      venueId: check.venueId,
+      minute: bogotaMinute(this.clock.now()),
+    });
+    const router = await this.stations.load(input.tenantId, check.venueId);
+    const tickets: RoutedTicket[] = [];
+
+    for (const line of firing) {
+      if (isCombo(line, menu)) {
+        throw new ComboNotSent();
+      }
+
+      const product = view.products.find((item) => item.id === line.productId);
+
+      if (!product?.orderable) {
+        throw new ProductNotOrderable();
+      }
+
+      if (router === null) {
+        throw new MissingStation();
+      }
+
+      const destination = router.route({
+        productId: line.productId,
+        kind: line.kind,
+      });
+
+      if (destination.printer) {
+        tickets.push({
+          stationId: destination.stationId,
+          stationName: destination.stationName,
+          lineId: line.lineId,
+          productName: line.name,
+          screen: destination.screen,
+          ...(line.note === undefined ? {} : { note: line.note }),
+        });
+      }
+    }
+
+    const sentAt = new Date(this.clock.now()).toISOString();
+    const priced = input.lines.map((line) => ({
+      line,
+      price: menu.quote({
+        venueId: check.venueId,
+        productId: line.productId,
+        modifierIds: [...(line.modifierIds ?? [])],
+      }),
+    }));
+
+    for (const { line, price } of priced) {
+      check.addLine({
+        orderId: line.orderId,
+        lineId: line.lineId,
+        productId: line.productId,
+        name: line.name,
+        course: line.course,
+        price,
+        channel: line.channel,
+        ...(line.kind === undefined ? {} : { kind: line.kind }),
+        variantIds: [...(line.variantIds ?? [])],
+        modifierIds: [...(line.modifierIds ?? [])],
+        ...(line.note === undefined ? {} : { note: line.note }),
+      });
+    }
+
+    check.send({ course: input.course, sentAt });
+    await this.commit(
+      check,
+      firing.map((line) => line.lineId),
+      tickets,
+    );
+
+    return check;
+  }
+
+  async resend(input: ResendOrderInput): Promise<Check> {
+    const check = await this.diningRoom.loadCheck(
+      input.tenantId,
+      input.venueId,
+      input.checkId,
+    );
+
+    if (check === null) {
+      throw new TableNotOpen();
+    }
+
+    const line = check.orders
+      .flatMap((order) => order.lines)
+      .find((item) => item.id === input.lineId);
+
+    if (!line) {
+      throw new InvalidLineId();
+    }
+
+    const router = await this.stations.load(input.tenantId, check.venueId);
+
+    if (router === null) {
+      throw new MissingStation();
+    }
+
+    const destination = router.route({ productId: line.productId });
+    check.resend({ lineId: input.lineId });
+    const tickets: RoutedTicket[] = destination.printer
+      ? [
+          {
+            stationId: destination.stationId,
+            stationName: destination.stationName,
+            lineId: line.id,
+            productName: line.name,
+            screen: destination.screen,
+            ...(line.note === undefined ? {} : { note: line.note }),
+          },
+        ]
+      : [];
+
+    await this.commit(check, [line.id], tickets);
+
+    return check;
+  }
+
+  async hold(input: HoldOrderLineInput): Promise<Check> {
+    const check = await this.loadCheck(input);
+    const menu = await this.loadMenu(input.tenantId, input.brandId);
+    const view = menu.viewAt({
+      venueId: check.venueId,
+      minute: bogotaMinute(this.clock.now()),
+    });
+    const line = input.line;
+    const product = view.products.find((item) => item.id === line.productId);
+
+    if (!product?.orderable) {
+      throw new ProductNotOrderable();
+    }
+
+    check.addLine({
+      orderId: line.orderId,
+      lineId: line.lineId,
+      productId: line.productId,
+      name: line.name,
+      course: line.course,
+      price: menu.quote({
+        venueId: check.venueId,
+        productId: line.productId,
+        modifierIds: [...(line.modifierIds ?? [])],
+      }),
+      channel: line.channel,
+      ...(line.kind === undefined ? {} : { kind: line.kind }),
+      variantIds: [...(line.variantIds ?? [])],
+      modifierIds: [...(line.modifierIds ?? [])],
+      ...(line.note === undefined ? {} : { note: line.note }),
+    });
+    await this.diningRoom.saveCheck(check);
+
+    return check;
+  }
+
+  async fire(input: FireCourseInput): Promise<Check> {
+    const check = await this.loadCheck(input);
+    const menu = await this.loadMenu(input.tenantId, input.brandId);
+    const view = menu.viewAt({
+      venueId: check.venueId,
+      minute: bogotaMinute(this.clock.now()),
+    });
+    const held = check.orders
+      .flatMap((order) => order.lines)
+      .filter((line) => line.course === input.course && line.state === "held");
+
+    if (held.length === 0) {
+      throw new EmptyOrder();
+    }
+
+    const router = await this.stations.load(input.tenantId, check.venueId);
+    const tickets: RoutedTicket[] = [];
+
+    for (const line of held) {
+      if (view.combos.some((combo) => combo.id === line.productId)) {
+        throw new ComboNotSent();
+      }
+
+      const product = view.products.find((item) => item.id === line.productId);
+
+      if (!product?.orderable) {
+        throw new ProductNotOrderable();
+      }
+
+      if (router === null) {
+        throw new MissingStation();
+      }
+
+      const destination = router.route({ productId: line.productId });
+
+      if (destination.printer) {
+        tickets.push({
+          stationId: destination.stationId,
+          stationName: destination.stationName,
+          lineId: line.id,
+          productName: line.name,
+          screen: destination.screen,
+          ...(line.note === undefined ? {} : { note: line.note }),
+        });
+      }
+    }
+
+    const sentAt = new Date(this.clock.now()).toISOString();
+
+    check.send({ course: input.course, sentAt });
+    await this.commit(
+      check,
+      held.map((line) => line.id),
+      tickets,
+    );
+
+    return check;
+  }
+
+  private async loadCheck(input: {
+    tenantId: string;
+    venueId: string;
+    checkId: string;
+  }): Promise<Check> {
+    const check = await this.diningRoom.loadCheck(
+      input.tenantId,
+      input.venueId,
+      input.checkId,
+    );
+
+    if (check === null) {
+      throw new TableNotOpen();
+    }
+
+    return check;
+  }
+
+  private async loadMenu(tenantId: string, brandId: string): Promise<Menu> {
+    const menu = await this.menus.load(tenantId, brandId);
+
+    if (menu === null) {
+      throw new ProductNotOrderable();
+    }
+
+    return menu;
+  }
+
+  private async commit(
+    check: Check,
+    lineIds: readonly string[],
+    tickets: readonly RoutedTicket[],
+  ): Promise<void> {
+    await this.diningRoom.saveCheck(check);
+    await this.hub.publish({
+      kind: "ids",
+      tenantId: check.tenantId,
+      venueId: check.venueId,
+      checkId: check.id,
+      tableId: check.tableId,
+      lineIds: [...lineIds],
+    });
+
+    for (const ticket of tickets) {
+      await this.printTicket(check, ticket);
+    }
+  }
+
+  private async printTicket(check: Check, ticket: RoutedTicket): Promise<void> {
+    const rendered = KitchenTicket.render({
+      stationName: ticket.stationName,
+      tableId: check.tableId,
+      productName: ticket.productName,
+      ...(ticket.note === undefined ? {} : { note: ticket.note }),
+    });
+
+    try {
+      await this.printer.print({ text: rendered.text });
+    } catch {
+      await this.hub.publish({
+        kind: "printer_failed",
+        tenantId: check.tenantId,
+        venueId: check.venueId,
+        checkId: check.id,
+        tableId: check.tableId,
+        lineId: ticket.lineId,
+        stationId: ticket.stationId,
+        ...(ticket.screen ? {} : { text: rendered.text }),
+      });
+    }
+  }
+}

@@ -85,22 +85,21 @@ Every table and line state change MUST store the operation owner's clock time (P
 - WHEN the first product is sent at 12:03:10
 - THEN both times are stored and order-taking time is 190 s
 
-#### Scenario: Stamped during a cut (hybrid)
-- GIVEN a hybrid site without internet
-- WHEN lines change state
-- THEN the node stamps them locally
-- AND events reach the cloud in order after reconnection, without duplicates
+#### Scenario: State change rejected on the local node
+- GIVEN the local node
+- WHEN a table or line state change is posted
+- THEN the response is 403 DiningRoomRejected and nothing is stored
 
 ### Requirement: Operation During an Internet Cut
 
-In hybrid mode the dining room MUST keep working on the node. In cloud mode it SHALL be stopped and the app MUST say so.
+The local node MUST reject every dining route, including orders-realtime, with 403 DiningRoomRejected and MUST store nothing. Hybrid node operation, SQLite, outbox, sync, and a cut are deferred (D-37).
 
-#### Scenario: Hybrid keeps serving
-- GIVEN a hybrid site loses internet
-- WHEN a waiter opens a table and sends products
-- THEN the node accepts them and the kitchen receives them
+#### Scenario: Dining routes rejected
+- GIVEN the local node
+- WHEN a dining route is called, including orders-realtime
+- THEN the response is 403 DiningRoomRejected and nothing is stored
 
-#### Scenario: Cloud mode stopped
-- GIVEN a cloud-mode site loses internet
-- WHEN a waiter tries to send an order
-- THEN the app shows it is unavailable and no order is created
+#### Scenario: Orders realtime rejected
+- GIVEN the local node
+- WHEN orders-realtime is requested
+- THEN the response is 403 DiningRoomRejected and nothing is stored
