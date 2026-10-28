@@ -37,6 +37,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "invoicing",
+          include: ["contexts/invoicing/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "spikes",
           include: ["tools/spikes/**/*.test.ts"],
         },

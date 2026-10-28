@@ -1,0 +1,28 @@
+{
+  "name": "@blackhole/invoicing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": "./domain/index.js",
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/ports/fiscal-profile-repository": "./application/ports/fiscal-profile-repository.js",
+    "./application/ports/tax-rule-repository": "./application/ports/tax-rule-repository.js",
+    "./adapters/memory/in-memory-fiscal-profile-repository": "./adapters/memory/in-memory-fiscal-profile-repository.js",
+    "./adapters/memory/in-memory-tax-rule-repository": "./adapters/memory/in-memory-tax-rule-repository.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "decimal.js": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "imports": {
+    "#domain/*": "./domain/*",
+    "#application/publish-tax-rule/*": "./application/publish-tax-rule/*",
+    "#application/adopt-fiscal-template/*": "./application/adopt-fiscal-template/*",
+    "#application/calculate-taxes/*": "./application/calculate-taxes/*",
+    "#application/ports/*": "./application/ports/*",
+    "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/postgres/*": "./adapters/postgres/*"
+  }
+}

@@ -106,12 +106,12 @@ The system MUST offer accountant-validated profile and rule templates that a tax
 
 ### Requirement: Traceability and Offline Parity
 
-Each sale line MUST store the rule and version applied. A hybrid node MUST compute offline with its rule copy.
+Each sale line MUST store the rule and version applied. The local node MUST reject quote, publish, and adopt with 403 TaxRejected and MUST store nothing. It does not compute taxes.
 
-#### Scenario: Offline computation
-- GIVEN a hybrid node offline with rules version 7
-- WHEN a sale is computed
-- THEN the result equals the cloud result for version 7 and lines record version 7
+#### Scenario: Node rejection
+- GIVEN a tax quote, a rule publish, and a fiscal-profile adopt
+- WHEN they are posted on the local node
+- THEN each response is 403 TaxRejected and nothing is stored
 
 #### Scenario: Accountant case table
 - GIVEN the accountant-validated case table per regime

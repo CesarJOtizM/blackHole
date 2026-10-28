@@ -89,6 +89,7 @@ const expectedMatrix: Record<PermissionCode, Record<MatrixRole, Grant>> = {
   [PERMISSION.REPORT_VIEW_SALES]: cells(Y, Y, Y, L, N, N, N, N),
   [PERMISSION.CUSTOMER_EXPORT]: cells(Y, A, N, N, N, N, N, N),
   [PERMISSION.AUDIT_VIEW]: cells(Y, Y, L, N, N, N, N, N),
+  [PERMISSION.TAX_CONFIGURE]: cells(Y, N, N, N, N, N, N, N),
 };
 
 const matrixChecked: Record<
@@ -119,6 +120,16 @@ for (const permission of Object.values(PERMISSION)) {
     }
   });
 }
+
+it("given tax.configure, when every matrix role is read, then only the owner is yes", () => {
+  expect(PERMISSION.TAX_CONFIGURE).toBe("tax.configure");
+
+  for (const role of MATRIX_ROLES) {
+    const grant = permissionMatrix[PERMISSION.TAX_CONFIGURE][role];
+
+    expect(grant).toBe(role === MATRIX_ROLE.OWNER ? Y : N);
+  }
+});
 
 it("given section 4 roles outside the eight columns, when the catalog is read, then they stay prose-only", () => {
   const columns = [...MATRIX_ROLES];
