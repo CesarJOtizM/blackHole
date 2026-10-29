@@ -4,6 +4,15 @@ import { AttendancePolicyRepository } from "@blackhole/attendance/application/po
 import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
 import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
+import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
+import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
+import {
+  AdoptFiscalTemplate,
+  CalculateTaxes,
+  PublishTaxRule,
+} from "@blackhole/invoicing/application/entry-port";
+import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
+import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
@@ -199,6 +208,29 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: HoursWorkbook,
         useValue: new SheetJsHoursWorkbook(),
+      },
+      {
+        provide: TaxRuleRepository,
+        useValue: new InMemoryTaxRuleRepository(),
+      },
+      {
+        provide: FiscalProfileRepository,
+        useValue: new InMemoryFiscalProfileRepository(),
+      },
+      {
+        provide: CalculateTaxes,
+        useFactory: expect.any(Function),
+        inject: [FiscalProfileRepository, TaxRuleRepository],
+      },
+      {
+        provide: PublishTaxRule,
+        useFactory: expect.any(Function),
+        inject: [TaxRuleRepository],
+      },
+      {
+        provide: AdoptFiscalTemplate,
+        useFactory: expect.any(Function),
+        inject: [FiscalProfileRepository],
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

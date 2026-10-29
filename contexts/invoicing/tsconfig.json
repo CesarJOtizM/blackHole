@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+    "types": ["node"],
+    "typeRoots": [
+      "../../node_modules/.pnpm/@types+node@24.19.2/node_modules/@types"
+    ]
+  },
+  "include": ["domain", "application", "adapters"]
+}

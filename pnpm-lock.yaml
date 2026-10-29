@@ -170,6 +170,9 @@ catalogs:
     '@types/node':
       specifier: 24.19.2
       version: 24.19.2
+    decimal.js:
+      specifier: 10.6.0
+      version: 10.6.0
     drizzle-orm:
       specifier: 0.45.4
       version: 0.45.4
@@ -214,6 +217,9 @@ importers:
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts
+      '@blackhole/invoicing':
+        specifier: workspace:*
+        version: link:../../contexts/invoicing
       '@blackhole/orders':
         specifier: workspace:*
         version: link:../../contexts/orders
@@ -290,6 +296,18 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
+
+  contexts/invoicing:
+    dependencies:
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.10
+      decimal.js:
+        specifier: 'catalog:'
+        version: 10.6.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.4(@electric-sql/pglite@0.5.10)(@opentelemetry/api@1.10.0)(pg@8.23.1)
 
   contexts/orders:
     dependencies:
@@ -1333,6 +1351,9 @@ packages:
     peerDependenciesMeta:
       supports-color:
         optional: true
+
+  decimal.js@10.6.0:
+    resolution: {integrity: sha512-YpgQiITW3JXGntzdUmyUR1V812Hn8T1YVXhCu+wO3OpS4eU9l4YdD3qjyiKdV6mvV29zapkMeD390UVEf2lkUg==}
 
   dependency-cruiser@18.6.0:
     resolution: {integrity: sha512-It7NW5AmCDBCLMq7I91Nfu8VRKzrIE6S+M/FMQzALDceJ0B1PWRHo77q9YJg/HwyBBEWHVtOuTptIQki+xecOw==}
@@ -2974,6 +2995,8 @@ snapshots:
       ms: 2.1.3
     optionalDependencies:
       supports-color: 7.2.0
+
+  decimal.js@10.6.0: {}
 
   dependency-cruiser@18.6.0:
     dependencies:

@@ -4,6 +4,15 @@ import { AttendancePolicyRepository } from "@blackhole/attendance/application/po
 import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
 import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
+import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
+import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
+import {
+  AdoptFiscalTemplate,
+  CalculateTaxes,
+  PublishTaxRule,
+} from "@blackhole/invoicing/application/entry-port";
+import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
+import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
@@ -45,6 +54,8 @@ import { HealthController } from "#src/http/health.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
+import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
+import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
 import { UpdateMenuController } from "#src/http/update-menu.controller.js";
 import { UpdateStructureController } from "#src/http/update-structure.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
@@ -76,6 +87,8 @@ export interface CloudApplicationDependencies {
   corrections?: ClockEntryCorrectionRepository;
   policies?: AttendancePolicyRepository;
   workbook?: HoursWorkbook;
+  taxRules?: TaxRuleRepository;
+  fiscalProfiles?: FiscalProfileRepository;
 }
 
 @Module({})
@@ -93,6 +106,8 @@ export class ApplicationModule {
         ReadAuditController,
         UpdateMenuController,
         ViewVenueMenuController,
+        TaxQuoteController,
+        TaxConfigurationController,
         AttendanceController,
         HealthController,
       ],
@@ -210,6 +225,35 @@ export class ApplicationModule {
         {
           provide: HoursWorkbook,
           useValue: dependencies.workbook ?? new SheetJsHoursWorkbook(),
+        },
+        {
+          provide: TaxRuleRepository,
+          useValue: dependencies.taxRules ?? new InMemoryTaxRuleRepository(),
+        },
+        {
+          provide: FiscalProfileRepository,
+          useValue:
+            dependencies.fiscalProfiles ??
+            new InMemoryFiscalProfileRepository(),
+        },
+        {
+          provide: CalculateTaxes,
+          useFactory: (
+            profiles: FiscalProfileRepository,
+            rules: TaxRuleRepository,
+          ) => new CalculateTaxes(profiles, rules),
+          inject: [FiscalProfileRepository, TaxRuleRepository],
+        },
+        {
+          provide: PublishTaxRule,
+          useFactory: (rules: TaxRuleRepository) => new PublishTaxRule(rules),
+          inject: [TaxRuleRepository],
+        },
+        {
+          provide: AdoptFiscalTemplate,
+          useFactory: (profiles: FiscalProfileRepository) =>
+            new AdoptFiscalTemplate(profiles),
+          inject: [FiscalProfileRepository],
         },
       ],
     };

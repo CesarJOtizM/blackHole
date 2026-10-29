@@ -13,6 +13,7 @@
   "dependencies": {
     "@blackhole/attendance": "workspace:*",
     "@blackhole/contracts": "workspace:*",
+    "@blackhole/invoicing": "workspace:*",
     "@blackhole/orders": "workspace:*",
     "@blackhole/platform": "workspace:*",
     "@nestjs/common": "12.1.3",
