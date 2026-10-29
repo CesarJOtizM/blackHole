@@ -13,6 +13,7 @@
     "authorization.ts",
     "attendance.ts",
     "devices.ts",
+    "dining-room.ts",
     "identity.ts",
     "menu.ts",
     "update-structure.ts"

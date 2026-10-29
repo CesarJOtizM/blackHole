@@ -19,6 +19,7 @@ import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-m
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
 import { Authorization, Identity } from "@blackhole/platform/domain";
+import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
@@ -42,7 +43,11 @@ export const openDiningCloud = async (deps?: {
   menus?: InMemoryMenuRepository;
   stationRoutes?: InMemoryStationRouteRepository;
   printer?: InMemoryPrinter;
-}) => {
+}): Promise<{
+  application: NestFastifyApplication;
+  diningRooms: InMemoryDiningRoomRepository;
+  audits: InMemoryAuditRepository;
+}> => {
   const identities = new InMemoryIdentityRepository();
   const authorizations = new InMemoryAuthorizationRepository();
   const diningRooms = new InMemoryDiningRoomRepository();
@@ -186,7 +191,7 @@ export const postDining = (
   url: string,
   sessionId: string,
   payload: unknown,
-) =>
+): Promise<{ statusCode: number; json: () => unknown }> =>
   application.inject({
     method: "POST",
     url,
@@ -198,7 +203,7 @@ export const getDining = (
   application: Awaited<ReturnType<typeof createApplication>>,
   url: string,
   sessionId: string,
-) =>
+): Promise<{ statusCode: number; json: () => unknown }> =>
   application.inject({
     method: "GET",
     url,
