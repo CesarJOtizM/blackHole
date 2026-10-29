@@ -25,8 +25,8 @@ import {
   MarkTableReady,
   OpenTable,
   PlaceTable,
-  ReassignCheck,
   RealtimeHub,
+  ReassignCheck,
   ReleaseTable,
   RequestCheck,
   TakeOrder,
@@ -81,16 +81,16 @@ import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.control
 import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
-import { GetCheckController } from "#src/http/get-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
+import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
+import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
+import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
 import {
   OrdersRealtimeController,
   RealtimeSocketMiddleware,
 } from "#src/http/orders-realtime.controller.js";
-import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
-import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
 import { PlaceTableController } from "#src/http/place-table.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
@@ -100,9 +100,9 @@ import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
 import { UpdateMenuController } from "#src/http/update-menu.controller.js";
+import { UpdateStructureController } from "#src/http/update-structure.controller.js";
 import { ViewStationQueueController } from "#src/http/view-station-queue.controller.js";
 import { ViewTableMapController } from "#src/http/view-table-map.controller.js";
-import { UpdateStructureController } from "#src/http/update-structure.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
 
 export interface CloudApplicationDependencies {
@@ -153,7 +153,9 @@ class OrdersClockAdapter extends OrdersClock {
 @Module({})
 export class ApplicationModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RealtimeSocketMiddleware).forRoutes(OrdersRealtimeController);
+    consumer
+      .apply(RealtimeSocketMiddleware)
+      .forRoutes(OrdersRealtimeController);
   }
 
   static register(dependencies: CloudApplicationDependencies): DynamicModule {

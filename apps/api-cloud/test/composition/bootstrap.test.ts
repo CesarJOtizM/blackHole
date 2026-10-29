@@ -13,8 +13,32 @@ import {
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
 import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
+import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
+import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
+import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
+import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import {
+  ChangeLineState,
+  ConfigureStationRoute,
+  GetCheck,
+  MarkTableReady,
+  OpenTable,
+  PlaceTable,
+  RealtimeHub,
+  ReassignCheck,
+  ReleaseTable,
+  RequestCheck,
+  TakeOrder,
+  ViewStationQueue,
+  ViewTableMap,
+} from "@blackhole/orders/application/entry-port";
+import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
+import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
+import { Printer } from "@blackhole/orders/application/ports/printer";
+import { StationDirectory } from "@blackhole/orders/application/ports/station-directory";
+import { StationRouteRepository } from "@blackhole/orders/application/ports/station-route-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
 import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import {
@@ -184,6 +208,99 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: MenuRepository,
         useValue: new InMemoryMenuRepository(),
+      },
+      {
+        provide: DiningRoomRepository,
+        useValue: new InMemoryDiningRoomRepository(),
+      },
+      {
+        provide: StationRouteRepository,
+        useValue: new InMemoryStationRouteRepository(),
+      },
+      {
+        provide: PlaceTable,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
+      },
+      {
+        provide: ConfigureStationRoute,
+        useFactory: expect.any(Function),
+        inject: [StationRouteRepository],
+      },
+      {
+        provide: OrdersClock,
+        useFactory: expect.any(Function),
+        inject: [Clock],
+      },
+      {
+        provide: OpenTable,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository, OrdersClock],
+      },
+      {
+        provide: ReleaseTable,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
+      },
+      {
+        provide: MarkTableReady,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
+      },
+      {
+        provide: RequestCheck,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository, OrdersClock],
+      },
+      {
+        provide: ReassignCheck,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
+      },
+      {
+        provide: Printer,
+        useValue: new InMemoryPrinter(),
+      },
+      {
+        provide: RealtimeHub,
+        useValue: new InMemoryRealtimeHub(),
+      },
+      {
+        provide: StationDirectory,
+        useFactory: expect.any(Function),
+        inject: [StationRouteRepository],
+      },
+      {
+        provide: TakeOrder,
+        useFactory: expect.any(Function),
+        inject: [
+          DiningRoomRepository,
+          MenuRepository,
+          StationDirectory,
+          Printer,
+          OrdersClock,
+          RealtimeHub,
+        ],
+      },
+      {
+        provide: ChangeLineState,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository, OrdersClock, RealtimeHub],
+      },
+      {
+        provide: ViewTableMap,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
+      },
+      {
+        provide: ViewStationQueue,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository, StationRouteRepository, OrdersClock],
+      },
+      {
+        provide: GetCheck,
+        useFactory: expect.any(Function),
+        inject: [DiningRoomRepository],
       },
       {
         provide: VenueDirectory,

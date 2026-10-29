@@ -76,7 +76,11 @@ it("given a check and a kitchen chief session, when GET /checks/:checkId is inje
     );
     await seatAccount(diningRooms);
 
-    const response = await getDining(application, accountUrl, "session_kitchen");
+    const response = await getDining(
+      application,
+      accountUrl,
+      "session_kitchen",
+    );
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({

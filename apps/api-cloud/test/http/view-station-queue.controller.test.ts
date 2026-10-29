@@ -1,5 +1,5 @@
-import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import type { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
+import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import { Check, DiningTable } from "@blackhole/orders/domain";
 import { expect, it } from "vitest";
 
