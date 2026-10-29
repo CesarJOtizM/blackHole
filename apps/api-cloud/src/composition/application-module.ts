@@ -13,8 +13,32 @@ import {
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
 import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
+import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
+import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
+import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
+import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import {
+  ChangeLineState,
+  ConfigureStationRoute,
+  GetCheck,
+  MarkTableReady,
+  OpenTable,
+  PlaceTable,
+  RealtimeHub,
+  ReassignCheck,
+  ReleaseTable,
+  RequestCheck,
+  TakeOrder,
+  ViewStationQueue,
+  ViewTableMap,
+} from "@blackhole/orders/application/entry-port";
+import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
+import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
+import { Printer } from "@blackhole/orders/application/ports/printer";
+import { StationDirectory } from "@blackhole/orders/application/ports/station-directory";
+import { StationRouteRepository } from "@blackhole/orders/application/ports/station-route-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
 import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
@@ -40,24 +64,45 @@ import { Secrets } from "@blackhole/platform/application/ports/secrets";
 import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
-import { type DynamicModule, Module } from "@nestjs/common";
+import {
+  type DynamicModule,
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+} from "@nestjs/common";
 import {
   InMemoryAttendancePolicyRepository,
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
+import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
+import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
+import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
+import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
+import {
+  OrdersRealtimeController,
+  RealtimeSocketMiddleware,
+} from "#src/http/orders-realtime.controller.js";
+import { PlaceTableController } from "#src/http/place-table.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
+import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
+import { ReleaseTableController } from "#src/http/release-table.controller.js";
+import { RequestCheckController } from "#src/http/request-check.controller.js";
+import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
 import { UpdateMenuController } from "#src/http/update-menu.controller.js";
 import { UpdateStructureController } from "#src/http/update-structure.controller.js";
+import { ViewStationQueueController } from "#src/http/view-station-queue.controller.js";
+import { ViewTableMapController } from "#src/http/view-table-map.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
 
 export interface CloudApplicationDependencies {
@@ -89,11 +134,30 @@ export interface CloudApplicationDependencies {
   workbook?: HoursWorkbook;
   taxRules?: TaxRuleRepository;
   fiscalProfiles?: FiscalProfileRepository;
+  diningRooms?: DiningRoomRepository;
+  stationRoutes?: StationRouteRepository;
+  printer?: Printer;
+  realtime?: RealtimeHub;
+}
+
+class OrdersClockAdapter extends OrdersClock {
+  constructor(private readonly source: Clock) {
+    super();
+  }
+
+  override now(): number {
+    return this.source.now();
+  }
 }
 
 @Module({})
-// biome-ignore lint/complexity/noStaticOnlyClass: Nest module registration is static
-export class ApplicationModule {
+export class ApplicationModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(RealtimeSocketMiddleware)
+      .forRoutes(OrdersRealtimeController);
+  }
+
   static register(dependencies: CloudApplicationDependencies): DynamicModule {
     return {
       module: ApplicationModule,
@@ -106,6 +170,18 @@ export class ApplicationModule {
         ReadAuditController,
         UpdateMenuController,
         ViewVenueMenuController,
+        PlaceTableController,
+        ConfigureStationRouteController,
+        OpenTableController,
+        ReleaseTableController,
+        RequestCheckController,
+        ReassignCheckController,
+        TakeOrderController,
+        ChangeLineStateController,
+        ViewTableMapController,
+        ViewStationQueueController,
+        GetCheckController,
+        OrdersRealtimeController,
         TaxQuoteController,
         TaxConfigurationController,
         AttendanceController,
@@ -197,6 +273,126 @@ export class ApplicationModule {
         {
           provide: MenuRepository,
           useValue: dependencies.menus ?? new InMemoryMenuRepository(),
+        },
+        {
+          provide: DiningRoomRepository,
+          useValue:
+            dependencies.diningRooms ?? new InMemoryDiningRoomRepository(),
+        },
+        {
+          provide: StationRouteRepository,
+          useValue:
+            dependencies.stationRoutes ?? new InMemoryStationRouteRepository(),
+        },
+        {
+          provide: PlaceTable,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new PlaceTable(diningRoom),
+          inject: [DiningRoomRepository],
+        },
+        {
+          provide: ConfigureStationRoute,
+          useFactory: (routes: StationRouteRepository) =>
+            new ConfigureStationRoute(routes),
+          inject: [StationRouteRepository],
+        },
+        {
+          provide: OrdersClock,
+          useFactory: (clock: Clock) => new OrdersClockAdapter(clock),
+          inject: [Clock],
+        },
+        {
+          provide: OpenTable,
+          useFactory: (diningRoom: DiningRoomRepository, clock: OrdersClock) =>
+            new OpenTable(diningRoom, clock),
+          inject: [DiningRoomRepository, OrdersClock],
+        },
+        {
+          provide: ReleaseTable,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new ReleaseTable(diningRoom),
+          inject: [DiningRoomRepository],
+        },
+        {
+          provide: MarkTableReady,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new MarkTableReady(diningRoom),
+          inject: [DiningRoomRepository],
+        },
+        {
+          provide: RequestCheck,
+          useFactory: (diningRoom: DiningRoomRepository, clock: OrdersClock) =>
+            new RequestCheck(diningRoom, clock),
+          inject: [DiningRoomRepository, OrdersClock],
+        },
+        {
+          provide: ReassignCheck,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new ReassignCheck(diningRoom),
+          inject: [DiningRoomRepository],
+        },
+        {
+          provide: Printer,
+          useValue: dependencies.printer ?? new InMemoryPrinter(),
+        },
+        {
+          provide: RealtimeHub,
+          useValue: dependencies.realtime ?? new InMemoryRealtimeHub(),
+        },
+        {
+          provide: StationDirectory,
+          useFactory: (routes: StationRouteRepository) =>
+            new StationRouteDirectory(routes),
+          inject: [StationRouteRepository],
+        },
+        {
+          provide: TakeOrder,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            menus: MenuRepository,
+            stations: StationDirectory,
+            printer: Printer,
+            clock: OrdersClock,
+            hub: RealtimeHub,
+          ) => new TakeOrder(diningRoom, menus, stations, printer, clock, hub),
+          inject: [
+            DiningRoomRepository,
+            MenuRepository,
+            StationDirectory,
+            Printer,
+            OrdersClock,
+            RealtimeHub,
+          ],
+        },
+        {
+          provide: ChangeLineState,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            clock: OrdersClock,
+            hub: RealtimeHub,
+          ) => new ChangeLineState(diningRoom, clock, hub),
+          inject: [DiningRoomRepository, OrdersClock, RealtimeHub],
+        },
+        {
+          provide: ViewTableMap,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new ViewTableMap(diningRoom),
+          inject: [DiningRoomRepository],
+        },
+        {
+          provide: ViewStationQueue,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            routes: StationRouteRepository,
+            clock: OrdersClock,
+          ) => new ViewStationQueue(diningRoom, routes, clock),
+          inject: [DiningRoomRepository, StationRouteRepository, OrdersClock],
+        },
+        {
+          provide: GetCheck,
+          useFactory: (diningRoom: DiningRoomRepository) =>
+            new GetCheck(diningRoom),
+          inject: [DiningRoomRepository],
         },
         {
           provide: VenueDirectory,
