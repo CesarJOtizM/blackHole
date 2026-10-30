@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { AuthorizationController } from "#src/http/authorization.controller.js";
+import { CashRegisterController } from "#src/http/cash-register.controller.js";
 import { DiningRoomController } from "#src/http/dining-room.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
@@ -17,6 +18,7 @@ import { UpdateStructureController } from "#src/http/update-structure.controller
     AuthorizationController,
     TaxController,
     DiningRoomController,
+    CashRegisterController,
   ],
 })
 export class ApplicationModule {}
