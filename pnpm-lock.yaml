@@ -297,6 +297,12 @@ importers:
         specifier: 'catalog:'
         version: 24.19.2
 
+  contexts/cash-register:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+
   contexts/invoicing:
     dependencies:
       '@electric-sql/pglite':

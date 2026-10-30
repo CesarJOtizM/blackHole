@@ -5,7 +5,12 @@
   "type": "module",
   "exports": {
     "./domain": "./domain/index.js",
-    "./application/entry-port": "./application/entry-port.js"
+    "./application/entry-port": "./application/entry-port.js",
+    "./adapters/memory/in-memory-cash-register-repository": "./adapters/memory/in-memory-cash-register-repository.js",
+    "./adapters/manual-terminal/manual-card-terminal": "./adapters/manual-terminal/manual-card-terminal.js"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   },
   "imports": {
     "#domain/*": "./domain/*",
@@ -17,6 +22,8 @@
     "#application/submit-count/*": "./application/submit-count/*",
     "#application/approve-variance/*": "./application/approve-variance/*",
     "#application/close-shift/*": "./application/close-shift/*",
-    "#application/ports/*": "./application/ports/*"
+    "#application/ports/*": "./application/ports/*",
+    "#adapters/memory/*": "./adapters/memory/*",
+    "#adapters/manual-terminal/*": "./adapters/manual-terminal/*"
   }
 }
