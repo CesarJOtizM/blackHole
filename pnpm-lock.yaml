@@ -214,6 +214,9 @@ importers:
       '@blackhole/attendance':
         specifier: workspace:*
         version: link:../../contexts/attendance
+      '@blackhole/cash-register':
+        specifier: workspace:*
+        version: link:../../contexts/cash-register
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts

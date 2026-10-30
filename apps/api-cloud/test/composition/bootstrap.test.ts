@@ -4,6 +4,13 @@ import { AttendancePolicyRepository } from "@blackhole/attendance/application/po
 import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
 import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
+import {
+  ApproveVariance,
+  ChargeCheck,
+  CloseShift,
+  OpenShift,
+  SubmitCount,
+} from "@blackhole/cash-register/application/entry-port";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
@@ -86,6 +93,7 @@ import {
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
@@ -236,6 +244,41 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: OpenTable,
         useFactory: expect.any(Function),
         inject: [DiningRoomRepository, OrdersClock],
+      },
+      {
+        provide: OpenShift,
+        useFactory: expect.any(Function),
+        inject: [OrganizationRepository],
+      },
+      {
+        provide: OrdersAccount,
+        useFactory: expect.any(Function),
+        inject: [
+          DiningRoomRepository,
+          MenuRepository,
+          VenueDirectory,
+          OrdersClock,
+        ],
+      },
+      {
+        provide: ChargeCheck,
+        useFactory: expect.any(Function),
+        inject: [OrganizationRepository, OrdersAccount],
+      },
+      {
+        provide: SubmitCount,
+        useFactory: expect.any(Function),
+        inject: [OrganizationRepository],
+      },
+      {
+        provide: ApproveVariance,
+        useFactory: expect.any(Function),
+        inject: [OrganizationRepository],
+      },
+      {
+        provide: CloseShift,
+        useFactory: expect.any(Function),
+        inject: [OrganizationRepository],
       },
       {
         provide: ReleaseTable,

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@blackhole/attendance": "workspace:*",
+    "@blackhole/cash-register": "workspace:*",
     "@blackhole/contracts": "workspace:*",
     "@blackhole/invoicing": "workspace:*",
     "@blackhole/orders": "workspace:*",

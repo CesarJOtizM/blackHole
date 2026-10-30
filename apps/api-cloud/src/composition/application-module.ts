@@ -4,6 +4,16 @@ import { AttendancePolicyRepository } from "@blackhole/attendance/application/po
 import { ClockEntryCorrectionRepository } from "@blackhole/attendance/application/ports/clock-entry-correction-repository";
 import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
+import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-terminal/manual-card-terminal";
+import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
+import {
+  ApproveVariance,
+  ChargeCheck,
+  CloseShift,
+  OpenShift,
+  type Payment,
+  SubmitCount,
+} from "@blackhole/cash-register/application/entry-port";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
@@ -22,6 +32,7 @@ import {
   ChangeLineState,
   ConfigureStationRoute,
   GetCheck,
+  MarkAccountPaid,
   MarkTableReady,
   OpenTable,
   PlaceTable,
@@ -32,6 +43,7 @@ import {
   TakeOrder,
   ViewStationQueue,
   ViewTableMap,
+  ViewVenueMenu,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
@@ -75,12 +87,17 @@ import {
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
+import { CashCountController } from "#src/http/cash-count.controller.js";
+import { CashShiftController } from "#src/http/cash-shift.controller.js";
 import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
+import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
@@ -135,6 +152,9 @@ export interface CloudApplicationDependencies {
   taxRules?: TaxRuleRepository;
   fiscalProfiles?: FiscalProfileRepository;
   diningRooms?: DiningRoomRepository;
+  registers?: InMemoryCashRegisterRepository;
+  charges?: MemoryChargeLedger;
+  counts?: MemoryCashCounts;
   stationRoutes?: StationRouteRepository;
   printer?: Printer;
   realtime?: RealtimeHub;
@@ -159,6 +179,14 @@ export class ApplicationModule implements NestModule {
   }
 
   static register(dependencies: CloudApplicationDependencies): DynamicModule {
+    const registers =
+      dependencies.registers ?? new InMemoryCashRegisterRepository();
+    const charges = dependencies.charges ?? new MemoryChargeLedger();
+    const counts = dependencies.counts ?? new MemoryCashCounts();
+    const countStore = counts as unknown as ConstructorParameters<
+      typeof SubmitCount
+    >[2];
+
     return {
       module: ApplicationModule,
       controllers: [
@@ -185,6 +213,9 @@ export class ApplicationModule implements NestModule {
         TaxQuoteController,
         TaxConfigurationController,
         AttendanceController,
+        CashShiftController,
+        ChargeCheckController,
+        CashCountController,
         HealthController,
       ],
       providers: [
@@ -306,6 +337,77 @@ export class ApplicationModule implements NestModule {
           useFactory: (diningRoom: DiningRoomRepository, clock: OrdersClock) =>
             new OpenTable(diningRoom, clock),
           inject: [DiningRoomRepository, OrdersClock],
+        },
+        {
+          provide: OpenShift,
+          useFactory: (organizations: OrganizationRepository) =>
+            new OpenShift(
+              registers,
+              new OrganizationRegisterDirectory(organizations),
+            ),
+          inject: [OrganizationRepository],
+        },
+        {
+          provide: OrdersAccount,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            menus: MenuRepository,
+            venues: VenueDirectory,
+            clock: OrdersClock,
+          ) =>
+            new OrdersAccount(
+              new GetCheck(diningRoom),
+              new ViewVenueMenu(menus, venues, clock),
+              new MarkAccountPaid(diningRoom),
+            ),
+          inject: [
+            DiningRoomRepository,
+            MenuRepository,
+            VenueDirectory,
+            OrdersClock,
+          ],
+        },
+        {
+          provide: ChargeCheck,
+          useFactory: (
+            organizations: OrganizationRepository,
+            accounts: OrdersAccount,
+          ) =>
+            new ChargeCheck(
+              new OrganizationRegisterDirectory(organizations),
+              accounts,
+              new ManualCardTerminal(),
+              charges,
+            ),
+          inject: [OrganizationRepository, OrdersAccount],
+        },
+        {
+          provide: SubmitCount,
+          useFactory: (organizations: OrganizationRepository) =>
+            new SubmitCount(
+              new OrganizationRegisterDirectory(organizations),
+              registers,
+              countStore,
+            ),
+          inject: [OrganizationRepository],
+        },
+        {
+          provide: ApproveVariance,
+          useFactory: (organizations: OrganizationRepository) =>
+            new ApproveVariance(
+              new OrganizationRegisterDirectory(organizations),
+              countStore,
+            ),
+          inject: [OrganizationRepository],
+        },
+        {
+          provide: CloseShift,
+          useFactory: (organizations: OrganizationRepository) =>
+            new CloseShift(
+              new OrganizationRegisterDirectory(organizations),
+              countStore,
+            ),
+          inject: [OrganizationRepository],
         },
         {
           provide: ReleaseTable,
@@ -453,5 +555,91 @@ export class ApplicationModule implements NestModule {
         },
       ],
     };
+  }
+}
+
+interface StoredChargeLine {
+  lineId: string;
+  productId: string;
+  priceCop: number;
+  originTableId: string;
+  menuClass: string;
+}
+
+interface StoredCharge {
+  commandId: string;
+  payment: Payment;
+  closure: {
+    id: string;
+    status: "queued";
+    commandId: string;
+    checkId: string;
+    tableId: string;
+    registerId: string;
+    paymentId: string;
+    saleCop: number;
+    changeCop: number;
+    lines: readonly StoredChargeLine[];
+    tenders: Payment["tenders"];
+    tip: Payment["tip"];
+  };
+}
+
+const chargeKey = (
+  tenantId: string,
+  venueId: string,
+  commandId: string,
+): string => `${tenantId}\u0000${venueId}\u0000${commandId}`;
+
+export class MemoryChargeLedger {
+  insertions = 0;
+
+  private readonly charges = new Map<string, StoredCharge>();
+
+  async findByCommand(
+    tenantId: string,
+    venueId: string,
+    commandId: string,
+  ): Promise<StoredCharge | null> {
+    return this.charges.get(chargeKey(tenantId, venueId, commandId)) ?? null;
+  }
+
+  async insert(
+    tenantId: string,
+    venueId: string,
+    charge: StoredCharge,
+  ): Promise<void> {
+    this.insertions += 1;
+    this.charges.set(chargeKey(tenantId, venueId, charge.commandId), charge);
+  }
+}
+
+const countKey = (
+  tenantId: string,
+  venueId: string,
+  registerId: string,
+): string => `${tenantId}\u0000${venueId}\u0000${registerId}`;
+
+export class MemoryCashCounts {
+  saves = 0;
+
+  private readonly counts = new Map<string, object>();
+
+  async find(
+    tenantId: string,
+    venueId: string,
+    registerId: string,
+  ): Promise<object | null> {
+    return this.counts.get(countKey(tenantId, venueId, registerId)) ?? null;
+  }
+
+  async save(
+    tenantId: string,
+    venueId: string,
+    registerId: string,
+    count: object,
+  ): Promise<void> {
+    this.saves += 1;
+    this.counts.set(countKey(tenantId, venueId, registerId), count);
   }
 }

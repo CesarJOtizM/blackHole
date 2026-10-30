@@ -11,6 +11,7 @@
     "accept-cloud-write.ts",
     "audit.ts",
     "authorization.ts",
+    "cash-register.ts",
     "attendance.ts",
     "devices.ts",
     "dining-room.ts",

@@ -37,6 +37,26 @@ export {
   saleChargeResult,
 } from "#contracts/authorization.js";
 export {
+  type ApproveVarianceCommand,
+  approveVarianceCommand,
+  type CashCountView,
+  type ChargeCheckCommand,
+  type ChargedCheck,
+  cashCountView,
+  chargeCheckCommand,
+  chargedCheck,
+  type FinalCloseCommand,
+  finalCloseCommand,
+  type OpenedCashShift,
+  type OpenShiftCommand,
+  openedCashShift,
+  openShiftCommand,
+  type PartialCloseCommand,
+  partialCloseCommand,
+  type SubmitCountCommand,
+  submitCountCommand,
+} from "#contracts/cash-register.js";
+export {
   type DeviceRequest,
   type DeviceResult,
   deviceRequest,
