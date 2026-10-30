@@ -3,10 +3,10 @@ roadmap_delivery: "1.3"
 roadmap_title: "Cash register"
 phase: 1
 modules: [M2]
-bounded_contexts: [cash-register, orders, contracts, sync]
-apps: [api-cloud, local-node, venue-app]
-status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+bounded_contexts: [cash-register, orders, contracts]
+apps: [api-cloud, local-node]
+status: tasked
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
 depends_on: [p0-03-organization, p0-05-roles-and-permissions, p0-06-audit, p1-02-dining-room-and-kitchen]
 source_docs:
   - docs/roadmap.md
