@@ -38,6 +38,7 @@
     "#application/view-table-map/*": "./application/view-table-map/*",
     "#application/view-station-queue/*": "./application/view-station-queue/*",
     "#application/get-check/*": "./application/get-check/*",
+    "#application/mark-account-paid/*": "./application/mark-account-paid/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*"

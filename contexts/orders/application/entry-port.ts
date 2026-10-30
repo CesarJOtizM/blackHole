@@ -13,6 +13,8 @@ export type {
   GetCheckInput,
 } from "#application/get-check/get-check.js";
 export { GetCheck } from "#application/get-check/get-check.js";
+export type { MarkAccountPaidInput } from "#application/mark-account-paid/mark-account-paid.js";
+export { MarkAccountPaid } from "#application/mark-account-paid/mark-account-paid.js";
 export type {
   OpenedTable,
   OpenTableInput,
