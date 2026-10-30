@@ -1,115 +1,167 @@
-# Observability Specification
+# Delta for Observability
 
-## Purpose
+Judge only ADDED and MODIFIED scenarios. Cloud MVP (D-37): api-cloud and its worker on PostgreSQL. No SQLite or local-node behavior. REMOVED items are not acceptance criteria.
 
-Answer four questions for any cloud: can each site serve, do invoices go out, does the cloud hold up, did a release break something (TRD-01 7, 8). Node signals exist only for hybrid sites.
-
-## Requirements
-
-### Requirement: Signals Through a Collector
-
-API, workers and node MUST emit OpenTelemetry logs, metrics and traces, forwarded by a cloud collector. Logs MUST carry tenant, site, device and trace id; one trace MUST follow a request end to end. Metric labels MUST be low cardinality; device, user and order stay in logs and traces.
-
-#### Scenario: End-to-end trace
-- GIVEN a request from a PWA through the node to the cloud
-- WHEN it is traced
-- THEN one trace id links every hop
-
-#### Scenario: High-cardinality label
-- GIVEN a metric labelled by user id
-- WHEN the metric catalog check runs
-- THEN it fails
+## ADDED Requirements
 
 ### Requirement: Metric Catalog
 
-The system MUST publish the TRD-01 7.3 catalog for site, invoices, cloud and deployment. A metric that answers none of the four questions MUST NOT be added.
+The system MUST publish the site, invoice, cloud, and deployment catalog and MUST NOT add a metric outside serve, invoices, cloud health, or release.
 
 #### Scenario: Panel per metric
+
 - GIVEN the catalog
 - WHEN dashboards are applied
 - THEN each metric has a panel
 
 #### Scenario: Unanswered question
-- GIVEN a proposed metric unrelated to the four questions
+
+- GIVEN a metric outside those questions
 - WHEN it is reviewed
 - THEN it is rejected
 
-### Requirement: Node Telemetry at Lowest Priority
+### Requirement: Worker Scaling Within Provider Limit
 
-A connected hybrid node MUST report its state every minute at the lowest sync priority, never directly to the backend. Offline, telemetry MUST be buffered up to a maximum, discarding the oldest lowest-severity entries first.
+Workers MUST scale with queue depth and MUST NOT exceed 80 shared provider requests per minute per tax id. PostgreSQL only; no SQLite rule.
 
-#### Scenario: Weak link
-- GIVEN pending invoice events and telemetry
-- WHEN the node sends
-- THEN invoices go before telemetry
+#### Scenario: Load test
 
-#### Scenario: Full buffer
-- GIVEN a full telemetry buffer offline
-- WHEN a new entry arrives
-- THEN the oldest lowest-severity entry is discarded
+- GIVEN a full queue for one tax id
+- WHEN workers scale up and later down
+- THEN that tax id stays at or under 80 per minute
+
+#### Scenario: Provider throttles
+
+- GIVEN a 429 with a retry delay
+- WHEN workers receive it
+- THEN jobs reschedule in order and the response records 429
+
+### Requirement: Export Stays Off the Request Path
+
+An empty OpenTelemetry endpoint MUST skip log, metric, and trace export. An empty Sentry DSN MUST skip error export. Export failure MUST NOT fail the request or `GET /health`.
+
+#### Scenario: Unset exporters
+
+- GIVEN no OpenTelemetry endpoint and no Sentry DSN
+- WHEN api-cloud or the worker runs
+- THEN nothing is exported and the work succeeds
+
+#### Scenario: Export failure
+
+- GIVEN the exporter fails
+- WHEN a request or `GET /health` runs
+- THEN the request succeeds and health reports ok
+
+## MODIFIED Requirements
+
+### Requirement: Signals Through a Collector
+
+api-cloud and the worker MUST emit logs, catalog metrics, and traces through a collector. Logs MUST carry tenant, site, and trace id. One trace id MUST link the cloud hops. Device, user, and order MUST NOT be metric labels.
+
+(Previously: the node emitted, and a trace crossed a PWA and the node.)
+
+#### Scenario: Cloud logs, metrics, and traces
+
+- GIVEN the worker continues a cloud request
+- WHEN telemetry is exported
+- THEN the collector receives logs, metrics, and traces from both on one trace id
+
+#### Scenario: High-cardinality label
+
+- GIVEN a metric labelled by user id
+- WHEN the catalog check runs
+- THEN it fails
 
 ### Requirement: Dashboards and Alarms as Code
 
-Dashboards and alarms MUST be code beside the infrastructure, each alarm with owner, threshold and action; a service MUST NOT deploy without its dashboard. Alarms MUST cover at least the TRD-01 7.5 list, including node offline over 15 minutes in operating hours and an invoice pending over 30 minutes at a connected site.
+Dashboards and alarms MUST be infrastructure code. Each alarm MUST have owner, threshold, and action. A service MUST NOT deploy without its dashboard. Alarms MUST cover availability under 99.5% this month or 5 silent minutes, invoice age over 30 minutes, over 3 rejections in 10 minutes per tax id, and the first production Sentry issue.
 
-#### Scenario: Node disconnected
-- GIVEN a hybrid node unplugged during operating hours
-- WHEN 15 minutes pass
-- THEN Grafana shows it offline and its alarm fires
-
-#### Scenario: Pending invoice
-- GIVEN a connected site with an invoice pending 31 minutes
-- WHEN the alarm evaluates
-- THEN it fires
+(Previously: also a node-offline alarm and a sync-delay alarm.)
 
 #### Scenario: Cloud availability below target
-- GIVEN the cloud API below 99.5% availability in the month, or not answering for more than 5 minutes
+
+- GIVEN under 99.5% this month or silent 5 minutes
 - WHEN the alarm evaluates
-- THEN the cloud availability alarm fires (TRD-00 15, TRD-01 7.5)
+- THEN the availability alarm fires
 
-#### Scenario: Sync delay over target
-- GIVEN a connected hybrid site whose sync delay p95 exceeds 1 minute
+#### Scenario: Pending invoice
+
+- GIVEN an invoice pending 31 minutes
 - WHEN the alarm evaluates
-- THEN the sync delay alarm fires (TRD-00 15, TRD-01 7.5)
+- THEN the invoice-age alarm fires
 
-### Requirement: Error Tracking with Deferred Sending
+#### Scenario: Repeated rejections
 
-Cloud, node and PWAs MUST report errors with company, site, role and release, queuing them offline up to a maximum. PWA source maps MUST be uploaded but not published.
+- GIVEN over 3 rejections for one tax id in 10 minutes
+- WHEN the alarm evaluates
+- THEN the rejection alarm fires
 
-#### Scenario: PWA error offline
-- GIVEN a PWA without internet that throws an error
-- WHEN the connection returns
-- THEN the error reaches the tracker with its release
+#### Scenario: First production error
 
-#### Scenario: New error in production
-- GIVEN an error never seen before in production
+- GIVEN an error never seen in production
 - WHEN it is reported
 - THEN the new-error alarm fires
 
+### Requirement: Cloud Error Tracking
+
+api-cloud and the worker MUST report errors with company, site, role, and release.
+
+(Previously: the node, an offline PWA queue, and source maps were required.)
+
+#### Scenario: Cloud error report
+
+- GIVEN company, site, role, and release on a cloud error
+- WHEN it is reported
+- THEN the tracker stores those fields and that release
+
 ### Requirement: No Personal Data
 
-No signal or error report MUST contain names, ID numbers, phones, addresses, secrets or tokens; scrubbing MUST happen before data leaves device, node or collector, checked by an automated pattern test.
+A signal or error report MUST NOT contain names, ID numbers, phones, addresses, secrets, or tokens. Scrubbing MUST run before data leaves api-cloud, the worker, or the collector. A pattern test MUST fail if a pattern remains.
+
+(Previously: the device and the node also scrubbed.)
 
 #### Scenario: Error with customer phone
-- GIVEN an error whose message contains a phone number
+
+- GIVEN an error message with a phone number
 - WHEN it is sent
 - THEN the stored report has the number removed
 
 #### Scenario: Pattern test
-- GIVEN a log line containing an ID number
+
+- GIVEN a log line with an ID number
 - WHEN the privacy test runs
 - THEN it fails
 
-### Requirement: Worker Scaling Within Provider Limit
+## REMOVED Requirements
 
-Workers MUST scale with queue depth, and the per-NIT request rate to the invoicing provider MUST be shared across all instances so scaling never exceeds 80 requests per minute per NIT.
+### Requirement: Node Telemetry at Lowest Priority
 
-#### Scenario: Load test
-- GIVEN a full invoice queue for one NIT
-- WHEN workers scale up and later down
-- THEN requests for that NIT never exceed 80 per minute
+(Reason: D-37 defers node telemetry, the weak link, and the full buffer.)
+(Migration: None.)
 
-#### Scenario: Provider throttles
-- GIVEN the provider answers 429 with a retry delay
-- WHEN workers receive it
-- THEN jobs are rescheduled in order and the response metric records it
+### Requirement: Node Disconnected Alarm
+
+(Reason: D-37 defers the hybrid node-offline alarm. Dashboards stay without it.)
+(Migration: None.)
+
+### Requirement: Sync Delay Alarm
+
+(Reason: D-37 defers the hybrid sync-delay alarm. Dashboards stay without it.)
+(Migration: None.)
+
+### Requirement: Offline PWA Error Queue and Deferred Browser Sentry
+
+(Reason: D-37 defers the offline PWA queue, browser Sentry, and source-map upload.)
+(Migration: None. Cloud Error Tracking is api-cloud and the worker only.)
+
+### Requirement: PWA-to-Node Trace
+
+(Reason: A PWA-to-node trace needs the local node and hybrid sync.)
+(Migration: None. Judge Cloud logs, metrics, and traces.)
+
+## RENAMED Requirements
+
+### Requirement: Error Tracking with Deferred Sending → Cloud Error Tracking
+
+(Reason: Browser deferral is out; cloud reporting stays.)
+(Migration: Use Cloud Error Tracking. Drop the PWA offline scenario.)
