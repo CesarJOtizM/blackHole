@@ -4,9 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": "./domain/index.js"
+    "./domain": "./domain/index.js",
+    "./application/entry-port": "./application/entry-port.js"
   },
   "imports": {
-    "#domain/*": "./domain/*"
+    "#domain/*": "./domain/*",
+    "#application/*": "./application/*",
+    "#application/open-shift/*": "./application/open-shift/*",
+    "#application/record-movement/*": "./application/record-movement/*",
+    "#application/charge-check/*": "./application/charge-check/*",
+    "#application/split-account/*": "./application/split-account/*",
+    "#application/submit-count/*": "./application/submit-count/*",
+    "#application/approve-variance/*": "./application/approve-variance/*",
+    "#application/close-shift/*": "./application/close-shift/*",
+    "#application/ports/*": "./application/ports/*"
   }
 }
