@@ -38,6 +38,7 @@ const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
 
 const allowedContexts = [
   "attendance",
+  "cash-register",
   "invoicing",
   "orders",
   "platform",

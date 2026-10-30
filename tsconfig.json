@@ -4,6 +4,7 @@
     { "path": "contexts/platform" },
     { "path": "contexts/orders" },
     { "path": "contexts/attendance" },
+    { "path": "contexts/cash-register" },
     { "path": "contexts/invoicing" },
     { "path": "shared/contracts" },
     { "path": "apps/api-cloud" },

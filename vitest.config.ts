@@ -39,6 +39,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "cash-register",
+          include: ["contexts/cash-register/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "invoicing",
           include: ["contexts/invoicing/**/*.test.ts"],
         },
