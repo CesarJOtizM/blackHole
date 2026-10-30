@@ -7,7 +7,11 @@ import { routePermissions, TaxController } from "#src/http/tax.controller.js";
 const tenantId = "organization_tenant_1";
 
 it("given a tax quote, publish, and adopt, when they are posted on the node, then each is rejected and nothing is stored", async () => {
-  expect(routePermissions).toEqual({ "POST tax-rules": "tax.configure" });
+  expect(routePermissions).toEqual({
+    "POST tax-quotes": "tax.configure",
+    "POST tax-rules": "tax.configure",
+    "POST fiscal-profiles/adopt": "tax.configure",
+  });
   expect(TaxController).toBeDefined();
   const application = await createApplication();
 

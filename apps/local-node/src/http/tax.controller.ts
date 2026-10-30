@@ -5,7 +5,9 @@ const TAX_REJECTION = {
 } as const;
 
 export const routePermissions = {
+  "POST tax-quotes": "tax.configure",
   "POST tax-rules": "tax.configure",
+  "POST fiscal-profiles/adopt": "tax.configure",
 } as const;
 
 interface TaxRejection {
