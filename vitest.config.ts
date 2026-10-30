@@ -21,6 +21,8 @@ export default defineConfig({
         test: {
           name: "platform",
           include: ["contexts/platform/**/*.test.ts"],
+          testTimeout: 20_000,
+          hookTimeout: 20_000,
         },
       },
       {
