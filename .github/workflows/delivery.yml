@@ -29,6 +29,7 @@ jobs:
 
   release:
     needs: checks
+    if: vars.PRODUCTION_CLOUD == 'aws' || vars.PRODUCTION_CLOUD == 'gcp'
     runs-on: ubuntu-latest
     environment: staging-${{ vars.PRODUCTION_CLOUD }}
     outputs:
