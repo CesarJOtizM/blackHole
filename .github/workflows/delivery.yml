@@ -140,7 +140,7 @@ jobs:
         working-directory: infra/environments/production-${{ vars.PRODUCTION_CLOUD }}
         run: |
           terraform init -input=false
-          terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}"
+          terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}" -var "rollout_percent=50"
       - name: Read the load balancer 5xx ratio and p95
         id: signals
         run: |
@@ -183,4 +183,4 @@ jobs:
       - name: Finish the rollout when 5xx and p95 hold
         if: steps.signals.outputs.worsened != 'true'
         working-directory: infra/environments/production-${{ vars.PRODUCTION_CLOUD }}
-        run: terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}"
+        run: terraform apply -auto-approve -input=false -var "git_ref=${{ needs.release.outputs.digest }}" -var "rollout_percent=100"

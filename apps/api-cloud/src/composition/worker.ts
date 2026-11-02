@@ -17,8 +17,15 @@ import type {
   FactusIssueResult,
   FactusSimulator,
 } from "#src/composition/factus-simulator.js";
+import {
+  openIssueDocument,
+  registerIssueDocument,
+} from "#src/composition/issue-document.worker.js";
 import { infrastructureFromEnv } from "#src/composition/main.js";
-import { startTelemetry } from "#src/composition/telemetry.js";
+import {
+  continuedTraceFromEnv,
+  startTelemetry,
+} from "#src/composition/telemetry.js";
 
 export interface QueueSnapshotSource {
   queuedCount: number;
@@ -159,11 +166,12 @@ export const startWorker = async (
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<void> => {
   const runtime = infrastructureFromEnv(env);
-  startTelemetry(env);
+  startTelemetry(env, {}, continuedTraceFromEnv(env));
   const boss = new PgBoss(runtime.databaseUrl);
 
   await boss.start();
   await registerCloseOpenShifts(boss);
+  await registerIssueDocument(boss, openIssueDocument(runtime.secrets));
 
   const publish = async (): Promise<void> => {
     await runtime.metrics.publishQueue(queueDepth(await boss.getQueues()));

@@ -9,9 +9,11 @@
     "./application/ports/fiscal-profile-repository": "./application/ports/fiscal-profile-repository.js",
     "./application/ports/tax-rule-repository": "./application/ports/tax-rule-repository.js",
     "./adapters/memory/in-memory-fiscal-profile-repository": "./adapters/memory/in-memory-fiscal-profile-repository.js",
-    "./adapters/memory/in-memory-tax-rule-repository": "./adapters/memory/in-memory-tax-rule-repository.js"
+    "./adapters/memory/in-memory-tax-rule-repository": "./adapters/memory/in-memory-tax-rule-repository.js",
+    "./adapters/factus/factus-invoicing-provider": "./adapters/factus/factus-invoicing-provider.js"
   },
   "dependencies": {
+    "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "decimal.js": "catalog:",
     "drizzle-orm": "catalog:"
@@ -21,8 +23,15 @@
     "#application/publish-tax-rule/*": "./application/publish-tax-rule/*",
     "#application/adopt-fiscal-template/*": "./application/adopt-fiscal-template/*",
     "#application/calculate-taxes/*": "./application/calculate-taxes/*",
+    "#application/issue-document/*": "./application/issue-document/*",
+    "#application/verify-issuance/*": "./application/verify-issuance/*",
+    "#application/attach-buyer/*": "./application/attach-buyer/*",
+    "#application/issue-credit-note/*": "./application/issue-credit-note/*",
+    "#application/document-balance/*": "./application/document-balance/*",
+    "#application/issuance-gate/*": "./application/issuance-gate/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
-    "#adapters/postgres/*": "./adapters/postgres/*"
+    "#adapters/postgres/*": "./adapters/postgres/*",
+    "#adapters/factus/*": "./adapters/factus/*"
   }
 }

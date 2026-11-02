@@ -122,6 +122,28 @@ export {
   tableState,
 } from "#contracts/dining-room.js";
 export {
+  type AcquirerLookupResult,
+  type AssignNumberingRangeCommand,
+  type AttachBuyerCommand,
+  type AttachedBuyer,
+  acquirerLookupResult,
+  assignNumberingRangeCommand,
+  attachBuyerCommand,
+  attachedBuyer,
+  type DocumentBalanceResult,
+  documentBalanceResult,
+  type IssueCreditNoteCommand,
+  type IssuedCreditNote,
+  issueCreditNoteCommand,
+  issuedCreditNote,
+  type LookupAcquirerCommand,
+  lookupAcquirerCommand,
+  type NumberingRangeAssignment,
+  numberingRangeAssignment,
+  type SetDocumentBalanceCommand,
+  setDocumentBalanceCommand,
+} from "#contracts/e-invoicing.js";
+export {
   type IdentityChanged,
   type IdentityRequest,
   identityChanged,

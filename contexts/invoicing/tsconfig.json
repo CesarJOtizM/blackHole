@@ -10,5 +10,6 @@
       "../../node_modules/.pnpm/@types+node@24.19.2/node_modules/@types"
     ]
   },
-  "include": ["domain", "application", "adapters"]
+  "include": ["domain", "application", "adapters"],
+  "references": [{ "path": "../platform" }]
 }

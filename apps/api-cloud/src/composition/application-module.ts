@@ -14,12 +14,24 @@ import {
   type Payment,
   SubmitCount,
 } from "@blackhole/cash-register/application/entry-port";
+import type { NumberingRangeAssignment } from "@blackhole/contracts";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
   AdoptFiscalTemplate,
+  AttachBuyer,
   CalculateTaxes,
+  type CreditNote,
+  CreditNoteAudit,
+  type CreditNoteAuditCommand,
+  CreditNoteRepository,
+  type DocumentBalanceKey,
+  DocumentBalanceStore,
+  InvoicingProvider,
+  IssueCreditNote,
+  type OpeningDocumentBalance,
   PublishTaxRule,
+  SetDocumentBalance,
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
 import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
@@ -101,6 +113,10 @@ import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
+import {
+  InvoicingController,
+  NumberingRangeStore,
+} from "#src/http/invoicing.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
@@ -158,6 +174,11 @@ export interface CloudApplicationDependencies {
   stationRoutes?: StationRouteRepository;
   printer?: Printer;
   realtime?: RealtimeHub;
+  invoicingProvider?: InvoicingProvider;
+  documentBalances?: MemoryDocumentBalances;
+  creditNotes?: MemoryCreditNotes;
+  creditNoteAudits?: MemoryCreditNoteAudit;
+  numberingRanges?: MemoryNumberingRanges;
 }
 
 class OrdersClockAdapter extends OrdersClock {
@@ -186,6 +207,15 @@ export class ApplicationModule implements NestModule {
     const countStore = counts as unknown as ConstructorParameters<
       typeof SubmitCount
     >[2];
+    const invoicingProvider =
+      dependencies.invoicingProvider ?? new UnconfiguredInvoicingProvider();
+    const documentBalances =
+      dependencies.documentBalances ?? new MemoryDocumentBalances();
+    const creditNotes = dependencies.creditNotes ?? new MemoryCreditNotes();
+    const creditNoteAudits =
+      dependencies.creditNoteAudits ?? new MemoryCreditNoteAudit(creditNotes);
+    const numberingRanges =
+      dependencies.numberingRanges ?? new MemoryNumberingRanges();
 
     return {
       module: ApplicationModule,
@@ -212,6 +242,7 @@ export class ApplicationModule implements NestModule {
         OrdersRealtimeController,
         TaxQuoteController,
         TaxConfigurationController,
+        InvoicingController,
         AttendanceController,
         CashShiftController,
         ChargeCheckController,
@@ -553,6 +584,32 @@ export class ApplicationModule implements NestModule {
             new AdoptFiscalTemplate(profiles),
           inject: [FiscalProfileRepository],
         },
+        { provide: InvoicingProvider, useValue: invoicingProvider },
+        {
+          provide: AttachBuyer,
+          useFactory: (provider: InvoicingProvider) =>
+            new AttachBuyer(provider),
+          inject: [InvoicingProvider],
+        },
+        { provide: DocumentBalanceStore, useValue: documentBalances },
+        {
+          provide: SetDocumentBalance,
+          useFactory: (balances: DocumentBalanceStore) =>
+            new SetDocumentBalance(balances),
+          inject: [DocumentBalanceStore],
+        },
+        { provide: CreditNoteRepository, useValue: creditNotes },
+        { provide: CreditNoteAudit, useValue: creditNoteAudits },
+        {
+          provide: IssueCreditNote,
+          useFactory: (
+            provider: InvoicingProvider,
+            notes: CreditNoteRepository,
+            audits: CreditNoteAudit,
+          ) => new IssueCreditNote(provider, notes, audits),
+          inject: [InvoicingProvider, CreditNoteRepository, CreditNoteAudit],
+        },
+        { provide: NumberingRangeStore, useValue: numberingRanges },
       ],
     };
   }
@@ -641,5 +698,79 @@ export class MemoryCashCounts {
   ): Promise<void> {
     this.saves += 1;
     this.counts.set(countKey(tenantId, venueId, registerId), count);
+  }
+}
+
+class UnconfiguredInvoicingProvider extends InvoicingProvider {
+  override async validate(): Promise<void> {
+    throw new Error("InvoicingProvider is not configured.");
+  }
+}
+
+export class MemoryDocumentBalances extends DocumentBalanceStore {
+  readonly saved: OpeningDocumentBalance[] = [];
+  saves = 0;
+
+  override async readRemaining(
+    key: DocumentBalanceKey,
+  ): Promise<number | null> {
+    const found = this.saved.find(
+      (row) =>
+        row.companyId === key.companyId &&
+        row.nit === key.nit &&
+        row.siteId === key.siteId,
+    );
+
+    return found?.remaining ?? null;
+  }
+
+  override async saveRemaining(balance: OpeningDocumentBalance): Promise<void> {
+    this.saves += 1;
+    this.saved.push({ ...balance });
+  }
+
+  override async readCount(): Promise<number> {
+    return 0;
+  }
+
+  override async saveCount(): Promise<void> {
+    return undefined;
+  }
+}
+
+export class MemoryCreditNotes extends CreditNoteRepository {
+  readonly rows: CreditNote[] = [];
+
+  override async insert(note: CreditNote): Promise<void> {
+    this.rows.push({ ...note });
+  }
+}
+
+export class MemoryCreditNoteAudit extends CreditNoteAudit {
+  readonly calls: CreditNoteAuditCommand[] = [];
+  readonly storedBeforeRecord: number[] = [];
+
+  constructor(private readonly notes: MemoryCreditNotes) {
+    super();
+  }
+
+  override async record(command: CreditNoteAuditCommand): Promise<void> {
+    this.storedBeforeRecord.push(this.notes.rows.length);
+    this.calls.push({ ...command });
+  }
+}
+
+export class MemoryNumberingRanges extends NumberingRangeStore {
+  readonly rows: NumberingRangeAssignment[] = [];
+  saves = 0;
+
+  override async save(
+    range: NumberingRangeAssignment,
+  ): Promise<NumberingRangeAssignment> {
+    this.saves += 1;
+    const stored = { ...range };
+    this.rows.push(stored);
+
+    return stored;
   }
 }

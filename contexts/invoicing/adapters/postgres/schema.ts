@@ -12,12 +12,18 @@ import type {
   FiscalProfileFields,
   FiscalTemplateRule,
 } from "#application/ports/fiscal-profile-repository.js";
+import type { DocumentHoldReason } from "#application/ports/sales-document-repository.js";
 import type { TaxMarker } from "#application/ports/tax-rule-repository.js";
 import type {
   TaxChannel,
   TaxComponent,
   TaxRegime,
 } from "#domain/calculate-taxes.js";
+import type { DocumentContent } from "#domain/document-content.js";
+import type {
+  GenericBuyer,
+  SalesDocumentStatus,
+} from "#domain/sales-document.js";
 
 export const taxRules = pgTable(
   "tax_rules",
@@ -66,4 +72,24 @@ export const adoptedFiscalProfiles = pgTable(
     rules: jsonb("rules").$type<CopiedFiscalRule[]>().notNull(),
   },
   (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
+);
+
+export const salesDocuments = pgTable(
+  "sales_documents",
+  {
+    tenantId: text("tenant_id").notNull(),
+    closureId: text("closure_id").notNull(),
+    referenceCode: text("reference_code").notNull(),
+    status: text("status").$type<SalesDocumentStatus>().notNull(),
+    holdReason: text("hold_reason").$type<DocumentHoldReason | null>(),
+    buyer: jsonb("buyer").$type<GenericBuyer>().notNull(),
+    content: jsonb("content").$type<DocumentContent>().notNull(),
+    invoiceNumber: text("invoice_number"),
+    cufe: text("cufe"),
+    qr: text("qr"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.closureId] }),
+    unique("sales_documents_reference").on(table.tenantId, table.referenceCode),
+  ],
 );

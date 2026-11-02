@@ -17,12 +17,28 @@ variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
 variable "collector_endpoint" { type = string }
+variable "rollout_percent" {
+  type    = number
+  default = 100
+
+  validation {
+    condition     = var.rollout_percent >= 1 && var.rollout_percent <= 100
+    error_message = "rollout_percent must be between 1 and 100."
+  }
+}
 
 locals {
-  production    = var.environment == "production"
-  min_instances = local.production ? (var.role == "api" ? 2 : 1) : 0
-  max_instances = 10
-  queue_scaled  = var.role == "worker"
+  production      = var.environment == "production"
+  min_instances   = local.production ? (var.role == "api" ? 2 : 1) : 0
+  max_instances   = 10
+  queue_scaled    = var.role == "worker"
+  partial_rollout = var.rollout_percent < 100
+}
+
+data "google_cloud_run_v2_service" "active" {
+  count    = local.partial_rollout ? 1 : 0
+  name     = var.name
+  location = var.region
 }
 
 resource "google_cloud_run_v2_service" "this" {
@@ -56,6 +72,20 @@ resource "google_cloud_run_v2_service" "this" {
         name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
         value = var.collector_endpoint
       }
+    }
+  }
+
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = var.rollout_percent
+  }
+
+  dynamic "traffic" {
+    for_each = local.partial_rollout ? [100 - var.rollout_percent] : []
+    content {
+      type     = "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION"
+      percent  = traffic.value
+      revision = try(data.google_cloud_run_v2_service.active[0].latest_ready_revision, var.name)
     }
   }
 }

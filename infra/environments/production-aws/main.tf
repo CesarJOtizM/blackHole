@@ -1,4 +1,8 @@
 variable "git_ref" { type = string }
+variable "rollout_percent" {
+  type    = number
+  default = 100
+}
 
 locals {
   account_id = "222222222222"
@@ -50,6 +54,11 @@ module "collector" {
   name   = "production-aws"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/aws/service"
   name               = "production-aws-api"
@@ -61,6 +70,7 @@ module "api" {
   role               = "api"
   environment        = "production"
   collector_endpoint = module.collector.endpoint
+  rollout_percent    = var.rollout_percent
 }
 
 module "worker" {
@@ -74,6 +84,7 @@ module "worker" {
   role               = "worker"
   environment        = "production"
   collector_endpoint = module.collector.endpoint
+  rollout_percent    = var.rollout_percent
 }
 
 module "dns" {

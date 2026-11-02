@@ -49,11 +49,28 @@ jobs:
           terraform apply -auto-approve -input=false -var "git_ref=${{ github.sha }}"
           echo "api_hostname=$(terraform output -raw api_hostname)" >> "$GITHUB_OUTPUT"
       - name: Restore the encrypted dump
-        run: echo "restore the latest encrypted dump into staging-${{ steps.target.outputs.cloud }}"
+        id: restore
+        run: node tools/delivery/restore-dump.mjs --cloud "${{ steps.target.outputs.cloud }}" --dump "${{ vars.BACKUP_KEY }}"
       - name: Smoke
+        id: smoke
         env:
           SMOKE_BASE_URL: https://${{ steps.apply.outputs.api_hostname }}
         run: node tools/delivery/smoke.mjs
+      - name: Alert the team with the failing step
+        if: failure()
+        run: |
+          failing="rehearse"
+          if [ "${{ steps.target.outcome }}" = "failure" ]; then
+            failing="Choose the non-production AWS or GCP cloud"
+          elif [ "${{ steps.apply.outcome }}" = "failure" ]; then
+            failing="Apply non-production staging"
+          elif [ "${{ steps.restore.outcome }}" = "failure" ]; then
+            failing="Restore the encrypted dump"
+          elif [ "${{ steps.smoke.outcome }}" = "failure" ]; then
+            failing="Smoke"
+          fi
+          echo "alert: failing step: ${failing}"
+          exit 1
       - name: Destroy the rehearsal
         if: always()
         working-directory: infra/environments/staging-${{ steps.target.outputs.cloud }}

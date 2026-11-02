@@ -50,6 +50,11 @@ module "collector" {
   name   = "staging-aws"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/aws/service"
   name               = "staging-aws-api"

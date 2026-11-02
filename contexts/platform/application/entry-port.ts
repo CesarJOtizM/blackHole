@@ -23,6 +23,8 @@ export {
   PinConfirmationLocked,
   PinConfirmationRejected,
 } from "#application/ports/pin-verifier.js";
+export { ProviderRateGate } from "#application/ports/provider-rate-gate.js";
+export { Secrets } from "#application/ports/secrets.js";
 export {
   AuditReadDenied,
   ReadAudit,
@@ -66,3 +68,4 @@ export {
   UnknownOrganizationReference,
   UserDeactivated,
 } from "#domain/index.js";
+export { PERMISSION } from "#domain/permission-catalog.js";
