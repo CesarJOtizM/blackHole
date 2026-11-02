@@ -88,3 +88,46 @@ Each directory below ran `terraform init -backend=false -input=false -no-color` 
 - `infra/modules/gcp/storage`
 
 Init wrote `.terraform/` and `.terraform.lock.hcl` under those directories. Those local artifacts were deleted after validate. They are not part of the change. `infra/environments/local` has no Terraform configuration.
+
+## Phase 5 correction
+
+Mode stays Standard. `strict_tdd` is false. ADR-017 still wrote the failing check before the fix. This slice was not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
+
+Workload: feature-branch-chain, next slice after the pipeline unit. Changed lines in this slice, additions plus deletions, excluding the pre-existing grafana hunks: **458** (441 additions, 17 deletions). Tasks 1.1–4.11 stay complete. Tasks 5.1–5.3 are complete. `state.yaml` keeps `apply: done` and `verify: partial`. No `terraform apply`, no deploy, no cloud credentials. Grafana module and the uncommitted grafana blocks in the six environment files were not edited.
+
+### Commands
+
+| Command | Exit |
+|---------|------|
+| RED `node tools/delivery/check-rehearsal-rollout.mjs` | 1 |
+| GREEN `node tools/delivery/check-rehearsal-rollout.mjs` | 0 (`rehearsal restore and partial rollout hold`) |
+| `node tools/infra/compare-module-outputs.mjs` | 0 (`module outputs match`) |
+| `pnpm exec biome check tools/delivery/check-rehearsal-rollout.mjs tools/delivery/restore-dump.mjs` | 0 |
+| `terraform fmt` on the edited service modules and `production-aws` / `production-gcp` | 0, no diff |
+
+`pnpm test` was not run. Terraform validate and apply were not run.
+
+### What changed
+
+- `tools/delivery/restore-dump.mjs` reads a local dump path. A missing dump exits 1 and names `aws` or `gcp`. It does not open a network connection and does not call terraform.
+- `rehearsal.yml` calls that script with the one selected cloud. On failure, the alert step prints `failing step:` plus the failed step name (`steps.restore.outcome` and the other step outcomes). Rehearsal still selects one of AWS or GCP.
+- The first production apply passes `rollout_percent=50` with the new digest. The finish apply passes `rollout_percent=100` only when `steps.signals.outputs.worsened != 'true'`. Rollback still applies `steps.previous.outputs.digest` and does not run a migration.
+- `rollout_percent` is on the aws, gcp, and azure service modules (default 100). Production AWS and GCP pass it through. Below 100, AWS keeps `desired_count` at the API minimum on the active revision and starts the new digest on only that share. GCP sends that percent to the latest revision and holds the rest on the active revision. Azure accepts the variable as the traffic weight. No Azure apply.
+
+### Deviations
+
+- The spec sentence "both clouds" remains a design deviation (D-39). This slice does not widen rehearsal to AWS and GCP together, and it does not add an Azure apply.
+- A partial AWS or GCP apply reads the active revision. An empty production stack has no revision yet, so the first partial apply assumes the previous digest is already running.
+- Azure `traffic_weight` uses `rollout_percent` and does not add a second revision weight. A value below 100 would not sum to 100. Delivery does not apply Azure.
+- This pair is 458 changed lines. The 400-line budget is exceeded. It was not split, because the orchestrator forbade splitting this RED/GREEN pair and did not grant `size:exception`.
+
+### Task status
+
+- [x] 1.1–1.9 Platform ports, memory doubles, cloud adapters, health, worker, main, bootstrap, skeleton.
+- [x] 2.1–2.4 Dockerfile, Compose, local env, three services.
+- [x] 3.1–3.4 Modules, DNS, six environments, bootstrap. Azure environments set `plan_only`.
+- [x] 3.5 Fmt and validate. Terraform v1.16.6. Fmt check exit 0 on three trees. Init and validate exit 0 on 31 configuration directories. No apply.
+- [x] 4.1–4.11 Infra scripts, smoke script, CI plan, delivery, drift, backup check, rehearsal, bootstrap dispatch.
+- [x] 5.1 RED check. Exit 1 while restore echoed and both production applies passed only `git_ref`.
+- [x] 5.2 GREEN restore script and rehearsal alert. No terraform.
+- [x] 5.3 GREEN partial production apply and `rollout_percent` on aws, gcp, and azure. No Azure apply. No grafana edits.

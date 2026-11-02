@@ -30,3 +30,18 @@ export {
   InvalidTaxId,
   NoMatchingTaxRule,
 } from "#domain/calculate-taxes.js";
+export type { DocumentContent } from "#domain/document-content.js";
+export { createDocumentContent } from "#domain/document-content.js";
+export type {
+  CreateSalesDocument,
+  GenericBuyer,
+  SalesDocument,
+  SalesDocumentStatus,
+} from "#domain/sales-document.js";
+export {
+  assertNitCheckDigit,
+  createSalesDocument,
+  InvalidNitCheckDigit,
+  InvalidReferenceCode,
+  SALES_DOCUMENT_STATUS,
+} from "#domain/sales-document.js";

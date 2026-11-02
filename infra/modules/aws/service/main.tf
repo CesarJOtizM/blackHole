@@ -17,12 +17,23 @@ variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
 variable "collector_endpoint" { type = string }
+variable "rollout_percent" {
+  type    = number
+  default = 100
+
+  validation {
+    condition     = var.rollout_percent >= 1 && var.rollout_percent <= 100
+    error_message = "rollout_percent must be between 1 and 100."
+  }
+}
 
 locals {
-  production    = var.environment == "production"
-  min_instances = local.production ? (var.role == "api" ? 2 : 1) : 0
-  max_instances = 10
-  queue_scaled  = var.role == "worker"
+  production        = var.environment == "production"
+  min_instances     = local.production ? (var.role == "api" ? 2 : 1) : 0
+  max_instances     = 10
+  queue_scaled      = var.role == "worker"
+  partial_rollout   = var.rollout_percent < 100
+  shifted_instances = local.partial_rollout ? max(1, floor(local.min_instances * var.rollout_percent / 100)) : 0
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -59,12 +70,35 @@ resource "aws_ecs_task_definition" "this" {
   }])
 }
 
+data "aws_ecs_task_definition" "active" {
+  count           = local.partial_rollout ? 1 : 0
+  task_definition = var.name
+}
+
 resource "aws_ecs_service" "this" {
-  name            = var.name
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = local.min_instances
-  launch_type     = "FARGATE"
+  name                               = var.name
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = local.partial_rollout ? try(data.aws_ecs_task_definition.active[0].arn, aws_ecs_task_definition.this.arn) : aws_ecs_task_definition.this.arn
+  desired_count                      = local.min_instances
+  launch_type                        = "FARGATE"
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    assign_public_ip = false
+  }
+}
+
+resource "aws_ecs_service" "shift" {
+  count                              = local.partial_rollout ? 1 : 0
+  name                               = "${var.name}-shift"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.this.arn
+  desired_count                      = local.shifted_instances
+  launch_type                        = "FARGATE"
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
 
   network_configuration {
     subnets          = var.private_subnet_ids

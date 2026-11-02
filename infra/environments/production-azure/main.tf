@@ -51,6 +51,11 @@ module "collector" {
   name   = "production-azure"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/azure/service"
   name               = "production-azure-api"

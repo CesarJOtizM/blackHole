@@ -15,6 +15,7 @@
     "attendance.ts",
     "devices.ts",
     "dining-room.ts",
+    "e-invoicing.ts",
     "identity.ts",
     "menu.ts",
     "update-structure.ts"

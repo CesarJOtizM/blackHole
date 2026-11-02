@@ -17,6 +17,15 @@ variable "public_subnet_ids" { type = list(string) }
 variable "role" { type = string }
 variable "environment" { type = string }
 variable "collector_endpoint" { type = string }
+variable "rollout_percent" {
+  type    = number
+  default = 100
+
+  validation {
+    condition     = var.rollout_percent >= 1 && var.rollout_percent <= 100
+    error_message = "rollout_percent must be between 1 and 100."
+  }
+}
 
 locals {
   production    = var.environment == "production"
@@ -82,7 +91,7 @@ resource "azurerm_container_app" "this" {
       target_port      = 4310
       traffic_weight {
         latest_revision = true
-        percentage      = 100
+        percentage      = var.rollout_percent
       }
     }
   }

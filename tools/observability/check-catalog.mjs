@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -153,6 +153,126 @@ const redactionProblems = (scrub, collector) => {
 
   if (!coversDigitRun) {
     problems.push("collector digit run does not cover 7-10 digits");
+  }
+
+  return problems;
+};
+
+const matchingBrace = (source, openIndex) => {
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+
+  for (let index = openIndex; index < source.length; index += 1) {
+    const char = source[index];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') quoted = false;
+      continue;
+    }
+    if (char === '"') {
+      quoted = true;
+      continue;
+    }
+    if (char === "{") depth += 1;
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+
+  return -1;
+};
+
+const alarmEntries = (grafana) => {
+  const header = /\balarms\s*=\s*\{/.exec(grafana);
+  if (!header) return null;
+  const open = grafana.indexOf("{", header.index);
+  const close = matchingBrace(grafana, open);
+  if (close === -1) return null;
+  const body = grafana.slice(open + 1, close);
+  const entries = [];
+
+  for (const match of body.matchAll(/(?:^|\n)\s*([A-Za-z0-9_]+)\s*=\s*\{/g)) {
+    const brace = body.indexOf("{", match.index);
+    const end = matchingBrace(body, brace);
+    if (end === -1) return null;
+    entries.push({
+      name: match[1],
+      body: body.slice(brace + 1, end),
+    });
+  }
+
+  return entries;
+};
+
+const alarmActionProblems = (grafana) => {
+  const problems = [];
+  const entries = alarmEntries(grafana);
+  if (!entries || entries.length === 0) {
+    problems.push("grafana alarms could not be read");
+    return problems;
+  }
+
+  for (const entry of entries) {
+    const action = entry.body.match(/\baction\s*=\s*"([^"]*)"/);
+    if (!action || action[1].trim().length === 0) {
+      problems.push(`alarm ${entry.name} has no action`);
+    }
+  }
+
+  const rule = /resource\s+"grafana_rule_group"\s+"blackhole"/.exec(grafana);
+  if (!rule) {
+    problems.push("grafana_rule_group.blackhole is missing");
+    return problems;
+  }
+
+  const open = grafana.indexOf("{", rule.index);
+  const close = matchingBrace(grafana, open);
+  const resource = grafana.slice(open, close);
+  const annotations = /annotations\s*=\s*\{/.exec(resource);
+  const annOpen = annotations ? resource.indexOf("{", annotations.index) : -1;
+  const annClose = annOpen === -1 ? -1 : matchingBrace(resource, annOpen);
+  const annBody = annClose === -1 ? "" : resource.slice(annOpen + 1, annClose);
+  const literal = annBody.match(/\baction\s*=\s*"([^"]*)"/);
+  const reference = /\baction\s*=\s*[A-Za-z0-9_.]+/.test(annBody);
+  const present = literal ? literal[1].trim().length > 0 : reference;
+  if (!present) {
+    problems.push("grafana_rule_group.blackhole annotations have no action");
+  }
+
+  return problems;
+};
+
+const environmentProblems = (root) => {
+  const dir = path.join(root, "infra", "environments");
+  if (!existsSync(dir)) return ["infra/environments is missing"];
+  const problems = [];
+
+  for (const name of readdirSync(dir)) {
+    const file = path.join(dir, name, "main.tf");
+    if (!existsSync(file)) continue;
+    const source = readFileSync(file, "utf8");
+    if (!/module\s+"collector"/.test(source)) continue;
+
+    const header = /module\s+"grafana"\s*\{/.exec(source);
+    if (!header) {
+      problems.push(`${name} mounts the collector without module "grafana"`);
+      continue;
+    }
+
+    const open = source.indexOf("{", header.index);
+    const close = matchingBrace(source, open);
+    const body = source.slice(open + 1, close);
+    if (!/source\s*=\s*"\.\.\/\.\.\/modules\/common\/grafana"/.test(body)) {
+      problems.push(
+        `${name} grafana source must be ../../modules/common/grafana`,
+      );
+    }
+    if (!/\bprometheus_datasource_uid\s*=/.test(body)) {
+      problems.push(`${name} does not pass prometheus_datasource_uid`);
+    }
   }
 
   return problems;
@@ -313,16 +433,23 @@ const read = (relative) => {
   return readFileSync(file, "utf8");
 };
 
-const problems = catalogProblems({
-  catalog: read("contexts/platform/domain/metric-catalog.ts"),
-  scrub: read("contexts/platform/domain/telemetry-scrub.ts"),
-  grafana: read("infra/modules/common/grafana/main.tf"),
-  collector: read("infra/modules/common/collector/main.tf"),
-});
+const grafana = read("infra/modules/common/grafana/main.tf");
+const problems = [
+  ...catalogProblems({
+    catalog: read("contexts/platform/domain/metric-catalog.ts"),
+    scrub: read("contexts/platform/domain/telemetry-scrub.ts"),
+    grafana,
+    collector: read("infra/modules/common/collector/main.tf"),
+  }),
+  ...alarmActionProblems(grafana),
+  ...environmentProblems(root),
+];
 
 if (problems.length > 0) {
   console.error(problems.join("\n"));
   process.exit(1);
 }
 
-console.log("catalog panels, labels, and collector redaction match");
+console.log(
+  "catalog panels, labels, collector redaction, alarm actions, and grafana modules match",
+);

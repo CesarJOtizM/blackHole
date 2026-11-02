@@ -51,6 +51,11 @@ module "collector" {
   name   = "staging-azure"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/azure/service"
   name               = "staging-azure-api"

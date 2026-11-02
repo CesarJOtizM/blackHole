@@ -40,7 +40,10 @@ import type { Secrets } from "@blackhole/platform/application/ports/secrets";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
-import { startTelemetry } from "#src/composition/telemetry.js";
+import {
+  continuedTraceFromEnv,
+  startTelemetry,
+} from "#src/composition/telemetry.js";
 
 const scrypt = promisify(scryptCallback);
 const fileStorageAdapters = ["s3", "gcs", "blob", "disk"] as const;
@@ -207,7 +210,7 @@ export const startApi = async (
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<void> => {
   const runtime = infrastructureFromEnv(env);
-  startTelemetry(env);
+  startTelemetry(env, {}, continuedTraceFromEnv(env));
   const identities = new InMemoryIdentityRepository();
   const clock = new SystemClock();
   const application = await createApplication({

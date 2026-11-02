@@ -50,6 +50,11 @@ module "collector" {
   name   = "staging-gcp"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/gcp/service"
   name               = "staging-gcp-api"

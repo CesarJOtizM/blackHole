@@ -1,4 +1,8 @@
 variable "git_ref" { type = string }
+variable "rollout_percent" {
+  type    = number
+  default = 100
+}
 
 locals {
   account_id = "blackhole-production-gcp"
@@ -50,6 +54,11 @@ module "collector" {
   name   = "production-gcp"
 }
 
+module "grafana" {
+  source                    = "../../modules/common/grafana"
+  prometheus_datasource_uid = "prometheus"
+}
+
 module "api" {
   source             = "../../modules/gcp/service"
   name               = "production-gcp-api"
@@ -61,6 +70,7 @@ module "api" {
   role               = "api"
   environment        = "production"
   collector_endpoint = module.collector.endpoint
+  rollout_percent    = var.rollout_percent
 }
 
 module "worker" {
@@ -74,6 +84,7 @@ module "worker" {
   role               = "worker"
   environment        = "production"
   collector_endpoint = module.collector.endpoint
+  rollout_percent    = var.rollout_percent
 }
 
 module "dns" {
