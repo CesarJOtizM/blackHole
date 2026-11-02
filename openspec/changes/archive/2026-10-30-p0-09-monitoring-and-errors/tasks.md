@@ -58,3 +58,29 @@ Shared with 0.8: `application-module.ts`, `main.ts`, `worker.ts`, `contexts/plat
 ## Refused
 
 None for an open question. Threat matrix is N/A, so no threat RED task. Omitted as already closed: node telemetry, offline queue, SQLite, hybrid sync, node and sync alarms, browser Sentry, wallet, cost alarm, retention, real Factus, D-19.
+
+## Phase 7: Cloud-MVP verify corrections
+
+Phases 1–6 stay checked. This slice covers only the three CRITICAL gaps at `208b303` (8/15). Still deferred: node telemetry, offline buffer, sync alarms, browser Sentry, worker scale-up and scale-down (D-37 warnings).
+
+Corrective estimate: 400–740 changed lines, about 150–320 per unit. Delivery strategy: ask-on-risk. The forecast at the top records phases 1–6. These lines are the guard for the remaining work:
+
+Decision needed before apply: Yes
+Chained PRs recommended: Yes
+Chain strategy: feature-branch-chain
+400-line budget risk: Medium
+
+### Suggested Work Units
+
+| Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
+|------|------|-----------|----------------------|-----------------|-------------------|
+| 7 | One trace id for logs, metrics, and traces | PR 7, base tracker | `pnpm exec vitest run --project api-cloud telemetry` | N/A: exporter doubles, no live collector | `telemetry.ts`, `telemetry.test.ts`, OTLP log/metric deps, trace handoff in `main.ts` and `worker.ts` |
+| 8 | Four alarms fire; environments compose Grafana | PR 8, base PR 7 | `node tools/observability/evaluate-alarms.mjs` and `node tools/observability/check-catalog.mjs` | N/A: no terraform apply; Azure stays plan-only | alarm `action`, six environment modules, both observability scripts |
+| 9 | Sentry stores company, site, role, and release | PR 9, base PR 8 | `pnpm exec vitest run --project api-cloud telemetry` | N/A: Sentry client double | Sentry export in `telemetry.ts` and `telemetry.test.ts` |
+
+- [x] 7.1 Failing test first. `apps/api-cloud/test/composition/telemetry.test.ts`: given the worker continues a cloud request, when telemetry is exported, then logs, catalog metrics, and traces from api-cloud and the worker share one trace id, and each log carries tenant, site, and trace id. Fails while `telemetry.ts` only ends a local span (`logRecordProcessors` and `metricReaders` empty).
+- [x] 7.2 Make 7.1 pass. `apps/api-cloud/src/composition/telemetry.ts`, with the continued trace passed from `main.ts` and `worker.ts`. Export OTLP logs, metrics, and traces. Pin `@opentelemetry/exporter-logs-otlp-http` and `@opentelemetry/exporter-metrics-otlp-http` to `0.300.0` in `apps/api-cloud/package.json`. Empty endpoint and a throwing exporter stay off the request path. `GET /health` stays `{ "status": "ok" }`. No browser SDK and no `apps/local-node` edit.
+- [x] 7.3 Failing test first. `tools/observability/evaluate-alarms.mjs` exits non-zero until these fire: under 99.5% this month or silent 5 minutes; an invoice pending 31 minutes; over 3 rejections in 10 minutes for one tax id; an error never seen in production. A repeated production error does not fire. `tools/observability/check-catalog.mjs` fails a rule with no `action`, or an environment that mounts the collector without `module "grafana"`.
+- [x] 7.4 Make 7.3 pass. Add `action` on each `local.alarms` entry and on `grafana_rule_group.blackhole` annotations in `infra/modules/common/grafana/main.tf`. Owner stays `blackhole`. The first-production expression fires only for an error never seen in production. Pass `prometheus_datasource_uid`. Compose `module "grafana"` (`source = "../../modules/common/grafana"`) in `infra/environments/{staging,production}-{aws,gcp,azure}/main.tf`. The catalog check rejects a service stack that omits it. No `terraform apply`.
+- [x] 7.5 Failing test first. Same `telemetry.test.ts`: given company, site, role, and release on a cloud error, when api-cloud or the worker reports it, then the Sentry double stores company, site, role, and release `service.version`. Project `api-cloud` plus release `service.version` alone does not pass. Keep the existing DSN test.
+- [x] 7.6 Make 7.5 pass in `apps/api-cloud/src/composition/telemetry.ts`. Store company, site, and role with project `api-cloud` and release `service.version`. Scrub before send. No browser Sentry.

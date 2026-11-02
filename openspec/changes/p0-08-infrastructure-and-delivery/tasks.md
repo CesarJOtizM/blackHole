@@ -70,6 +70,14 @@ Unit 1 waits for `p0-04-identity-and-devices`. It alone edits `contexts/platform
 - [x] 4.10 `bootstrap.yml`: `workflow_dispatch` only.
 - [x] 4.11 Run the three `tools/infra` scripts.
 
+## Phase 5: Restore and partial rollout (next pipeline slice)
+
+Feature-branch chain after the pipeline unit. Not committed. `size:exception` was not granted. One RED/GREEN pair. Rehearsal stays on one of AWS or GCP (D-39). The spec sentence "both clouds" remains a design deviation. No Azure apply. No live-cloud restore, drift, or smoke.
+
+- [x] 5.1 RED `tools/delivery/check-rehearsal-rollout.mjs`. Missing dump exits non-zero, names the target cloud, and opens no network connection. The check reads `rehearsal.yml` and fails unless a failure alerts with the failing step name. It reads `delivery.yml` and fails if the first production apply is a full shift or if both applies pass only `git_ref`.
+- [x] 5.2 GREEN `tools/delivery/restore-dump.mjs` and `rehearsal.yml`. The restore step calls the script. The script fails when the dump is missing and names the target cloud. A failed rehearsal alerts with the failing step name. No terraform.
+- [x] 5.3 GREEN partial production apply. The first production apply passes a rollout percent below 100 and the API minimum can still serve. The finish apply completes the shift only when signals are not worsened. Rollback returns `steps.previous.outputs.digest` and does not run a migration. `rollout_percent` is on `infra/modules/{aws,gcp,azure}/service`. No Azure apply. No grafana edits.
+
 ## Not placed
 
-Node secrets. Previous-node sync. Two versions behind. Azure apply, backup, rehearsal.
+Node secrets. Previous-node sync. Two versions behind. Azure apply, backup, rehearsal. Live staging, refused database connections, drift execution, lost instances, live smoke, and a real cross-cloud restore.

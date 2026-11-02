@@ -6,7 +6,7 @@ modules: [M0, M3]
 bounded_contexts: [infra, sync, platform]
 apps: [api-cloud, local-node, venue-app, admin-web]
 status: applying
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: done, archive: pending}
 depends_on: [p0-02-skeleton-and-sync, p0-08-infrastructure-and-delivery]
 source_docs:
   - docs/roadmap.md
