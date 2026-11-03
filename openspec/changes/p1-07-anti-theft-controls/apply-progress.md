@@ -27,6 +27,7 @@
 - [x] 5.2 Reopen a paid account: the reversal is stored on the open `CashShift` and points at the original payment. The closed shift is not saved and gains no reversal. `sale.reopen-paid` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount. A missing grant, a mismatch, a denial, an unknown reference, a missing account, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. The audit `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is the reversal's `originalPaymentId` and the audit `entity`
 - [x] 5.3 Change a payment method: the reversal and the new payment are stored on the open `CashShift` and both point at the original payment. The closed shift is not saved and gains neither. `sale.change-tender` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount before both writes. A missing grant, a mismatch, a denial, an unknown reference, a missing payment, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. One audit runs after both writes. `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is `originalPaymentId` on the reversal and on the new payment. A cash-to-card change stores method `card` and the original amount
 - [x] 6.1 Cloud authorization HTTP boundary: a request may carry optional `targetId` and `shiftTotals`. The controller passes them to `OperateAuthorization`. The sensitive-action envelope validates with `safeParse`. No void, discount, courtesy, price, drawer, reopen, or tender routes
+- [x] 6.2 Cloud void HTTP: a denied session leaves the line or the account and writes no void audit. A waiter inside the before-kitchen cap, with an open shift, voids the line and the audit authorizer is null. A cashier with a matching grant clears the account and the audit authorizer is the grant's authorizer. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 
 ## Work Unit Evidence
 
@@ -508,6 +509,33 @@ The same command after `pnpm exec biome check --write` on the six TypeScript fil
 
 `pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
 
+### Unit 11 — Void HTTP (task 6.2)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/void-line.controller.test.ts test/http/void-account.controller.test.ts`. RED exit 1: 2 failed files, no tests (missing modules). GREEN exit 0: 2 files, 8 passed. Re-run after Biome: exit 0, 2 files, 8 passed. |
+| Runtime harness command/scenario and exact result | N/A. Nest `inject` covers the HTTP boundary. Tasks forecast says runtime harness N/A. No listening port and no SQL. |
+| Rollback boundary | `apps/api-cloud/src/http/void-line.controller.ts`, `apps/api-cloud/src/http/void-account.controller.ts`, `apps/api-cloud/src/http/void-command.ts`, `apps/api-cloud/src/composition/closed-shift-reader.ts`, the `VoidLine` and `VoidAccount` providers in `apps/api-cloud/src/composition/application-module.ts`, `apps/api-cloud/test/http/void-line.controller.test.ts`, `apps/api-cloud/test/http/void-account.controller.test.ts`, and the optional `shifts`, `people`, and `authorizations` return on `apps/api-cloud/test/http/dining-room-session.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/void-line.controller.test.ts test/http/void-account.controller.test.ts`
+
+Result: exit 1. Test files 2 failed. Tests: no tests.
+
+Failures before the controllers existed:
+
+- Cannot find module `#src/http/void-line.controller.js`.
+- Cannot find module `#src/http/void-account.controller.js`.
+
+#### GREEN
+
+Same command, after `VoidLineController` and `VoidAccountController` called the existing use cases, `ClosedShiftReader` answered closed unless the test replaced it, and the strict body rejected `authorizerId` and shift totals. Exit 0. Test files 2 passed. Tests 8 passed.
+
+The same command after `pnpm exec biome check --write` on the eight TypeScript files. Exit 0. Test files 2 passed. Tests 8 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -575,7 +603,11 @@ The same command after `pnpm exec biome check --write` on the six TypeScript fil
 - No `@blackhole/printing` import. The cash-register repository and the SQL mapper are unchanged.
 - `requestCommand.targetId` and `requestCommand.shiftTotals` stay optional. When present, `operateCommand` copies them onto the command passed to `OperateAuthorization.execute`, and the existing `request` method stores them. When absent, the copies are undefined and the domain keeps the migration defaults. `OperateAuthorization` is still constructed with five arguments. `RecordAuditEvent` is not injected.
 - `authorizationShiftTotals` is one Zod object shared by the request and `sensitiveActionEnvelope`. The package index exports `sensitiveActionEnvelope` and `SensitiveActionEnvelope` only. `shared/contracts` is not a vitest project, so the envelope test lives in `apps/api-cloud/test/contracts/sensitive-actions.test.ts` and imports `@blackhole/contracts`. This slice validates the envelope with `safeParse` and adds no void, discount, courtesy, price, drawer, reopen, or tender route. No migration and no alert write.
+- Both void routes share `void-command.ts`. The body is a strict Zod 4 object: `reason`, `shiftId`, and `authorizationId` (`string` or `null`). `authorizerId` and shift totals fail `safeParse`, return 400, and store nothing. `authorizationId` null passes `authorizerId` null. A present id loads the approved resolution and passes that `authorizerId`. The use cases count shift totals. The client total is not forwarded.
+- `ClosedShiftReader` is the default `OpenShiftReader` and answers closed. The HTTP test replaces it through `CloudApplicationDependencies.shifts`, the same way `diningRooms` is replaced. The cash-register repository is not asked to list a shift. No SQL and no migration.
+- A missing header or an unknown session is 400 before the use case. A denied decision is 200: the use case returns the check, and the response lists the remaining line ids. `TableNotOpen` and `InvalidLineId` map to 409. The line success is a waiter inside the cap. The account success consumes a matching `sale.void-account` grant. `TakeOrder` stays a six-argument construction. No discount, courtesy, price, drawer, reopen, tender, reprint, or report route.
+- This pair is 740 additions and 3 deletions. It was not split. `size:exception` was not granted.
 
 ## Remaining
 
-Tasks 6.2–7.1 are pending. The next checkbox is 6.2. Task 6.1 is the only checkbox newly marked in this batch. 18/25 tasks complete. The authorization HTTP slice is 107 added lines and 1 deleted line: `authorization.controller.ts` 22/1, `authorization.controller.test.ts` 29, `authorization.ts` 7, `index.ts` 4, `sensitive-actions.ts` 15, and `sensitive-actions.test.ts` 30. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-auth-http`, based on `feat/anti-theft-tender`. It is under the 400-line review budget. No void, discount, courtesy, price, drawer, reopen, or tender routes. No migration. No local-node.
+Tasks 6.3–7.1 are pending. The next checkbox is 6.3. Task 6.2 is the only checkbox newly marked in this batch. 19/25 tasks complete. The void HTTP slice is 740 added lines and 3 deleted lines: `application-module.ts` 95, `dining-room-session.ts` 9/3, `closed-shift-reader.ts` 7, `void-command.ts` 73, `void-line.controller.ts` 88, `void-account.controller.ts` 86, `void-line.controller.test.ts` 166, and `void-account.controller.test.ts` 216. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-void-http`, based on `feat/anti-theft-auth-http` (`abbca00`). No commit, push, or pull request. No discount, courtesy, price, drawer, reopen, tender, reprint, or report routes. No migration. No local-node.

@@ -46,6 +46,7 @@ import {
   GetCheck,
   MarkAccountPaid,
   MarkTableReady,
+  OpenShiftReader,
   OpenTable,
   PlaceTable,
   RealtimeHub,
@@ -56,6 +57,8 @@ import {
   ViewStationQueue,
   ViewTableMap,
   ViewVenueMenu,
+  VoidAccount,
+  VoidLine,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
@@ -68,6 +71,12 @@ import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-au
 import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
 import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
 import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
+import {
+  ConsumeAuthorization,
+  CountExecutedOperations,
+  EvaluatePermission,
+  RecordAuditEvent,
+} from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
 import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
@@ -98,6 +107,7 @@ import {
   InMemoryAttendancePolicyRepository,
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
+import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
@@ -149,6 +159,8 @@ import {
 import { ViewStationQueueController } from "#src/http/view-station-queue.controller.js";
 import { ViewTableMapController } from "#src/http/view-table-map.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
+import { VoidAccountController } from "#src/http/void-account.controller.js";
+import { VoidLineController } from "#src/http/void-line.controller.js";
 
 export interface CloudApplicationDependencies {
   venueOperations: VenueOperationRepository;
@@ -180,6 +192,7 @@ export interface CloudApplicationDependencies {
   taxRules?: TaxRuleRepository;
   fiscalProfiles?: FiscalProfileRepository;
   diningRooms?: DiningRoomRepository;
+  shifts?: OpenShiftReader;
   registers?: InMemoryCashRegisterRepository;
   charges?: MemoryChargeLedger;
   counts?: MemoryCashCounts;
@@ -257,6 +270,8 @@ export class ApplicationModule implements NestModule {
         RequestCheckController,
         ReassignCheckController,
         TakeOrderController,
+        VoidLineController,
+        VoidAccountController,
         ChangeLineStateController,
         ViewTableMapController,
         ViewStationQueueController,
@@ -362,6 +377,10 @@ export class ApplicationModule implements NestModule {
           provide: DiningRoomRepository,
           useValue:
             dependencies.diningRooms ?? new InMemoryDiningRoomRepository(),
+        },
+        {
+          provide: OpenShiftReader,
+          useValue: dependencies.shifts ?? new ClosedShiftReader(),
         },
         {
           provide: StationRouteRepository,
@@ -537,6 +556,82 @@ export class ApplicationModule implements NestModule {
             Printer,
             OrdersClock,
             RealtimeHub,
+          ],
+        },
+        {
+          provide: VoidLine,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new VoidLine(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: VoidAccount,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new VoidAccount(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
           ],
         },
         {
