@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-alerts` targeting `feat/anti-theft-grant` (PR #71). Not the SQL branch.
-**Work unit**: 5 — in-memory detector (task 2.4)
+**PR slice**: `feat/anti-theft-report` targeting `feat/anti-theft-alerts` (PR #72). Not the SQL branch.
+**Work unit**: 6 — in-memory control report (task 2.5)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -14,6 +14,7 @@
 - [x] 2.2 Count executed operations: successful audits only
 - [x] 2.3 Operate authorization: request carries `targetId` and shift totals; a rejected PIN appends `pin.confirmation-failed` without the PIN
 - [x] 2.4 Detect unusual behavior: void seed 5; every self-authorization alerts; discount, pair, and failed-PIN seeds are venue rows defaulting to 5
+- [x] 2.5 Read control report: voids, discounts, courtesies, cash differences, drawer openings, and accounts reopened or edited after the pre-bill. `audit.view`. Successful audits only
 
 ## Work Unit Evidence
 
@@ -140,6 +141,32 @@ Same command, after `DetectUnusualBehavior` counted successful audits and export
 
 `pnpm exec biome check --formatter-enabled=false` on the detector files, `entry-port.ts`, and `contexts/platform/package.json`. Exit 0. No fixes applied.
 
+### Unit 6 — Control report (task 2.5)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project platform contexts/platform/application/read-control-report/read-control-report.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 2 passed. Re-run after the `import type` lint fix: exit 0, 1 file, 2 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory application projection. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/platform/application/read-control-report/`, the `ReadControlReport` export in `contexts/platform/application/entry-port.ts`, and the `#application/read-control-report/*` import in `contexts/platform/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project platform contexts/platform/application/read-control-report/read-control-report.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Cannot find module `#application/read-control-report/read-control-report.js`.
+
+#### GREEN
+
+Same command, after `ReadControlReport` projected successful audits and exported the use case from the platform entry port. Exit 0. Test files 1 passed. Tests 2 passed.
+
+The same command after changing `EvaluatePermission` to `import type`. Exit 0. Test files 1 passed. Tests 2 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on the report files, `entry-port.ts`, and `contexts/platform/package.json`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -154,7 +181,10 @@ Same command, after `DetectUnusualBehavior` counted successful audits and export
 - `DetectUnusualBehavior` does not call `CountExecutedOperations`. That use case returns only before-kitchen voids and courtesy totals for one actor. The detector repeats the same successful-audit predicate: `kind: "event"`, `after` shaped `{ value, shiftId, kitchen }`, action other than `pin.confirmation-failed`, `after.approved` not false, and `before` different from `after`. It also filters by site and shift. It does not consume grants.
 - Post-kitchen voids use the published seed 5 only. Discount, requester-authorizer pair, and failed-PIN seeds use that same integer unless the caller passes venue rows. Self-authorization has no numeric seed: every successful audit with `authorizerId === actorId` or `after.selfAuthorized === true` alerts.
 - A repeated pair is any successful audit in the shift whose authorizer is a different person. A failed PIN is `pin.confirmation-failed` on one device in the shift, counted when the count is over the seed. The alert does not copy a PIN. The detector does not write a mark back onto the void.
+- `ReadControlReport` does not call `CountExecutedOperations`. That use case returns only before-kitchen voids and courtesy totals for one actor. The report repeats the same successful-audit predicate: `kind: "event"`, `after` shaped `{ value, shiftId, kitchen }`, action other than `pin.confirmation-failed`, `after.approved` not false, and `before` different from `after`. It also keeps the event site. It does not write an audit or an authorization change.
+- A caller whose `EvaluatePermission` result for existing `audit.view` is not `allowed` gets an empty report. The catalog already declares `audit.view`. No second entry was added. Denial does not throw `AuditReadDenied`.
+- Discounts and courtesies are separate lists. Both carry user, authorizer, and value. Voids carry user, authorizer, reason, and `before kitchen` or `after kitchen`. Cash differences carry cashier and shift. Drawer openings carry the user. Reopened accounts and post-pre-bill edits share one list and are distinguished by `reopened` or `edited-after-pre-bill`. Offline hybrid rows stay deferred.
 
 ## Remaining
 
-Tasks 2.5–7.1 are pending. The next checkbox is 2.5. Task 2.4 is the only checkbox newly marked in this batch. 5/25 tasks complete.
+Tasks 3.1–7.1 are pending. The next checkbox is 3.1. Task 2.5 is the only checkbox newly marked in this batch. 6/25 tasks complete.

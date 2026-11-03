@@ -42,6 +42,11 @@ export {
   AuditReadDenied,
   ReadAudit,
 } from "#application/read-audit/read-audit.js";
+export type {
+  ControlReport,
+  ReadControlReportQuery,
+} from "#application/read-control-report/read-control-report.js";
+export { ReadControlReport } from "#application/read-control-report/read-control-report.js";
 export { RecordAuditEvent } from "#application/record-audit-event/record-audit-event.js";
 export { UpdateStructure } from "#application/update-structure/update-structure.js";
 export {

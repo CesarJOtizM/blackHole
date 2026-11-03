@@ -76,6 +76,7 @@
     "#application/operate-identity/*": "./application/operate-identity/*",
     "#application/operate-authorization/*": "./application/operate-authorization/*",
     "#application/read-audit/*": "./application/read-audit/*",
+    "#application/read-control-report/*": "./application/read-control-report/*",
     "#application/record-audit-event/*": "./application/record-audit-event/*",
     "#application/verify-device-chain/*": "./application/verify-device-chain/*",
     "#application/evaluate-permission/*": "./application/evaluate-permission/*",
