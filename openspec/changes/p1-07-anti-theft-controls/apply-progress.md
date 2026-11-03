@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-report-http` at `64495f0` on `feat/anti-theft-reprint-http`. Not `main`. No commit or pull request in this batch.
-**Work unit**: Report HTTP (task 6.7)
+**PR slice**: `feat/anti-theft-node-http` at `4b7c302` on `feat/anti-theft-report-http`. Not `main`. No commit or pull request in this batch.
+**Work unit**: Node (task 7.1)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -33,6 +33,7 @@
 - [x] 6.5 Cloud drawer, reopen, and tender HTTP: an owner with a present drawer and a printer id enqueues one `drawer_open` job with `kickDrawer: true` and audits `cash.drawer-opened`. A kitchen chief, an absent drawer, or a null printer id stores no job and no opening audit. Reopen and tender write the reversal, and tender also writes the replacement payment, on the open shift only. The closed shift and cash movements stay unchanged. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 - [x] 6.6 Cloud reprint HTTP: under a numeric cap, one `sale.reprint` is stored and `PendingSalePrinter.jobs` stays empty. At or over the cap, a resolved authorizer stores one more `sale.reprint` carrying that authorizer and still does not enqueue. The same second reprint with no resolved authorizer stores nothing and returns 409 `ReprintNeedsAuthorization`. A null cap stays 409 `ReprintCapUnconfigured` with an empty audit list. `shared/printing` and `sale-receipt.ts` stay unchanged
 - [x] 6.7 Cloud report HTTP: `GET control-report` and `GET unusual-behavior` both require `audit.view`. An owner sees one before-kitchen void and one self-authorization alert. A kitchen chief gets an empty report and an empty alert list. The detector is not called for that denial. Nothing is stored. The SQL alert table stays unused
+- [x] 7.1 Local node rejects the new sensitive routes with 403 `{ error: "SensitiveActionRejected" }`. Nothing is stored. The constructor takes no arguments. No providers and no imports
 
 ## Work Unit Evidence
 
@@ -718,6 +719,54 @@ The catalog row `audit.view` is `cells(Y, Y, L, N, N, N, N, N)`: owner is yes an
 
 The pair is 469 additions and 0 deletions: `read-control-report.controller.ts` 62, `detect-unusual-behavior.controller.ts` 91, `read-control-report.controller.test.ts` 125, `detect-unusual-behavior.controller.test.ts` 150, and `application-module.ts` 41. `size:exception` was not granted. The pair is over the 400-line review budget and was not split, because this assignment said not to split it. It stays on `feat/anti-theft-report-http`, based on `feat/anti-theft-reprint-http` (`64495f0`). No commit, push, or pull request.
 
+### Unit 16 — Node (task 7.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project local-node test/http/sensitive-actions.controller.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 1 passed. Same command after Biome: exit 0, 1 file, 1 passed. `pnpm exec tsc -b apps/local-node --pretty false`. Exit 0. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused test boots Nest through `createApplication` and injects the eleven routes. No listening port. |
+| Rollback boundary | `apps/local-node/src/http/sensitive-actions.controller.ts`, `apps/local-node/test/http/sensitive-actions.controller.test.ts`, the `SensitiveActionsController` registration in `apps/local-node/src/composition/application-module.ts`, and the local-node allowlist line in `tools/skeleton/skeleton.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project local-node test/http/sensitive-actions.controller.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the controller existed:
+
+- Cannot find module `#src/http/sensitive-actions.controller.js`.
+
+#### GREEN
+
+Same command, after `SensitiveActionsController` returned 403 `{ error: "SensitiveActionRejected" }` for each new route and `ApplicationModule` registered that controller only. Exit 0. Test files 1 passed. Tests 1 passed.
+
+The same command after `pnpm exec biome check --write` on the four TypeScript files, then `pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. Test files 1 passed. Tests 1 passed. Biome reported no fixes on the second check.
+
+`pnpm exec tsc -b apps/local-node --pretty false`. Exit 0.
+
+`pnpm vitest run --project skeleton`. Exit 1. Test files 1 failed, 1 passed (2). Tests 1 failed, 9 passed (10). The local-node source allowlist passes with `http/sensitive-actions.controller.ts`. The failing test is the platform source inventory. It expects 85 files and finds 91. The six extra files are already in `4b7c302`: `drizzle-authorization-repository.contract.test.ts`, `consume-authorization.ts`, `count-executed-operations.ts`, `detect-unusual-behavior.ts`, `operate-authorization.test.ts`, and `read-control-report.ts`. This slice does not add them to that allowlist.
+
+The prefix is `tenants/:tenantId/venues/:venueId`. Each method returns the rejection and uses `HttpCode` `FORBIDDEN`. `routePermissions` is:
+
+- `POST checks/:checkId/lines/:lineId/void` → `sale.void-before-kitchen`
+- `POST checks/:checkId/void` → `sale.void-account`
+- `POST checks/:checkId/discount` → `sale.discount`
+- `POST checks/:checkId/courtesy` → `sale.comp`
+- `POST checks/:checkId/lines/:lineId/price` → `sale.change-price`
+- `POST checks/:checkId/transfer-table` → `sale.transfer-table`
+- `POST cash-registers/:registerId/open-drawer` → `cash.open-drawer`
+- `POST cash-registers/:registerId/payments/:paymentId/reopen` → `sale.reopen-paid`
+- `POST cash-registers/:registerId/payments/:paymentId/tender` → `sale.change-tender`
+- `GET control-report` → `audit.view`
+- `GET unusual-behavior` → `audit.view`
+
+`POST checks/:checkId/lines` and `POST reprints` were not added. Dining room still rejects its own routes with `DiningRoomRejected`. Cash still rejects its own routes with `CashRegisterRejected`. Printing still rejects `POST reprints` with `PrintingRejected`. Those controllers were not edited.
+
+The constructor is absent, so `SensitiveActionsController.length` is 0, the same as `PrintingController.length`. The methods take no collaborators. A POST body `{ kickDrawer: true, authorizerId: "identity_supervisor" }` does not change `printRoutes()`, and `ApplicationModule` providers and imports stay empty. Nothing is stored. No `providers` array and no `imports` array were added.
+
+The pair is 177 additions and 0 deletions: `sensitive-actions.controller.ts` 94, `sensitive-actions.controller.test.ts` 80, `application-module.ts` 2, and `skeleton.test.ts` 1. `size:exception` was not granted. The pair is under the 400-line review budget and was not split. It stays on `feat/anti-theft-node-http`, based on `feat/anti-theft-report-http` (`4b7c302`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -807,7 +856,8 @@ The pair is 469 additions and 0 deletions: `read-control-report.controller.ts` 6
 - `sale-receipt.ts` was not edited. The reprint path does not call `PendingSalePrinter.enqueue`, and `SaleReceiptJob` gained no reprint document. The over-cap tests read the existing printer's `jobs`.
 - The reprint body stays on `reprintDocumentCommand`. `document` stays required. `authorizationId` is optional and accepts a string or null, so `{ document }` still parses. `authorizerId` and `shiftTotals` still fail the strict object. The controller does not trust a client authorizer. The count comes from `MemoryReprintAudit.events` for the same document.
 - `EvaluatePermission` is now also a Nest provider. The other use cases still construct their own instances. The unusual-behavior controller injects that provider and calls it before `DetectUnusualBehavior`. `ReadControlReport` keeps its own permission check. A decision other than `allowed` stays 200: an empty report, or an empty alert list when the detector is not called. `UnknownSession` is 400. No alert repository and no migration.
+- The local node copies the printing rejection: one error constant, `routePermissions`, no constructor, and `HttpCode` `FORBIDDEN`. It does not call a use case. `POST checks/:checkId/lines` stays on `DiningRoomController`. `POST reprints` stays on `PrintingController`. The platform source inventory in `tools/skeleton/skeleton.test.ts` was already missing six files at `4b7c302`. This slice adds only `http/sensitive-actions.controller.ts` to the local-node allowlist.
 
 ## Remaining
 
-Task 7.1 is pending. The next checkbox is 7.1. Task 6.7 is the only checkbox newly marked in this batch. 24/25 tasks complete. No migration. No local-node. The SQL alert table stays unused. `shared/printing` stays unchanged. Production cash persistence still stores movements only.
+No task remains. 25/25 tasks complete. Task 7.1 is the only checkbox newly marked in this batch. Ready for verify. No migration. The SQL alert table stays unused. `shared/printing` stays unchanged. Production cash persistence still stores movements only.

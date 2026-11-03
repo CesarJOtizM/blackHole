@@ -80,4 +80,4 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 7: Node
 
-- [ ] 7.1 RED/GREEN `apps/local-node/src/http/sensitive-actions.controller.ts` `src/composition/application-module.ts` `test/http/sensitive-actions.controller.test.ts`: copy `printing.controller.ts`; 403 `{ error: "SensitiveActionRejected" }`; store nothing; no providers. local-node
+- [x] 7.1 RED/GREEN `apps/local-node/src/http/sensitive-actions.controller.ts` `src/composition/application-module.ts` `test/http/sensitive-actions.controller.test.ts`: copy `printing.controller.ts`; 403 `{ error: "SensitiveActionRejected" }`; store nothing; no providers. local-node
