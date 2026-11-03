@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-price` targeting `feat/anti-theft-courtesy` (PR #78). Not `main`.
-**Work unit**: 8 — Price (task 4.5)
+**PR slice**: `feat/anti-theft-prebill` targeting `feat/anti-theft-price` (PR #79). Not `main`.
+**Work unit**: 8 — Pre-bill (task 4.6)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -21,6 +21,7 @@
 - [x] 4.3 Apply a discount: over the percent cap the discount waits until a matching `sale.discount` grant is consumed. The same value and the same target apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay. The discount is stored on the audit
 - [x] 4.4 Apply a courtesy: `compShiftCop` comes from executed operations. Over the shift cap the courtesy waits until a matching `sale.comp` grant is consumed. The same amount and the same account apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay and the account is not cleared. The courtesy is stored on the audit
 - [x] 4.5 Change a line price: the new price is stored on that line. The menu stays. `sale.change-price` is the existing permission. Shift totals come from executed operations. A matching grant (same price and same line id) is consumed before the save when authorization is required. `allowed` does not consume. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the line price unchanged. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` and the check is saved
+- [x] 4.6 Add a line after the printed pre-bill: without `sale.edit-printed-check` the account stays as it was saved. Shift totals come from executed operations. `allowed` does not consume a grant. `requires_authorization` consumes a grant for the check and the added line's quoted price before the save. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. The successful audit `after` is `{ value, shiftId, kitchen: null }`
 
 ## Work Unit Evidence
 
@@ -341,6 +342,32 @@ The same two files after `pnpm exec biome check --write` on the slice. Exit 0. T
 
 `pnpm exec biome check --formatter-enabled=false` on `change-price.ts`, `change-price.test.ts`, `check.ts`, `check.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
 
+### Unit 8 — Pre-bill (task 4.6)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project orders contexts/orders/application/take-order/take-order.test.ts`. RED exit 1: 1 failed, 11 passed (12). GREEN exit 0: 1 file, 12 passed. Re-run after Biome: exit 0, 1 file, 12 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room, menu, stations, printer, and hub already used by `TakeOrder`. The printed-check guard is an in-memory double of the platform entry port. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/take-order/take-order.ts` and `contexts/orders/application/take-order/take-order.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project orders contexts/orders/application/take-order/take-order.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 1 failed, 11 passed (12).
+
+Failure before `TakeOrder` refused a post-pre-bill add, on `given a printed pre-bill, when a waiter adds a product without sale.edit-printed-check, then the account stays unchanged`:
+
+- Stored line ids were `["line_soup", "line_soda"]` instead of `["line_soup"]`. The soda was saved after the pre-bill.
+
+#### GREEN
+
+Same command, after `hold` and `execute` ask `sale.edit-printed-check` once `preBillRequest` is set, pass counted shift totals, and return the loaded check without `addLine` or `saveCheck` when the decision is `denied`. Exit 0. Test files 1 passed. Tests 12 passed.
+
+The same command after `pnpm exec biome check --write` on the two take-order files. Exit 0. Test files 1 passed. Tests 12 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `take-order.ts` and `take-order.test.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -376,7 +403,12 @@ The same two files after `pnpm exec biome check --write` on the slice. Exit 0. T
 - The consumed value is `1` and `targetId` is the line id. The audit action is `sale.void-before-kitchen`. `after` is `{ value: 1, shiftId, kitchen: "before" }`. `before` is `{ state }` so the successful audit is not the same state twice.
 - `Check` still has no void. `DiningTable.release` and `MarkAccountPaid` only move the table to `to_clean`, which is the paid lifecycle, so this slice does not call them. `VoidAccount` keeps the mutation in the use case: after the platform calls, it saves `Check.open` with the same id, tenant, venue, table, and `openedAt`. That drops every line. It does not transfer them to `check_void_sink`. No new domain method was added.
 - The permission is the existing catalog code `sale.void-account`. The consumed value is the sum of every line price, `targetId` is the check id, and `after.kitchen` is `null`. `allowed` clears the account without a grant. `requires_authorization` consumes first. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume.
+- The printed pre-bill is `check.preBillRequest`. `requestCheck()` without a stamp only moves `tableState` to `check_requested`, so the existing send still returns the table to `occupied`. Orders before that stamp do not call the platform.
+- `PrintedCheckGuard` is an optional last constructor argument. `application-module.ts` still builds `TakeOrder` with six arguments, which this slice cannot edit. A stamped pre-bill with no guard, or with no `edit`, leaves the account unchanged. Task 6.4 wires the guard. No new use case, no entry-port export, and no package import.
+- `hold` and `execute` share the gate. `fire` and `resend` do not add a line. The permission is the existing catalog code `sale.edit-printed-check`. Shift totals come from `CountExecutedOperations` and are passed into `EvaluatePermission` with the quoted price of the added line. One `execute` that adds several lines uses their sum. The grant `targetId` is the check id.
+- `allowed` adds the line and audits, and does not consume. `requires_authorization` consumes before `addLine` and `saveCheck`. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume and does not audit.
+- The audit action is `sale.edit-printed-check`. `entity` is the check id. `after` is `{ value, shiftId, kitchen: null }`, where `value` is that quoted price. `before` is `{ value: 0 }` so the two states differ. The assigned test covers the denied add. The allowed, grant, mismatch, closed-shift, and second-consume paths use that same gate and are not separate tests in this pair.
 
 ## Remaining
 
-Tasks 4.6–7.1 are pending. The next checkbox is 4.6. Task 4.5 is the only checkbox newly marked in this batch. 12/25 tasks complete. The price slice is about 742 added lines: `change-price.ts` 153, `change-price.test.ts` 516, `check.ts` 18, `check.test.ts` 52, plus the entry-port export and the package import. One shared harness covers the authorized line change, the untouched site price, the allowed path, and the six rejection cases. Dropping a spec scenario would be the only way under 400. `size:exception` was not granted.
+Tasks 4.7–7.1 are pending. The next checkbox is 4.7. Task 4.6 is the only checkbox newly marked in this batch. 13/25 tasks complete. The pre-bill slice is 408 changed lines: `take-order.ts` 170 additions and 5 deletions, `take-order.test.ts` 225 additions and 8 deletions. No entry-port export and no package import. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-prebill`.
