@@ -38,7 +38,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 1: Domain
 
-- [ ] 1.1 RED/GREEN `contexts/platform/domain/authorization.ts` `evaluate.ts` + tests: `targetId`, one consume, mismatch unconsumed, second consume throws, `compShiftCop`. platform
+- [x] 1.1 RED/GREEN `contexts/platform/domain/authorization.ts` `evaluate.ts` + tests: `targetId`, one consume, mismatch unconsumed, second consume throws, `compShiftCop`. platform
 
 ## Phase 2: Application
 

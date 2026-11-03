@@ -1,4 +1,5 @@
 import type {
+  AuthorizationShiftTotals,
   CustomRoleRecord,
   VenueLimitRecord,
 } from "#domain/authorization.js";
@@ -8,6 +9,7 @@ import {
   type Grant,
   grantRank,
   isMatrixRole,
+  LIMIT,
   type LimitCode,
   limitUnit,
   type PermissionCode,
@@ -53,7 +55,7 @@ export interface EvaluateInput {
   assignments: readonly EvaluationAssignment[];
   customRoles: readonly CustomRoleRecord[];
   venueLimits: readonly VenueLimitRecord[];
-  shiftTotals: { waiterVoidsBeforeKitchen: number };
+  shiftTotals: AuthorizationShiftTotals;
   selfAuthorizationAttempt: boolean;
   shiftSelfAuthorization: boolean;
   authorizerAssignmentCount: number;
@@ -141,10 +143,7 @@ const decide = (
     return { outcome: "allowed", selfAuthorized: false };
   }
 
-  const consumed =
-    limit === "waiterVoidCount"
-      ? input.shiftTotals.waiterVoidsBeforeKitchen + (input.value ?? 1)
-      : (input.value ?? 0);
+  const consumed = consumedAmount(limit, input);
 
   if (consumed <= cap) {
     return { outcome: "allowed", selfAuthorized: false };
@@ -155,6 +154,18 @@ const decide = (
     exceededLimit: { code: limit, cap, unit: limitUnit[limit] },
     selfAuthorized: false,
   };
+};
+
+const consumedAmount = (limit: LimitCode, input: EvaluateInput): number => {
+  if (limit === LIMIT.WAITER_VOID_COUNT) {
+    return input.shiftTotals.waiterVoidsBeforeKitchen + (input.value ?? 1);
+  }
+
+  if (limit === LIMIT.COMP_SHIFT_COP) {
+    return (input.shiftTotals.compShiftCop ?? 0) + (input.value ?? 0);
+  }
+
+  return input.value ?? 0;
 };
 
 const grantOf = (

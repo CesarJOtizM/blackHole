@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 
 import {
   Authorization,
+  AuthorizationAlreadyConsumed,
   LastOwnerRemains,
   LimitRaised,
   PredefinedRoleRevision,
@@ -188,4 +189,143 @@ it("given a venue, when bartender charging is read, then the flag starts off", (
   const enabled = authorization.bartenderCharge(SITE_1);
 
   expect(enabled).toBe(false);
+});
+
+const ACCOUNT_A = "account_a";
+const ACCOUNT_B = "account_b";
+const DISCOUNT_REQUEST_ID = "request_discount";
+const SHIFT_TOTALS = { waiterVoidsBeforeKitchen: 0, compShiftCop: 0 };
+
+const approvedDiscount = (): Authorization => {
+  const authorization = opened();
+
+  authorization.requestAuthorization({
+    requestId: DISCOUNT_REQUEST_ID,
+    requesterId: "user_cashier",
+    permission: PERMISSION.SALE_DISCOUNT,
+    venueId: SITE_1,
+    targetId: ACCOUNT_A,
+    value: 10,
+    reason: "guest",
+    expiresAt: AT + 60_000,
+    shiftTotals: SHIFT_TOTALS,
+  });
+  authorization.resolveAuthorization({
+    requestId: DISCOUNT_REQUEST_ID,
+    authorizerId: OWNER_ID,
+    deviceId: "device_owner",
+    shiftId: "shift_1",
+    at: AT,
+    approved: true,
+    authorizerAssignmentCount: 1,
+  });
+
+  return authorization;
+};
+
+const consumeDiscount = (
+  authorization: Authorization,
+  input: {
+    targetId?: string;
+    value?: number;
+    permission?: "sale.discount" | "sale.comp";
+  } = {},
+) =>
+  authorization.consumeAuthorization({
+    requestId: DISCOUNT_REQUEST_ID,
+    permission: input.permission ?? PERMISSION.SALE_DISCOUNT,
+    targetId: input.targetId ?? ACCOUNT_A,
+    value: input.value ?? 10,
+    at: AT + 1,
+  });
+
+it("given an approved discount on account A, when the request is read, then it keeps that target and the shift totals", () => {
+  const authorization = approvedDiscount();
+
+  const request = authorization.snapshot().requests[0];
+
+  expect(request).toMatchObject({
+    targetId: ACCOUNT_A,
+    shiftTotals: SHIFT_TOTALS,
+    consumedAt: null,
+  });
+});
+
+it("given an approved discount of 10 percent on account A, when that discount is consumed, then the grant is consumed once", () => {
+  const authorization = approvedDiscount();
+
+  const consumed = consumeDiscount(authorization);
+
+  expect(consumed).toBe(true);
+  expect(authorization.snapshot().requests[0]?.consumedAt).toBe(AT + 1);
+});
+
+it("given an approved discount of 10 percent on account A, when 20 percent is consumed, then the grant stays unconsumed", () => {
+  const authorization = approvedDiscount();
+
+  const consumed = consumeDiscount(authorization, { value: 20 });
+
+  expect(consumed).toBe(false);
+  expect(authorization.snapshot().requests[0]?.consumedAt).toBeNull();
+});
+
+it("given an approved discount on account A, when account B is consumed, then the grant stays unconsumed", () => {
+  const authorization = approvedDiscount();
+
+  const consumed = consumeDiscount(authorization, { targetId: ACCOUNT_B });
+
+  expect(consumed).toBe(false);
+  expect(authorization.snapshot().requests[0]?.consumedAt).toBeNull();
+});
+
+it("given an approved discount, when another action is consumed, then the grant stays unconsumed", () => {
+  const authorization = approvedDiscount();
+
+  const consumed = consumeDiscount(authorization, {
+    permission: PERMISSION.SALE_COMP,
+  });
+
+  expect(consumed).toBe(false);
+  expect(authorization.snapshot().requests[0]?.consumedAt).toBeNull();
+});
+
+it("given a consumed discount, when it is consumed again, then the second consume is rejected", () => {
+  const authorization = approvedDiscount();
+  consumeDiscount(authorization);
+
+  const again = () => consumeDiscount(authorization, {});
+
+  expect(again).toThrow(AuthorizationAlreadyConsumed);
+  expect(authorization.snapshot().requests[0]?.consumedAt).toBe(AT + 1);
+});
+
+it("given an administrator with 90000 courtesy already used, when the company evaluates another 20000, then authorization is required", () => {
+  const authorization = opened();
+
+  authorization.assign({
+    assignmentId: ADMIN_ASSIGNMENT_ID,
+    userId: ADMIN_ID,
+    roleId: "siteAdministrator",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: AT,
+  });
+  const result = authorization.evaluateFor(ADMIN_ID, {
+    permission: PERMISSION.SALE_COMP,
+    at: AT,
+    target: { kind: "site", id: SITE_1, brandId: null },
+    value: 20_000,
+    shiftTotals: { waiterVoidsBeforeKitchen: 0, compShiftCop: 90_000 },
+    selfAuthorizationAttempt: false,
+    shiftId: null,
+  });
+
+  expect(result).toEqual({
+    outcome: "requires_authorization",
+    exceededLimit: { code: "compShiftCop", cap: 100_000, unit: "cop" },
+    selfAuthorized: false,
+  });
 });

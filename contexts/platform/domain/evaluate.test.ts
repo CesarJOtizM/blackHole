@@ -271,3 +271,38 @@ it("given three waiter voids already in the shift, when another void is attempte
   });
   expect(within).toEqual({ outcome: "allowed", selfAuthorized: false });
 });
+
+it("given an administrator with a courtesy cap of 100000 and 90000 used, when they grant 20000 more, then authorization is required", () => {
+  const assignment = {
+    roleId: "siteAdministrator",
+    scopeKind: "site" as const,
+    scopeId: "organization_venue_1",
+    validFrom: null,
+    validUntil: null,
+  };
+  const over = evaluate({
+    ...base,
+    permission: PERMISSION.SALE_COMP,
+    at: SATURDAY,
+    target: site("organization_venue_1"),
+    value: 20_000,
+    shiftTotals: { waiterVoidsBeforeKitchen: 0, compShiftCop: 90_000 },
+    assignments: [assignment],
+  });
+  const within = evaluate({
+    ...base,
+    permission: PERMISSION.SALE_COMP,
+    at: SATURDAY,
+    target: site("organization_venue_1"),
+    value: 10_000,
+    shiftTotals: { waiterVoidsBeforeKitchen: 0, compShiftCop: 90_000 },
+    assignments: [assignment],
+  });
+
+  expect(over).toEqual({
+    outcome: "requires_authorization",
+    exceededLimit: { code: "compShiftCop", cap: 100_000, unit: "cop" },
+    selfAuthorized: false,
+  });
+  expect(within).toEqual({ outcome: "allowed", selfAuthorized: false });
+});
