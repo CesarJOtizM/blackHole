@@ -146,10 +146,12 @@ export class DrizzleAuthorizationRepository extends AuthorizationRepository {
           requesterId: row.requesterId,
           permission: asPermission(row.permission),
           venueId: row.venueId,
+          targetId: row.targetId,
           value: row.value,
           reason: row.reason,
           expiresAt: row.expiresAt,
           status: asStatus(row.status),
+          consumedAt: row.consumedAt,
         })),
         resolutions: (
           await tx
@@ -398,10 +400,12 @@ const insertTree = async (
         requesterId: request.requesterId,
         permission: request.permission,
         venueId: request.venueId,
+        targetId: request.targetId ?? request.venueId,
         value: request.value,
         reason: request.reason,
         expiresAt: request.expiresAt,
         status: request.status,
+        consumedAt: request.consumedAt ?? null,
         position,
       })),
     );

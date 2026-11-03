@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-report` targeting `feat/anti-theft-alerts` (PR #72). Not the SQL branch.
-**Work unit**: 6 — in-memory control report (task 2.5)
+**PR slice**: `feat/anti-theft-sql` targeting `feat/anti-theft-report` (PR #73). Not `main`.
+**Work unit**: 4 — Postgres binding (task 3.1)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -15,6 +15,7 @@
 - [x] 2.3 Operate authorization: request carries `targetId` and shift totals; a rejected PIN appends `pin.confirmation-failed` without the PIN
 - [x] 2.4 Detect unusual behavior: void seed 5; every self-authorization alerts; discount, pair, and failed-PIN seeds are venue rows defaulting to 5
 - [x] 2.5 Read control report: voids, discounts, courtesies, cash differences, drawer openings, and accounts reopened or edited after the pre-bill. `audit.view`. Successful audits only
+- [x] 3.1 Postgres binding: `target_id` copied from `venue_id`, `consumed_at` null on existing rows, updatable venue thresholds, insert-only alerts, RLS for `authorization_app`
 
 ## Work Unit Evidence
 
@@ -167,6 +168,34 @@ The same command after changing `EvaluatePermission` to `import type`. Exit 0. T
 
 `pnpm exec biome check --formatter-enabled=false` on the report files, `entry-port.ts`, and `contexts/platform/package.json`. Exit 0. No fixes applied.
 
+### Unit 4 — SQL (task 3.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project platform contexts/platform/adapters/postgres/drizzle-authorization-repository.contract.test.ts`. RED exit 1: 6 failed, 5 passed (11). GREEN exit 0: 1 file, 11 passed. Re-run after the import-order lint fix: exit 0, 1 file, 11 passed. |
+| Runtime harness command/scenario and exact result | PGlite executes `0004_authorization.sql`, then `0014_authorization_binding.sql`, as `authorization_app` with forced RLS. An existing request copies `venue_id` into `target_id` and leaves `consumed_at` null. A saved discount keeps `targetId` `account_a`. A mismatched target or value stays unconsumed. The matching consume stores `consumedAt`, and a second consume throws `AuthorizationAlreadyConsumed`. Venue threshold columns start at 5 and `authorization_app` can update them; the other tenant stays hidden. Alerts accept insert. The table owner cannot update, delete, or truncate them (`insert-only`). The role cannot update or delete them (`permission denied`). No SQLite. Drizzle is not mocked. No HTTP. |
+| Rollback boundary | `contexts/platform/adapters/postgres/0014_authorization_binding.sql`, `contexts/platform/adapters/postgres/schema.ts`, `contexts/platform/adapters/postgres/drizzle-authorization-repository.ts`, and `contexts/platform/adapters/postgres/drizzle-authorization-repository.contract.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project platform contexts/platform/adapters/postgres/drizzle-authorization-repository.contract.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 6 failed, 5 passed (11).
+
+Failure before the migration and adapter mapping existed:
+
+- `ENOENT` for `contexts/platform/adapters/postgres/0014_authorization_binding.sql` on all six new tests. The five existing contract tests passed.
+
+#### GREEN
+
+Same command, after `0014_authorization_binding.sql`, the Drizzle schema, and the request mapping for `targetId` and `consumedAt`. Exit 0. Test files 1 passed. Tests 11 passed.
+
+The same command after sorting the authorization imports for Biome. Exit 0. Test files 1 passed. Tests 11 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on the contract test, `drizzle-authorization-repository.ts`, and `schema.ts`. Exit 0. No fixes applied.
+
+`node tools/infra/check-forward-migrations.mjs`. Exit 0. Migrations stay forward-only and keep `0001` and `0002`.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -184,7 +213,10 @@ The same command after changing `EvaluatePermission` to `import type`. Exit 0. T
 - `ReadControlReport` does not call `CountExecutedOperations`. That use case returns only before-kitchen voids and courtesy totals for one actor. The report repeats the same successful-audit predicate: `kind: "event"`, `after` shaped `{ value, shiftId, kitchen }`, action other than `pin.confirmation-failed`, `after.approved` not false, and `before` different from `after`. It also keeps the event site. It does not write an audit or an authorization change.
 - A caller whose `EvaluatePermission` result for existing `audit.view` is not `allowed` gets an empty report. The catalog already declares `audit.view`. No second entry was added. Denial does not throw `AuditReadDenied`.
 - Discounts and courtesies are separate lists. Both carry user, authorizer, and value. Voids carry user, authorizer, reason, and `before kitchen` or `after kitchen`. Cash differences carry cashier and shift. Drawer openings carry the user. Reopened accounts and post-pre-bill edits share one list and are distinguished by `reopened` or `edited-after-pre-bill`. Offline hybrid rows stay deferred.
+- `0014_authorization_binding.sql` adds `target_id` and nullable `consumed_at` on `authorization_requests`. Existing rows copy `venue_id` into `target_id` and leave `consumed_at` null. The Drizzle repository writes and reads both fields. A mismatch stays unconsumed in the domain. A second consume throws `AuthorizationAlreadyConsumed`. Shift totals stay on the domain request and are filled by `completeRequest` on restore. This migration does not add shift-total columns.
+- Venue thresholds are `authorization_venue_thresholds`: `discount`, `requester_authorizer_pair`, and `failed_pin`, each `NOT NULL DEFAULT 5`. `authorization_app` may select, insert, update, and delete them under forced RLS. The void-after-kitchen seed stays the published 5 in the detector. The domain snapshot and the authorization port were not changed.
+- Alerts are `authorization_alerts`. `authorization_app` receives `SELECT` and `INSERT` only. A trigger rejects update, delete, and truncate with `authorization alerts are insert-only`, including for the table owner. The role's update and delete fail with permission denied. Saving an authorization does not delete alerts. The migration does not create a role and does not grant `authorization_app` update on unrelated tables. `node tools/infra/check-forward-migrations.mjs` accepts the file. No `DROP` or `RENAME`.
 
 ## Remaining
 
-Tasks 3.1–7.1 are pending. The next checkbox is 3.1. Task 2.5 is the only checkbox newly marked in this batch. 6/25 tasks complete.
+Tasks 4.1–7.1 are pending. The next checkbox is 4.1. Task 3.1 is the only checkbox newly marked in this batch. 7/25 tasks complete.

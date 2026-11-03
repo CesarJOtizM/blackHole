@@ -50,7 +50,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 3: Postgres
 
-- [ ] 3.1 RED/GREEN `contexts/platform/adapters/postgres/drizzle-authorization-repository.contract.test.ts` `0014_authorization_binding.sql` `schema.ts`: `target_id` from `venue_id`, `consumed_at` null, updatable thresholds, insert-only alerts, RLS `authorization_app`. PGlite. platform
+- [x] 3.1 RED/GREEN `contexts/platform/adapters/postgres/drizzle-authorization-repository.contract.test.ts` `0014_authorization_binding.sql` `schema.ts`: `target_id` from `venue_id`, `consumed_at` null, updatable thresholds, insert-only alerts, RLS `authorization_app`. PGlite. platform
 
 ## Phase 4: Orders
 
