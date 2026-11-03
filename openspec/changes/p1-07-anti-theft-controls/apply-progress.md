@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-drawer` targeting `feat/anti-theft-transfer` (PR #81). Not `main`.
-**Work unit**: 9 — No-sale drawer (task 5.1)
+**PR slice**: `feat/anti-theft-reopen` targeting `feat/anti-theft-drawer` (PR #82). Not `main`.
+**Work unit**: 10 — Reopen a paid account (task 5.2)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -24,6 +24,7 @@
 - [x] 4.6 Add a line after the printed pre-bill: without `sale.edit-printed-check` the account stays as it was saved. Shift totals come from executed operations. `allowed` does not consume a grant. `requires_authorization` consumes a grant for the check and the added line's quoted price before the save. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. The successful audit `after` is `{ value, shiftId, kitchen: null }`
 - [x] 4.7 Transfer a table to another waiter: `sale.transfer-table` runs before the write. Shift totals come from executed operations. `allowed` does not consume. `requires_authorization` consumes a grant for the check before the reassignment. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the current waiter. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` plus the new waiter id
 - [x] 5.1 Open the drawer without a sale: one `drawer_open` job with `kickDrawer: true` on the cash-register `Printer` port. A missing register or a drawer other than `present` is `absent`. A null `printerId` does not enqueue. `cash.open-drawer` consumes a matching grant only when the decision is `requires_authorization`. `allowed` does not consume. No job and no `cash.drawer-opened` audit when the grant is missing, mismatched, denied, unknown, the drawer is absent, or there is no printer. `AuthorizationAlreadyConsumed` is rethrown. No receipt and no `@blackhole/printing` import
+- [x] 5.2 Reopen a paid account: the reversal is stored on the open `CashShift` and points at the original payment. The closed shift is not saved and gains no reversal. `sale.reopen-paid` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount. A missing grant, a mismatch, a denial, an unknown reference, a missing account, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. The audit `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is the reversal's `originalPaymentId` and the audit `entity`
 
 ## Work Unit Evidence
 
@@ -426,6 +427,32 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 
 `pnpm exec biome check --formatter-enabled=false` on `open-drawer.ts`, `open-drawer.test.ts`, `printer.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
 
+### Unit 10 — Reopen a paid account (task 5.2)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project cash-register contexts/cash-register/application/reopen-paid-account/reopen-paid-account.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 11 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory paid-account reader, open-shift book, and platform entry-port doubles. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/cash-register/application/reopen-paid-account/`, `CashShift.recordReversal` and `PaymentReversal` in `contexts/cash-register/domain/cash-shift.ts`, the matching exports in `contexts/cash-register/domain/index.ts`, the `ReopenPaidAccount` export in `contexts/cash-register/application/entry-port.ts`, and the `#application/reopen-paid-account/*` import in `contexts/cash-register/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project cash-register contexts/cash-register/application/reopen-paid-account/reopen-paid-account.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Cannot find module `#application/reopen-paid-account/reopen-paid-account.js`.
+
+#### GREEN
+
+Same command, after `ReopenPaidAccount` evaluates `sale.reopen-paid`, consumes a matching grant only when required, records the reversal on the open shift, and `pnpm exec biome check --write` formatted the slice. Exit 0. Test files 1 passed. Tests 11 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `reopen-paid-account.ts`, `reopen-paid-account.test.ts`, `cash-shift.ts`, `domain/index.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
+Related regression, same project: `contexts/cash-register/domain/cash-shift.test.ts` and `contexts/cash-register/domain/cash-movement.test.ts`. Exit 0. 2 files, 4 passed.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -475,7 +502,14 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 - The opening audit action is `cash.drawer-opened`. `ReadControlReport` lists a drawer opening only when the action is `cash.open-drawer`. This slice does not edit the report. `after` is `{ value: 1, shiftId, kitchen: null }` and `before` is `{ value: 0 }`. The grant uses permission `cash.open-drawer`, `targetId` the register id, and value `1`. `allowed` does not consume, even when an authorization id is present.
 - `CountExecutedOperations` runs only after the drawer and printer are usable, and those totals are passed into `EvaluatePermission`. `cash.open-drawer` has no numeric cap. This pair has no `OpenShiftReader`. Task 5.2 owns open-shift reversals.
 - `@blackhole/cash-register` depends on `@blackhole/platform` at `workspace:*` and imports only `@blackhole/platform/application/entry-port`. It does not depend on `@blackhole/printing`. `PendingSalePrinter` is not wired here.
+- `CashMovement` cannot point at a payment. `CashShift.recordReversal` stores `{ id, originalPaymentId, amountCop }` on that shift. It does not append a cash movement and does not change `expectedCashCop`. `InvalidReversalId` and `InvalidOriginalPayment` guard the prefixes `reversal_` and `payment_`.
+- The use case loads one shift for the register. It records the reversal only when that shift is open and its id is not the payment's shift id. The closed shift is a separate object the use case never receives, so it is not saved and gains no reversal. A loaded shift whose id is the payment's shift returns before count, evaluate, and consume.
+- `PaidAccountReader` lives in the use case file. `ports/` is outside this slice. The reader returns the original payment id, the amount, and the shift that owns the payment.
+- The permission is the existing catalog code `sale.reopen-paid`. No second code was added. The command carries the payment id and the reversal id. It does not carry a caller total or a caller shift id. `value` is the payment amount. Shift totals come from `CountExecutedOperations` for the open shift id and are passed into `EvaluatePermission`.
+- `requires_authorization` consumes a grant for that payment id and that amount before `recordReversal` and `save`. `allowed` saves and audits and does not consume, even when an authorization id is present. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. A denied permission does not consume and does not audit.
+- The audit action is `sale.reopen-paid`. `entity` is the original payment id. `after` is `{ value, shiftId, kitchen: null }`, where `shiftId` is the open shift and `value` is the payment amount. `before` is `{ value: 0 }` so the two states differ. The same payment id is `PaymentReversal.originalPaymentId`.
+- The cash-register repository remains insert-only. This slice does not edit it or the SQL mapper. The test double replaces the open shift on `save`. Drizzle still persists movements only, so a later adapter must store `reversals` before this use case is wired. No `@blackhole/printing` import.
 
 ## Remaining
 
-Tasks 5.2–7.1 are pending. The next checkbox is 5.2. Task 5.1 is the only checkbox newly marked in this batch. 15/25 tasks complete. The drawer slice is 533 changed lines: `open-drawer.ts` 148 additions, `open-drawer.test.ts` 369 additions, `printer.ts` 8 additions and 1 deletion, `entry-port.ts` 2 additions, `package.json` 2 additions, and `pnpm-lock.yaml` 3 additions. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-drawer`, based on `feat/anti-theft-transfer` (PR #81). The diff is over the 400-line review budget because the shared authorization doubles and the refusal matrix live in one test file. The harness is not copied per test.
+Tasks 5.3–7.1 are pending. The next checkbox is 5.3. Task 5.2 is the only checkbox newly marked in this batch. 16/25 tasks complete. The reopen slice is 679 added lines: `reopen-paid-account.ts` 174, `reopen-paid-account.test.ts` 428, `cash-shift.ts` 62, `domain/index.ts` 3, `entry-port.ts` 11, and `package.json` 1. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-reopen`, based on `feat/anti-theft-drawer` (PR #82). The diff is over the 400-line review budget because the shared authorization doubles and the closed-shift refusal matrix live in one test file, and the shift model needed a reversal that points at the original payment. The harness is not copied per test.

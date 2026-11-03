@@ -34,6 +34,14 @@ export {
   RecordMovement,
 } from "#application/record-movement/record-movement.js";
 export type {
+  PaidAccount,
+  ReopenPaidAccountInput,
+} from "#application/reopen-paid-account/reopen-paid-account.js";
+export {
+  PaidAccountReader,
+  ReopenPaidAccount,
+} from "#application/reopen-paid-account/reopen-paid-account.js";
+export type {
   PayAccountPartInput,
   SplitAccountInput,
 } from "#application/split-account/split-account.js";
@@ -64,12 +72,15 @@ export {
 export type {
   CashMovement,
   CashMovementKind,
+  PaymentReversal,
   ShiftState,
 } from "#domain/cash-shift.js";
 export {
   CashShift,
   InvalidCashAmount,
   InvalidMovementId,
+  InvalidOriginalPayment,
+  InvalidReversalId,
   InvalidShiftId,
   MissingReason,
   ShiftAlreadyOpen,

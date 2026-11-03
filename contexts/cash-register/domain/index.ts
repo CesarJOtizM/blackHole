@@ -32,12 +32,15 @@ export {
 export type {
   CashMovement,
   CashMovementKind,
+  PaymentReversal,
   ShiftState,
 } from "#domain/cash-shift.js";
 export {
   CashShift,
   InvalidCashAmount,
   InvalidMovementId,
+  InvalidOriginalPayment,
+  InvalidReversalId,
   InvalidShiftId,
   MissingReason,
   ShiftAlreadyOpen,

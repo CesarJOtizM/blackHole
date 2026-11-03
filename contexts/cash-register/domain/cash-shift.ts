@@ -1,5 +1,7 @@
 const SHIFT_ID_PREFIX = "shift_";
 const MOVEMENT_ID_PREFIX = "movement_";
+const REVERSAL_ID_PREFIX = "reversal_";
+const ORIGINAL_PAYMENT_PREFIX = "payment_";
 
 const SHIFT_STATE = {
   OPEN: "open",
@@ -21,6 +23,12 @@ export interface CashMovement {
   kind: CashMovementKind;
   amountCop: number;
   reason: string;
+}
+
+export interface PaymentReversal {
+  id: string;
+  originalPaymentId: string;
+  amountCop: number;
 }
 
 interface OpenShift {
@@ -78,6 +86,20 @@ export class MissingReason extends Error {
   }
 }
 
+export class InvalidReversalId extends Error {
+  constructor() {
+    super("A reversal identifier must use the reversal_ prefix.");
+    this.name = "InvalidReversalId";
+  }
+}
+
+export class InvalidOriginalPayment extends Error {
+  constructor() {
+    super("A reversal must point at a payment_ identifier.");
+    this.name = "InvalidOriginalPayment";
+  }
+}
+
 class OpenShiftRequired extends Error {
   constructor() {
     super("A cash movement requires an open shift.");
@@ -112,6 +134,24 @@ function assertReason(reason: string): void {
   }
 }
 
+function assertReversalId(id: string): void {
+  if (
+    !id.startsWith(REVERSAL_ID_PREFIX) ||
+    id.length === REVERSAL_ID_PREFIX.length
+  ) {
+    throw new InvalidReversalId();
+  }
+}
+
+function assertOriginalPaymentId(id: string): void {
+  if (
+    !id.startsWith(ORIGINAL_PAYMENT_PREFIX) ||
+    id.length === ORIGINAL_PAYMENT_PREFIX.length
+  ) {
+    throw new InvalidOriginalPayment();
+  }
+}
+
 function movementEffectCop(movement: CashMovement): number {
   switch (movement.kind) {
     case MOVEMENT_KIND.CASH_IN:
@@ -132,6 +172,8 @@ export class CashShift {
   private openedShift: OpenedShift | undefined;
 
   private readonly recordedMovements: CashMovement[] = [];
+
+  private readonly recordedReversals: PaymentReversal[] = [];
 
   private constructor(registerId: string) {
     this.registerId = registerId;
@@ -159,6 +201,10 @@ export class CashShift {
 
   get movements(): readonly CashMovement[] {
     return this.recordedMovements.map((movement) => ({ ...movement }));
+  }
+
+  get reversals(): readonly PaymentReversal[] {
+    return this.recordedReversals.map((reversal) => ({ ...reversal }));
   }
 
   get expectedCashCop(): number | undefined {
@@ -202,6 +248,22 @@ export class CashShift {
       kind: input.kind,
       amountCop: input.amountCop,
       reason: input.reason,
+    });
+  }
+
+  recordReversal(input: PaymentReversal): void {
+    if (!this.openedShift || this.openedShift.state !== SHIFT_STATE.OPEN) {
+      throw new OpenShiftRequired();
+    }
+
+    assertReversalId(input.id);
+    assertOriginalPaymentId(input.originalPaymentId);
+    assertCop(input.amountCop);
+
+    this.recordedReversals.push({
+      id: input.id,
+      originalPaymentId: input.originalPaymentId,
+      amountCop: input.amountCop,
     });
   }
 }
