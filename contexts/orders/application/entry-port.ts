@@ -1,3 +1,5 @@
+export type { ApplyDiscountInput } from "#application/apply-discount/apply-discount.js";
+export { ApplyDiscount } from "#application/apply-discount/apply-discount.js";
 export type { ChangeLineStateInput } from "#application/change-line-state/change-line-state.js";
 export { ChangeLineState } from "#application/change-line-state/change-line-state.js";
 export type {

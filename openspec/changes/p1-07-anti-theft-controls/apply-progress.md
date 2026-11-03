@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-void-account` targeting `feat/anti-theft-voids` (PR #75). Not `main`.
-**Work unit**: 6 — Voids (task 4.2)
+**PR slice**: `feat/anti-theft-discount` targeting `feat/anti-theft-void-account` (PR #76). Not `main`.
+**Work unit**: 7 — Discount (task 4.3)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -18,6 +18,7 @@
 - [x] 3.1 Postgres binding: `target_id` copied from `venue_id`, `consumed_at` null on existing rows, updatable venue thresholds, insert-only alerts, RLS for `authorization_app`
 - [x] 4.1 Void a line: `held` or `sent` within the before-kitchen cap leaves the account; `in_preparation` and later stay. A missing grant, a mismatch, or a closed shift leaves the line unchanged
 - [x] 4.2 Void an account: a matching `sale.void-account` grant is consumed before the account is cleared. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws
+- [x] 4.3 Apply a discount: over the percent cap the discount waits until a matching `sale.discount` grant is consumed. The same value and the same target apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay. The discount is stored on the audit
 
 ## Work Unit Evidence
 
@@ -250,6 +251,32 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 
 `pnpm exec biome check --formatter-enabled=false` on `void-account.ts`, `void-account.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
 
+### Unit 7 — Discount (task 4.3)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project orders contexts/orders/application/apply-discount/apply-discount.test.ts`. RED exit 1: 1 failed file, no tests (missing import). GREEN exit 0: 1 file, 9 passed. Re-run after the shared harness and Biome: exit 0, 1 file, 9 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room and the existing open-shift double. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/apply-discount/`, the `ApplyDiscount` export in `contexts/orders/application/entry-port.ts`, and the `#application/apply-discount/*` import in `contexts/orders/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project orders contexts/orders/application/apply-discount/apply-discount.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Missing `#application/apply-discount/apply-discount.js` specifier in `@blackhole/orders`.
+
+#### GREEN
+
+Same command, after `ApplyDiscount` evaluated `sale.discount`, consumed a matching grant before the audit, and left every line price unchanged. Exit 0. Test files 1 passed. Tests 9 passed.
+
+The same command after sharing one harness and `pnpm exec biome check --write` on the slice. Exit 0. Test files 1 passed. Tests 9 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `apply-discount.ts`, `apply-discount.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -266,6 +293,9 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 - A repeated pair is any successful audit in the shift whose authorizer is a different person. A failed PIN is `pin.confirmation-failed` on one device in the shift, counted when the count is over the seed. The alert does not copy a PIN. The detector does not write a mark back onto the void.
 - `ReadControlReport` does not call `CountExecutedOperations`. That use case returns only before-kitchen voids and courtesy totals for one actor. The report repeats the same successful-audit predicate: `kind: "event"`, `after` shaped `{ value, shiftId, kitchen }`, action other than `pin.confirmation-failed`, `after.approved` not false, and `before` different from `after`. It also keeps the event site. It does not write an audit or an authorization change.
 - A caller whose `EvaluatePermission` result for existing `audit.view` is not `allowed` gets an empty report. The catalog already declares `audit.view`. No second entry was added. Denial does not throw `AuditReadDenied`.
+- `Check` has no discount operation, and this slice does not add one. `ApplyDiscount` does not save the check, does not clear it, and does not use `check_void_sink`. Line prices stay. The applied discount is the audit `after` shape `{ value, shiftId, kitchen: null }`, where `value` is the percent. `before` is `{ value: 0 }` so the two states differ. The action is the existing catalog code `sale.discount`. Task 4.5 owns price changes.
+- Over the percent cap the decision is `requires_authorization` and nothing is written until `ConsumeAuthorization` returns true for the same percent and the same check id. `allowed` writes the audit and does not consume. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume.
+- Shift totals come from `CountExecutedOperations`. The command carries `percent` and does not carry a caller total.
 - Discounts and courtesies are separate lists. Both carry user, authorizer, and value. Voids carry user, authorizer, reason, and `before kitchen` or `after kitchen`. Cash differences carry cashier and shift. Drawer openings carry the user. Reopened accounts and post-pre-bill edits share one list and are distinguished by `reopened` or `edited-after-pre-bill`. Offline hybrid rows stay deferred.
 - `0014_authorization_binding.sql` adds `target_id` and nullable `consumed_at` on `authorization_requests`. Existing rows copy `venue_id` into `target_id` and leave `consumed_at` null. The Drizzle repository writes and reads both fields. A mismatch stays unconsumed in the domain. A second consume throws `AuthorizationAlreadyConsumed`. Shift totals stay on the domain request and are filled by `completeRequest` on restore. This migration does not add shift-total columns.
 - Venue thresholds are `authorization_venue_thresholds`: `discount`, `requester_authorizer_pair`, and `failed_pin`, each `NOT NULL DEFAULT 5`. `authorization_app` may select, insert, update, and delete them under forced RLS. The void-after-kitchen seed stays the published 5 in the detector. The domain snapshot and the authorization port were not changed.
@@ -278,4 +308,4 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 
 ## Remaining
 
-Tasks 4.3–7.1 are pending. The next checkbox is 4.3. Task 4.2 is the only checkbox newly marked in this batch. 9/25 tasks complete.
+Tasks 4.4–7.1 are pending. The next checkbox is 4.4. Task 4.3 is the only checkbox newly marked in this batch. 10/25 tasks complete. The discount slice is 599 added lines: one shared harness still stands in for the dining room and the five ports, and dropping a spec scenario would be the only way under 400. `size:exception` was not granted.
