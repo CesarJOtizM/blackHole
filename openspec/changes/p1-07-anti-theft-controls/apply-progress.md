@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-reprint-http` targeting `feat/anti-theft-drawer-http` (`df6ed20`). Not `main`. No commit or pull request in this batch.
-**Work unit**: Reprint HTTP (task 6.6)
+**PR slice**: `feat/anti-theft-report-http` at `64495f0` on `feat/anti-theft-reprint-http`. Not `main`. No commit or pull request in this batch.
+**Work unit**: Report HTTP (task 6.7)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -32,6 +32,7 @@
 - [x] 6.4 Cloud pre-bill and waiter-transfer HTTP: a printed pre-bill refuses a new line when the session is denied or the edit fields are absent, and audits `sale.edit-printed-check` when an owner sends those fields on an open shift. `POST checks/:checkId/transfer-table` audits `sale.transfer-table` with the previous and next waiter. Join and move-lines stay on `POST checks/reassign`
 - [x] 6.5 Cloud drawer, reopen, and tender HTTP: an owner with a present drawer and a printer id enqueues one `drawer_open` job with `kickDrawer: true` and audits `cash.drawer-opened`. A kitchen chief, an absent drawer, or a null printer id stores no job and no opening audit. Reopen and tender write the reversal, and tender also writes the replacement payment, on the open shift only. The closed shift and cash movements stay unchanged. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 - [x] 6.6 Cloud reprint HTTP: under a numeric cap, one `sale.reprint` is stored and `PendingSalePrinter.jobs` stays empty. At or over the cap, a resolved authorizer stores one more `sale.reprint` carrying that authorizer and still does not enqueue. The same second reprint with no resolved authorizer stores nothing and returns 409 `ReprintNeedsAuthorization`. A null cap stays 409 `ReprintCapUnconfigured` with an empty audit list. `shared/printing` and `sale-receipt.ts` stay unchanged
+- [x] 6.7 Cloud report HTTP: `GET control-report` and `GET unusual-behavior` both require `audit.view`. An owner sees one before-kitchen void and one self-authorization alert. A kitchen chief gets an empty report and an empty alert list. The detector is not called for that denial. Nothing is stored. The SQL alert table stays unused
 
 ## Work Unit Evidence
 
@@ -682,6 +683,41 @@ The same command after `pnpm exec biome check --write` on the three TypeScript f
 
 The pair is 199 additions and 22 deletions: `printing.controller.ts` 64/6, `printing.controller.test.ts` 133/16, and `shared/contracts/printing.ts` 2/0. `size:exception` was not granted. The pair is under the 400-line review budget and was not split. It stays on `feat/anti-theft-reprint-http`, based on `feat/anti-theft-drawer-http` (`df6ed20`). No commit, push, or pull request.
 
+### Unit 15 — Report HTTP (task 6.7)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud apps/api-cloud/test/http/read-control-report.controller.test.ts apps/api-cloud/test/http/detect-unusual-behavior.controller.test.ts`. RED exit 1: 2 failed files, no tests. GREEN exit 0: 2 files, 6 passed. Same command after Biome: exit 0, 2 files, 6 passed. `pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused tests boot Nest through `createApplication` and inject the two GET routes. No listening port. |
+| Rollback boundary | `apps/api-cloud/src/http/read-control-report.controller.ts`, `apps/api-cloud/src/http/detect-unusual-behavior.controller.ts`, `apps/api-cloud/test/http/read-control-report.controller.test.ts`, `apps/api-cloud/test/http/detect-unusual-behavior.controller.test.ts`, and the provider plus controller registrations in `apps/api-cloud/src/composition/application-module.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud apps/api-cloud/test/http/read-control-report.controller.test.ts apps/api-cloud/test/http/detect-unusual-behavior.controller.test.ts`
+
+Result: exit 1. Test files 2 failed. Tests: no tests.
+
+Failures before the controllers existed:
+
+- Cannot find module `#src/http/detect-unusual-behavior.controller.js`.
+- Cannot find module `#src/http/read-control-report.controller.js`.
+
+#### GREEN
+
+Same command, after both controllers were registered and `ReadControlReport`, `DetectUnusualBehavior`, and `EvaluatePermission` were provided by `ApplicationModule.register`. Exit 0. Test files 2 passed. Tests 6 passed.
+
+The same command after `pnpm exec biome check --write` on the five TypeScript files. Exit 0. Test files 2 passed. Tests 6 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
+`pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0.
+
+The catalog row `audit.view` is `cells(Y, Y, L, N, N, N, N, N)`: owner is yes and kitchen chief is no. No second permission was added. `GET /tenants/:tenantId/venues/:venueId/control-report` passes the venue id as `siteId` and `x-session-id` as `sessionId`. `ReadControlReport` already returns an empty report when the decision is not `allowed`. That empty report is HTTP 200. It is not turned into 403. A missing header or `UnknownSession` is 400 and the audit list is unchanged.
+
+`GET /tenants/:tenantId/venues/:venueId/unusual-behavior` requires query `shiftId`. The query is a Zod 4 strict object parsed with `safeParse`. `shiftTotals` and `authorizerId` fail that parse. A missing header, an unknown session, or a missing `shiftId` is 400 and stores nothing. The controller calls `EvaluatePermission` for `audit.view` before `DetectUnusualBehavior`. A denied session returns `[]`, and the audit repository `list` is not called during that request. An allowed session returns the detector result. The seeded self-authorization alert has no PIN. Neither route writes an audit or an alert. The SQL alert table stays unused. No migration. `ReadControlReport` and `DetectUnusualBehavior` were not edited.
+
+The pair is 469 additions and 0 deletions: `read-control-report.controller.ts` 62, `detect-unusual-behavior.controller.ts` 91, `read-control-report.controller.test.ts` 125, `detect-unusual-behavior.controller.test.ts` 150, and `application-module.ts` 41. `size:exception` was not granted. The pair is over the 400-line review budget and was not split, because this assignment said not to split it. It stays on `feat/anti-theft-report-http`, based on `feat/anti-theft-reprint-http` (`64495f0`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -770,7 +806,8 @@ The pair is 199 additions and 22 deletions: `printing.controller.ts` 64/6, `prin
 - The refusal when the cap is reached and `authorizerOf` returns null is 409 `{ error: "ReprintNeedsAuthorization" }`. The design names the audit and the missing enqueue. It does not name this status. The name is the printing error already reserved for an unauthorized reprint. Nothing is stored and the success body is not returned.
 - `sale-receipt.ts` was not edited. The reprint path does not call `PendingSalePrinter.enqueue`, and `SaleReceiptJob` gained no reprint document. The over-cap tests read the existing printer's `jobs`.
 - The reprint body stays on `reprintDocumentCommand`. `document` stays required. `authorizationId` is optional and accepts a string or null, so `{ document }` still parses. `authorizerId` and `shiftTotals` still fail the strict object. The controller does not trust a client authorizer. The count comes from `MemoryReprintAudit.events` for the same document.
+- `EvaluatePermission` is now also a Nest provider. The other use cases still construct their own instances. The unusual-behavior controller injects that provider and calls it before `DetectUnusualBehavior`. `ReadControlReport` keeps its own permission check. A decision other than `allowed` stays 200: an empty report, or an empty alert list when the detector is not called. `UnknownSession` is 400. No alert repository and no migration.
 
 ## Remaining
 
-Tasks 6.7 and 7.1 are pending. The next checkbox is 6.7. Task 6.6 is the only checkbox newly marked in this batch. 23/25 tasks complete. No migration. No local-node. No report route in this batch. `shared/printing` stays unchanged. Production cash persistence still stores movements only.
+Task 7.1 is pending. The next checkbox is 7.1. Task 6.7 is the only checkbox newly marked in this batch. 24/25 tasks complete. No migration. No local-node. The SQL alert table stays unused. `shared/printing` stays unchanged. Production cash persistence still stores movements only.

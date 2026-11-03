@@ -82,7 +82,9 @@ import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in
 import {
   ConsumeAuthorization,
   CountExecutedOperations,
+  DetectUnusualBehavior,
   EvaluatePermission,
+  ReadControlReport,
   RecordAuditEvent,
 } from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
@@ -141,6 +143,7 @@ import { ChangePriceController } from "#src/http/change-price.controller.js";
 import { ChangeTenderController } from "#src/http/change-tender.controller.js";
 import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
+import { DetectUnusualBehaviorController } from "#src/http/detect-unusual-behavior.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import {
@@ -162,6 +165,7 @@ import {
   ReprintCap,
 } from "#src/http/printing.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
+import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
@@ -281,6 +285,8 @@ export class ApplicationModule implements NestModule {
         OperateDevicesController,
         AuthorizationController,
         ReadAuditController,
+        ReadControlReportController,
+        DetectUnusualBehaviorController,
         UpdateMenuController,
         ViewVenueMenuController,
         PlaceTableController,
@@ -1080,6 +1086,41 @@ export class ApplicationModule implements NestModule {
         { provide: ReprintCap, useValue: reprintCap },
         { provide: MemoryReprintAudit, useValue: reprintAudits },
         { provide: StructurePrinters, useValue: structurePrinters },
+        {
+          provide: EvaluatePermission,
+          useFactory: (
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          inject: [
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ReadControlReport,
+          useFactory: (
+            audits: AuditRepository,
+            permissions: EvaluatePermission,
+          ) => new ReadControlReport(audits, permissions),
+          inject: [AuditRepository, EvaluatePermission],
+        },
+        {
+          provide: DetectUnusualBehavior,
+          useFactory: (audits: AuditRepository) =>
+            new DetectUnusualBehavior(audits),
+          inject: [AuditRepository],
+        },
       ],
     };
   }
