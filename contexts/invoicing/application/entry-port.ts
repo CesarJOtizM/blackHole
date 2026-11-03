@@ -50,6 +50,16 @@ export {
   SALES_DOCUMENT_DUPLICATE,
   SalesDocumentRepository,
 } from "#application/ports/sales-document-repository.js";
+export type {
+  InvoicePrintPayload,
+  OfflineReceiptPrintPayload,
+  PrintDocumentCommand,
+  SalePrintPayload,
+} from "#application/print-document/print-document.js";
+export {
+  PrintDocument,
+  SalesDocumentNotPrintable,
+} from "#application/print-document/print-document.js";
 export type { PublishTaxRuleCommand } from "#application/publish-tax-rule/publish-tax-rule.js";
 export {
   OverlappingTaxRule,

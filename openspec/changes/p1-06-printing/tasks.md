@@ -55,8 +55,8 @@ Units: 1 widths (skeleton), 2 sale-templates, 3 other-templates, 4 enqueue, 5 di
 - [x] 5.4 GREEN `charge-check.ts`, `ports/register-lookup.ts`.
 - [x] 5.5 RED `contexts/cash-register/application/close-shift/close-shift.test.ts` and charge: `card/transfer/wallet/voucher/customer_credit/corporate_credit` and `cash_close` never kick. Mixed kicks only with cash.
 - [x] 5.6 GREEN `charge-check.ts`, `close-shift.ts`.
-- [ ] 5.7 RED `contexts/invoicing/application/print-document/print-document.test.ts`: number, CUFE, QR. Offline not-an-invoice + QR. No kick.
-- [ ] 5.8 GREEN `print-document.ts`, invoicing `entry-port.ts`. No enqueue.
+- [x] 5.7 RED `contexts/invoicing/application/print-document/print-document.test.ts`: number, CUFE, QR. Offline not-an-invoice + QR. No kick.
+- [x] 5.8 GREEN `print-document.ts`, invoicing `entry-port.ts`. No enqueue.
 
 6. HTTP
 
