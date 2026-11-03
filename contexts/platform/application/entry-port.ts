@@ -1,4 +1,9 @@
 export { AcceptCloudWrite } from "#application/accept-cloud-write/accept-cloud-write.js";
+export type { ConsumeAuthorizationInput } from "#application/consume-authorization/consume-authorization.js";
+export {
+  AuthorizationAlreadyConsumed,
+  ConsumeAuthorization,
+} from "#application/consume-authorization/consume-authorization.js";
 export { EvaluatePermission } from "#application/evaluate-permission/evaluate-permission.js";
 export type { AuthorizationCommand } from "#application/operate-authorization/operate-authorization.js";
 export {

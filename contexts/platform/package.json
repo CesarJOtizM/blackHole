@@ -68,6 +68,7 @@
     "#application/*": "./application/*",
     "#application/ports/*": "./application/ports/*",
     "#application/accept-cloud-write/*": "./application/accept-cloud-write/*",
+    "#application/consume-authorization/*": "./application/consume-authorization/*",
     "#application/update-structure/*": "./application/update-structure/*",
     "#application/operate-devices/*": "./application/operate-devices/*",
     "#application/operate-identity/*": "./application/operate-identity/*",

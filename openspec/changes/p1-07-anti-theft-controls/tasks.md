@@ -42,7 +42,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 2: Application
 
-- [ ] 2.1 RED/GREEN `contexts/platform/application/consume-authorization/` `entry-port.ts`: failed-write needs new-grant. platform
+- [x] 2.1 RED/GREEN `contexts/platform/application/consume-authorization/` `entry-port.ts`: failed-write needs new-grant. platform
 - [ ] 2.2 RED/GREEN `contexts/platform/application/count-executed-operations/`: successful audits only. platform
 - [ ] 2.3 RED/GREEN `contexts/platform/application/operate-authorization/operate-authorization.ts` + test: `targetId`, shift totals, `pin.confirmation-failed` without PIN. platform
 - [ ] 2.4 RED/GREEN `contexts/platform/application/detect-unusual-behavior/`: void seed 5; every self-authorization; other seeds venue 5. platform
