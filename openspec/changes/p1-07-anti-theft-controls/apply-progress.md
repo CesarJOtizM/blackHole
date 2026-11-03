@@ -28,6 +28,7 @@
 - [x] 5.3 Change a payment method: the reversal and the new payment are stored on the open `CashShift` and both point at the original payment. The closed shift is not saved and gains neither. `sale.change-tender` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount before both writes. A missing grant, a mismatch, a denial, an unknown reference, a missing payment, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. One audit runs after both writes. `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is `originalPaymentId` on the reversal and on the new payment. A cash-to-card change stores method `card` and the original amount
 - [x] 6.1 Cloud authorization HTTP boundary: a request may carry optional `targetId` and `shiftTotals`. The controller passes them to `OperateAuthorization`. The sensitive-action envelope validates with `safeParse`. No void, discount, courtesy, price, drawer, reopen, or tender routes
 - [x] 6.2 Cloud void HTTP: a denied session leaves the line or the account and writes no void audit. A waiter inside the before-kitchen cap, with an open shift, voids the line and the audit authorizer is null. A cashier with a matching grant clears the account and the audit authorizer is the grant's authorizer. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
+- [x] 6.3 Cloud discount, courtesy, and price HTTP: a kitchen chief on an open shift leaves line prices unchanged and writes no success audit. An owner on an open shift audits `sale.discount` with `after.value` equal to the percent and leaves line prices unchanged. An owner courtesy audits `sale.comp` with `after.value` equal to the COP amount and leaves line prices unchanged. An owner price change saves the new line price, leaves the menu unchanged, and audits `sale.change-price` with `before.value` equal to the previous line price
 
 ## Work Unit Evidence
 
@@ -536,6 +537,38 @@ The same command after `pnpm exec biome check --write` on the eight TypeScript f
 
 `pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
 
+### Unit 12 — Comp HTTP (task 6.3)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/apply-discount.controller.test.ts test/http/apply-courtesy.controller.test.ts test/http/change-price.controller.test.ts`. RED exit 1: 3 failed files, no tests (missing controller modules). GREEN exit 0: 3 files, 6 passed. Same command after Biome: exit 0, 3 files, 6 passed. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused tests boot Nest through `openDiningCloud` and inject the three routes. No listening port. |
+| Rollback boundary | `apps/api-cloud/src/http/apply-discount.controller.ts`, `apps/api-cloud/src/http/apply-courtesy.controller.ts`, `apps/api-cloud/src/http/change-price.controller.ts`, their three HTTP tests, and the `ApplyDiscount`, `ApplyCourtesy`, and `ChangePrice` providers plus controller registrations in `apps/api-cloud/src/composition/application-module.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/apply-discount.controller.test.ts test/http/apply-courtesy.controller.test.ts test/http/change-price.controller.test.ts`
+
+Result: exit 1. Test files 3 failed. Tests: no tests.
+
+Failures before the controllers existed:
+
+- Cannot find module `#src/http/apply-discount.controller.js`.
+- Cannot find module `#src/http/apply-courtesy.controller.js`.
+- Cannot find module `#src/http/change-price.controller.js`.
+
+#### GREEN
+
+Same command, after the three controllers called the existing use cases, reused `readText` and `authorizerOf`, and rejected `authorizerId` and shift totals with a strict body. Exit 0. Test files 3 passed. Tests 6 passed.
+
+The same command after `pnpm exec biome check --write` on the seven TypeScript files. Exit 0. Test files 3 passed. Tests 6 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
+Each controller has one denial and one success. A kitchen chief on an open shift gets 200, the line price stays, and the audit list stays empty. An owner on an open shift audits `sale.discount` with `after.value` 10 and does not change the line price. An owner courtesy audits `sale.comp` with `after.value` 15000 and does not change the line price. An owner price change stores 18000 on the line, leaves catalog price 20000 and venue price 24000, and audits `sale.change-price` with `before.value` 22000. `authorizationId` is null, so `authorizerId` is null. `actorId` is the session user. The open shift reader accepts `OpenShiftQuery`.
+
+The pair is 855 additions and 0 deletions: `apply-discount.controller.ts` 96, `apply-courtesy.controller.ts` 96, `change-price.controller.ts` 98, `apply-discount.controller.test.ts` 128, `apply-courtesy.controller.test.ts` 128, `change-price.controller.test.ts` 186, and `application-module.ts` 123. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-discount-http`, based on `feat/anti-theft-void-http` (`754d1ac`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -607,7 +640,9 @@ The same command after `pnpm exec biome check --write` on the eight TypeScript f
 - `ClosedShiftReader` is the default `OpenShiftReader` and answers closed. The HTTP test replaces it through `CloudApplicationDependencies.shifts`, the same way `diningRooms` is replaced. The cash-register repository is not asked to list a shift. No SQL and no migration.
 - A missing header or an unknown session is 400 before the use case. A denied decision is 200: the use case returns the check, and the response lists the remaining line ids. `TableNotOpen` and `InvalidLineId` map to 409. The line success is a waiter inside the cap. The account success consumes a matching `sale.void-account` grant. `TakeOrder` stays a six-argument construction. No discount, courtesy, price, drawer, reopen, tender, reprint, or report route.
 - This pair is 740 additions and 3 deletions. It was not split. `size:exception` was not granted.
+- The three discount, courtesy, and price routes return the same `{ checkId, lineIds }` listing as a void, through the existing `presentVoid` and `rejectionOf` helpers. `voidCommand` was not widened. `percent`, `value`, and `price` live on the controller schemas. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 before the use case. Those 400 paths are the void controller behavior and are not separate assertions in this pair. The assigned tests are one denial and one success per controller.
+- `TakeOrder` stays a six-argument construction. The existing `OpenShiftReader` provider is reused. No void, drawer, reopen, tender, reprint, pre-bill, or report route was added. The use cases were not edited. Shift totals come from `CountExecutedOperations` inside those use cases.
 
 ## Remaining
 
-Tasks 6.3–7.1 are pending. The next checkbox is 6.3. Task 6.2 is the only checkbox newly marked in this batch. 19/25 tasks complete. The void HTTP slice is 740 added lines and 3 deleted lines: `application-module.ts` 95, `dining-room-session.ts` 9/3, `closed-shift-reader.ts` 7, `void-command.ts` 73, `void-line.controller.ts` 88, `void-account.controller.ts` 86, `void-line.controller.test.ts` 166, and `void-account.controller.test.ts` 216. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-void-http`, based on `feat/anti-theft-auth-http` (`abbca00`). No commit, push, or pull request. No discount, courtesy, price, drawer, reopen, tender, reprint, or report routes. No migration. No local-node.
+Tasks 6.4–7.1 are pending. The next checkbox is 6.4. Task 6.3 is the only checkbox newly marked in this batch. 20/25 tasks complete. No migration. No local-node. No take-order, reassign, drawer, reopen, tender, reprint, or report route in this batch.

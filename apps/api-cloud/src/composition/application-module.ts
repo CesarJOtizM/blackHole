@@ -41,7 +41,10 @@ import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-pri
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import {
+  ApplyCourtesy,
+  ApplyDiscount,
   ChangeLineState,
+  ChangePrice,
   ConfigureStationRoute,
   GetCheck,
   MarkAccountPaid,
@@ -118,11 +121,14 @@ import {
 } from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
+import { ApplyCourtesyController } from "#src/http/apply-courtesy.controller.js";
+import { ApplyDiscountController } from "#src/http/apply-discount.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { CashCountController } from "#src/http/cash-count.controller.js";
 import { CashShiftController } from "#src/http/cash-shift.controller.js";
 import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
+import { ChangePriceController } from "#src/http/change-price.controller.js";
 import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
@@ -272,6 +278,9 @@ export class ApplicationModule implements NestModule {
         TakeOrderController,
         VoidLineController,
         VoidAccountController,
+        ApplyDiscountController,
+        ApplyCourtesyController,
+        ChangePriceController,
         ChangeLineStateController,
         ViewTableMapController,
         ViewStationQueueController,
@@ -610,6 +619,120 @@ export class ApplicationModule implements NestModule {
             authorizationClock: AuthorizationClock,
           ) =>
             new VoidAccount(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ApplyDiscount,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ApplyDiscount(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ApplyCourtesy,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ApplyCourtesy(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ChangePrice,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ChangePrice(
               diningRoom,
               shifts,
               new CountExecutedOperations(audits),
