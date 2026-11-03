@@ -24,6 +24,11 @@ const LOCATION_KIND = {
   WAREHOUSE: "warehouse",
 } as const;
 
+const DRAWER = {
+  PRESENT: "present",
+  ABSENT: "absent",
+} as const;
+
 type Database = PgliteDatabase;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type CompanyRow = typeof organizations.$inferSelect;
@@ -220,6 +225,7 @@ async function insertTree(
     tenantId,
     venueId: station.venueId,
     name: station.name,
+    printerId: station.printerId,
     position,
   }));
 
@@ -232,6 +238,8 @@ async function insertTree(
     tenantId,
     venueId: register.venueId,
     name: register.name,
+    drawer: register.drawer,
+    printerId: register.printerId,
     position,
   }));
 
@@ -257,6 +265,14 @@ async function insertEvent(
     beforeSnapshot: event.before,
     afterSnapshot: event.after,
   });
+}
+
+function storedDrawer(value: string): "present" | "absent" {
+  if (value === DRAWER.PRESENT || value === DRAWER.ABSENT) {
+    return value;
+  }
+
+  throw new Error("Stored drawer is not supported.");
 }
 
 function restoreOrganization(stored: StoredTree): Organization {
@@ -296,6 +312,7 @@ function restoreOrganization(stored: StoredTree): Organization {
       id: station.id,
       venueId: station.venueId,
       name: station.name,
+      printerId: station.printerId,
     });
   }
 
@@ -304,6 +321,8 @@ function restoreOrganization(stored: StoredTree): Organization {
       id: register.id,
       venueId: register.venueId,
       name: register.name,
+      drawer: storedDrawer(register.drawer),
+      printerId: register.printerId,
     });
   }
 

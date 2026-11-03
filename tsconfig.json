@@ -7,6 +7,7 @@
     { "path": "contexts/cash-register" },
     { "path": "contexts/invoicing" },
     { "path": "shared/contracts" },
+    { "path": "shared/printing" },
     { "path": "apps/api-cloud" },
     { "path": "apps/local-node" }
   ]

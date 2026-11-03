@@ -51,6 +51,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "printing",
+          include: ["shared/printing/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "spikes",
           include: ["tools/spikes/**/*.test.ts"],
         },

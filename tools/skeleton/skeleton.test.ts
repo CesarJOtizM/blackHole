@@ -23,7 +23,6 @@ const sourceTrees = ["apps", "contexts", "shared", "tools"] as const;
 
 const absent = [
   "shared/sync",
-  "shared/printing",
   "shared/ui",
   "apps/venue",
   "apps/deliveries",

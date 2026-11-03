@@ -104,16 +104,19 @@ class MemoryStations extends StationDirectory {
   }
 }
 
+type PrintStatus = "waiting" | "printed" | "failed";
+
 class MemoryPrinter extends Printer {
-  readonly printed: string[] = [];
-  fail = false;
+  readonly jobs: unknown[] = [];
+  status: PrintStatus = "waiting";
 
-  override async print(ticket: { text: string }): Promise<void> {
-    if (this.fail) {
-      throw new Error("The printer is offline.");
-    }
+  override async enqueue(job: { kickDrawer: boolean }): Promise<{
+    status: PrintStatus;
+    kickDrawer: boolean;
+  }> {
+    this.jobs.push(job);
 
-    this.printed.push(ticket.text);
+    return { status: this.status, kickDrawer: job.kickDrawer };
   }
 }
 
@@ -244,7 +247,7 @@ const expectNothingSaved = async (
 ) => {
   expect(saveTable).not.toHaveBeenCalled();
   expect(saveCheck).not.toHaveBeenCalled();
-  expect(printer.printed).toEqual([]);
+  expect(printer.jobs).toEqual([]);
   const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
   expect(stored?.orders).toEqual([]);
   expect(stored?.total).toBe(0);
@@ -331,7 +334,17 @@ it("given course 1, when sent, then the quoted line keeps its variant, modifier,
   expect(stored?.total).toBe(quoted);
   expect(saveTable).not.toHaveBeenCalled();
   expect(saveCheck).toHaveBeenCalledTimes(1);
-  expect(printer.printed).toEqual(["Grill\ntable_5\nSoup\nno onion"]);
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soup",
+      stationId: "station_grill",
+      station: "Grill",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup", note: "no onion" }],
+      kickDrawer: false,
+    },
+  ]);
 });
 
 it("given a product outside its schedule, when it is sent, then ProductNotOrderable and nothing is saved", async () => {
@@ -480,7 +493,7 @@ it("given a sent soup, when it is resent, then only that product is routed and t
     total: sent.total,
     orders: structuredClone(sent.orders),
   };
-  printer.printed.length = 0;
+  printer.jobs.length = 0;
 
   const resent = await takeOrder.resend({
     tenantId: TENANT_ID,
@@ -494,7 +507,17 @@ it("given a sent soup, when it is resent, then only that product is routed and t
   expect(before.total).toBe(soup + soda);
   expect(resent.total).toBe(before.total);
   expect(resent.orders).toEqual(before.orders);
-  expect(printer.printed).toEqual(["Grill\ntable_5\nSoup"]);
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soup:resend",
+      stationId: "station_grill",
+      station: "Grill",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup" }],
+      kickDrawer: false,
+    },
+  ]);
   const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
   expect(stored?.total).toBe(before.total);
   expect(stored?.orders).toEqual(before.orders);
@@ -502,7 +525,7 @@ it("given a sent soup, when it is resent, then only that product is routed and t
 
 it("given output both and a failed printer, when a product is sent, then the line stays and printer_failed is published", async () => {
   const { dining, printer, hub, takeOrder } = await harness([SOUP_ID]);
-  printer.fail = true;
+  printer.status = "failed";
 
   const sent = await takeOrder.execute({
     tenantId: TENANT_ID,
@@ -526,7 +549,17 @@ it("given output both and a failed printer, when a product is sent, then the lin
   const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
   expect(stored?.orders).toEqual(sent.orders);
   expect(stored?.total).toBe(sent.total);
-  expect(printer.printed).toEqual([]);
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soup",
+      stationId: "station_grill",
+      station: "Grill",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup" }],
+      kickDrawer: false,
+    },
+  ]);
   expect(hub.published).toContainEqual({
     kind: "printer_failed",
     tenantId: TENANT_ID,
@@ -544,7 +577,7 @@ it("given printer only, when the printer fails, then the alert includes the unpr
     "printer",
   );
   const ticket = "Bar\ntable_5\nSoda\njalapeño";
-  printer.fail = true;
+  printer.status = "failed";
 
   const sent = await takeOrder.execute({
     tenantId: TENANT_ID,
@@ -591,10 +624,21 @@ it("given printer only, when the printer fails, then the alert includes the unpr
   expect(encoded.includes(0x1b)).toBe(false);
   expect(encoded.includes(0x1d)).toBe(false);
   expect(controls).toEqual([]);
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soda",
+      stationId: "station_bar",
+      station: "Bar",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soda", note: "jalapeño" }],
+      kickDrawer: false,
+    },
+  ]);
 });
 
 it("given a send, when the product is sent, then RealtimeHub gets the check, table, and line ids", async () => {
-  const { hub, takeOrder } = await harness([SOUP_ID]);
+  const { hub, printer, takeOrder } = await harness([SOUP_ID]);
 
   await takeOrder.execute({
     tenantId: TENANT_ID,
@@ -623,7 +667,63 @@ it("given a send, when the product is sent, then RealtimeHub gets the check, tab
       tableId: TABLE_ID,
       lineIds: ["line_soup"],
     },
+    {
+      kind: "printer_failed",
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      checkId: CHECK_ID,
+      tableId: TABLE_ID,
+      lineId: "line_soup",
+      stationId: "station_grill",
+    },
   ]);
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soup",
+      stationId: "station_grill",
+      station: "Grill",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup" }],
+      kickDrawer: false,
+    },
+  ]);
+});
+
+it("given a kitchen job that is already printed, when a product is sent, then the ticket is enqueued with no kick and printer_failed is not published", async () => {
+  const { hub, printer, takeOrder } = await harness([SOUP_ID]);
+  printer.status = "printed";
+
+  await takeOrder.execute({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+    course: 1,
+    lines: [
+      {
+        orderId: ORDER_ID,
+        lineId: "line_soup",
+        productId: SOUP_ID,
+        name: "Soup",
+        course: 1,
+        channel: "waiter",
+      },
+    ],
+  });
+
+  expect(printer.jobs).toEqual([
+    {
+      document: "kitchen_ticket",
+      commandId: "kitchen_ticket:check_5:line_soup",
+      stationId: "station_grill",
+      station: "Grill",
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup" }],
+      kickDrawer: false,
+    },
+  ]);
+  expect(hub.published.map((notice) => notice.kind)).toEqual(["ids"]);
 });
 
 it("given check_requested, when another product is sent, then the table returns to occupied", async () => {

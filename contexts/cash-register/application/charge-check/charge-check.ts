@@ -3,7 +3,10 @@ import type {
   AccountLine,
 } from "#application/ports/account-gateway.js";
 import type { CardTerminal } from "#application/ports/card-terminal.js";
+import type { Printer } from "#application/ports/printer.js";
 import {
+  type KnownRegister,
+  REGISTER_DRAWER,
   type RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
@@ -81,17 +84,65 @@ export abstract class ChargeLedger {
   ): Promise<void>;
 }
 
+export interface DrawerOpenedAudit {
+  action: "cash.drawer-opened";
+  paymentId: string;
+  registerId: string;
+  printerId: string;
+}
+
+export abstract class DrawerAudit {
+  abstract record(event: DrawerOpenedAudit): Promise<void>;
+}
+
 const knownRegister = async (
   lookup: RegisterLookup,
   tenantId: string,
   venueId: string,
   registerId: string,
-): Promise<void> => {
+): Promise<KnownRegister> => {
   const known = await lookup.find(tenantId, venueId, registerId);
 
   if (known === null || known.id !== registerId || known.venueId !== venueId) {
     throw new UnknownRegister();
   }
+
+  return known;
+};
+
+const cashSale = (tenders: readonly PaymentTender[]): boolean =>
+  tenders.length > 0 && tenders.every((tender) => tender.method === "cash");
+
+const printCashReceipt = async (
+  printer: Printer,
+  audits: DrawerAudit,
+  register: KnownRegister,
+  payment: Payment,
+  commandId: string,
+): Promise<void> => {
+  if (!cashSale(payment.tenders) || register.printerId === null) {
+    return;
+  }
+
+  const kickDrawer = register.drawer === REGISTER_DRAWER.PRESENT;
+
+  await printer.enqueue({
+    commandId,
+    printerId: register.printerId,
+    document: "offline_receipt",
+    kickDrawer,
+  });
+
+  if (!kickDrawer) {
+    return;
+  }
+
+  await audits.record({
+    action: "cash.drawer-opened",
+    paymentId: payment.id,
+    registerId: register.id,
+    printerId: register.printerId,
+  });
 };
 
 const assertClosureId = (id: string): void => {
@@ -165,10 +216,12 @@ export class ChargeCheck {
     private readonly accounts: AccountGateway,
     private readonly terminal: CardTerminal,
     private readonly ledger: ChargeLedger,
+    private readonly printer: Printer,
+    private readonly audits: DrawerAudit,
   ) {}
 
   async execute(input: ChargeCheckInput): Promise<ChargeCheckResult> {
-    await knownRegister(
+    const register = await knownRegister(
       this.registerLookup,
       input.tenantId,
       input.venueId,
@@ -238,6 +291,13 @@ export class ChargeCheck {
       closure,
     });
     await this.accounts.markPaid(input.tenantId, input.venueId, check.checkId);
+    await printCashReceipt(
+      this.printer,
+      this.audits,
+      register,
+      payment,
+      input.commandId,
+    );
 
     return { payment, closure };
   }

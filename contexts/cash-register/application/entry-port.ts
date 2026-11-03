@@ -4,8 +4,10 @@ export type {
   ChargeCheckInput,
   ChargeCheckResult,
 } from "#application/charge-check/charge-check.js";
+export type { DrawerOpenedAudit } from "#application/charge-check/charge-check.js";
 export {
   ChargeCheck,
+  DrawerAudit,
   InvalidClosureId,
   UnknownAccount,
 } from "#application/charge-check/charge-check.js";
@@ -19,6 +21,11 @@ export { CloseShift } from "#application/close-shift/close-shift.js";
 export type { OpenShiftInput } from "#application/open-shift/open-shift.js";
 export { OpenShift } from "#application/open-shift/open-shift.js";
 export { UnknownRegister } from "#application/ports/register-lookup.js";
+export type {
+  QueuedSaleReceipt,
+  SaleReceiptJob,
+} from "#application/ports/printer.js";
+export { Printer } from "#application/ports/printer.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,

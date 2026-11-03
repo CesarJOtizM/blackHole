@@ -2,6 +2,11 @@ import { expect, it, vi } from "vitest";
 
 import { Clock } from "#application/ports/clock.js";
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
+import { Printer } from "#application/ports/printer.js";
+import {
+  RealtimeHub,
+  type RealtimeNotice,
+} from "#application/ports/realtime-hub.js";
 import { RequestCheck } from "#application/request-check/request-check.js";
 import { Check, TableNotOpen } from "#domain/check.js";
 import {
@@ -20,6 +25,30 @@ const REQUESTED_AT = Date.parse("2026-10-28T12:15:00.000Z");
 class FixedClock extends Clock {
   override now(): number {
     return REQUESTED_AT;
+  }
+}
+
+type PrintStatus = "waiting" | "printed" | "failed";
+
+class MemoryPrinter extends Printer {
+  readonly jobs: unknown[] = [];
+  status: PrintStatus = "waiting";
+
+  override async enqueue(job: { kickDrawer: boolean }): Promise<{
+    status: PrintStatus;
+    kickDrawer: boolean;
+  }> {
+    this.jobs.push(job);
+
+    return { status: this.status, kickDrawer: job.kickDrawer };
+  }
+}
+
+class MemoryHub extends RealtimeHub {
+  readonly published: RealtimeNotice[] = [];
+
+  override async publish(notice: RealtimeNotice): Promise<void> {
+    this.published.push(notice);
   }
 }
 
@@ -103,10 +132,14 @@ const seat = async (input: {
 
   await dining.save(table);
   await dining.saveCheck(check);
+  const printer = new MemoryPrinter();
+  const hub = new MemoryHub();
 
   return {
     dining,
-    requestCheck: new RequestCheck(dining, new FixedClock()),
+    printer,
+    hub,
+    requestCheck: new RequestCheck(dining, new FixedClock(), printer, hub),
   };
 };
 
@@ -164,7 +197,7 @@ it("given a rejection, when the bill is requested, then nothing is saved", async
   ] as const;
 
   for (const attempt of cases) {
-    const { dining, requestCheck } = await seat({
+    const { dining, printer, hub, requestCheck } = await seat({
       table: attempt.table,
       check: attempt.check,
     });
@@ -191,5 +224,118 @@ it("given a rejection, when the bill is requested, then nothing is saved", async
     expect(
       (await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID))?.preBillRequest,
     ).toBeUndefined();
+    expect(printer.jobs).toEqual([]);
+    expect(hub.published).toEqual([]);
   }
+});
+
+const billableCheck = async () => {
+  const dining = new MemoryDiningRoom();
+  const table = placeTable("occupied");
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+  });
+
+  check.addLine({
+    orderId: "order_1",
+    lineId: "line_soup",
+    productId: "menu_product_soup",
+    name: "Soup",
+    course: 1,
+    price: 22_000,
+    channel: "waiter",
+  });
+  check.addLine({
+    orderId: "order_1",
+    lineId: "line_steak",
+    productId: "menu_product_steak",
+    name: "Steak",
+    course: 2,
+    price: 45_000,
+    channel: "waiter",
+  });
+  check.send({ course: 1, sentAt: OPENED_AT });
+  await dining.save(table);
+  await dining.saveCheck(check);
+  const printer = new MemoryPrinter();
+  const hub = new MemoryHub();
+
+  return {
+    dining,
+    printer,
+    hub,
+    requestCheck: new RequestCheck(dining, new FixedClock(), printer, hub),
+  };
+};
+
+it("given a sent soup and a held steak, when the bill is requested, then a pre-bill is enqueued with no kick and waiting publishes printer_failed", async () => {
+  const { dining, printer, hub, requestCheck } = await billableCheck();
+
+  await requestCheck.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+  });
+
+  expect(printer.jobs).toEqual([
+    {
+      document: "pre_bill",
+      commandId: `pre_bill:${CHECK_ID}:2026-10-28T12:15:00.000Z`,
+      table: TABLE_ID,
+      lines: [{ quantity: "1", name: "Soup", amount: "22000" }],
+      total: "22000",
+      qr: "",
+      kickDrawer: false,
+    },
+  ]);
+  expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+  expect(new TextEncoder().encode(JSON.stringify(printer.jobs))).not.toContain(
+    0x1b,
+  );
+  expect(hub.published).toEqual([
+    {
+      kind: "printer_failed",
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      checkId: CHECK_ID,
+      tableId: TABLE_ID,
+    },
+  ]);
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  expect(stored?.tableState).toBe("check_requested");
+  expect(stored?.total).toBe(22_000);
+});
+
+it("given a pre-bill that fails, when the bill is requested, then printer_failed is published and the check stays requested", async () => {
+  const { dining, printer, hub, requestCheck } = await billableCheck();
+  printer.status = "failed";
+
+  await requestCheck.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+  });
+
+  expect(printer.jobs).toEqual([
+    expect.objectContaining({
+      document: "pre_bill",
+      kickDrawer: false,
+    }),
+  ]);
+  expect(hub.published).toEqual([
+    {
+      kind: "printer_failed",
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      checkId: CHECK_ID,
+      tableId: TABLE_ID,
+    },
+  ]);
+  expect(
+    (await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID))?.tableState,
+  ).toBe("check_requested");
 });

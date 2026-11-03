@@ -7,7 +7,12 @@ export class OrganizationRegisterDirectory {
     tenantId: string,
     venueId: string,
     registerId: string,
-  ): Promise<{ id: string; venueId: string } | null> {
+  ): Promise<{
+    id: string;
+    venueId: string;
+    drawer: "present" | "absent";
+    printerId: string | null;
+  } | null> {
     const organization = await this.organizations.load(tenantId);
     const register = organization?.cashRegisters.find(
       (item) => item.id === registerId && item.venueId === venueId,
@@ -17,6 +22,11 @@ export class OrganizationRegisterDirectory {
       return null;
     }
 
-    return { id: register.id, venueId: register.venueId };
+    return {
+      id: register.id,
+      venueId: register.venueId,
+      drawer: register.drawer,
+      printerId: register.printerId,
+    };
   }
 }

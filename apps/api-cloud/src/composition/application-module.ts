@@ -102,6 +102,10 @@ import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
+import {
+  PendingDrawerAudit,
+  PendingSalePrinter,
+} from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
@@ -409,6 +413,8 @@ export class ApplicationModule implements NestModule {
               accounts,
               new ManualCardTerminal(),
               charges,
+              new PendingSalePrinter(),
+              new PendingDrawerAudit(),
             ),
           inject: [OrganizationRepository, OrdersAccount],
         },
@@ -454,9 +460,13 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: RequestCheck,
-          useFactory: (diningRoom: DiningRoomRepository, clock: OrdersClock) =>
-            new RequestCheck(diningRoom, clock),
-          inject: [DiningRoomRepository, OrdersClock],
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            clock: OrdersClock,
+            printer: Printer,
+            hub: RealtimeHub,
+          ) => new RequestCheck(diningRoom, clock, printer, hub),
+          inject: [DiningRoomRepository, OrdersClock, Printer, RealtimeHub],
         },
         {
           provide: ReassignCheck,

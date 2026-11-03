@@ -65,11 +65,25 @@ interface AddInvoicingTaxpayerCommand {
   taxpayerId: string;
 }
 
-interface AddVenueItemCommand {
-  type:
-    | typeof STRUCTURE_COMMAND.ADD_KITCHEN_STATION
-    | typeof STRUCTURE_COMMAND.ADD_CASH_REGISTER
-    | typeof STRUCTURE_COMMAND.ADD_SITE_WAREHOUSE;
+interface AddKitchenStationCommand {
+  type: typeof STRUCTURE_COMMAND.ADD_KITCHEN_STATION;
+  id: string;
+  venueId: string;
+  name: string;
+  printerId?: string | null;
+}
+
+interface AddCashRegisterCommand {
+  type: typeof STRUCTURE_COMMAND.ADD_CASH_REGISTER;
+  id: string;
+  venueId: string;
+  name: string;
+  drawer?: "present" | "absent";
+  printerId?: string | null;
+}
+
+interface AddSiteWarehouseCommand {
+  type: typeof STRUCTURE_COMMAND.ADD_SITE_WAREHOUSE;
   id: string;
   venueId: string;
   name: string;
@@ -108,7 +122,9 @@ export type StructureCommand =
   | OpenVenueCommand
   | ReplaceInvoicingTaxpayerCommand
   | AddInvoicingTaxpayerCommand
-  | AddVenueItemCommand
+  | AddKitchenStationCommand
+  | AddCashRegisterCommand
+  | AddSiteWarehouseCommand
   | RenameCashRegisterCommand
   | AddGeneralWarehouseCommand
   | AddPointCommand

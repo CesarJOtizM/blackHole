@@ -1,0 +1,23 @@
+{
+  "name": "@blackhole/printing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain/render": "./domain/render.js",
+    "./domain/templates": "./domain/templates.js",
+    "./application/entry-port": "./application/entry-port.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "imports": {
+    "#domain/*": "./domain/*",
+    "#application/*": "./application/*",
+    "#application/dispatch-print-jobs/*": "./application/dispatch-print-jobs/*",
+    "#application/enqueue-print-job/*": "./application/enqueue-print-job/*",
+    "#application/reprint-document/*": "./application/reprint-document/*",
+    "#adapters/postgres/*": "./adapters/postgres/*"
+  }
+}

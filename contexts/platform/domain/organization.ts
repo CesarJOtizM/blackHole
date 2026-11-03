@@ -9,10 +9,17 @@ const INVENTORY_LOCATION_KIND = {
 
 const ORGANIZATION_ID_PREFIX = "organization_";
 
+const DRAWER = {
+  PRESENT: "present",
+  ABSENT: "absent",
+} as const;
+
 type VenueMode = (typeof VENUE_MODE)[keyof typeof VENUE_MODE];
 
 type InventoryLocationKind =
   (typeof INVENTORY_LOCATION_KIND)[keyof typeof INVENTORY_LOCATION_KIND];
+
+type Drawer = (typeof DRAWER)[keyof typeof DRAWER];
 
 interface Taxpayer {
   id: string;
@@ -44,12 +51,15 @@ interface KitchenStation {
   id: string;
   venueId: string;
   name: string;
+  printerId: string | null;
 }
 
 interface CashRegister {
   id: string;
   venueId: string;
   name: string;
+  drawer: Drawer;
+  printerId: string | null;
 }
 
 interface RegisterCompany {
@@ -85,6 +95,21 @@ interface AddPoint {
 interface AssignInvoicingTaxpayer {
   venueId: string;
   taxpayerId: string;
+}
+
+interface AddKitchenStation {
+  id: string;
+  venueId: string;
+  name: string;
+  printerId?: string | null;
+}
+
+interface AddCashRegister {
+  id: string;
+  venueId: string;
+  name: string;
+  drawer?: Drawer;
+  printerId?: string | null;
 }
 
 interface AddVenueItem {
@@ -309,7 +334,7 @@ export class Organization {
     venue.invoicingTaxpayerId = input.taxpayerId;
   }
 
-  addKitchenStation(input: AddVenueItem): void {
+  addKitchenStation(input: AddKitchenStation): void {
     assertOrganizationId(input.venueId);
     this.reserve(input.id);
     this.venueById(input.venueId);
@@ -318,10 +343,11 @@ export class Organization {
       id: input.id,
       venueId: input.venueId,
       name: input.name,
+      printerId: input.printerId ?? null,
     });
   }
 
-  addCashRegister(input: AddVenueItem): void {
+  addCashRegister(input: AddCashRegister): void {
     assertOrganizationId(input.venueId);
     this.reserve(input.id);
     this.venueById(input.venueId);
@@ -330,6 +356,8 @@ export class Organization {
       id: input.id,
       venueId: input.venueId,
       name: input.name,
+      drawer: input.drawer ?? DRAWER.ABSENT,
+      printerId: input.printerId ?? null,
     });
   }
 

@@ -90,6 +90,7 @@ export const kitchenStations = pgTable("kitchen_stations", {
   tenantId: text("tenant_id").notNull(),
   venueId: text("venue_id").notNull(),
   name: text("name").notNull(),
+  printerId: text("printer_id"),
   position: integer("position").notNull(),
 });
 
@@ -98,6 +99,8 @@ export const cashRegisters = pgTable("cash_registers", {
   tenantId: text("tenant_id").notNull(),
   venueId: text("venue_id").notNull(),
   name: text("name").notNull(),
+  drawer: text("drawer").notNull().default("absent"),
+  printerId: text("printer_id"),
   position: integer("position").notNull(),
 });
 

@@ -13,8 +13,8 @@ export interface PrinterFailed {
   venueId: string;
   checkId: string;
   tableId: string;
-  lineId: string;
-  stationId: string;
+  lineId?: string;
+  stationId?: string;
   text?: string;
 }
 

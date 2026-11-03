@@ -9,9 +9,16 @@ const LOCATION_KIND = {
   WAREHOUSE: "warehouse",
 } as const;
 
+const DRAWER = {
+  PRESENT: "present",
+  ABSENT: "absent",
+} as const;
+
 type VenueMode = (typeof VENUE_MODE)[keyof typeof VENUE_MODE];
 
 type LocationKind = (typeof LOCATION_KIND)[keyof typeof LOCATION_KIND];
+
+type Drawer = (typeof DRAWER)[keyof typeof DRAWER];
 
 export interface OrganizationTaxpayer {
   id: string;
@@ -43,12 +50,15 @@ export interface OrganizationKitchenStation {
   id: string;
   venueId: string;
   name: string;
+  printerId: string | null;
 }
 
 export interface OrganizationCashRegister {
   id: string;
   venueId: string;
   name: string;
+  drawer: Drawer;
+  printerId: string | null;
 }
 
 export interface OrganizationSnapshot {

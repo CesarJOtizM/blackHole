@@ -1,14 +1,24 @@
-import { type PrintedTicket, Printer } from "#application/ports/printer.js";
+import {
+  Printer,
+  type PrintJobRequest,
+  type PrintJobStatus,
+  type QueuedPrintJob,
+} from "#application/ports/printer.js";
 
 export class InMemoryPrinter extends Printer {
-  readonly printed: string[] = [];
+  readonly jobs: PrintJobRequest[] = [];
   fail = false;
 
-  override async print(ticket: PrintedTicket): Promise<void> {
-    if (this.fail) {
-      throw new Error("The printer is offline.");
-    }
+  override async enqueue(job: PrintJobRequest): Promise<QueuedPrintJob> {
+    this.jobs.push(job);
 
-    this.printed.push(ticket.text);
+    return {
+      status: this.status(),
+      kickDrawer: job.kickDrawer,
+    };
+  }
+
+  private status(): PrintJobStatus {
+    return this.fail ? "failed" : "waiting";
   }
 }

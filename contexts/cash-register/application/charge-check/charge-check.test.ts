@@ -3,6 +3,8 @@ import { expect, it, vi } from "vitest";
 import {
   ChargeCheck,
   ChargeLedger,
+  DrawerAudit,
+  type DrawerOpenedAudit,
   InvalidClosureId,
   type RecordedCharge,
   UnknownAccount,
@@ -15,8 +17,10 @@ import {
   type CardCapture,
   CardTerminal,
 } from "#application/ports/card-terminal.js";
+import { Printer, type SaleReceiptJob } from "#application/ports/printer.js";
 import {
   type KnownRegister,
+  type RegisterDrawer,
   RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
@@ -44,6 +48,11 @@ const TERMINAL = "terminal_front";
 const BRAND = "visa";
 const PORT_LAST_4 = "4242";
 const TYPED_LAST_4 = "1111";
+const PRINTER_ID = "printer-front";
+const QUIET_PRINTER_ID = "printer-quiet";
+const CASH_PAYMENT_ID = "payment_cash_1";
+const CASH_CLOSURE_ID = "closure_cash_1";
+const CASH_COMMAND_ID = "command_cash_1";
 
 const registerKey = (
   tenantId: string,
@@ -116,8 +125,37 @@ class MemoryCardTerminal extends CardTerminal {
   }
 }
 
+interface RegisterProfile {
+  drawer: RegisterDrawer;
+  printerId: string | null;
+}
+
+class MemoryPrinter extends Printer {
+  readonly jobs: SaleReceiptJob[] = [];
+
+  override async enqueue(job: SaleReceiptJob): Promise<{
+    status: "waiting";
+    kickDrawer: boolean;
+  }> {
+    this.jobs.push(job);
+
+    return { status: "waiting", kickDrawer: job.kickDrawer };
+  }
+}
+
+class MemoryDrawerAudit extends DrawerAudit {
+  readonly events: DrawerOpenedAudit[] = [];
+
+  override async record(event: DrawerOpenedAudit): Promise<void> {
+    this.events.push(event);
+  }
+}
+
 class MemoryRegisterLookup extends RegisterLookup {
-  constructor(private readonly known: ReadonlySet<string>) {
+  constructor(
+    private readonly known: ReadonlySet<string>,
+    private readonly profiles: ReadonlyMap<string, RegisterProfile> = new Map(),
+  ) {
     super();
   }
 
@@ -130,7 +168,16 @@ class MemoryRegisterLookup extends RegisterLookup {
       return null;
     }
 
-    return { id: registerId, venueId };
+    const profile = this.profiles.get(
+      registerKey(tenantId, venueId, registerId),
+    );
+
+    return {
+      id: registerId,
+      venueId,
+      drawer: profile?.drawer ?? "absent",
+      printerId: profile?.printerId ?? null,
+    };
   }
 }
 
@@ -167,11 +214,61 @@ const chargeFor = (
   const ledger = new MemoryChargeLedger();
   const lookup = new MemoryRegisterLookup(knownRegisters);
 
+  const printer = new MemoryPrinter();
+  const audits = new MemoryDrawerAudit();
+
   return {
     accounts,
     ledger,
     terminal,
-    charge: new ChargeCheck(lookup, accounts, terminal, ledger),
+    printer,
+    audits,
+    charge: new ChargeCheck(
+      lookup,
+      accounts,
+      terminal,
+      ledger,
+      printer,
+      audits,
+    ),
+  };
+};
+
+const cashInput = {
+  tenantId: TENANT_ID,
+  venueId: VENUE_ID,
+  registerId: REGISTER_ID,
+  checkId: CHECK_ID,
+  commandId: CASH_COMMAND_ID,
+  paymentId: CASH_PAYMENT_ID,
+  closureId: CASH_CLOSURE_ID,
+  tenders: [{ method: "cash" as const, amountCop: 85_000 }],
+  tip: { method: "cash" as const, amountCop: 0 },
+};
+
+const chargeCash = (profile: RegisterProfile) => {
+  const accounts = new MemoryAccounts(TENANT_ID, accountFor(85_000));
+  const ledger = new MemoryChargeLedger();
+  const printer = new MemoryPrinter();
+  const audits = new MemoryDrawerAudit();
+  const lookup = new MemoryRegisterLookup(
+    knownRegisters,
+    new Map([[registerKey(TENANT_ID, VENUE_ID, REGISTER_ID), profile]]),
+  );
+
+  return {
+    accounts,
+    ledger,
+    printer,
+    audits,
+    charge: new ChargeCheck(
+      lookup,
+      accounts,
+      new MemoryCardTerminal(),
+      ledger,
+      printer,
+      audits,
+    ),
   };
 };
 
@@ -507,4 +604,86 @@ it("given a charge saved for one tenant, when another tenant loads that command,
   expect(otherTenant).toBeNull();
   expect(sameTenant?.closure.id).toBe(CLOSURE_ID);
   expect(sameTenant?.payment.saleCop).toBe(85_000);
+});
+
+it("given a present drawer and a cash sale, when the charge is saved, then that printer is kicked and cash.drawer-opened is audited once", async () => {
+  const { accounts, ledger, printer, audits, charge } = chargeCash({
+    drawer: "present",
+    printerId: PRINTER_ID,
+  });
+  const markPaid = vi.spyOn(accounts, "markPaid");
+  const insert = vi.spyOn(ledger, "insert");
+  const enqueue = vi.spyOn(printer, "enqueue");
+  const record = vi.spyOn(audits, "record");
+
+  await charge.execute(cashInput);
+  await charge.execute({
+    ...cashInput,
+    paymentId: "payment_cash_again",
+    closureId: "closure_cash_again",
+  });
+
+  expect(printer.jobs).toEqual([
+    {
+      commandId: CASH_COMMAND_ID,
+      printerId: PRINTER_ID,
+      document: "offline_receipt",
+      kickDrawer: true,
+    },
+  ]);
+  expect(audits.events).toEqual([
+    {
+      action: "cash.drawer-opened",
+      paymentId: CASH_PAYMENT_ID,
+      registerId: REGISTER_ID,
+      printerId: PRINTER_ID,
+    },
+  ]);
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(insert.mock.invocationCallOrder[0]).toBeLessThan(
+    markPaid.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(markPaid.mock.invocationCallOrder[0]).toBeLessThan(
+    enqueue.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(enqueue.mock.invocationCallOrder[0]).toBeLessThan(
+    record.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+  expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+});
+
+it("given an absent drawer and a cash sale, when the charge is saved, then the receipt prints with no kick, no drawer audit, and no open-without-sale", async () => {
+  const { ledger, printer, audits, charge } = chargeCash({
+    drawer: "absent",
+    printerId: QUIET_PRINTER_ID,
+  });
+  const insert = vi.spyOn(ledger, "insert");
+  const record = vi.spyOn(audits, "record");
+
+  await charge.execute(cashInput);
+
+  expect(printer.jobs).toEqual([
+    {
+      commandId: CASH_COMMAND_ID,
+      printerId: QUIET_PRINTER_ID,
+      document: "offline_receipt",
+      kickDrawer: false,
+    },
+  ]);
+  expect(audits.events).toEqual([]);
+  expect(record).not.toHaveBeenCalled();
+  expect(insert).toHaveBeenCalledTimes(1);
+  expect(Object.getOwnPropertyNames(ChargeCheck.prototype)).toEqual([
+    "constructor",
+    "execute",
+  ]);
+  expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+  expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+  const stored = await ledger.findByCommand(
+    TENANT_ID,
+    VENUE_ID,
+    CASH_COMMAND_ID,
+  );
+  expect(stored?.closure.id).toBe(CASH_CLOSURE_ID);
 });
