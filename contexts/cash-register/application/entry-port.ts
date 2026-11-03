@@ -3,8 +3,8 @@ export { ApproveVariance } from "#application/approve-variance/approve-variance.
 export type {
   ChargeCheckInput,
   ChargeCheckResult,
+  DrawerOpenedAudit,
 } from "#application/charge-check/charge-check.js";
-export type { DrawerOpenedAudit } from "#application/charge-check/charge-check.js";
 export {
   ChargeCheck,
   DrawerAudit,
@@ -20,12 +20,12 @@ export type {
 export { CloseShift } from "#application/close-shift/close-shift.js";
 export type { OpenShiftInput } from "#application/open-shift/open-shift.js";
 export { OpenShift } from "#application/open-shift/open-shift.js";
-export { UnknownRegister } from "#application/ports/register-lookup.js";
 export type {
   QueuedSaleReceipt,
   SaleReceiptJob,
 } from "#application/ports/printer.js";
 export { Printer } from "#application/ports/printer.js";
+export { UnknownRegister } from "#application/ports/register-lookup.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,
