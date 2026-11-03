@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: PR3 `feat/anti-theft-grant` targeting `feat/anti-theft-consume`
-**Work unit**: 3 — PIN (task 2.3)
+**PR slice**: `feat/anti-theft-alerts` targeting `feat/anti-theft-grant` (PR #71). Not the SQL branch.
+**Work unit**: 5 — in-memory detector (task 2.4)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -13,6 +13,7 @@
 - [x] 2.1 Consume use case: a failed write after consume needs a new grant
 - [x] 2.2 Count executed operations: successful audits only
 - [x] 2.3 Operate authorization: request carries `targetId` and shift totals; a rejected PIN appends `pin.confirmation-failed` without the PIN
+- [x] 2.4 Detect unusual behavior: void seed 5; every self-authorization alerts; discount, pair, and failed-PIN seeds are venue rows defaulting to 5
 
 ## Work Unit Evidence
 
@@ -115,6 +116,30 @@ Same command, after `OperateAuthorization` passed `targetId` and shift totals in
 
 `pnpm exec biome check --formatter-enabled=false` on the two edited operate-authorization files. Exit 0. No fixes applied.
 
+### Unit 5 — Alerts detector (task 2.4)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project platform contexts/platform/application/detect-unusual-behavior/detect-unusual-behavior.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 3 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory application use case. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/platform/application/detect-unusual-behavior/`, the `DetectUnusualBehavior` export in `contexts/platform/application/entry-port.ts`, and the `#application/detect-unusual-behavior/*` import in `contexts/platform/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project platform contexts/platform/application/detect-unusual-behavior/detect-unusual-behavior.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Cannot find module `#application/detect-unusual-behavior/detect-unusual-behavior.js`.
+
+#### GREEN
+
+Same command, after `DetectUnusualBehavior` counted successful audits and exported the use case from the platform entry port. Exit 0. Test files 1 passed. Tests 3 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on the detector files, `entry-port.ts`, and `contexts/platform/package.json`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -126,7 +151,10 @@ Same command, after `OperateAuthorization` passed `targetId` and shift totals in
 - A counted audit is `kind: "event"`, for that actor and `after.shiftId`, with `after` shaped `{ value, shiftId, kitchen }` and `before` different from `after`. `pin.confirmation-failed`, `after.approved === false`, and `kind: "altered"` do not count. No new audit type and no SQL migration.
 - `RequestCommand.targetId` and `RequestCommand.shiftTotals` stay optional. When present, `OperateAuthorization` passes them to `evaluateFor` and `requestAuthorization`. When absent, evaluation still uses `waiterVoidsBeforeKitchen: 0` and the domain keeps the migration defaults. This slice does not edit the HTTP contract.
 - `RecordAuditEvent` is an optional last constructor argument so `authorization.controller.ts` keeps compiling with five arguments. A `PinConfirmationRejected` error appends `pin.confirmation-failed` only when that collaborator is present. The audit stores actor, device, site, request id, target, shift, and the reason `PIN confirmation failed`. It does not store the PIN. `PinConfirmationLocked` does not append this action. This use case does not count audits.
+- `DetectUnusualBehavior` does not call `CountExecutedOperations`. That use case returns only before-kitchen voids and courtesy totals for one actor. The detector repeats the same successful-audit predicate: `kind: "event"`, `after` shaped `{ value, shiftId, kitchen }`, action other than `pin.confirmation-failed`, `after.approved` not false, and `before` different from `after`. It also filters by site and shift. It does not consume grants.
+- Post-kitchen voids use the published seed 5 only. Discount, requester-authorizer pair, and failed-PIN seeds use that same integer unless the caller passes venue rows. Self-authorization has no numeric seed: every successful audit with `authorizerId === actorId` or `after.selfAuthorized === true` alerts.
+- A repeated pair is any successful audit in the shift whose authorizer is a different person. A failed PIN is `pin.confirmation-failed` on one device in the shift, counted when the count is over the seed. The alert does not copy a PIN. The detector does not write a mark back onto the void.
 
 ## Remaining
 
-Tasks 2.4–7.1 are pending. The next checkbox is 2.4. Task 2.3 is the only checkbox newly marked in this batch.
+Tasks 2.5–7.1 are pending. The next checkbox is 2.5. Task 2.4 is the only checkbox newly marked in this batch. 5/25 tasks complete.
