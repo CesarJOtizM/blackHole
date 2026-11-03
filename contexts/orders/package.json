@@ -39,6 +39,7 @@
     "#application/view-station-queue/*": "./application/view-station-queue/*",
     "#application/get-check/*": "./application/get-check/*",
     "#application/mark-account-paid/*": "./application/mark-account-paid/*",
+    "#application/apply-courtesy/*": "./application/apply-courtesy/*",
     "#application/apply-discount/*": "./application/apply-discount/*",
     "#application/void-account/*": "./application/void-account/*",
     "#application/void-line/*": "./application/void-line/*",

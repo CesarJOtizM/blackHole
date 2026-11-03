@@ -57,7 +57,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 - [x] 4.1 RED/GREEN `contexts/orders/application/void-line/` `ports/open-shift-reader.ts` `entry-port.ts`: `held`/`sent` within cap; `in_preparation` and later stay. `@blackhole/platform/application/entry-port`. orders
 - [x] 4.2 RED/GREEN `contexts/orders/application/void-account/` `entry-port.ts`: matching grant. orders
 - [x] 4.3 RED/GREEN `contexts/orders/application/apply-discount/` `entry-port.ts`: over percent cap waits; same value and target apply. orders
-- [ ] 4.4 RED/GREEN `contexts/orders/application/apply-courtesy/` `entry-port.ts`: `compShiftCop` from executed operations. orders
+- [x] 4.4 RED/GREEN `contexts/orders/application/apply-courtesy/` `entry-port.ts`: `compShiftCop` from executed operations. orders
 - [ ] 4.5 RED/GREEN `contexts/orders/application/change-price/` `entry-port.ts`: line only; menu stays. orders
 - [ ] 4.6 RED/GREEN `contexts/orders/application/take-order/take-order.ts` + test: post-pre-bill add without `sale.edit-printed-check` leaves the account. orders
 - [ ] 4.7 RED/GREEN `contexts/orders/application/reassign-check/reassign-check.ts` + test: `sale.transfer-table` audits the new waiter. orders
