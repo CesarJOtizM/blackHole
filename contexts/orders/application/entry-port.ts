@@ -22,6 +22,8 @@ export type {
 export { OpenTable } from "#application/open-table/open-table.js";
 export type { PlaceTableInput } from "#application/place-table/place-table.js";
 export { PlaceTable } from "#application/place-table/place-table.js";
+export type { OpenShiftQuery } from "#application/ports/open-shift-reader.js";
+export { OpenShiftReader } from "#application/ports/open-shift-reader.js";
 export type { RealtimeNotice } from "#application/ports/realtime-hub.js";
 export { RealtimeHub } from "#application/ports/realtime-hub.js";
 export type { ReassignCheckInput } from "#application/reassign-check/reassign-check.js";
@@ -63,6 +65,8 @@ export type {
 export { ViewTableMap } from "#application/view-table-map/view-table-map.js";
 export type { ViewVenueMenuInput } from "#application/view-venue-menu/view-venue-menu.js";
 export { ViewVenueMenu } from "#application/view-venue-menu/view-venue-menu.js";
+export type { VoidLineInput } from "#application/void-line/void-line.js";
+export { VoidLine } from "#application/void-line/void-line.js";
 export {
   ComboNotSent,
   EmptyOrder,

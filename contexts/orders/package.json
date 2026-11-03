@@ -39,11 +39,13 @@
     "#application/view-station-queue/*": "./application/view-station-queue/*",
     "#application/get-check/*": "./application/get-check/*",
     "#application/mark-account-paid/*": "./application/mark-account-paid/*",
+    "#application/void-line/*": "./application/void-line/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*"
   },
   "dependencies": {
+    "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "drizzle-orm": "catalog:"
   },

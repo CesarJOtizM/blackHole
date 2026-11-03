@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-sql` targeting `feat/anti-theft-report` (PR #73). Not `main`.
-**Work unit**: 4 — Postgres binding (task 3.1)
+**PR slice**: `feat/anti-theft-voids` targeting `feat/anti-theft-sql` (PR #74). Not `main`.
+**Work unit**: 6 — Voids (task 4.1)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -16,6 +16,7 @@
 - [x] 2.4 Detect unusual behavior: void seed 5; every self-authorization alerts; discount, pair, and failed-PIN seeds are venue rows defaulting to 5
 - [x] 2.5 Read control report: voids, discounts, courtesies, cash differences, drawer openings, and accounts reopened or edited after the pre-bill. `audit.view`. Successful audits only
 - [x] 3.1 Postgres binding: `target_id` copied from `venue_id`, `consumed_at` null on existing rows, updatable venue thresholds, insert-only alerts, RLS for `authorization_app`
+- [x] 4.1 Void a line: `held` or `sent` within the before-kitchen cap leaves the account; `in_preparation` and later stay. A missing grant, a mismatch, or a closed shift leaves the line unchanged
 
 ## Work Unit Evidence
 
@@ -196,6 +197,32 @@ The same command after sorting the authorization imports for Biome. Exit 0. Test
 
 `node tools/infra/check-forward-migrations.mjs`. Exit 0. Migrations stay forward-only and keep `0001` and `0002`.
 
+### Unit 6 — Voids (task 4.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project orders contexts/orders/application/void-line/void-line.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 8 passed. Re-run after the Biome import fixes: exit 0, 1 file, 8 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room and an in-memory open-shift double. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/void-line/`, `contexts/orders/application/ports/open-shift-reader.ts`, the `VoidLine` and `OpenShiftReader` exports in `contexts/orders/application/entry-port.ts`, the `#application/void-line/*` import and `@blackhole/platform` dependency in `contexts/orders/package.json`, and the matching workspace link in `pnpm-lock.yaml` |
+
+#### RED
+
+Command: `pnpm vitest run --project orders contexts/orders/application/void-line/void-line.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case and the open-shift port existed:
+
+- Cannot find module `#application/ports/open-shift-reader.js`.
+
+#### GREEN
+
+Same command, after `VoidLine` counted executed operations, evaluated `sale.void-before-kitchen`, consumed a matching grant only when the cap required one, and detached a `held` or `sent` line. Exit 0. Test files 1 passed. Tests 8 passed.
+
+The same command after the Biome import-type and import-order fixes. Exit 0. Test files 1 passed. Tests 8 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `void-line.ts`, `void-line.test.ts`, `open-shift-reader.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -216,7 +243,10 @@ The same command after sorting the authorization imports for Biome. Exit 0. Test
 - `0014_authorization_binding.sql` adds `target_id` and nullable `consumed_at` on `authorization_requests`. Existing rows copy `venue_id` into `target_id` and leave `consumed_at` null. The Drizzle repository writes and reads both fields. A mismatch stays unconsumed in the domain. A second consume throws `AuthorizationAlreadyConsumed`. Shift totals stay on the domain request and are filled by `completeRequest` on restore. This migration does not add shift-total columns.
 - Venue thresholds are `authorization_venue_thresholds`: `discount`, `requester_authorizer_pair`, and `failed_pin`, each `NOT NULL DEFAULT 5`. `authorization_app` may select, insert, update, and delete them under forced RLS. The void-after-kitchen seed stays the published 5 in the detector. The domain snapshot and the authorization port were not changed.
 - Alerts are `authorization_alerts`. `authorization_app` receives `SELECT` and `INSERT` only. A trigger rejects update, delete, and truncate with `authorization alerts are insert-only`, including for the table owner. The role's update and delete fail with permission denied. Saving an authorization does not delete alerts. The migration does not create a role and does not grant `authorization_app` update on unrelated tables. `node tools/infra/check-forward-migrations.mjs` accepts the file. No `DROP` or `RENAME`.
+- `Check` has no void operation, and this slice cannot edit the orders domain. `VoidLine` detaches the line with the public `transfer` onto an unsaved sink check (`check_void_sink`) and saves only the original account. The line leaves that account. The sink is not persisted.
+- A line in `held` or `sent` whose evaluation is `allowed` is voided without a grant. `requires_authorization` consumes first. A null `authorizationId` does not call consume. `UnknownAuthorizationReference` and a `false` consume leave the line unchanged. `in_preparation`, `ready`, and `delivered` return before the platform calls. A closed shift returns after the open-shift read and before count, evaluate, or consume.
+- The consumed value is `1` and `targetId` is the line id. The audit action is `sale.void-before-kitchen`. `after` is `{ value: 1, shiftId, kitchen: "before" }`. `before` is `{ state }` so the successful audit is not the same state twice.
 
 ## Remaining
 
-Tasks 4.1–7.1 are pending. The next checkbox is 4.1. Task 3.1 is the only checkbox newly marked in this batch. 7/25 tasks complete.
+Tasks 4.2–7.1 are pending. The next checkbox is 4.2. Task 4.1 is the only checkbox newly marked in this batch. 8/25 tasks complete.
