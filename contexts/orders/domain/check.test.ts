@@ -577,3 +577,55 @@ it("given check_requested, when another product is sent, then the table is occup
     "sent",
   ]);
 });
+
+it("given soup and salad, when the soup price changes, then only that line price changes", () => {
+  const check = openTableCheck();
+  addCourseLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_soup",
+    name: "Soup",
+    price: 12_000,
+  });
+  addCourseLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_salad",
+    name: "Salad",
+    price: 8_000,
+  });
+
+  check.changePrice({ lineId: "line_soup", price: 9_000 });
+
+  expect(check.orders[0]?.lines).toEqual([
+    expect.objectContaining({
+      id: "line_soup",
+      productId: "menu_product_soup",
+      price: 9_000,
+      state: "held",
+    }),
+    expect.objectContaining({
+      id: "line_salad",
+      productId: "menu_product_salad",
+      price: 8_000,
+      state: "held",
+    }),
+  ]);
+  expect(check.total).toBe(0);
+});
+
+it("given soup at 12000, when the new price is not an integer or the line is unknown, then the price stays", () => {
+  const check = openTableCheck();
+  addCourseLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_soup",
+    name: "Soup",
+    price: 12_000,
+  });
+
+  expect(() => {
+    check.changePrice({ lineId: "line_soup", price: 9_000.5 });
+  }).toThrow(InvalidCheckPrice);
+  expect(() => {
+    check.changePrice({ lineId: "line_missing", price: 9_000 });
+  }).toThrow(InvalidLineId);
+  expect(check.orders[0]?.lines.map((line) => line.price)).toEqual([12_000]);
+});

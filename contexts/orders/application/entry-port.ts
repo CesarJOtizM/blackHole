@@ -4,6 +4,8 @@ export type { ApplyDiscountInput } from "#application/apply-discount/apply-disco
 export { ApplyDiscount } from "#application/apply-discount/apply-discount.js";
 export type { ChangeLineStateInput } from "#application/change-line-state/change-line-state.js";
 export { ChangeLineState } from "#application/change-line-state/change-line-state.js";
+export type { ChangePriceInput } from "#application/change-price/change-price.js";
+export { ChangePrice } from "#application/change-price/change-price.js";
 export type {
   ConfigureStationRouteInput,
   VenueStation,

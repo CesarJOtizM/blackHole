@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-courtesy` targeting `feat/anti-theft-discount` (PR #77). Not `main`.
-**Work unit**: 7 — Courtesy (task 4.4)
+**PR slice**: `feat/anti-theft-price` targeting `feat/anti-theft-courtesy` (PR #78). Not `main`.
+**Work unit**: 8 — Price (task 4.5)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -20,6 +20,7 @@
 - [x] 4.2 Void an account: a matching `sale.void-account` grant is consumed before the account is cleared. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws
 - [x] 4.3 Apply a discount: over the percent cap the discount waits until a matching `sale.discount` grant is consumed. The same value and the same target apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay. The discount is stored on the audit
 - [x] 4.4 Apply a courtesy: `compShiftCop` comes from executed operations. Over the shift cap the courtesy waits until a matching `sale.comp` grant is consumed. The same amount and the same account apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay and the account is not cleared. The courtesy is stored on the audit
+- [x] 4.5 Change a line price: the new price is stored on that line. The menu stays. `sale.change-price` is the existing permission. Shift totals come from executed operations. A matching grant (same price and same line id) is consumed before the save when authorization is required. `allowed` does not consume. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the line price unchanged. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` and the check is saved
 
 ## Work Unit Evidence
 
@@ -304,6 +305,42 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 
 `pnpm exec biome check --formatter-enabled=false` on `apply-courtesy.ts`, `apply-courtesy.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
 
+### Unit 8 — Price (task 4.5)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | Domain: `pnpm vitest run --project orders contexts/orders/domain/check.test.ts`. RED exit 1: 2 failed, 15 passed (17). GREEN exit 0: 1 file, 17 passed. Application: `pnpm vitest run --project orders contexts/orders/application/change-price/change-price.test.ts`. RED exit 1: 1 failed file, no tests (missing import). GREEN with the domain file: exit 0, 2 files, 26 passed (9 application + 17 domain). Re-run after Biome: exit 0, 2 files, 26 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room, an in-memory open-shift double, and a menu that the use case does not receive. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/change-price/`, `Check.changePrice` in `contexts/orders/domain/check.ts` and the two tests in `contexts/orders/domain/check.test.ts`, the `ChangePrice` export in `contexts/orders/application/entry-port.ts`, and the `#application/change-price/*` import in `contexts/orders/package.json` |
+
+#### RED
+
+Domain command: `pnpm vitest run --project orders contexts/orders/domain/check.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 2 failed, 15 passed (17).
+
+Failure before `Check` could change one line's price:
+
+- `check.changePrice` was not a function. The non-integer case therefore threw `TypeError` instead of `InvalidCheckPrice`.
+
+Application command: `pnpm vitest run --project orders contexts/orders/application/change-price/change-price.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Missing `#application/change-price/change-price.js` specifier in `@blackhole/orders`.
+
+#### GREEN
+
+Domain command, after `Check.changePrice`. Exit 0. Test files 1 passed. Tests 17 passed.
+
+Application and domain together, after `ChangePrice` evaluated `sale.change-price`, consumed a matching grant before the save, wrote the new price on that line, and left the menu untouched. Exit 0. Test files 2 passed. Tests 26 passed.
+
+The same two files after `pnpm exec biome check --write` on the slice. Exit 0. Test files 2 passed. Tests 26 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `change-price.ts`, `change-price.test.ts`, `check.ts`, `check.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -326,6 +363,10 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 - `Check` has no courtesy operation, and this slice does not add one. `ApplyCourtesy` does not save the check, does not clear it, and does not change line prices. The applied courtesy is the audit `after` shape `{ value, shiftId, kitchen: null }`, where `value` is the courtesy amount in the same unit `CountExecutedOperations` adds to `compShiftCop`. `before` is `{ value: 0 }` so the two states differ and the next courtesy sees the used amount. The action is the existing catalog code `sale.comp`. No second permission code was added.
 - Over the shift cap the decision is `requires_authorization` and nothing is written until `ConsumeAuthorization` returns true for the same amount and the same check id. `allowed` writes the audit and does not consume. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume.
 - The courtesy command carries `value` and does not carry a caller total. `CountExecutedOperations` returns `compShiftCop`. `ApplyCourtesy` passes those totals and the courtesy value into `EvaluatePermission`. The domain adds `compShiftCop` to the value before comparing the shift cap. This use case does not add them itself.
+- `Check` could not change one line's price. This slice adds `changePrice({ lineId, price })`. A non-integer price throws `InvalidCheckPrice` and an unknown line throws `InvalidLineId`. Other lines stay. The method does not write the menu.
+- `ChangePrice` uses the existing catalog code `sale.change-price`. No second code was added. The command carries `price` and does not carry a caller total. Shift totals come from `CountExecutedOperations` and are passed into `EvaluatePermission` with that price. The menu is not a collaborator.
+- `requires_authorization` consumes a grant for the same price and the same line id before `changePrice` and `saveCheck`. `allowed` saves and audits and does not consume. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the line price unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume.
+- The audit action is `sale.change-price`. `entity` is the line id. `after` is `{ value, shiftId, kitchen: null }`, where `value` is the new price. `before` is `{ value: previous line price }` so the two states differ. Discount and courtesy used `{ value: 0 }` because those amounts are not stored on the check. The site price stays on the menu object the use case never receives.
 - Discounts and courtesies are separate lists. Both carry user, authorizer, and value. Voids carry user, authorizer, reason, and `before kitchen` or `after kitchen`. Cash differences carry cashier and shift. Drawer openings carry the user. Reopened accounts and post-pre-bill edits share one list and are distinguished by `reopened` or `edited-after-pre-bill`. Offline hybrid rows stay deferred.
 - `0014_authorization_binding.sql` adds `target_id` and nullable `consumed_at` on `authorization_requests`. Existing rows copy `venue_id` into `target_id` and leave `consumed_at` null. The Drizzle repository writes and reads both fields. A mismatch stays unconsumed in the domain. A second consume throws `AuthorizationAlreadyConsumed`. Shift totals stay on the domain request and are filled by `completeRequest` on restore. This migration does not add shift-total columns.
 - Venue thresholds are `authorization_venue_thresholds`: `discount`, `requester_authorizer_pair`, and `failed_pin`, each `NOT NULL DEFAULT 5`. `authorization_app` may select, insert, update, and delete them under forced RLS. The void-after-kitchen seed stays the published 5 in the detector. The domain snapshot and the authorization port were not changed.
@@ -338,4 +379,4 @@ The same command after `pnpm exec biome check --write` on the slice. Exit 0. Tes
 
 ## Remaining
 
-Tasks 4.5–7.1 are pending. The next checkbox is 4.5. Task 4.4 is the only checkbox newly marked in this batch. 11/25 tasks complete. The courtesy slice is 580 added lines: `apply-courtesy.ts` 143, `apply-courtesy.test.ts` 434, plus the entry-port export and the package import. One shared harness covers the cap, the matching grant, the allowed path, and the six rejection cases. Dropping a spec scenario would be the only way under 400. `size:exception` was not granted.
+Tasks 4.6–7.1 are pending. The next checkbox is 4.6. Task 4.5 is the only checkbox newly marked in this batch. 12/25 tasks complete. The price slice is about 742 added lines: `change-price.ts` 153, `change-price.test.ts` 516, `check.ts` 18, `check.test.ts` 52, plus the entry-port export and the package import. One shared harness covers the authorized line change, the untouched site price, the allowed path, and the six rejection cases. Dropping a spec scenario would be the only way under 400. `size:exception` was not granted.
