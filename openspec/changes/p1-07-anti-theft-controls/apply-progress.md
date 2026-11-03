@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-transfer` targeting `feat/anti-theft-prebill` (PR #80). Not `main`.
-**Work unit**: 8 — Table transfer (task 4.7)
+**PR slice**: `feat/anti-theft-drawer` targeting `feat/anti-theft-transfer` (PR #81). Not `main`.
+**Work unit**: 9 — No-sale drawer (task 5.1)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -23,6 +23,7 @@
 - [x] 4.5 Change a line price: the new price is stored on that line. The menu stays. `sale.change-price` is the existing permission. Shift totals come from executed operations. A matching grant (same price and same line id) is consumed before the save when authorization is required. `allowed` does not consume. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the line price unchanged. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` and the check is saved
 - [x] 4.6 Add a line after the printed pre-bill: without `sale.edit-printed-check` the account stays as it was saved. Shift totals come from executed operations. `allowed` does not consume a grant. `requires_authorization` consumes a grant for the check and the added line's quoted price before the save. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. The successful audit `after` is `{ value, shiftId, kitchen: null }`
 - [x] 4.7 Transfer a table to another waiter: `sale.transfer-table` runs before the write. Shift totals come from executed operations. `allowed` does not consume. `requires_authorization` consumes a grant for the check before the reassignment. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the current waiter. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` plus the new waiter id
+- [x] 5.1 Open the drawer without a sale: one `drawer_open` job with `kickDrawer: true` on the cash-register `Printer` port. A missing register or a drawer other than `present` is `absent`. A null `printerId` does not enqueue. `cash.open-drawer` consumes a matching grant only when the decision is `requires_authorization`. `allowed` does not consume. No job and no `cash.drawer-opened` audit when the grant is missing, mismatched, denied, unknown, the drawer is absent, or there is no printer. `AuthorizationAlreadyConsumed` is rethrown. No receipt and no `@blackhole/printing` import
 
 ## Work Unit Evidence
 
@@ -397,6 +398,34 @@ The same command after folding the six refusal cases into one `it`, matching the
 
 `pnpm exec biome check --formatter-enabled=false` on `reassign-check.ts` and `reassign-check.test.ts`. Exit 0. No fixes applied.
 
+### Unit 9 — No-sale drawer (task 5.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project cash-register contexts/cash-register/application/open-drawer/open-drawer.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 10 passed. Re-run after Biome: exit 0, 1 file, 10 passed. Charge-check regression: `pnpm vitest run --project cash-register contexts/cash-register/application/charge-check/charge-check.test.ts`. Exit 0: 1 file, 22 passed. Re-run after the printer-port format: exit 0, 1 file, 22 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory register lookup, printer, and platform entry-port doubles. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. `PendingSalePrinter` stays unwired. |
+| Rollback boundary | `contexts/cash-register/application/open-drawer/`, the `DrawerOpenJob` member of `SaleReceiptJob` in `contexts/cash-register/application/ports/printer.ts`, the `OpenDrawer` export in `contexts/cash-register/application/entry-port.ts`, the `#application/open-drawer/*` import and `@blackhole/platform` dependency in `contexts/cash-register/package.json`, and the matching workspace link in `pnpm-lock.yaml` |
+
+#### RED
+
+Command: `pnpm vitest run --project cash-register contexts/cash-register/application/open-drawer/open-drawer.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Cannot find module `#application/open-drawer/open-drawer.js`.
+
+#### GREEN
+
+Same command, after `OpenDrawer` evaluates `cash.open-drawer`, consumes a matching grant only when required, enqueues `{ document: "drawer_open", kickDrawer: true }`, and audits `cash.drawer-opened` once. Exit 0. Test files 1 passed. Tests 10 passed.
+
+The same command after `pnpm exec biome check --write` on the slice. Exit 0. Test files 1 passed. Tests 10 passed.
+
+`pnpm vitest run --project cash-register contexts/cash-register/application/charge-check/charge-check.test.ts`, because the printer port union grew. Exit 0. Test files 1 passed. Tests 22 passed. The same command after Biome formatted `printer.ts`. Exit 0. Test files 1 passed. Tests 22 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `open-drawer.ts`, `open-drawer.test.ts`, `printer.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -442,7 +471,11 @@ The same command after folding the six refusal cases into one `it`, matching the
 - `requires_authorization` consumes before `assignWaiter` and `saveCheck`. `allowed` saves and audits and does not consume. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the waiter. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume and does not audit.
 - The audit action is `sale.transfer-table`. `entity` is the check id. `after` is `{ value, shiftId, kitchen: null, waiterId }`. It does not store a PIN. Join and line transfer do not call the platform.
 - `TableTransferGuard` is an optional last constructor argument. `application-module.ts` still builds `ReassignCheck` with one argument (`new ReassignCheck(diningRoom)`), which this slice cannot edit. A `transfer-table` command with no guard leaves the current waiter and writes no audit. Task 6.4 wires the guard. No new use case, no entry-port export, and no package import.
+- A missing register, a drawer other than `present`, or a null `printerId` returns before count, evaluate, and consume. The use case does not throw `UnknownRegister`. A grant is not burned when the drawer cannot open. A cash sale still kicks on charge through `ChargeCheck`; this pair does not edit that path and does not enqueue `offline_receipt`.
+- The opening audit action is `cash.drawer-opened`. `ReadControlReport` lists a drawer opening only when the action is `cash.open-drawer`. This slice does not edit the report. `after` is `{ value: 1, shiftId, kitchen: null }` and `before` is `{ value: 0 }`. The grant uses permission `cash.open-drawer`, `targetId` the register id, and value `1`. `allowed` does not consume, even when an authorization id is present.
+- `CountExecutedOperations` runs only after the drawer and printer are usable, and those totals are passed into `EvaluatePermission`. `cash.open-drawer` has no numeric cap. This pair has no `OpenShiftReader`. Task 5.2 owns open-shift reversals.
+- `@blackhole/cash-register` depends on `@blackhole/platform` at `workspace:*` and imports only `@blackhole/platform/application/entry-port`. It does not depend on `@blackhole/printing`. `PendingSalePrinter` is not wired here.
 
 ## Remaining
 
-Tasks 5.1–7.1 are pending. The next checkbox is 5.1. Task 4.7 is the only checkbox newly marked in this batch. 14/25 tasks complete. The transfer slice is 502 changed lines: `reassign-check.ts` 167 additions and 2 deletions, `reassign-check.test.ts` 332 additions and 1 deletion. No entry-port export and no package import. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-transfer`, based on `feat/anti-theft-prebill`. The diff is over the 400-line review budget because this test file had no platform doubles and the authorization matrix is covered.
+Tasks 5.2–7.1 are pending. The next checkbox is 5.2. Task 5.1 is the only checkbox newly marked in this batch. 15/25 tasks complete. The drawer slice is 533 changed lines: `open-drawer.ts` 148 additions, `open-drawer.test.ts` 369 additions, `printer.ts` 8 additions and 1 deletion, `entry-port.ts` 2 additions, `package.json` 2 additions, and `pnpm-lock.yaml` 3 additions. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-drawer`, based on `feat/anti-theft-transfer` (PR #81). The diff is over the 400-line review budget because the shared authorization doubles and the refusal matrix live in one test file. The harness is not copied per test.

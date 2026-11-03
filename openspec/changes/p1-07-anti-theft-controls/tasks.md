@@ -64,7 +64,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 5: Cash-register
 
-- [ ] 5.1 RED/GREEN `contexts/cash-register/application/open-drawer/` `ports/printer.ts` `entry-port.ts`: `drawer_open`, `kickDrawer: true`. Missing drawer is `absent`. No `@blackhole/printing`. cash-register
+- [x] 5.1 RED/GREEN `contexts/cash-register/application/open-drawer/` `ports/printer.ts` `entry-port.ts`: `drawer_open`, `kickDrawer: true`. Missing drawer is `absent`. No `@blackhole/printing`. cash-register
 - [ ] 5.2 RED/GREEN `contexts/cash-register/application/reopen-paid-account/` `entry-port.ts`: reversal on the open shift. cash-register
 - [ ] 5.3 RED/GREEN `contexts/cash-register/application/change-tender/` `entry-port.ts`: reversal and new payment on the open shift, linked to the original. cash-register
 
