@@ -108,7 +108,11 @@ class MemoryRegisters extends CashRegisterRepository {
     this.stored = shift;
   }
 
-  override load(): Promise<CashShift | null> {
+  override load(
+    _tenantId: string,
+    _venueId: string,
+    _registerId: string,
+  ): Promise<CashShift | null> {
     return Promise.resolve(this.stored);
   }
 
