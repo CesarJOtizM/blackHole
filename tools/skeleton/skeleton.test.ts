@@ -278,6 +278,7 @@ it("given local-node, when its sources are listed, then the structure rejection 
       path.join("http", "invoicing.controller.ts"),
       path.join("http", "operate-devices.controller.ts"),
       path.join("http", "operate-identity.controller.ts"),
+      path.join("http", "printing.controller.ts"),
       path.join("http", "tax.controller.ts"),
       path.join("http", "update-menu.controller.ts"),
       path.join("http", "update-structure.controller.ts"),
