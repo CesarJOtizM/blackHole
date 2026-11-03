@@ -166,6 +166,11 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
       path.join("adapters", "postgres", "drizzle-audit-repository.ts"),
       path.join("adapters", "postgres", "drizzle-authorization-repository.ts"),
       path.join("adapters", "postgres", "drizzle-identity-repository.ts"),
+      path.join(
+        "adapters",
+        "postgres",
+        "drizzle-organization-repository.contract.test.ts",
+      ),
       path.join("adapters", "postgres", "drizzle-organization-repository.ts"),
       path.join("adapters", "postgres", "drizzle-pending-issuance.ts"),
       path.join(
