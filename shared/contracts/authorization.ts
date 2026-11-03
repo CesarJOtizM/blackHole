@@ -68,14 +68,21 @@ const enableShiftSelfAuthorizationCommand = z.object({
   enabled: z.boolean(),
 });
 
+export const authorizationShiftTotals = z.object({
+  waiterVoidsBeforeKitchen: z.number(),
+  compShiftCop: z.number(),
+});
+
 const requestCommand = z.object({
   type: z.literal("request"),
   requestId: z.string(),
   permission: z.string(),
   venueId: z.string(),
+  targetId: z.string().optional(),
   value: z.number().nullable(),
   reason: z.string(),
   expiresAt: z.number(),
+  shiftTotals: authorizationShiftTotals.optional(),
 });
 
 const resolveCommand = z.object({

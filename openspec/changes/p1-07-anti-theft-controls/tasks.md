@@ -70,7 +70,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 
 ## Phase 6: HTTP
 
-- [ ] 6.1 RED/GREEN `shared/contracts/authorization.ts` `sensitive-actions.ts` `index.ts` `apps/api-cloud/src/http/authorization.controller.ts` + test: Zod 4 `safeParse`, `targetId`, shift totals. api-cloud
+- [x] 6.1 RED/GREEN `shared/contracts/authorization.ts` `sensitive-actions.ts` `index.ts` `apps/api-cloud/src/http/authorization.controller.ts` + test: Zod 4 `safeParse`, `targetId`, shift totals. api-cloud
 - [ ] 6.2 RED/GREEN `apps/api-cloud/src/http/void-line.controller.ts` `void-account.controller.ts` `src/composition/application-module.ts` + tests: denied leaves the account; authorized audits. api-cloud
 - [ ] 6.3 RED/GREEN `apps/api-cloud/src/http/apply-discount.controller.ts` `apply-courtesy.controller.ts` `change-price.controller.ts` + tests. api-cloud
 - [ ] 6.4 RED/GREEN `apps/api-cloud/src/http/take-order.controller.ts` `reassign-check.controller.ts` + tests: pre-bill denial; audited transfer. api-cloud

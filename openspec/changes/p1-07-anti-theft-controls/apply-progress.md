@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-tender` targeting `feat/anti-theft-reopen` (PR #83). Not `main`.
-**Work unit**: 10 — Change a payment method (task 5.3)
+**PR slice**: `feat/anti-theft-auth-http` targeting `feat/anti-theft-tender`. Not `main`. No commit or pull request in this batch.
+**Work unit**: Authorization HTTP boundary (task 6.1)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -26,6 +26,7 @@
 - [x] 5.1 Open the drawer without a sale: one `drawer_open` job with `kickDrawer: true` on the cash-register `Printer` port. A missing register or a drawer other than `present` is `absent`. A null `printerId` does not enqueue. `cash.open-drawer` consumes a matching grant only when the decision is `requires_authorization`. `allowed` does not consume. No job and no `cash.drawer-opened` audit when the grant is missing, mismatched, denied, unknown, the drawer is absent, or there is no printer. `AuthorizationAlreadyConsumed` is rethrown. No receipt and no `@blackhole/printing` import
 - [x] 5.2 Reopen a paid account: the reversal is stored on the open `CashShift` and points at the original payment. The closed shift is not saved and gains no reversal. `sale.reopen-paid` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount. A missing grant, a mismatch, a denial, an unknown reference, a missing account, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. The audit `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is the reversal's `originalPaymentId` and the audit `entity`
 - [x] 5.3 Change a payment method: the reversal and the new payment are stored on the open `CashShift` and both point at the original payment. The closed shift is not saved and gains neither. `sale.change-tender` runs before the write. Shift totals come from `CountExecutedOperations` for the open shift. `allowed` does not consume. `requires_authorization` consumes a grant for the same payment id and the same amount before both writes. A missing grant, a mismatch, a denial, an unknown reference, a missing payment, a missing open shift, or a loaded shift that is the payment's own shift leaves both shifts unchanged. `AuthorizationAlreadyConsumed` is rethrown. One audit runs after both writes. `after` is `{ value, shiftId, kitchen: null }` with the open shift id. The original payment id is `originalPaymentId` on the reversal and on the new payment. A cash-to-card change stores method `card` and the original amount
+- [x] 6.1 Cloud authorization HTTP boundary: a request may carry optional `targetId` and `shiftTotals`. The controller passes them to `OperateAuthorization`. The sensitive-action envelope validates with `safeParse`. No void, discount, courtesy, price, drawer, reopen, or tender routes
 
 ## Work Unit Evidence
 
@@ -480,6 +481,33 @@ Same command, after `ChangeTender` evaluates `sale.change-tender`, consumes a ma
 
 Related regression, same project, because `cash-shift.ts` changed: `pnpm vitest run --project cash-register contexts/cash-register/domain/cash-shift.test.ts`. Exit 0. 1 file, 2 passed.
 
+### Unit 11 — Authorization HTTP boundary (task 6.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/authorization.controller.test.ts test/contracts/sensitive-actions.test.ts`. RED exit 1: 2 failed, 6 passed (8). GREEN exit 0: 2 files, 8 passed. Re-run after Biome: exit 0, 2 files, 8 passed. |
+| Runtime harness command/scenario and exact result | N/A. Nest `inject` covers the HTTP boundary. Tasks forecast says runtime harness N/A. No listening port, no SQL, and no alert write. |
+| Rollback boundary | `shared/contracts/authorization.ts`, `shared/contracts/sensitive-actions.ts`, `shared/contracts/index.ts`, `apps/api-cloud/src/http/authorization.controller.ts`, `apps/api-cloud/test/http/authorization.controller.test.ts`, and `apps/api-cloud/test/contracts/sensitive-actions.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/authorization.controller.test.ts test/contracts/sensitive-actions.test.ts`
+
+Result: exit 1. Test files 2 failed. Tests 2 failed, 6 passed (8).
+
+Failures before the schema and the request fields existed:
+
+- `sensitiveActionEnvelope` was missing. `safeParse` threw `TypeError: Cannot read properties of undefined (reading 'safeParse')`.
+- On `given a cashier request carrying the target and shift totals, when it is posted, then OperateAuthorization stores those values`, the stored request had `targetId` `organization_venue_1` instead of `check_1`, and `shiftTotals` `{ waiterVoidsBeforeKitchen: 0, compShiftCop: 0 }` instead of `{ waiterVoidsBeforeKitchen: 2, compShiftCop: 90000 }`. The HTTP fields were not on `requestCommand`, so the domain kept the migration defaults.
+
+#### GREEN
+
+Same command, after `requestCommand` accepted optional `targetId` and `shiftTotals`, `operateCommand` passed them into `OperateAuthorization`, and `sensitiveActionEnvelope` validated the envelope with `safeParse`. Exit 0. Test files 2 passed. Tests 8 passed. The six existing authorization controller tests stayed green.
+
+The same command after `pnpm exec biome check --write` on the six TypeScript files. Exit 0. Test files 2 passed. Tests 8 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -545,7 +573,9 @@ Related regression, same project, because `cash-shift.ts` changed: `pnpm vitest 
 - The use case loads one shift for the register. It records both facts only when that shift is open and its id is not the payment's shift id. The closed shift is a separate object the use case never receives, so it is not saved and gains no reversal and no payment. A loaded shift whose id is the payment's shift returns before count, evaluate, and consume.
 - The audit action is `sale.change-tender`. It is written once, after both domain writes and the save. `entity` is the original payment id. `after` is `{ value, shiftId, kitchen: null }`, where `shiftId` is the open shift and `value` is the original amount. `before` is `{ value: 0 }` so the two states differ. The same payment id is `PaymentReversal.originalPaymentId` and `ShiftPayment.originalPaymentId`.
 - No `@blackhole/printing` import. The cash-register repository and the SQL mapper are unchanged.
+- `requestCommand.targetId` and `requestCommand.shiftTotals` stay optional. When present, `operateCommand` copies them onto the command passed to `OperateAuthorization.execute`, and the existing `request` method stores them. When absent, the copies are undefined and the domain keeps the migration defaults. `OperateAuthorization` is still constructed with five arguments. `RecordAuditEvent` is not injected.
+- `authorizationShiftTotals` is one Zod object shared by the request and `sensitiveActionEnvelope`. The package index exports `sensitiveActionEnvelope` and `SensitiveActionEnvelope` only. `shared/contracts` is not a vitest project, so the envelope test lives in `apps/api-cloud/test/contracts/sensitive-actions.test.ts` and imports `@blackhole/contracts`. This slice validates the envelope with `safeParse` and adds no void, discount, courtesy, price, drawer, reopen, or tender route. No migration and no alert write.
 
 ## Remaining
 
-Tasks 6.1–7.1 are pending. The next checkbox is 6.1. Task 5.3 is the only checkbox newly marked in this batch. 17/25 tasks complete. The tender slice is 673 added lines: `change-tender.ts` 182, `change-tender.test.ts` 393, `cash-shift.ts` 81, `domain/index.ts` 4, `entry-port.ts` 12, and `package.json` 1. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-tender`, based on `feat/anti-theft-reopen` (PR #83). The diff is over the 400-line review budget because one shared harness covers the authorization matrix and the open shift needed a replacement payment beside the reversal. The harness is not a copy of the reopen doubles. Drizzle still persists movements only. No migration.
+Tasks 6.2–7.1 are pending. The next checkbox is 6.2. Task 6.1 is the only checkbox newly marked in this batch. 18/25 tasks complete. The authorization HTTP slice is 107 added lines and 1 deleted line: `authorization.controller.ts` 22/1, `authorization.controller.test.ts` 29, `authorization.ts` 7, `index.ts` 4, `sensitive-actions.ts` 15, and `sensitive-actions.test.ts` 30. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-auth-http`, based on `feat/anti-theft-tender`. It is under the 400-line review budget. No void, discount, courtesy, price, drawer, reopen, or tender routes. No migration. No local-node.
