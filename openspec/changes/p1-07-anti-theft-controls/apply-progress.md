@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-drawer-http` targeting `feat/anti-theft-prebill-http` (`554cbb2`). Not `main`. No commit or pull request in this batch.
-**Work unit**: Cash HTTP (task 6.5)
+**PR slice**: `feat/anti-theft-reprint-http` targeting `feat/anti-theft-drawer-http` (`df6ed20`). Not `main`. No commit or pull request in this batch.
+**Work unit**: Reprint HTTP (task 6.6)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -31,6 +31,7 @@
 - [x] 6.3 Cloud discount, courtesy, and price HTTP: a kitchen chief on an open shift leaves line prices unchanged and writes no success audit. An owner on an open shift audits `sale.discount` with `after.value` equal to the percent and leaves line prices unchanged. An owner courtesy audits `sale.comp` with `after.value` equal to the COP amount and leaves line prices unchanged. An owner price change saves the new line price, leaves the menu unchanged, and audits `sale.change-price` with `before.value` equal to the previous line price
 - [x] 6.4 Cloud pre-bill and waiter-transfer HTTP: a printed pre-bill refuses a new line when the session is denied or the edit fields are absent, and audits `sale.edit-printed-check` when an owner sends those fields on an open shift. `POST checks/:checkId/transfer-table` audits `sale.transfer-table` with the previous and next waiter. Join and move-lines stay on `POST checks/reassign`
 - [x] 6.5 Cloud drawer, reopen, and tender HTTP: an owner with a present drawer and a printer id enqueues one `drawer_open` job with `kickDrawer: true` and audits `cash.drawer-opened`. A kitchen chief, an absent drawer, or a null printer id stores no job and no opening audit. Reopen and tender write the reversal, and tender also writes the replacement payment, on the open shift only. The closed shift and cash movements stay unchanged. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
+- [x] 6.6 Cloud reprint HTTP: under a numeric cap, one `sale.reprint` is stored and `PendingSalePrinter.jobs` stays empty. At or over the cap, a resolved authorizer stores one more `sale.reprint` carrying that authorizer and still does not enqueue. The same second reprint with no resolved authorizer stores nothing and returns 409 `ReprintNeedsAuthorization`. A null cap stays 409 `ReprintCapUnconfigured` with an empty audit list. `shared/printing` and `sale-receipt.ts` stay unchanged
 
 ## Work Unit Evidence
 
@@ -645,6 +646,42 @@ Reopen and tender seed an open shift whose id differs from the original payment 
 
 The pair is 1443 additions and 4 deletions: `application-module.ts` 134/0, `register-directory.ts` 6/3, `entry-port.ts` 4/1, `missing-sale-readers.ts` 26/0, `open-drawer.controller.ts` 93/0, `reopen-paid-account.controller.ts` 94/0, `change-tender.controller.ts` 109/0, `cash-action-cloud.ts` 322/0, `open-drawer.controller.test.ts` 191/0, `reopen-paid-account.controller.test.ts` 225/0, and `change-tender.controller.test.ts` 239/0. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-drawer-http`, based on `feat/anti-theft-prebill-http` (`554cbb2`). No commit, push, or pull request.
 
+### Unit 15 — Reprint HTTP (task 6.6)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/printing.controller.test.ts`. RED exit 1: 1 failed file, 3 failed, 2 passed (5). GREEN exit 0: 1 file, 5 passed. Same command after Biome: exit 0, 1 file, 5 passed. `pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused tests boot Nest through `createApplication` and inject `POST /tenants/:tenantId/reprints`. No listening port. |
+| Rollback boundary | `apps/api-cloud/src/http/printing.controller.ts`, `apps/api-cloud/test/http/printing.controller.test.ts`, and `shared/contracts/printing.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/printing.controller.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 3 failed, 2 passed (5).
+
+Failures before the cap lived at the HTTP boundary:
+
+- `given a reprint body the schema rejects, when it is posted, then the response is 400 and nothing is stored`: expected false to be true. `authorizationId: null` was rejected by the strict document-only command.
+- `given a cap of 1 and one existing reprint, when a second reprint has no authorization, then no new audit is stored and PendingSalePrinter.jobs is unchanged`: expected 200 to be 409. The second reprint was accepted and stored.
+- `given a cap of 1, one existing reprint, and a resolved authorizer, when the second reprint is posted, then one more sale.reprint is stored with that authorizer and PendingSalePrinter.jobs is unchanged`: expected false to be true. `authorizationId` on the body was rejected before an authorizer could be stored.
+
+The existing numeric-cap test and the null-cap test passed in this RED run. The numeric-cap test already expected one audit and an empty `PendingSalePrinter.jobs`.
+
+#### GREEN
+
+Same command, after the controller counted `MemoryReprintAudit.events` for the same document, resolved `authorizationId` with `authorizerOf`, and stored `authorizerId` only on the api-cloud record. Exit 0. Test files 1 passed. Tests 5 passed.
+
+The same command after `pnpm exec biome check --write` on the three TypeScript files. Exit 0. Test files 1 passed. Tests 5 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
+`pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0.
+
+`ReprintAuditEvent` has no authorizer. `MemoryReprintAudit` keeps the shared `record` shape and adds `authorizerId` only through `recordAuthorized`. Under the numeric cap, `ReprintDocument` still writes today's audit and the response has no authorizer. At or over the cap, a resolved authorizer adds one `sale.reprint` with that `authorizerId` on the stored event and on the HTTP body. No resolved authorizer stores nothing, enqueues nothing, and returns 409 `{ error: "ReprintNeedsAuthorization" }` instead of the success body. A null cap still returns 409 `{ error: "ReprintCapUnconfigured" }` and leaves the audit list empty. `document` stays required. `authorizationId` is an optional string or null. `authorizerId` and `shiftTotals` still fail the strict parse and return 400 with nothing stored. The client authorizer is not read. `PendingSalePrinter` is not injected, and `sale-receipt.ts` was not edited. `shared/printing`, `ReprintDocument`, and its application tests were not edited.
+
+The pair is 199 additions and 22 deletions: `printing.controller.ts` 64/6, `printing.controller.test.ts` 133/16, and `shared/contracts/printing.ts` 2/0. `size:exception` was not granted. The pair is under the 400-line review budget and was not split. It stays on `feat/anti-theft-reprint-http`, based on `feat/anti-theft-drawer-http` (`df6ed20`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -729,7 +766,11 @@ The pair is 1443 additions and 4 deletions: `application-module.ts` 134/0, `regi
 - `InMemoryCashRegisterRepository.save` still throws `ShiftAlreadyOpen` when the register already has a shift. The HTTP test subclasses it so a second save replaces the open shift. `DrizzleCashRegisterRepository` was not changed and still persists movements only. Reversals and replacement payments stay on the in-memory shift. Production does not persist them until a later adapter stores `reversals` and `payments`. No migration. No card-terminal fields.
 - `OpenDrawer` receives the `PendingSalePrinter` instance created once in `ApplicationModule.register`. `ChargeCheck` keeps that same instance. No second printer was created.
 - The HTTP acknowledgement is `{ registerId }` for the drawer, `{ paymentId }` for reopen, and `{ paymentId, method }` for tender. Denied and missing-sale decisions still return 200 with that acknowledgement because the use cases return void and leave state unchanged. A missing or unknown session, or a strict-parse failure, is 400 before the use case.
+- `ReprintAuditEvent` has no authorizer, and this slice does not edit `shared/printing`. The over-cap audit stores `authorizerId` on `MemoryReprintAudit` and on the HTTP body. `recordedReprint` gained an optional `authorizerId` so `parse` keeps that field. The under-cap body and the under-cap stored event stay without it.
+- The refusal when the cap is reached and `authorizerOf` returns null is 409 `{ error: "ReprintNeedsAuthorization" }`. The design names the audit and the missing enqueue. It does not name this status. The name is the printing error already reserved for an unauthorized reprint. Nothing is stored and the success body is not returned.
+- `sale-receipt.ts` was not edited. The reprint path does not call `PendingSalePrinter.enqueue`, and `SaleReceiptJob` gained no reprint document. The over-cap tests read the existing printer's `jobs`.
+- The reprint body stays on `reprintDocumentCommand`. `document` stays required. `authorizationId` is optional and accepts a string or null, so `{ document }` still parses. `authorizerId` and `shiftTotals` still fail the strict object. The controller does not trust a client authorizer. The count comes from `MemoryReprintAudit.events` for the same document.
 
 ## Remaining
 
-Tasks 6.6–7.1 are pending. The next checkbox is 6.6. Task 6.5 is the only checkbox newly marked in this batch. 22/25 tasks complete. No migration. No local-node. No reprint or report route in this batch. Production cash persistence still stores movements only.
+Tasks 6.7 and 7.1 are pending. The next checkbox is 6.7. Task 6.6 is the only checkbox newly marked in this batch. 23/25 tasks complete. No migration. No local-node. No report route in this batch. `shared/printing` stays unchanged. Production cash persistence still stores movements only.

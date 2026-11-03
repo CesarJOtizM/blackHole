@@ -3,6 +3,7 @@ import {
   recordedReprint,
   reprintDocumentCommand,
 } from "@blackhole/contracts";
+import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
 import {
   ReprintAudit,
@@ -19,8 +20,11 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
 } from "@nestjs/common";
+
+import { authorizerOf } from "#src/http/void-command.js";
 
 const ACTOR_HEADER = "x-actor-id";
 const DEVICE_HEADER = "x-device-id";
@@ -33,11 +37,22 @@ export class ReprintCap {
   constructor(readonly limit: number | null) {}
 }
 
+export type StoredReprintAudit = ReprintAuditEvent & {
+  authorizerId?: string;
+};
+
 export class MemoryReprintAudit extends ReprintAudit {
-  readonly events: ReprintAuditEvent[] = [];
+  readonly events: StoredReprintAudit[] = [];
 
   override async record(event: ReprintAuditEvent): Promise<void> {
     this.events.push({ ...event });
+  }
+
+  async recordAuthorized(
+    event: ReprintAuditEvent,
+    authorizerId: string,
+  ): Promise<void> {
+    this.events.push({ ...event, authorizerId });
   }
 }
 
@@ -50,11 +65,14 @@ export class PrintingController {
     private readonly cap: ReprintCap,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(AuthorizationRepository)
+    private readonly authorizations: AuthorizationRepository,
   ) {}
 
   @Post("reprints")
   @HttpCode(HttpStatus.OK)
   async reprint(
+    @Param("tenantId") tenantId: string,
     @Headers(ACTOR_HEADER) actorHeader: unknown,
     @Headers(DEVICE_HEADER) deviceHeader: unknown,
     @Body() body: unknown,
@@ -68,15 +86,49 @@ export class PrintingController {
     }
 
     const occurredAt = new Date(this.clock.now()).toISOString();
-    const reprintDocument = new ReprintDocument(this.audits);
+    const document = parsed.data.document;
+    const limit = this.cap.limit;
+    const overCap = limit !== null && this.priorReprints(document) >= limit;
 
-    try {
-      await reprintDocument.execute({
+    if (overCap) {
+      const authorizerId = await authorizerOf(
+        this.authorizations,
+        tenantId,
+        parsed.data.authorizationId ?? null,
+      );
+
+      if (authorizerId === null) {
+        throw new ConflictException({ error: "ReprintNeedsAuthorization" });
+      }
+
+      await this.audits.recordAuthorized(
+        {
+          action: "sale.reprint",
+          actorId,
+          deviceId,
+          document,
+          occurredAt,
+        },
+        authorizerId,
+      );
+
+      return recordedReprint.parse({
+        action: "sale.reprint",
         actorId,
         deviceId,
-        document: parsed.data.document,
+        document,
         occurredAt,
-        limit: this.cap.limit,
+        authorizerId,
+      });
+    }
+
+    try {
+      await new ReprintDocument(this.audits).execute({
+        actorId,
+        deviceId,
+        document,
+        occurredAt,
+        limit,
       });
     } catch (error: unknown) {
       if (error instanceof ReprintCapUnconfigured) {
@@ -90,9 +142,15 @@ export class PrintingController {
       action: "sale.reprint",
       actorId,
       deviceId,
-      document: parsed.data.document,
+      document,
       occurredAt,
     });
+  }
+
+  private priorReprints(document: string): number {
+    return this.audits.events.filter(
+      (event) => event.action === "sale.reprint" && event.document === document,
+    ).length;
   }
 }
 

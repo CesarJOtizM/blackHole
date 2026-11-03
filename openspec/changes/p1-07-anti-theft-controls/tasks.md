@@ -75,7 +75,7 @@ Test: `pnpm vitest run --project <project>`. Runtime harness: N/A. PR-cell is br
 - [x] 6.3 RED/GREEN `apps/api-cloud/src/http/apply-discount.controller.ts` `apply-courtesy.controller.ts` `change-price.controller.ts` + tests. api-cloud
 - [x] 6.4 RED/GREEN `apps/api-cloud/src/http/take-order.controller.ts` `reassign-check.controller.ts` + tests: pre-bill denial; audited transfer. api-cloud
 - [x] 6.5 RED/GREEN `apps/api-cloud/src/http/open-drawer.controller.ts` `reopen-paid-account.controller.ts` `change-tender.controller.ts` + tests: `PendingSalePrinter` enqueues `drawer_open`. api-cloud
-- [ ] 6.6 RED/GREEN `apps/api-cloud/src/http/printing.controller.ts` `src/composition/sale-receipt.ts` `test/http/printing.controller.test.ts`: over cap audits, no enqueue; null cap 409 `ReprintCapUnconfigured`. api-cloud
+- [x] 6.6 RED/GREEN `apps/api-cloud/src/http/printing.controller.ts` `src/composition/sale-receipt.ts` `test/http/printing.controller.test.ts`: over cap audits, no enqueue; null cap 409 `ReprintCapUnconfigured`. api-cloud
 - [ ] 6.7 RED/GREEN `apps/api-cloud/src/http/read-control-report.controller.ts` `detect-unusual-behavior.controller.ts` + tests: `audit.view`. api-cloud
 
 ## Phase 7: Node
