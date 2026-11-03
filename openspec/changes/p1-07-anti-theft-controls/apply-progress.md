@@ -3,12 +3,13 @@
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
 **PR slice**: PR2 `feat/anti-theft-consume` targeting `feat/anti-theft-binding`
-**Work unit**: 2 — Consume (task 2.1 only)
+**Work unit**: 2 — Consume (tasks 2.1 and 2.2)
 
 ## Completed tasks
 
 - [x] 1.1 Domain binding: `targetId`, one consume, mismatch unconsumed, second consume throws, `compShiftCop`
 - [x] 2.1 Consume use case: a failed write after consume needs a new grant
+- [x] 2.2 Count executed operations: successful audits only
 
 ## Work Unit Evidence
 
@@ -60,6 +61,30 @@ Failure before the use case existed:
 
 Same command, after `ConsumeAuthorization` delegated to `Authorization.consumeAuthorization` and saved the grant. Exit 0. Test files 1 passed. Tests 1 passed.
 
+### Unit 2 — Consume (task 2.2)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project platform contexts/platform/application/count-executed-operations/count-executed-operations.test.ts`. RED exit 1: 1 failed file, no tests (missing module). GREEN exit 0: 1 file, 1 passed. Re-run after Biome format: exit 0, 1 file, 1 passed. |
+| Runtime harness command/scenario and exact result | N/A. Application use case reading the existing in-memory audit port. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/platform/application/count-executed-operations/`, the `CountExecutedOperations` export in `contexts/platform/application/entry-port.ts`, and the `#application/count-executed-operations/*` import in `contexts/platform/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project platform contexts/platform/application/count-executed-operations/count-executed-operations.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Cannot find module `#application/count-executed-operations/count-executed-operations.js`.
+
+#### GREEN
+
+Same command, after `CountExecutedOperations` listed `AuditRepository` events and returned shift totals. Exit 0. Test files 1 passed. Tests 1 passed.
+
+The same command after `pnpm biome check --write` on the slice. Exit 0. Test files 1 passed. Tests 1 passed.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -67,7 +92,9 @@ Same command, after `ConsumeAuthorization` delegated to `Authorization.consumeAu
 - The design `after` shape was not added. This slice does not record the audit event. `resolution.action` remains the permission code.
 - `ConsumeAuthorization.execute` also takes `tenantId` and reads `AuthorizationClock`. `AuthorizationRepository.load` is keyed by tenant, and `consumeAuthorization` requires `at`. `authorizationId` is the request id.
 - `AuthorizationAlreadyConsumed` is re-exported from the use case because `domain/index` does not export it and this slice must not edit domain files.
+- `CountExecutedOperations` does not accept a client total. It lists the existing audit port (`list(tenantId, null)`) and returns `AuthorizationShiftTotals`: one `sale.void-before-kitchen` event adds 1 to `waiterVoidsBeforeKitchen`; `sale.comp` adds `after.value` to `compShiftCop`.
+- A counted audit is `kind: "event"`, for that actor and `after.shiftId`, with `after` shaped `{ value, shiftId, kitchen }` and `before` different from `after`. `pin.confirmation-failed`, `after.approved === false`, and `kind: "altered"` do not count. No new audit type and no SQL migration.
 
 ## Remaining
 
-Tasks 2.2–7.1 are pending. Next assigned batch should stay on work unit 2, task 2.2. Task 2.1 is the only checkbox newly marked in this batch.
+Tasks 2.3–7.1 are pending. Next assigned batch should stay on work unit 2, task 2.3. Task 2.2 is the only checkbox newly marked in this batch.
