@@ -35,7 +35,10 @@ export type {
   SaleReceiptJob,
 } from "#application/ports/printer.js";
 export { Printer } from "#application/ports/printer.js";
-export { UnknownRegister } from "#application/ports/register-lookup.js";
+export {
+  RegisterLookup,
+  UnknownRegister,
+} from "#application/ports/register-lookup.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,

@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-prebill-http` targeting `feat/anti-theft-discount-http` (`86f14d8`). Not `main`. No commit or pull request in this batch.
-**Work unit**: Check HTTP (task 6.4)
+**PR slice**: `feat/anti-theft-drawer-http` targeting `feat/anti-theft-prebill-http` (`554cbb2`). Not `main`. No commit or pull request in this batch.
+**Work unit**: Cash HTTP (task 6.5)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -30,6 +30,7 @@
 - [x] 6.2 Cloud void HTTP: a denied session leaves the line or the account and writes no void audit. A waiter inside the before-kitchen cap, with an open shift, voids the line and the audit authorizer is null. A cashier with a matching grant clears the account and the audit authorizer is the grant's authorizer. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 - [x] 6.3 Cloud discount, courtesy, and price HTTP: a kitchen chief on an open shift leaves line prices unchanged and writes no success audit. An owner on an open shift audits `sale.discount` with `after.value` equal to the percent and leaves line prices unchanged. An owner courtesy audits `sale.comp` with `after.value` equal to the COP amount and leaves line prices unchanged. An owner price change saves the new line price, leaves the menu unchanged, and audits `sale.change-price` with `before.value` equal to the previous line price
 - [x] 6.4 Cloud pre-bill and waiter-transfer HTTP: a printed pre-bill refuses a new line when the session is denied or the edit fields are absent, and audits `sale.edit-printed-check` when an owner sends those fields on an open shift. `POST checks/:checkId/transfer-table` audits `sale.transfer-table` with the previous and next waiter. Join and move-lines stay on `POST checks/reassign`
+- [x] 6.5 Cloud drawer, reopen, and tender HTTP: an owner with a present drawer and a printer id enqueues one `drawer_open` job with `kickDrawer: true` and audits `cash.drawer-opened`. A kitchen chief, an absent drawer, or a null printer id stores no job and no opening audit. Reopen and tender write the reversal, and tender also writes the replacement payment, on the open shift only. The closed shift and cash movements stay unchanged. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 
 ## Work Unit Evidence
 
@@ -604,6 +605,46 @@ The catalog marks `sale.edit-printed-check` and `sale.transfer-table` as yes for
 
 The pair is 552 additions and 16 deletions: `application-module.ts` 78/5, `reassign-check.controller.ts` 73/1, `take-order.controller.ts` 49/8, `reassign-check.controller.test.ts` 195/0, `take-order.controller.test.ts` 150/1, and `dining-room.ts` 7/1. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-prebill-http`, based on `feat/anti-theft-discount-http` (`86f14d8`). No commit, push, or pull request.
 
+### Unit 14 — Cash HTTP (task 6.5)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/open-drawer.controller.test.ts test/http/reopen-paid-account.controller.test.ts test/http/change-tender.controller.test.ts`. RED exit 1: 3 failed files, no tests (missing controller modules). GREEN exit 0: 3 files, 18 passed. Same command after Biome: exit 0, 3 files, 18 passed. Charge-check regression: `pnpm vitest run --project api-cloud test/http/charge-check.controller.test.ts`. Exit 0: 1 file, 9 passed. `pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused tests boot Nest through `createApplication` and inject the three routes. No listening port. |
+| Rollback boundary | `apps/api-cloud/src/http/open-drawer.controller.ts`, `apps/api-cloud/src/http/reopen-paid-account.controller.ts`, `apps/api-cloud/src/http/change-tender.controller.ts`, their three HTTP tests, `apps/api-cloud/test/http/cash-action-cloud.ts`, `apps/api-cloud/src/composition/missing-sale-readers.ts`, the `OpenDrawer`, `ReopenPaidAccount`, and `ChangeTender` providers plus controller registrations and the `paidAccounts` / `originalPayments` dependencies in `apps/api-cloud/src/composition/application-module.ts`, the `RegisterLookup` extension in `apps/api-cloud/src/composition/register-directory.ts`, and the `RegisterLookup` export in `contexts/cash-register/application/entry-port.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/open-drawer.controller.test.ts test/http/reopen-paid-account.controller.test.ts test/http/change-tender.controller.test.ts`
+
+Result: exit 1. Test files 3 failed. Tests: no tests.
+
+Failures before the controllers existed:
+
+- Cannot find module `#src/http/open-drawer.controller.js`.
+- Cannot find module `#src/http/reopen-paid-account.controller.js`.
+- Cannot find module `#src/http/change-tender.controller.js`.
+
+#### GREEN
+
+Same command, after the three controllers called the existing use cases, reused `readText` and `authorizerOf`, rejected `authorizerId` and shift totals with a strict body, and `OpenDrawer` received the existing `PendingSalePrinter`. Exit 0. Test files 3 passed. Tests 18 passed.
+
+The same command after `pnpm exec biome check --write` on the eleven TypeScript files. Exit 0. Test files 3 passed. Tests 18 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
+`pnpm exec tsc -b apps/api-cloud --pretty false`. Exit 0.
+
+`pnpm vitest run --project api-cloud test/http/charge-check.controller.test.ts`. Exit 0. Test files 1 passed. Tests 9 passed. `ChargeCheck` still receives the same `PendingSalePrinter` instance.
+
+The catalog marks `cash.open-drawer` as yes for owner, general manager, and site administrator; with authorization for shift supervisor and cashier; and no for waiter, kitchen chief, and warehouse keeper. `sale.change-tender` is yes for owner and general manager, with authorization for site administrator and shift supervisor, and no for cashier, waiter, kitchen chief, and warehouse keeper. `sale.reopen-paid` is yes for owner and general manager, with authorization for site administrator, and no for shift supervisor, cashier, waiter, kitchen chief, and warehouse keeper. The tests use owner and kitchen chief.
+
+An owner, a present drawer, and a printer id enqueue one `{ document: "drawer_open", kickDrawer: true, status: "waiting" }` job and one `cash.drawer-opened` audit. There is no `offline_receipt`. A kitchen chief, an absent drawer, or a null `printerId` leaves `PendingSalePrinter.jobs` empty and stores no opening audit. `UnknownRegister` is not thrown. `actorId` is the session user and `deviceId` is the session device, which is empty for this administration sign-in. `authorizationId` null stores `authorizerId` null.
+
+Reopen and tender seed an open shift whose id differs from the original payment shift. The closed shift is a separate object that is not saved. A kitchen chief leaves both shifts unchanged and stores no audit. An owner reopen stores one reversal on the open shift, linked to the original payment, and audits `sale.reopen-paid`. An owner tender stores that reversal and one replacement payment with method `card` and the original amount, and audits `sale.change-tender` once. Neither write adds a cash movement, and `expectedCashCop` stays the opening float. The replacement payment has no terminal, approval, brand, or last 4. The default readers find nothing, so an owner without a replacement reader leaves the open shift unchanged. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing.
+
+The pair is 1443 additions and 4 deletions: `application-module.ts` 134/0, `register-directory.ts` 6/3, `entry-port.ts` 4/1, `missing-sale-readers.ts` 26/0, `open-drawer.controller.ts` 93/0, `reopen-paid-account.controller.ts` 94/0, `change-tender.controller.ts` 109/0, `cash-action-cloud.ts` 322/0, `open-drawer.controller.test.ts` 191/0, `reopen-paid-account.controller.test.ts` 225/0, and `change-tender.controller.test.ts` 239/0. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-drawer-http`, based on `feat/anti-theft-prebill-http` (`554cbb2`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -683,7 +724,12 @@ The pair is 552 additions and 16 deletions: `application-module.ts` 78/5, `reass
 - `TakeOrder` is now constructed with seven arguments. The seventh is `PrintedCheckGuard`, built from the same ports `VoidLine` uses: the existing `OpenShiftReader`, `CountExecutedOperations`, `EvaluatePermission`, `ConsumeAuthorization`, and `RecordAuditEvent`. `ReassignCheck` receives `TableTransferGuard` as the second argument from those same ports. `TakeOrder`, `ReassignCheck`, `Check`, and their application tests were not edited. No migration. Postgres still does not map `waiterId`.
 - `POST checks/reassign` still handles join and move-lines, including its `sale.move-items` gate and `PlatformDiningAudit`. `POST checks/:checkId/transfer-table` is a separate route with permission `sale.transfer-table`. It calls `reassignCheck.execute` with `kind: "transfer-table"` and does not write the move-items audit. The use case writes `sale.transfer-table`. A missing or unknown `x-session-id` is 400 before the use case. A denied session or a closed shift leaves the in-memory waiter unchanged and stores no transfer audit. An authorized session and an open shift set the waiter and audit `before.waiterId` and `after.waiterId`.
 - This pair is 552 additions and 16 deletions. It was not split. `size:exception` was not granted.
+- `RegisterLookup` was already the port `OpenDrawer` uses, and it was not re-exported from `@blackhole/cash-register/application/entry-port`. This slice exports that class so `OrganizationRegisterDirectory` can extend it. `find` is unchanged. The use cases and their application tests were not edited.
+- `MissingPaidAccountReader` and `MissingOriginalPaymentReader` return null. The HTTP tests replace them through `CloudApplicationDependencies.paidAccounts` and `originalPayments`, the same way `shifts` is replaced.
+- `InMemoryCashRegisterRepository.save` still throws `ShiftAlreadyOpen` when the register already has a shift. The HTTP test subclasses it so a second save replaces the open shift. `DrizzleCashRegisterRepository` was not changed and still persists movements only. Reversals and replacement payments stay on the in-memory shift. Production does not persist them until a later adapter stores `reversals` and `payments`. No migration. No card-terminal fields.
+- `OpenDrawer` receives the `PendingSalePrinter` instance created once in `ApplicationModule.register`. `ChargeCheck` keeps that same instance. No second printer was created.
+- The HTTP acknowledgement is `{ registerId }` for the drawer, `{ paymentId }` for reopen, and `{ paymentId, method }` for tender. Denied and missing-sale decisions still return 200 with that acknowledgement because the use cases return void and leave state unchanged. A missing or unknown session, or a strict-parse failure, is 400 before the use case.
 
 ## Remaining
 
-Tasks 6.5–7.1 are pending. The next checkbox is 6.5. Task 6.4 is the only checkbox newly marked in this batch. 21/25 tasks complete. No migration. No local-node. No drawer, reopen, tender, reprint, or report route in this batch.
+Tasks 6.6–7.1 are pending. The next checkbox is 6.6. Task 6.5 is the only checkbox newly marked in this batch. 22/25 tasks complete. No migration. No local-node. No reprint or report route in this batch. Production cash persistence still stores movements only.

@@ -8,10 +8,15 @@ import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-ter
 import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
 import {
   ApproveVariance,
+  ChangeTender,
   ChargeCheck,
   CloseShift,
+  OpenDrawer,
   OpenShift,
+  OriginalPaymentReader,
+  PaidAccountReader,
   type Payment,
+  ReopenPaidAccount,
   SubmitCount,
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
@@ -112,6 +117,10 @@ import {
 } from "#src/composition/attendance-memory.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import {
+  MissingOriginalPaymentReader,
+  MissingPaidAccountReader,
+} from "#src/composition/missing-sale-readers.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
@@ -129,6 +138,7 @@ import { CashCountController } from "#src/http/cash-count.controller.js";
 import { CashShiftController } from "#src/http/cash-shift.controller.js";
 import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
 import { ChangePriceController } from "#src/http/change-price.controller.js";
+import { ChangeTenderController } from "#src/http/change-tender.controller.js";
 import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
@@ -137,6 +147,7 @@ import {
   InvoicingController,
   NumberingRangeStore,
 } from "#src/http/invoicing.controller.js";
+import { OpenDrawerController } from "#src/http/open-drawer.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
@@ -153,6 +164,7 @@ import {
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
+import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
@@ -213,6 +225,8 @@ export interface CloudApplicationDependencies {
   reprintCap?: ReprintCap;
   reprintAudits?: MemoryReprintAudit;
   structurePrinters?: StructurePrinters;
+  paidAccounts?: PaidAccountReader;
+  originalPayments?: OriginalPaymentReader;
 }
 
 class OrdersClockAdapter extends OrdersClock {
@@ -281,6 +295,9 @@ export class ApplicationModule implements NestModule {
         ApplyDiscountController,
         ApplyCourtesyController,
         ChangePriceController,
+        OpenDrawerController,
+        ReopenPaidAccountController,
+        ChangeTenderController,
         ChangeLineStateController,
         ViewTableMapController,
         ViewStationQueueController,
@@ -390,6 +407,15 @@ export class ApplicationModule implements NestModule {
         {
           provide: OpenShiftReader,
           useValue: dependencies.shifts ?? new ClosedShiftReader(),
+        },
+        {
+          provide: PaidAccountReader,
+          useValue: dependencies.paidAccounts ?? new MissingPaidAccountReader(),
+        },
+        {
+          provide: OriginalPaymentReader,
+          useValue:
+            dependencies.originalPayments ?? new MissingOriginalPaymentReader(),
         },
         {
           provide: StationRouteRepository,
@@ -821,6 +847,114 @@ export class ApplicationModule implements NestModule {
           inject: [
             DiningRoomRepository,
             OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: OpenDrawer,
+          useFactory: (
+            organizations: OrganizationRepository,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new OpenDrawer(
+              new OrganizationRegisterDirectory(organizations),
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+              salePrinter,
+            ),
+          inject: [
+            OrganizationRepository,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ReopenPaidAccount,
+          useFactory: (
+            accounts: PaidAccountReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ReopenPaidAccount(
+              accounts,
+              registers,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            PaidAccountReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ChangeTender,
+          useFactory: (
+            payments: OriginalPaymentReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ChangeTender(
+              payments,
+              registers,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            OriginalPaymentReader,
             AuditRepository,
             AuditDigest,
             Clock,

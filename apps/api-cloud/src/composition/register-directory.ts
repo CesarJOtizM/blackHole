@@ -1,9 +1,12 @@
+import { RegisterLookup } from "@blackhole/cash-register/application/entry-port";
 import type { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 
-export class OrganizationRegisterDirectory {
-  constructor(private readonly organizations: OrganizationRepository) {}
+export class OrganizationRegisterDirectory extends RegisterLookup {
+  constructor(private readonly organizations: OrganizationRepository) {
+    super();
+  }
 
-  async find(
+  override async find(
     tenantId: string,
     venueId: string,
     registerId: string,
