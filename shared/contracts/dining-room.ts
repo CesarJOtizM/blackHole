@@ -122,6 +122,7 @@ export const requestedCheck = z
     tableId: z.string(),
     state: tableState,
     preBillRequestedAt: z.string().min(1),
+    printed: z.literal(false).optional(),
   })
   .strict();
 
@@ -193,6 +194,7 @@ export const savedOrderLine = z
     channel: orderChannel,
     sentAt: z.string().min(1).optional(),
     deliveredAt: z.string().min(1).optional(),
+    printed: z.literal(false).optional(),
   })
   .strict();
 
@@ -203,6 +205,7 @@ export const sentCourse = z
     checkId: z.string(),
     course: z.number().int(),
     lines: z.array(savedOrderLine).min(1),
+    printed: z.literal(false).optional(),
   })
   .strict();
 

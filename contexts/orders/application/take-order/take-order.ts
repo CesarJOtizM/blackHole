@@ -1,7 +1,7 @@
 import type { Clock } from "#application/ports/clock.js";
 import type { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
 import type { MenuRepository } from "#application/ports/menu-repository.js";
-import type { Printer } from "#application/ports/printer.js";
+import type { Printer, PrintJobStatus } from "#application/ports/printer.js";
 import type { RealtimeHub } from "#application/ports/realtime-hub.js";
 import type { StationDirectory } from "#application/ports/station-directory.js";
 import {
@@ -73,6 +73,7 @@ export interface FireCourseInput {
 }
 
 interface RoutedTicket {
+  commandId: string;
   stationId: string;
   stationName: string;
   lineId: string;
@@ -80,6 +81,8 @@ interface RoutedTicket {
   note?: string;
   screen: boolean;
 }
+
+const ALERTING_STATUS = new Set<PrintJobStatus>(["waiting", "failed"]);
 
 const bogotaMinute = (instant: number): string => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -160,6 +163,7 @@ export class TakeOrder {
 
       if (destination.printer) {
         tickets.push({
+          commandId: `kitchen_ticket:${check.id}:${line.lineId}`,
           stationId: destination.stationId,
           stationName: destination.stationName,
           lineId: line.lineId,
@@ -236,6 +240,7 @@ export class TakeOrder {
     const tickets: RoutedTicket[] = destination.printer
       ? [
           {
+            commandId: `kitchen_ticket:${check.id}:${line.id}:resend`,
             stationId: destination.stationId,
             stationName: destination.stationName,
             lineId: line.id,
@@ -324,6 +329,7 @@ export class TakeOrder {
 
       if (destination.printer) {
         tickets.push({
+          commandId: `kitchen_ticket:${check.id}:${line.id}`,
           stationId: destination.stationId,
           stationName: destination.stationName,
           lineId: line.id,
@@ -401,20 +407,35 @@ export class TakeOrder {
       productName: ticket.productName,
       ...(ticket.note === undefined ? {} : { note: ticket.note }),
     });
+    const queued = await this.printer.enqueue({
+      document: "kitchen_ticket",
+      commandId: ticket.commandId,
+      stationId: ticket.stationId,
+      station: ticket.stationName,
+      table: check.tableId,
+      lines: [
+        {
+          quantity: "1",
+          name: ticket.productName,
+          ...(ticket.note === undefined ? {} : { note: ticket.note }),
+        },
+      ],
+      kickDrawer: false,
+    });
 
-    try {
-      await this.printer.print({ text: rendered.text });
-    } catch {
-      await this.hub.publish({
-        kind: "printer_failed",
-        tenantId: check.tenantId,
-        venueId: check.venueId,
-        checkId: check.id,
-        tableId: check.tableId,
-        lineId: ticket.lineId,
-        stationId: ticket.stationId,
-        ...(ticket.screen ? {} : { text: rendered.text }),
-      });
+    if (!ALERTING_STATUS.has(queued.status)) {
+      return;
     }
+
+    await this.hub.publish({
+      kind: "printer_failed",
+      tenantId: check.tenantId,
+      venueId: check.venueId,
+      checkId: check.id,
+      tableId: check.tableId,
+      lineId: ticket.lineId,
+      stationId: ticket.stationId,
+      ...(ticket.screen ? {} : { text: rendered.text }),
+    });
   }
 }

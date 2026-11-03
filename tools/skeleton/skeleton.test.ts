@@ -23,7 +23,6 @@ const sourceTrees = ["apps", "contexts", "shared", "tools"] as const;
 
 const absent = [
   "shared/sync",
-  "shared/printing",
   "shared/ui",
   "apps/venue",
   "apps/deliveries",
@@ -167,6 +166,11 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
       path.join("adapters", "postgres", "drizzle-audit-repository.ts"),
       path.join("adapters", "postgres", "drizzle-authorization-repository.ts"),
       path.join("adapters", "postgres", "drizzle-identity-repository.ts"),
+      path.join(
+        "adapters",
+        "postgres",
+        "drizzle-organization-repository.contract.test.ts",
+      ),
       path.join("adapters", "postgres", "drizzle-organization-repository.ts"),
       path.join("adapters", "postgres", "drizzle-pending-issuance.ts"),
       path.join(
@@ -279,6 +283,7 @@ it("given local-node, when its sources are listed, then the structure rejection 
       path.join("http", "invoicing.controller.ts"),
       path.join("http", "operate-devices.controller.ts"),
       path.join("http", "operate-identity.controller.ts"),
+      path.join("http", "printing.controller.ts"),
       path.join("http", "tax.controller.ts"),
       path.join("http", "update-menu.controller.ts"),
       path.join("http", "update-structure.controller.ts"),

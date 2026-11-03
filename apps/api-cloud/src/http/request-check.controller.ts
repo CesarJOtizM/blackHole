@@ -8,6 +8,7 @@ import {
   TableAlreadyOccupied,
   TableNotOpen,
 } from "@blackhole/orders/application/entry-port";
+import { Printer } from "@blackhole/orders/application/ports/printer";
 import {
   EvaluatePermission,
   RecordAuditEvent,
@@ -34,7 +35,10 @@ import {
   Param,
   Post,
 } from "@nestjs/common";
-
+import {
+  orderStayedWaiting,
+  queuedOrderCount,
+} from "#src/composition/sale-receipt.js";
 import { PlatformDiningAudit } from "#src/http/platform-dining-audit.js";
 
 const SESSION_HEADER = "x-session-id";
@@ -66,6 +70,8 @@ export class RequestCheckController {
     private readonly digests: AuditDigest,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(Printer)
+    private readonly orders: Printer,
   ) {}
 
   @Post("checks/:checkId/bill")
@@ -97,6 +103,7 @@ export class RequestCheckController {
     }
 
     try {
+      const before = queuedOrderCount(this.orders);
       const billed = await this.requestCheck.execute({
         tenantId,
         venueId,
@@ -129,6 +136,7 @@ export class RequestCheckController {
         tableId: billed.tableId,
         state: billed.tableState,
         preBillRequestedAt,
+        ...(orderStayedWaiting(this.orders, before) ? { printed: false } : {}),
       });
     } catch (error: unknown) {
       const rejection = domainRejectionName(error);

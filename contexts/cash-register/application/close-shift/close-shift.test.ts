@@ -2,8 +2,10 @@ import { expect, it, vi } from "vitest";
 
 import { CloseShift } from "#application/close-shift/close-shift.js";
 import { CashCountStore } from "#application/ports/cash-count-store.js";
+import { Printer, type SaleReceiptJob } from "#application/ports/printer.js";
 import {
   type KnownRegister,
+  type RegisterDrawer,
   RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
@@ -31,6 +33,25 @@ const ORIGINAL_PAYMENT_ID = "payment_original";
 const CORRECTION_COP = 4_000;
 const CORRECTION_REASON = "Fix a tender";
 const JUSTIFICATION = "Drawer was short";
+const PRINTER_ID = "printer-front";
+
+interface RegisterProfile {
+  drawer: RegisterDrawer;
+  printerId: string | null;
+}
+
+class MemoryPrinter extends Printer {
+  readonly jobs: SaleReceiptJob[] = [];
+
+  override async enqueue(job: SaleReceiptJob): Promise<{
+    status: "waiting";
+    kickDrawer: boolean;
+  }> {
+    this.jobs.push(job);
+
+    return { status: "waiting", kickDrawer: job.kickDrawer };
+  }
+}
 
 const registerKey = (
   tenantId: string,
@@ -60,7 +81,10 @@ class MemoryCashCounts extends CashCountStore {
 }
 
 class MemoryRegisterLookup extends RegisterLookup {
-  constructor(private readonly known: ReadonlySet<string>) {
+  constructor(
+    private readonly known: ReadonlySet<string>,
+    private readonly profiles: ReadonlyMap<string, RegisterProfile> = new Map(),
+  ) {
     super();
   }
 
@@ -73,7 +97,16 @@ class MemoryRegisterLookup extends RegisterLookup {
       return null;
     }
 
-    return { id: registerId, venueId };
+    const profile = this.profiles.get(
+      registerKey(tenantId, venueId, registerId),
+    );
+
+    return {
+      id: registerId,
+      venueId,
+      drawer: profile?.drawer ?? "absent",
+      printerId: profile?.printerId ?? null,
+    };
   }
 }
 
@@ -107,9 +140,16 @@ const submitShort = (count: CashCount) => {
   });
 };
 
-const closeFor = async (count?: CashCount) => {
+const closeFor = async (count?: CashCount, profile?: RegisterProfile) => {
   const counts = new MemoryCashCounts();
-  const lookup = new MemoryRegisterLookup(knownRegisters);
+  const profiles = new Map<string, RegisterProfile>();
+
+  if (profile) {
+    profiles.set(registerKey(TENANT_ID, VENUE_ID, REGISTER_ID), profile);
+  }
+
+  const lookup = new MemoryRegisterLookup(knownRegisters, profiles);
+  const printer = new MemoryPrinter();
 
   if (count) {
     await counts.save(TENANT_ID, VENUE_ID, REGISTER_ID, count);
@@ -117,7 +157,8 @@ const closeFor = async (count?: CashCount) => {
 
   return {
     counts,
-    closeShift: new CloseShift(lookup, counts),
+    printer,
+    closeShift: new CloseShift(lookup, counts, printer),
   };
 };
 
@@ -365,4 +406,85 @@ it("given a count saved for one tenant, when another tenant final-closes, then t
   expect(await counts.find(OTHER_TENANT_ID, VENUE_ID, REGISTER_ID)).toBeNull();
   const stored = await counts.find(TENANT_ID, VENUE_ID, REGISTER_ID);
   expect(stored?.state).toBe("counting");
+});
+
+it.each([
+  ["a present", "present"],
+  ["an absent", "absent"],
+] as const)(
+  "given %s drawer and a printer, when the shift is final-closed, then cash_close is enqueued once with kickDrawer false and the drawer is not opened",
+  async (_article, drawer) => {
+    const count = startedCount();
+    submitBalanced(count);
+    const { counts, printer, closeShift } = await closeFor(count, {
+      drawer,
+      printerId: PRINTER_ID,
+    });
+    const save = vi.spyOn(counts, "save");
+    const enqueue = vi.spyOn(printer, "enqueue");
+
+    await closeShift.final({ ...scope, varianceCop: 0 });
+    const again = closeShift.final({ ...scope, varianceCop: 0 });
+
+    await expect(again).rejects.toThrow(ShiftClosed);
+    expect(printer.jobs).toEqual([
+      {
+        commandId: COUNT_ID,
+        printerId: PRINTER_ID,
+        document: "cash_close",
+        kickDrawer: false,
+      },
+    ]);
+    expect(save.mock.invocationCallOrder[0]).toBeLessThan(
+      enqueue.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+    expect(JSON.stringify(printer.jobs)).not.toContain("cash.drawer-opened");
+    expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+    expect(Object.getOwnPropertyNames(CloseShift.prototype)).not.toContain(
+      "openDrawer",
+    );
+  },
+);
+
+it("given a present drawer and no printer, when the shift is final-closed, then cash_close is not enqueued", async () => {
+  const count = startedCount();
+  submitBalanced(count);
+  const { printer, closeShift } = await closeFor(count, {
+    drawer: "present",
+    printerId: null,
+  });
+
+  await closeShift.final({ ...scope, varianceCop: 0 });
+
+  expect(printer.jobs).toEqual([]);
+});
+
+it("given a present drawer and a printer, when final close is rejected, then cash_close is not enqueued", async () => {
+  const count = startedCount();
+  submitShort(count);
+  const { printer, closeShift } = await closeFor(count, {
+    drawer: "present",
+    printerId: PRINTER_ID,
+  });
+
+  const close = closeShift.final({ ...scope, varianceCop: INSIDE_CAP_COP });
+
+  await expect(close).rejects.toThrow(VarianceNeedsApproval);
+  expect(printer.jobs).toEqual([]);
+});
+
+it("given a present drawer and a printer, when the close is partial, then cash_close is not enqueued", async () => {
+  const { printer, closeShift } = await closeFor(undefined, {
+    drawer: "present",
+    printerId: PRINTER_ID,
+  });
+
+  await closeShift.partial({
+    ...scope,
+    countId: COUNT_ID,
+    countedBy: CASHIER_ID,
+  });
+
+  expect(printer.jobs).toEqual([]);
 });

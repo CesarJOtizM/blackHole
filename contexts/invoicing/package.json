@@ -24,6 +24,7 @@
     "#application/adopt-fiscal-template/*": "./application/adopt-fiscal-template/*",
     "#application/calculate-taxes/*": "./application/calculate-taxes/*",
     "#application/issue-document/*": "./application/issue-document/*",
+    "#application/print-document/*": "./application/print-document/*",
     "#application/verify-issuance/*": "./application/verify-issuance/*",
     "#application/attach-buyer/*": "./application/attach-buyer/*",
     "#application/issue-credit-note/*": "./application/issue-credit-note/*",

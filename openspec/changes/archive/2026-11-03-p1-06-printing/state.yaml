@@ -5,8 +5,9 @@ phase: 1
 modules: [M3]
 bounded_contexts: [printing, invoicing, orders, cash-register, contracts]
 apps: [local-node, api-cloud, venue-app]
-status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+status: archived
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: done, archive: done}
+verify_verdict: pass-with-warnings
 depends_on: [p0-01-risk-spikes, p0-04-identity-and-devices, p0-05-roles-and-permissions, p0-06-audit, p1-02-dining-room-and-kitchen, p1-03-cash-register, p1-05-electronic-invoicing]
 source_docs:
   - docs/roadmap.md

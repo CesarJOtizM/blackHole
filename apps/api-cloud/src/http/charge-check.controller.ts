@@ -42,6 +42,10 @@ import {
   Post,
 } from "@nestjs/common";
 import { OrdersAccount } from "#src/composition/orders-account.js";
+import {
+  PendingSalePrinter,
+  withDrawerAudit,
+} from "#src/composition/sale-receipt.js";
 
 const SESSION_HEADER = "x-session-id";
 
@@ -84,6 +88,8 @@ export class ChargeCheckController {
     private readonly digests: AuditDigest,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(PendingSalePrinter)
+    private readonly receipts: PendingSalePrinter,
   ) {}
 
   @Post("cash-registers/:registerId/checks/:checkId/charge")
@@ -118,18 +124,34 @@ export class ChargeCheckController {
     const paidMarks = this.accounts.markCount();
 
     try {
-      const charged = await this.chargeCheck.execute({
-        tenantId,
-        venueId,
-        registerId,
-        checkId,
-        commandId: parsed.data.commandId,
-        paymentId: parsed.data.paymentId,
-        closureId: parsed.data.closureId,
-        tenders: parsed.data.tenders,
-        tip: parsed.data.tip,
-      });
-      const recorded = presentCharge(charged);
+      const charged = await withDrawerAudit(
+        {
+          tenantId,
+          actorId: session.userId,
+          authorizerId: decision.selfAuthorized ? session.userId : null,
+          deviceId: session.deviceId,
+          siteId: venueId,
+        },
+        () =>
+          this.chargeCheck.execute({
+            tenantId,
+            venueId,
+            registerId,
+            checkId,
+            commandId: parsed.data.commandId,
+            paymentId: parsed.data.paymentId,
+            closureId: parsed.data.closureId,
+            tenders: parsed.data.tenders,
+            tip: parsed.data.tip,
+          }),
+      );
+      const recorded = presentCharge(
+        charged,
+        this.receipts.jobs.some(
+          (job) =>
+            job.commandId === parsed.data.commandId && job.status === "waiting",
+        ),
+      );
 
       if (this.accounts.markCount() === paidMarks) {
         return recorded;
@@ -211,7 +233,10 @@ function domainRejectionName(error: unknown): string | null {
   return null;
 }
 
-function presentCharge(result: ChargeCheckResult): ChargedCheck {
+function presentCharge(
+  result: ChargeCheckResult,
+  printed: boolean,
+): ChargedCheck {
   return chargedCheck.parse({
     id: result.closure.id,
     status: result.closure.status,
@@ -231,5 +256,6 @@ function presentCharge(result: ChargeCheckResult): ChargedCheck {
     })),
     tenders: result.closure.tenders.map((tender) => ({ ...tender })),
     tip: { ...result.closure.tip },
+    ...(printed ? { printed: false } : {}),
   });
 }

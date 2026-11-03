@@ -18,6 +18,7 @@
     "e-invoicing.ts",
     "identity.ts",
     "menu.ts",
+    "printing.ts",
     "update-structure.ts"
   ]
 }

@@ -1,5 +1,4 @@
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
-import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import { Menu } from "@blackhole/orders/domain";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
@@ -22,6 +21,7 @@ import {
   seatOccupiedCheck,
   tenantId,
   venueId,
+  WatchingOrdersPrinter,
 } from "#test/http/dining-room-session.js";
 
 const brandId = "organization_brand_1";
@@ -125,7 +125,7 @@ const openOrderCloud = async (printerFails = false) => {
     output: "both",
     redThresholdMinutes: 15,
   });
-  const printer = new InMemoryPrinter();
+  const printer = new WatchingOrdersPrinter();
   printer.fail = printerFails;
 
   return {
@@ -291,7 +291,7 @@ it("given no check, when POST /checks/:checkId/lines is injected, then the respo
 });
 
 it("given course 1 and a later course, when POST /checks/:checkId/send is injected, then course 1 is sent at the quoted price, the later course stays held, and the audit records the send", async () => {
-  const { application, diningRooms, audits } = await openOrderCloud();
+  const { application, diningRooms, audits, printer } = await openOrderCloud();
 
   try {
     await seatOccupiedCheck(diningRooms);
@@ -308,7 +308,17 @@ it("given course 1 and a later course, when POST /checks/:checkId/send is inject
       checkId,
       course: 1,
       lines: [sentSoup],
+      printed: false,
     });
+    expect(printer.queued).toEqual([{ status: "waiting", kickDrawer: false }]);
+    expect(printer.jobs).toEqual([
+      expect.objectContaining({
+        document: "kitchen_ticket",
+        kickDrawer: false,
+      }),
+    ]);
+    expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
     expect(stored?.total).toBe(soupPrice);
     expect(stored?.orders).toEqual([
       {
@@ -352,7 +362,7 @@ it("given course 1 and a later course, when POST /checks/:checkId/send is inject
 });
 
 it("given a held line, when POST /checks/:checkId/send names that course, then the line is sent and the audit records the send", async () => {
-  const { application, diningRooms, audits } = await openOrderCloud();
+  const { application, diningRooms, audits, printer } = await openOrderCloud();
 
   try {
     const check = await seatOccupiedCheck(diningRooms);
@@ -377,7 +387,9 @@ it("given a held line, when POST /checks/:checkId/send names that course, then t
       checkId,
       course: 1,
       lines: [sentSoup],
+      printed: false,
     });
+    expect(printer.queued).toEqual([{ status: "waiting", kickDrawer: false }]);
     expect(stored?.total).toBe(soupPrice);
     expect(stored?.orders[0]?.lines[0]?.state).toBe("sent");
     expect(await audits.list(tenantId, null)).toEqual([
@@ -461,7 +473,8 @@ it("given an empty check, when POST /checks/:checkId/send names course 1, then t
 });
 
 it("given output both and a failed printer, when POST /checks/:checkId/send is injected, then the response is 200 and the saved line is sent", async () => {
-  const { application, diningRooms, audits } = await openOrderCloud(true);
+  const { application, diningRooms, audits, printer } =
+    await openOrderCloud(true);
 
   try {
     await seatOccupiedCheck(diningRooms);
@@ -478,6 +491,8 @@ it("given output both and a failed printer, when POST /checks/:checkId/send is i
       course: 1,
       lines: [sentSoup],
     });
+    expect(response.json()).not.toHaveProperty("printed");
+    expect(printer.queued).toEqual([{ status: "failed", kickDrawer: false }]);
     expect(stored?.orders[0]?.lines).toEqual([
       expect.objectContaining({
         id: lineId,
@@ -504,7 +519,7 @@ it("given output both and a failed printer, when POST /checks/:checkId/send is i
 });
 
 it("given a sent line, when POST /checks/:checkId/lines/:lineId/resend is injected, then the response is 200, the total stays, and nothing is audited", async () => {
-  const { application, diningRooms, audits } = await openOrderCloud();
+  const { application, diningRooms, audits, printer } = await openOrderCloud();
 
   try {
     const check = await seatOccupiedCheck(diningRooms);
@@ -529,7 +544,8 @@ it("given a sent line, when POST /checks/:checkId/lines/:lineId/resend is inject
     const stored = await diningRooms.loadCheck(tenantId, venueId, checkId);
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual(sentSoup);
+    expect(response.json()).toEqual({ ...sentSoup, printed: false });
+    expect(printer.queued).toEqual([{ status: "waiting", kickDrawer: false }]);
     expect(stored?.total).toBe(soupPrice);
     expect(stored?.orders[0]?.lines[0]?.state).toBe("sent");
     expect(await audits.list(tenantId, null)).toEqual([]);

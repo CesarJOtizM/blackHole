@@ -20,6 +20,11 @@ const GRILL_ID = "organization_station_grill";
 const BAR_STATION_ID = "organization_station_bar";
 const FRONT_REGISTER_ID = "organization_register_front";
 const BAR_REGISTER_ID = "organization_register_bar";
+const CARD_REGISTER_ID = "organization_register_card";
+const PRINTER_GRILL = "printer-grill";
+const PRINTER_FRONT = "printer-front";
+const PRINTER_BAR = "printer-bar";
+const PRINTER_CARD = "printer-card";
 const SITE_WAREHOUSE_ID = "organization_warehouse_site";
 const GENERAL_WAREHOUSE_ID = "organization_warehouse_general";
 
@@ -258,12 +263,24 @@ it("given a venue, when stations, registers, and warehouses are added, then they
   });
 
   expect(organization.kitchenStations).toEqual([
-    { id: GRILL_ID, venueId: VENUE_ID, name: "Grill" },
-    { id: BAR_STATION_ID, venueId: VENUE_ID, name: "Bar" },
+    { id: GRILL_ID, venueId: VENUE_ID, name: "Grill", printerId: null },
+    { id: BAR_STATION_ID, venueId: VENUE_ID, name: "Bar", printerId: null },
   ]);
   expect(organization.cashRegisters).toEqual([
-    { id: FRONT_REGISTER_ID, venueId: VENUE_ID, name: "Host" },
-    { id: BAR_REGISTER_ID, venueId: VENUE_ID, name: "Bar" },
+    {
+      id: FRONT_REGISTER_ID,
+      venueId: VENUE_ID,
+      name: "Host",
+      drawer: "absent",
+      printerId: null,
+    },
+    {
+      id: BAR_REGISTER_ID,
+      venueId: VENUE_ID,
+      name: "Bar",
+      drawer: "absent",
+      printerId: null,
+    },
   ]);
   expect(organization.locations).toEqual([
     {
@@ -283,6 +300,80 @@ it("given a venue, when stations, registers, and warehouses are added, then they
       name: "Central",
       kind: "warehouse",
       venueId: null,
+    },
+  ]);
+});
+
+it("given a venue, when one register has a drawer, one names it absent, and one omits it, then the venue keeps present beside absent and each printer", () => {
+  const organization = registerPilot();
+
+  organization.addKitchenStation({
+    id: GRILL_ID,
+    venueId: VENUE_ID,
+    name: "Grill",
+    printerId: PRINTER_GRILL,
+  });
+  organization.addKitchenStation({
+    id: BAR_STATION_ID,
+    venueId: VENUE_ID,
+    name: "Bar",
+  });
+  organization.addCashRegister({
+    id: FRONT_REGISTER_ID,
+    venueId: VENUE_ID,
+    name: "Front",
+    drawer: "present",
+    printerId: PRINTER_FRONT,
+  });
+  organization.addCashRegister({
+    id: BAR_REGISTER_ID,
+    venueId: VENUE_ID,
+    name: "Bar",
+    drawer: "absent",
+    printerId: PRINTER_BAR,
+  });
+  organization.addCashRegister({
+    id: CARD_REGISTER_ID,
+    venueId: VENUE_ID,
+    name: "Card",
+    printerId: PRINTER_CARD,
+  });
+
+  expect(organization.kitchenStations).toEqual([
+    {
+      id: GRILL_ID,
+      venueId: VENUE_ID,
+      name: "Grill",
+      printerId: PRINTER_GRILL,
+    },
+    {
+      id: BAR_STATION_ID,
+      venueId: VENUE_ID,
+      name: "Bar",
+      printerId: null,
+    },
+  ]);
+  expect(organization.cashRegisters).toEqual([
+    {
+      id: FRONT_REGISTER_ID,
+      venueId: VENUE_ID,
+      name: "Front",
+      drawer: "present",
+      printerId: PRINTER_FRONT,
+    },
+    {
+      id: BAR_REGISTER_ID,
+      venueId: VENUE_ID,
+      name: "Bar",
+      drawer: "absent",
+      printerId: PRINTER_BAR,
+    },
+    {
+      id: CARD_REGISTER_ID,
+      venueId: VENUE_ID,
+      name: "Card",
+      drawer: "absent",
+      printerId: PRINTER_CARD,
     },
   ]);
 });

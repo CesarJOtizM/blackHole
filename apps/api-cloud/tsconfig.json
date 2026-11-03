@@ -16,6 +16,7 @@
     { "path": "../../contexts/invoicing" },
     { "path": "../../contexts/orders" },
     { "path": "../../contexts/platform" },
-    { "path": "../../shared/contracts" }
+    { "path": "../../shared/contracts" },
+    { "path": "../../shared/printing" }
   ]
 }

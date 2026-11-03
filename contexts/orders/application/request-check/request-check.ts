@@ -1,5 +1,7 @@
 import type { Clock } from "#application/ports/clock.js";
 import type { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
+import type { Printer, PrintJobStatus } from "#application/ports/printer.js";
+import type { RealtimeHub } from "#application/ports/realtime-hub.js";
 import { type Check, TableNotOpen } from "#domain/check.js";
 import {
   type DiningTable,
@@ -11,6 +13,8 @@ export interface RequestCheckInput {
   venueId: string;
   checkId: string;
 }
+
+const ALERTING_STATUS = new Set<PrintJobStatus>(["waiting", "failed"]);
 
 const loadCheck = async (
   diningRoom: DiningRoomRepository,
@@ -50,6 +54,8 @@ export class RequestCheck {
   constructor(
     private readonly diningRoom: DiningRoomRepository,
     private readonly clock: Clock,
+    private readonly printer: Printer,
+    private readonly hub: RealtimeHub,
   ) {}
 
   async execute(input: RequestCheckInput): Promise<Check> {
@@ -70,7 +76,42 @@ export class RequestCheck {
     table.requestCheck();
     await this.diningRoom.save(table);
     await this.diningRoom.saveCheck(check);
+    await this.enqueuePreBill(check, requestedAt);
 
     return check;
+  }
+
+  private async enqueuePreBill(
+    check: Check,
+    requestedAt: string,
+  ): Promise<void> {
+    const queued = await this.printer.enqueue({
+      document: "pre_bill",
+      commandId: `pre_bill:${check.id}:${requestedAt}`,
+      table: check.tableId,
+      lines: check.orders
+        .flatMap((order) => order.lines)
+        .filter((line) => line.state !== "held")
+        .map((line) => ({
+          quantity: "1",
+          name: line.name,
+          amount: String(line.price),
+        })),
+      total: String(check.total),
+      qr: "",
+      kickDrawer: false,
+    });
+
+    if (!ALERTING_STATUS.has(queued.status)) {
+      return;
+    }
+
+    await this.hub.publish({
+      kind: "printer_failed",
+      tenantId: check.tenantId,
+      venueId: check.venueId,
+      checkId: check.id,
+      tableId: check.tableId,
+    });
   }
 }

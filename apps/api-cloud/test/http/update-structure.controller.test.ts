@@ -1,4 +1,7 @@
-import type { OrganizationChanged } from "@blackhole/contracts";
+import {
+  type OrganizationChanged,
+  structureCommand,
+} from "@blackhole/contracts";
 import {
   FakeClock,
   FastPasswordHasher,
@@ -15,6 +18,7 @@ import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/m
 import { expect, it } from "vitest";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
+import { StructurePrinters } from "#src/http/update-structure.controller.js";
 import {
   samplePilotActorId,
   samplePilotCommands,
@@ -32,6 +36,12 @@ const venueId = "organization_venue_1";
 const pointId = "organization_point_1";
 const secondPointId = "organization_point_2";
 const stationId = "organization_station_1";
+const grillId = "organization_station_grill";
+const registerId = "organization_register_front";
+const grillPrinterId = "printer-grill";
+const frontPrinterId = "printer-front";
+const grillBackupId = "printer-grill-backup";
+const frontBackupId = "printer-front-backup";
 const actorHeader = "x-actor-id";
 
 const emptySnapshot = {
@@ -187,6 +197,7 @@ it("given a kitchen station, when stock is assigned to it, then the response is 
         id: stationId,
         venueId,
         name: "Grill",
+        printerId: null,
       },
     ]);
   } finally {
@@ -262,6 +273,99 @@ it("given the sample pilot fixture, when it is posted, then six cloud venues are
     expect(body?.after.venues.every((venue) => venue.mode === "cloud")).toBe(
       true,
     );
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a venue, when a station and a register name drawer, printer, paper, and backup, then those fields are stored and safeParse rejects a bad value", async () => {
+  const stationCommand = {
+    type: "addKitchenStation",
+    id: grillId,
+    venueId,
+    name: "Grill",
+    printerId: grillPrinterId,
+    paper: "58",
+    backupPrinterId: grillBackupId,
+  };
+  const registerCommand = {
+    type: "addCashRegister",
+    id: registerId,
+    venueId,
+    name: "Front",
+    drawer: "present",
+    printerId: frontPrinterId,
+    paper: "80",
+    backupPrinterId: frontBackupId,
+  };
+  const { application, organizations } = await openCloud();
+
+  try {
+    expect(structureCommand.safeParse(stationCommand).success).toBe(true);
+    expect(structureCommand.safeParse(registerCommand).success).toBe(true);
+    expect(
+      structureCommand.safeParse({ ...registerCommand, paper: "letter" })
+        .success,
+    ).toBe(false);
+    expect(
+      structureCommand.safeParse({ ...registerCommand, drawer: "open" })
+        .success,
+    ).toBe(false);
+
+    await acceptVenue(application);
+    const station = await postStructure(application, stationCommand);
+    const register = await postStructure(application, registerCommand);
+    const stored = await organizations.load(tenantId);
+    const printers = application.get(StructurePrinters);
+
+    expect(station.statusCode).toBe(200);
+    expect(register.statusCode).toBe(200);
+    expect(station.json().after.kitchenStations).toEqual([
+      {
+        id: grillId,
+        venueId,
+        name: "Grill",
+        printerId: grillPrinterId,
+      },
+    ]);
+    expect(register.json().after.cashRegisters).toEqual([
+      {
+        id: registerId,
+        venueId,
+        name: "Front",
+        drawer: "present",
+        printerId: frontPrinterId,
+      },
+    ]);
+    expect(stored?.kitchenStations).toEqual([
+      {
+        id: grillId,
+        venueId,
+        name: "Grill",
+        printerId: grillPrinterId,
+      },
+    ]);
+    expect(stored?.cashRegisters).toEqual([
+      {
+        id: registerId,
+        venueId,
+        name: "Front",
+        drawer: "present",
+        printerId: frontPrinterId,
+      },
+    ]);
+    expect(printers.configured).toEqual([
+      {
+        id: grillPrinterId,
+        paper: "58",
+        backupPrinterId: grillBackupId,
+      },
+      {
+        id: frontPrinterId,
+        paper: "80",
+        backupPrinterId: frontBackupId,
+      },
+    ]);
   } finally {
     await application.close();
   }

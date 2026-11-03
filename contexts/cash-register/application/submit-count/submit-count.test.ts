@@ -95,7 +95,7 @@ class MemoryRegisterLookup extends RegisterLookup {
       return null;
     }
 
-    return { id: registerId, venueId };
+    return { id: registerId, venueId, drawer: "absent", printerId: null };
   }
 }
 
