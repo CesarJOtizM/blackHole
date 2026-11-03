@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-prebill` targeting `feat/anti-theft-price` (PR #79). Not `main`.
-**Work unit**: 8 — Pre-bill (task 4.6)
+**PR slice**: `feat/anti-theft-transfer` targeting `feat/anti-theft-prebill` (PR #80). Not `main`.
+**Work unit**: 8 — Table transfer (task 4.7)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -22,6 +22,7 @@
 - [x] 4.4 Apply a courtesy: `compShiftCop` comes from executed operations. Over the shift cap the courtesy waits until a matching `sale.comp` grant is consumed. The same amount and the same account apply. A mismatch, a missing grant, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. Line prices stay and the account is not cleared. The courtesy is stored on the audit
 - [x] 4.5 Change a line price: the new price is stored on that line. The menu stays. `sale.change-price` is the existing permission. Shift totals come from executed operations. A matching grant (same price and same line id) is consumed before the save when authorization is required. `allowed` does not consume. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the line price unchanged. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` and the check is saved
 - [x] 4.6 Add a line after the printed pre-bill: without `sale.edit-printed-check` the account stays as it was saved. Shift totals come from executed operations. `allowed` does not consume a grant. `requires_authorization` consumes a grant for the check and the added line's quoted price before the save. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws. The successful audit `after` is `{ value, shiftId, kitchen: null }`
+- [x] 4.7 Transfer a table to another waiter: `sale.transfer-table` runs before the write. Shift totals come from executed operations. `allowed` does not consume. `requires_authorization` consumes a grant for the check before the reassignment. A missing grant, a mismatch, a denial, a closed shift, or an unknown reference leaves the current waiter. A second consume throws. The audit `after` is `{ value, shiftId, kitchen: null }` plus the new waiter id
 
 ## Work Unit Evidence
 
@@ -368,6 +369,34 @@ The same command after `pnpm exec biome check --write` on the two take-order fil
 
 `pnpm exec biome check --formatter-enabled=false` on `take-order.ts` and `take-order.test.ts`. Exit 0. No fixes applied.
 
+### Unit 8 — Table transfer (task 4.7)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project orders contexts/orders/application/reassign-check/reassign-check.test.ts`. RED exit 1: 10 failed, 4 passed (14). GREEN after the use case, before folding the refusal titles: exit 0, 1 file, 14 passed. Final GREEN after that fold and Biome: exit 0, 1 file, 9 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room and an in-memory double of the platform entry port. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/reassign-check/reassign-check.ts` and `contexts/orders/application/reassign-check/reassign-check.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project orders contexts/orders/application/reassign-check/reassign-check.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 10 failed, 4 passed (14).
+
+Failure before `ReassignCheck` guarded a waiter transfer, on the new transfer cases:
+
+- `loadCheck` threw `TableNotOpen`. `kind: "transfer-table"` still followed the line move and looked up a missing `targetCheckId`.
+- The already-consumed case expected `AuthorizationAlreadyConsumed` and received `TableNotOpen`.
+- The four existing join and line-transfer tests passed.
+
+#### GREEN
+
+Same command, after `transferTable` evaluates `sale.transfer-table`, passes counted shift totals, consumes a matching grant only when required, assigns the new waiter, and audits. Exit 0. Test files 1 passed. Tests 14 passed.
+
+The same command after folding the six refusal cases into one `it`, matching the existing reassign loop, and after `pnpm exec biome check --write` on the two files. Exit 0. Test files 1 passed. Tests 9 passed. The refusal loop still checks the waiter, the empty audit, the grant calls, and the step order.
+
+`pnpm exec biome check --formatter-enabled=false` on `reassign-check.ts` and `reassign-check.test.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -408,7 +437,12 @@ The same command after `pnpm exec biome check --write` on the two take-order fil
 - `hold` and `execute` share the gate. `fire` and `resend` do not add a line. The permission is the existing catalog code `sale.edit-printed-check`. Shift totals come from `CountExecutedOperations` and are passed into `EvaluatePermission` with the quoted price of the added line. One `execute` that adds several lines uses their sum. The grant `targetId` is the check id.
 - `allowed` adds the line and audits, and does not consume. `requires_authorization` consumes before `addLine` and `saveCheck`. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume and does not audit.
 - The audit action is `sale.edit-printed-check`. `entity` is the check id. `after` is `{ value, shiftId, kitchen: null }`, where `value` is that quoted price. `before` is `{ value: 0 }` so the two states differ. The assigned test covers the denied add. The allowed, grant, mismatch, closed-shift, and second-consume paths use that same gate and are not separate tests in this pair.
+- `Check` has no waiter. This slice stores `waiterId` as an own property on the loaded check and saves that same check. The audit `after` repeats it. `before` is `{ waiterId }` so the two states differ. Postgres does not map the property. No domain method and no SQL in this slice.
+- The permission is the existing catalog code `sale.transfer-table`. No second code was added. The command carries the new waiter and does not carry a caller total. `value` is `check.total`. Shift totals come from `CountExecutedOperations` and are passed into `EvaluatePermission`. The grant `targetId` is the check id.
+- `requires_authorization` consumes before `assignWaiter` and `saveCheck`. `allowed` saves and audits and does not consume. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the waiter. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume and does not audit.
+- The audit action is `sale.transfer-table`. `entity` is the check id. `after` is `{ value, shiftId, kitchen: null, waiterId }`. It does not store a PIN. Join and line transfer do not call the platform.
+- `TableTransferGuard` is an optional last constructor argument. `application-module.ts` still builds `ReassignCheck` with one argument (`new ReassignCheck(diningRoom)`), which this slice cannot edit. A `transfer-table` command with no guard leaves the current waiter and writes no audit. Task 6.4 wires the guard. No new use case, no entry-port export, and no package import.
 
 ## Remaining
 
-Tasks 4.7–7.1 are pending. The next checkbox is 4.7. Task 4.6 is the only checkbox newly marked in this batch. 13/25 tasks complete. The pre-bill slice is 408 changed lines: `take-order.ts` 170 additions and 5 deletions, `take-order.test.ts` 225 additions and 8 deletions. No entry-port export and no package import. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-prebill`.
+Tasks 5.1–7.1 are pending. The next checkbox is 5.1. Task 4.7 is the only checkbox newly marked in this batch. 14/25 tasks complete. The transfer slice is 502 changed lines: `reassign-check.ts` 167 additions and 2 deletions, `reassign-check.test.ts` 332 additions and 1 deletion. No entry-port export and no package import. `size:exception` was not granted. The slice is one RED/GREEN pair and stays on `feat/anti-theft-transfer`, based on `feat/anti-theft-prebill`. The diff is over the 400-line review budget because this test file had no platform doubles and the authorization matrix is covered.
