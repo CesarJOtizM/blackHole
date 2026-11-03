@@ -23,6 +23,7 @@ import {
   TakeOrder,
   UnknownMenuReference,
 } from "@blackhole/orders/application/entry-port";
+import { Printer } from "@blackhole/orders/application/ports/printer";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
 import {
   EvaluatePermission,
@@ -50,7 +51,10 @@ import {
   Param,
   Post,
 } from "@nestjs/common";
-
+import {
+  orderStayedWaiting,
+  queuedOrderCount,
+} from "#src/composition/sale-receipt.js";
 import { PlatformDiningAudit } from "#src/http/platform-dining-audit.js";
 
 const SESSION_HEADER = "x-session-id";
@@ -120,6 +124,8 @@ export class TakeOrderController {
     private readonly digests: AuditDigest,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(Printer)
+    private readonly orders: Printer,
   ) {}
 
   @Post("checks/:checkId/lines")
@@ -179,6 +185,7 @@ export class TakeOrderController {
 
     try {
       const brandId = await this.brandOf(tenantId, venueId);
+      const before = queuedOrderCount(this.orders);
       const saved =
         "lines" in parsed.data
           ? await this.takeOrder.execute({
@@ -231,6 +238,7 @@ export class TakeOrderController {
         checkId: saved.id,
         course: parsed.data.course,
         lines,
+        ...(orderStayedWaiting(this.orders, before) ? { printed: false } : {}),
       });
     } catch (error: unknown) {
       throw rejectionOf(error);
@@ -257,14 +265,20 @@ export class TakeOrderController {
     await this.authorize(tenantId, venueId, sessionId);
 
     try {
+      const before = queuedOrderCount(this.orders);
       const saved = await this.takeOrder.resend({
         tenantId,
         venueId,
         checkId,
         lineId,
       });
+      const line = presentLine(saved, lineId);
 
-      return presentLine(saved, lineId);
+      if (!orderStayedWaiting(this.orders, before)) {
+        return line;
+      }
+
+      return savedOrderLine.parse({ ...line, printed: false });
     } catch (error: unknown) {
       throw rejectionOf(error);
     }

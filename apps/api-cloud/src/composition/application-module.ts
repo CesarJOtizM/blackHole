@@ -103,8 +103,8 @@ import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
 import {
-  PendingDrawerAudit,
   PendingSalePrinter,
+  RecordedDrawerAudit,
 } from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
@@ -220,6 +220,7 @@ export class ApplicationModule implements NestModule {
       dependencies.creditNoteAudits ?? new MemoryCreditNoteAudit(creditNotes);
     const numberingRanges =
       dependencies.numberingRanges ?? new MemoryNumberingRanges();
+    const salePrinter = new PendingSalePrinter();
 
     return {
       module: ApplicationModule,
@@ -403,20 +404,33 @@ export class ApplicationModule implements NestModule {
           ],
         },
         {
+          provide: PendingSalePrinter,
+          useValue: salePrinter,
+        },
+        {
           provide: ChargeCheck,
           useFactory: (
             organizations: OrganizationRepository,
             accounts: OrdersAccount,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
           ) =>
             new ChargeCheck(
               new OrganizationRegisterDirectory(organizations),
               accounts,
               new ManualCardTerminal(),
               charges,
-              new PendingSalePrinter(),
-              new PendingDrawerAudit(),
+              salePrinter,
+              new RecordedDrawerAudit(audits, digests, clock),
             ),
-          inject: [OrganizationRepository, OrdersAccount],
+          inject: [
+            OrganizationRepository,
+            OrdersAccount,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+          ],
         },
         {
           provide: SubmitCount,
@@ -443,6 +457,7 @@ export class ApplicationModule implements NestModule {
             new CloseShift(
               new OrganizationRegisterDirectory(organizations),
               countStore,
+              salePrinter,
             ),
           inject: [OrganizationRepository],
         },

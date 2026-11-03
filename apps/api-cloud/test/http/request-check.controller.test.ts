@@ -15,12 +15,16 @@ import {
   tableId,
   tenantId,
   venueId,
+  WatchingOrdersPrinter,
 } from "#test/http/dining-room-session.js";
 
 const billUrl = diningPath(`checks/${checkId}/bill`);
 
 it("given an occupied check, when POST /checks/:checkId/bill is injected, then the response is 200, the bill is requested, and the audit records the bill", async () => {
-  const { application, diningRooms, audits } = await openDiningCloud();
+  const printer = new WatchingOrdersPrinter();
+  const { application, diningRooms, audits } = await openDiningCloud({
+    printer,
+  });
 
   try {
     expect(routePermissions["POST checks/:checkId/bill"]).toBe(
@@ -49,7 +53,17 @@ it("given an occupied check, when POST /checks/:checkId/bill is injected, then t
       tableId,
       state: "check_requested",
       preBillRequestedAt: openedAt,
+      printed: false,
     });
+    expect(printer.queued).toEqual([{ status: "waiting", kickDrawer: false }]);
+    expect(printer.jobs).toEqual([
+      expect.objectContaining({
+        document: "pre_bill",
+        kickDrawer: false,
+      }),
+    ]);
+    expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
     expect(storedTable?.state).toBe("check_requested");
     expect(storedCheck?.tableState).toBe("check_requested");
     expect(storedCheck?.preBillRequest).toEqual({ requestedAt: openedAt });

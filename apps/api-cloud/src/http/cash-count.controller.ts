@@ -46,6 +46,8 @@ import {
   Post,
 } from "@nestjs/common";
 
+import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
+
 const SESSION_HEADER = "x-session-id";
 
 export const routePermissions = {
@@ -99,6 +101,8 @@ export class CashCountController {
     private readonly digests: AuditDigest,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(PendingSalePrinter)
+    private readonly receipts: PendingSalePrinter,
   ) {}
 
   @Get("cash-registers/:registerId/count")
@@ -293,6 +297,7 @@ export class CashCountController {
       OPEN_SHIFT,
       null,
     );
+    const before = this.receipts.jobs.length;
     const recorded = presentCount(
       await this.capture(() =>
         this.closeShift.final({
@@ -302,6 +307,11 @@ export class CashCountController {
           varianceCop: parsed.data.varianceCop,
         }),
       ),
+      this.receipts.jobs
+        .slice(before)
+        .some(
+          (job) => job.document === "cash_close" && job.status === "waiting",
+        ),
     );
 
     await this.record(
@@ -443,11 +453,14 @@ function domainRejectionName(error: unknown): string | null {
   return null;
 }
 
-function presentCount(count: {
-  state: CountReading["state"];
-  countedCashCop: number | undefined;
-  differenceCop: number | undefined;
-}): CashCountView {
+function presentCount(
+  count: {
+    state: CountReading["state"];
+    countedCashCop: number | undefined;
+    differenceCop: number | undefined;
+  },
+  printed = false,
+): CashCountView {
   return cashCountView.parse({
     state: count.state,
     ...(count.countedCashCop === undefined
@@ -456,5 +469,6 @@ function presentCount(count: {
     ...(count.differenceCop === undefined
       ? {}
       : { differenceCop: count.differenceCop }),
+    ...(printed ? { printed: false } : {}),
   });
 }

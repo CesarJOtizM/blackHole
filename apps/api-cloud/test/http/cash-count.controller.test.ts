@@ -26,6 +26,7 @@ import { expect, it } from "vitest";
 import { MemoryCashCounts } from "#src/composition/application-module.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
+import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
 import {
   CashCountController,
   routePermissions,
@@ -99,7 +100,10 @@ const picture = (organization: Organization): OrganizationSnapshot => ({
   cashRegisters: organization.cashRegisters,
 });
 
-const openCountCloud = async (): Promise<{
+const openCountCloud = async (register?: {
+  drawer?: "present" | "absent";
+  printerId?: string;
+}): Promise<{
   application: NestFastifyApplication;
   registers: InMemoryCashRegisterRepository;
   counts: MemoryCashCounts;
@@ -153,6 +157,10 @@ const openCountCloud = async (): Promise<{
     id: registerId,
     venueId,
     name: "Front",
+    ...(register?.drawer === undefined ? {} : { drawer: register.drawer }),
+    ...(register?.printerId === undefined
+      ? {}
+      : { printerId: register.printerId }),
   });
   const stored = picture(organization);
   await organizations.save(organization, {
@@ -472,6 +480,89 @@ it("given a submitted count, when a partial close is done, then the shift stays 
         reason: "cash.open-shift",
       }),
     );
+  } finally {
+    await application.close();
+  }
+});
+
+const balancedCount = {
+  countId: "count_front_balanced",
+  denominations: [{ denomination: 100_000, quantity: 1 }],
+  terminals: [],
+};
+
+const printerId = "printer-front";
+
+it("given a register with a printer, when the count is closed in part, then nothing is queued and the response omits printed", async () => {
+  const { application, audits } = await openCountCloud({
+    drawer: "present",
+    printerId,
+  });
+
+  try {
+    await openShift(application);
+    await send(application, "POST", countUrl, "session_owner", balancedCount);
+
+    const closed = await send(
+      application,
+      "POST",
+      partialUrl,
+      "session_owner",
+      { countId: balancedCount.countId },
+    );
+
+    expect(closed.statusCode).toBe(200);
+    expect(closed.json()).not.toHaveProperty("printed");
+    expect(application.get(PendingSalePrinter).jobs).toEqual([]);
+    expect(
+      (await audits.list(tenantId, null)).filter(
+        (event) => event.action === "cash.drawer-opened",
+      ),
+    ).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a register with a printer, when the shift is closed, then the cash close stays waiting, kickDrawer is false, and the response says printed false", async () => {
+  const { application, audits } = await openCountCloud({
+    drawer: "present",
+    printerId,
+  });
+
+  try {
+    await openShift(application);
+    await send(application, "POST", countUrl, "session_owner", balancedCount);
+
+    const closed = await send(application, "POST", finalUrl, "session_owner", {
+      varianceCop: 0,
+    });
+
+    expect(closed.statusCode).toBe(200);
+    expect(closed.json()).toEqual({
+      state: "closed",
+      countedCashCop: openingFloatCop,
+      differenceCop: 0,
+      printed: false,
+    });
+
+    const receipts = application.get(PendingSalePrinter);
+    expect(receipts.jobs).toEqual([
+      {
+        commandId: balancedCount.countId,
+        printerId,
+        document: "cash_close",
+        kickDrawer: false,
+        status: "waiting",
+      },
+    ]);
+    expect(JSON.stringify(receipts.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(receipts.jobs)).not.toContain("\\u001b");
+    expect(
+      (await audits.list(tenantId, null)).filter(
+        (event) => event.action === "cash.drawer-opened",
+      ),
+    ).toEqual([]);
   } finally {
     await application.close();
   }

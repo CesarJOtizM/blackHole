@@ -130,6 +130,7 @@ export const chargedCheck = z
     lines: z.array(chargedLine),
     tenders: z.array(tender),
     tip,
+    printed: z.literal(false).optional(),
   })
   .strict();
 
@@ -204,6 +205,7 @@ export const cashCountView = z
     state: z.enum(["open", "counting", "closed"]),
     countedCashCop: cop.optional(),
     differenceCop: z.number().int().optional(),
+    printed: z.literal(false).optional(),
   })
   .strict();
 

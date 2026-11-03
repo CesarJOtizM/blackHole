@@ -1,5 +1,11 @@
 # Apply progress: p1-06-printing
 
+Work unit 14. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+
+Delivery: feature-branch-chain. This batch stays on `feat/printing-http` and targets `feat/printing-documents` (PR https://github.com/CesarJOtizM/blackHole/pull/64), not `main`, and stops at tasks 6.1–6.2. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
+
+Cloud HTTP acceptance. A charge, a pre-bill, a kitchen send, a kitchen resend, and a final cash close return `printed: false` only while the accepted job is `waiting`. The in-memory sale printer stores that job as `waiting`. `PendingDrawerAudit` is gone. `RecordedDrawerAudit` calls `RecordAuditEvent` once, after the charge is saved, and only for a cash tender on a register whose drawer is `present` and whose `printerId` is set. A repeated `commandId` does not enqueue or audit again. Card, a present drawer without a printer, an absent drawer, a rejected charge, and a partial close do not audit `cash.drawer-opened`. Final close enqueues `cash_close` with `kickDrawer: false`. There is no TCP bridge, no physical printer, and no `@blackhole/printing` import. `PrintDocument` is not called. Units 1–13 stay recorded below.
+
 Work unit 13. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
 Delivery: feature-branch-chain. This batch is PR 13. It stays on `feat/printing-documents` and targets `feat/printing-tenders`, not `main`, and stops at tasks 5.7–5.8. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
@@ -62,6 +68,8 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 - [x] 5.6 GREEN `charge-check.ts` and `close-shift.ts`. A cash tender on a `present` drawer kicks once. Final close enqueues `cash_close` with `kickDrawer: false`. No ESC/POS bytes. No `@blackhole/printing` import.
 - [x] 5.7 RED `contexts/invoicing/application/print-document/print-document.test.ts`: an issued invoice carries number, CUFE, and QR. A `pending_issuance` receipt says it is not an invoice and carries the lookup QR. Neither kicks.
 - [x] 5.8 GREEN `print-document.ts` and the invoicing `entry-port.ts`. No enqueue. No `@blackhole/printing` import.
+- [x] 6.1 RED `apps/api-cloud/test/http` charge, request-check, take-order, and cash-count: `printed: false` while the job is `waiting`. Drawer audit only after a saved cash tender on a drawer `present`.
+- [x] 6.2 GREEN those controllers and `src/composition/application-module.ts`. One `RecordAuditEvent` for `cash.drawer-opened`. No bridge.
 
 ## Work Unit Evidence
 
@@ -195,6 +203,16 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | Review line count | 189 insertions, 0 deletions (189 changed lines) against the unit 12 slice. Under the 400-line budget. |
 | Rollback boundary | `contexts/invoicing/application/print-document/`, the `PrintDocument` export in `contexts/invoicing/application/entry-port.ts`, and the `#application/print-document/*` import in `contexts/invoicing/package.json`. No `shared/printing`. No `pnpm-lock.yaml`. No HTTP. |
 
+### Unit 14
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/charge-check.controller.test.ts apps/api-cloud/test/http/request-check.controller.test.ts apps/api-cloud/test/http/take-order.controller.test.ts apps/api-cloud/test/http/cash-count.controller.test.ts` — exit 0. `Test Files  4 passed (4)`. `Tests  36 passed (36)`. `pnpm exec biome check --write` on the fourteen touched files fixed 11 files before the recorded GREEN run. The same command was re-run after the `PendingSaleJob` type fix and exited 0 with the same counts. |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud --pretty false` — exit 0, after the type fix. |
+| Runtime harness command/scenario and exact result | Nest `inject` against in-memory ports. No socket, TCP, or `@blackhole/printing`. A cash sale on drawer `present` with `printer-front` returns `printed: false`, stores one `offline_receipt` with `status: "waiting"` and `kickDrawer: true`, and records one `cash.drawer-opened` after the closure is saved. The same `commandId` does not enqueue or audit again. Drawer `absent` stores that receipt with `kickDrawer: false` and writes no drawer audit. Card, a present drawer with `printerId: null`, and a rejected charge enqueue nothing and write no drawer audit. A pre-bill and a kitchen send or resend return `printed: false` while the orders job is `waiting` and `kickDrawer` is false. A failed kitchen printer omits `printed`. Final close stores one `cash_close` with `status: "waiting"` and `kickDrawer: false`. Partial close enqueues nothing. The stored jobs have no `1B 70` and no `\\u001b`. |
+| Review line count | 534 insertions, 40 deletions (574 changed lines) in the code slice, before the OpenSpec progress edit. Over the 400-line budget. The pair was not split. |
+| Rollback boundary | `apps/api-cloud` HTTP controllers, `src/composition/sale-receipt.ts`, `src/composition/application-module.ts`, `apps/api-cloud/test/http` for charge, request-check, take-order, cash-count, and dining-room session, `apps/api-cloud/test/composition/bootstrap.test.ts`, and the optional `printed` field on `shared/contracts` `chargedCheck`, `cashCountView`, `requestedCheck`, `savedOrderLine`, and `sentCourse`. No `pnpm-lock.yaml`. No `apps/local-node`. No reprint route. |
+
 ### RED then GREEN
 
 | Task | RED (command and result) | GREEN |
@@ -212,6 +230,7 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | 5.3 → 5.4 | `pnpm exec vitest run --project cash-register charge-check` exit 1. `Test Files  1 failed (1)`. `Tests  2 failed \| 11 passed (13)`. Both new tests received `jobs` `[]`. | Same command after `charge-check.ts`, `ports/printer.ts`, and `ports/register-lookup.ts`: exit 0. `Test Files  1 passed (1)`. `Tests  13 passed (13)`. `pnpm exec tsc -b contexts/cash-register --pretty false` exit 0. Biome fixed 3 files before that GREEN run. |
 | 5.5 → 5.6 | `pnpm exec vitest run --project cash-register charge-check close-shift` exit 1. `Test Files  2 failed (2)`. `Tests  4 failed \| 36 passed (40)`. Card plus cash, on a present drawer and on an absent drawer, received `jobs` `[]`. Final close with a printer, for both drawers, received `jobs` `[]`. | Same command after `includesCash`, the `cash_close` enqueue, and the `SaleReceiptJob` union: exit 0. `Test Files  2 passed (2)`. `Tests  40 passed (40)`. `pnpm exec tsc -b contexts/cash-register --pretty false` exit 0. Biome fixed 1 file before that GREEN run. |
 | 5.7 → 5.8 | `pnpm exec vitest run --project invoicing print-document` exit 1. `FAIL contexts/invoicing/application/print-document/print-document.test.ts` — `Cannot find module '#application/print-document/print-document.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `print-document.ts` and the invoicing entry-port export: exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`. `pnpm exec tsc -b contexts/invoicing --pretty false` exit 0. Biome fixed 4 files before that GREEN run. |
+| 6.1 → 6.2 | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/charge-check.controller.test.ts apps/api-cloud/test/http/request-check.controller.test.ts apps/api-cloud/test/http/take-order.controller.test.ts apps/api-cloud/test/http/cash-count.controller.test.ts` exit 1. `Test Files  4 failed (4)`. `Tests  11 failed \| 25 passed (36)`. Responses omitted `printed: false`. `PendingSalePrinter` was not a Nest provider. | Same command after the controllers, `RecordedDrawerAudit`, and the shared printer: exit 0. `Test Files  4 passed (4)`. `Tests  36 passed (36)`. `pnpm exec tsc -b apps/api-cloud --pretty false` exit 0. Biome fixed 11 files before the first GREEN run. The `PendingSaleJob` type was then changed from an interface to a type alias so `tsc -b apps/api-cloud` exited 0, and the same vitest command was re-run and exited 0. |
 
 ## Deviations from Design
 
@@ -243,6 +262,8 @@ Unit 11 enqueues the cash receipt through the cash-register `Printer` port. A ca
 
 Unit 13 keeps the payload in invoicing. `pending_issuance` is the offline receipt, and it requires a non-empty `lookupQr`. The statement on that payload is `This is not an invoice.` An accepted document with number, CUFE, and QR is the invoice payload; a lookup QR passed with it is not copied. `kickDrawer` is the literal `false` on both. Any other document throws `SalesDocumentNotPrintable`. There is no printer port and no call to `EnqueuePrintJob`. The package does not depend on `@blackhole/printing`. The ESC/POS template that prints the same sentence stays in `shared/printing`.
 
+Unit 14 keeps the cloud on the existing in-memory printer ports. `api-cloud` does not import `@blackhole/printing` and does not edit `pnpm-lock.yaml`. `PendingSalePrinter` records each sale or close job as `waiting`. `CloseShift` receives that printer, so a final close enqueues `cash_close` with `kickDrawer: false`. `RecordedDrawerAudit` is the only new `RecordAuditEvent`. It runs inside `ChargeCheck`, after the ledger insert, and only when the use case asks for `cash.drawer-opened`. The controller still records `sale.charge` and does not record the drawer a second time. The session scope travels on `AsyncLocalStorage` because the drawer port has no actor. `printed: false` is optional on the response schemas and is set only when the job accepted by that request is `waiting`. A failed kitchen job omits it. `PrintDocument` is not called: the charge response is the queued closure, not an invoice or offline-receipt payload. No ESC/POS bytes are rendered in `api-cloud`. No reprint route and no structure fields `drawer`, `printerId`, paper, or backup.
+
 Unit 12 treats a charge as cash when any tender method is `cash`. Drawer `present` still kicks and audits once after the save. Drawer `absent` still prints with `kickDrawer: false` and writes no drawer audit. A charge with no cash tender does not enqueue. A cash tip on a non-cash tender does not kick. `SaleReceiptJob` is now `offline_receipt` or `cash_close`. The `cash_close` variant types `kickDrawer` as `false`. Final close enqueues that job with `commandId` equal to the count id, after the count is saved, when the injected printer is present and the register `printerId` is set. Partial close, a rejected close, and a null `printerId` enqueue nothing. The job has no register, expected, counted, difference, number, CUFE, or QR. `CloseShift` takes the printer as an optional third argument that defaults to `null`, so `apps/api-cloud/src/composition/application-module.ts` still constructs it with two arguments. That file is outside the allowed roots and was not edited. A null port enqueues nothing. There is still no open-without-sale action. The package does not import `@blackhole/printing`.
 
 ## Issues Found
@@ -263,18 +284,20 @@ Unit 12 is 314 changed lines, under the 400-line budget. `CloseShift` still defa
 
 Unit 13 is 189 changed lines, under the 400-line budget. `PrintDocument` is exported from the invoicing entry port and is not called by HTTP or by the cloud composition. Those callers stay with tasks 6.1–6.6. `apps/api-cloud` was not edited. `pnpm-lock.yaml` was not edited.
 
+Unit 14 is 574 changed lines in the code slice (534 insertions, 40 deletions), over the 400-line budget. The RED/GREEN pair was not split. `apps/api-cloud/test/composition/bootstrap.test.ts` already expected `RequestCheck` to inject only the dining room and the clock, and its provider list ends before the invoicing providers the module already registers. That equality failure is older than this unit. This unit updates the `ChargeCheck` inject list and adds `PendingSalePrinter` to that expectation. `ChargeCheck`, `RequestCheck`, and `TakeOrder` constructor shapes are unchanged. `pnpm-lock.yaml` was not edited.
+
 ## Remaining Tasks
 
-- [ ] 6.1 through 6.6 stay unchecked
+- [ ] 6.3 through 6.6 stay unchecked
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 13. Invoice and offline-receipt payloads. PR 13, on `feat/printing-documents`, base = `feat/printing-tenders`, not `main`
-- Boundary: tasks 5.7 and 5.8 only. The RED/GREEN pair was not split.
-- Estimated review budget impact: 189 changed lines in this slice (189 insertions, 0 deletions). Under the 400-line budget. The change forecast stays High. `size:exception` was not granted.
+- Current work unit: 14. Cloud HTTP `printed: false` and one drawer audit. On `feat/printing-http`, base = `feat/printing-documents`, not `main`
+- Boundary: tasks 6.1 and 6.2 only. The RED/GREEN pair was not split.
+- Estimated review budget impact: 574 changed lines in this slice (534 insertions, 40 deletions), before the OpenSpec progress edit. Over the 400-line budget. The change forecast stays High. `size:exception` was not granted.
 
 ## Status
 
-26/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.
+28/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.

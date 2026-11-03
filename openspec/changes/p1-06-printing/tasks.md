@@ -60,8 +60,8 @@ Units: 1 widths (skeleton), 2 sale-templates, 3 other-templates, 4 enqueue, 5 di
 
 6. HTTP
 
-- [ ] 6.1 RED `apps/api-cloud/test/http` charge, request-check, take-order, cash-count: `printed: false` while `waiting`. Drawer audit only after saved cash+`present`.
-- [ ] 6.2 GREEN those controllers, `src/composition/application-module.ts`. One `RecordAuditEvent`. No bridge.
+- [x] 6.1 RED `apps/api-cloud/test/http` charge, request-check, take-order, cash-count: `printed: false` while `waiting`. Drawer audit only after saved cash+`present`.
+- [x] 6.2 GREEN those controllers, `src/composition/application-module.ts`. One `RecordAuditEvent`. No bridge.
 - [ ] 6.3 RED `apps/api-cloud/test/http/printing.controller.test.ts`, `update-structure.controller.test.ts`: under cap, one `sale.reprint`. Missing cap 409 `ReprintCapUnconfigured`, no-store. Structure sets drawer/printer/paper/backup. `safeParse`.
 - [ ] 6.4 GREEN `shared/contracts/printing.ts`, `index.ts`, `src/http/printing.controller.ts`. `sale.reprint`.
 - [ ] 6.5 RED `apps/local-node/test/http/printing.controller.test.ts`: 403 `PrintingRejected`. No store. No drawer.

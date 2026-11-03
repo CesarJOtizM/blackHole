@@ -1,7 +1,11 @@
 import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
 import type { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
-import type { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
+import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
 import type { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import type {
+  PrintJobRequest,
+  QueuedPrintJob,
+} from "@blackhole/orders/application/ports/printer";
 import { Check, DiningTable } from "@blackhole/orders/domain";
 import {
   FakeClock,
@@ -32,6 +36,18 @@ export const tableId = "table_5";
 export const checkId = "check_5";
 export const sessionHeader = "x-session-id";
 export const openedAt = "2026-10-28T12:00:00.000Z";
+
+export class WatchingOrdersPrinter extends InMemoryPrinter {
+  readonly queued: QueuedPrintJob[] = [];
+
+  override async enqueue(job: PrintJobRequest): Promise<QueuedPrintJob> {
+    const queued = await super.enqueue(job);
+
+    this.queued.push(queued);
+
+    return queued;
+  }
+}
 
 const people = [
   [ownerId, "session_owner", "owner"],

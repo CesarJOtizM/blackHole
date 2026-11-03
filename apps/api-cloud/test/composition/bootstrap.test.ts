@@ -15,8 +15,15 @@ import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/m
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
   AdoptFiscalTemplate,
+  AttachBuyer,
   CalculateTaxes,
+  CreditNoteAudit,
+  CreditNoteRepository,
+  DocumentBalanceStore,
+  InvoicingProvider,
+  IssueCreditNote,
   PublishTaxRule,
+  SetDocumentBalance,
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
 import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-rule-repository";
@@ -85,7 +92,13 @@ import { SessionReader } from "@blackhole/platform/application/ports/session-rea
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import { expect, it } from "vitest";
-import { ApplicationModule } from "#src/composition/application-module.js";
+import {
+  ApplicationModule,
+  MemoryCreditNoteAudit,
+  MemoryCreditNotes,
+  MemoryDocumentBalances,
+  MemoryNumberingRanges,
+} from "#src/composition/application-module.js";
 import {
   InMemoryAttendancePolicyRepository,
   InMemoryClockEntryCorrectionRepository,
@@ -95,6 +108,8 @@ import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
+import { NumberingRangeStore } from "#src/http/invoicing.controller.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication(cloudDependencies());
@@ -261,9 +276,19 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         ],
       },
       {
+        provide: PendingSalePrinter,
+        useValue: new PendingSalePrinter(),
+      },
+      {
         provide: ChargeCheck,
         useFactory: expect.any(Function),
-        inject: [OrganizationRepository, OrdersAccount],
+        inject: [
+          OrganizationRepository,
+          OrdersAccount,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
       },
       {
         provide: SubmitCount,
@@ -293,7 +318,7 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: RequestCheck,
         useFactory: expect.any(Function),
-        inject: [DiningRoomRepository, OrdersClock],
+        inject: [DiningRoomRepository, OrdersClock, Printer, RealtimeHub],
       },
       {
         provide: ReassignCheck,
@@ -391,6 +416,41 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: AdoptFiscalTemplate,
         useFactory: expect.any(Function),
         inject: [FiscalProfileRepository],
+      },
+      {
+        provide: InvoicingProvider,
+        useValue: expect.any(InvoicingProvider),
+      },
+      {
+        provide: AttachBuyer,
+        useFactory: expect.any(Function),
+        inject: [InvoicingProvider],
+      },
+      {
+        provide: DocumentBalanceStore,
+        useValue: new MemoryDocumentBalances(),
+      },
+      {
+        provide: SetDocumentBalance,
+        useFactory: expect.any(Function),
+        inject: [DocumentBalanceStore],
+      },
+      {
+        provide: CreditNoteRepository,
+        useValue: new MemoryCreditNotes(),
+      },
+      {
+        provide: CreditNoteAudit,
+        useValue: new MemoryCreditNoteAudit(new MemoryCreditNotes()),
+      },
+      {
+        provide: IssueCreditNote,
+        useFactory: expect.any(Function),
+        inject: [InvoicingProvider, CreditNoteRepository, CreditNoteAudit],
+      },
+      {
+        provide: NumberingRangeStore,
+        useValue: new MemoryNumberingRanges(),
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

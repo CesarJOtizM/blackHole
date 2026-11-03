@@ -28,6 +28,7 @@ import { MemoryChargeLedger } from "#src/composition/application-module.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
+import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
 import {
   ChargeCheckController,
   routePermissions,
@@ -81,7 +82,10 @@ const picture = (organization: Organization): OrganizationSnapshot => ({
   cashRegisters: organization.cashRegisters,
 });
 
-const openChargeCloud = async (): Promise<{
+const openChargeCloud = async (register?: {
+  drawer?: "present" | "absent";
+  printerId?: string | null;
+}): Promise<{
   application: NestFastifyApplication;
   diningRooms: InMemoryDiningRoomRepository;
   charges: MemoryChargeLedger;
@@ -136,6 +140,10 @@ const openChargeCloud = async (): Promise<{
     id: registerId,
     venueId,
     name: "Front",
+    ...(register?.drawer === undefined ? {} : { drawer: register.drawer }),
+    ...(register?.printerId === undefined
+      ? {}
+      : { printerId: register.printerId }),
   });
   const stored = picture(organization);
   await organizations.save(organization, {
@@ -370,6 +378,181 @@ it("given an owner session, when POST charge sends a bad body, then the response
     expect(await storedClosure(charges)).toBeNull();
     expect(table?.state).toBe("occupied");
     expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+const drawerAudits = async (audits: InMemoryAuditRepository) =>
+  (await audits.list(tenantId, null)).filter(
+    (event) => event.action === "cash.drawer-opened",
+  );
+
+const cardBody = {
+  commandId: "command_charge_card",
+  paymentId: "payment_card_1",
+  closureId: "closure_card_1",
+  tenders: [
+    {
+      method: "card" as const,
+      amountCop: accountCop,
+      terminal: "terminal-1",
+      approvalNumber: "approval-1",
+      brand: "visa",
+      last4: "4242",
+    },
+  ],
+  tip: {
+    method: "card" as const,
+    amountCop: 0,
+    terminal: "terminal-1",
+    approvalNumber: "approval-1",
+    brand: "visa",
+    last4: "4242",
+  },
+};
+
+it("given a present drawer and a saved cash tender, when POST charge is injected, then the receipt stays waiting, the response says printed false, and cash.drawer-opened is audited once", async () => {
+  const printerId = "printer-front";
+  const { application, charges, audits } = await openChargeCloud({
+    drawer: "present",
+    printerId,
+  });
+
+  try {
+    const response = await postCharge(application, "session_owner", chargeBody);
+    const replay = await postCharge(application, "session_owner", chargeBody);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ printed: false });
+    expect(replay.json()).toEqual(response.json());
+
+    const receipts = application.get(PendingSalePrinter);
+    const stored = await storedClosure(charges);
+    expect(receipts.jobs).toEqual([
+      {
+        commandId,
+        printerId,
+        document: "offline_receipt",
+        kickDrawer: true,
+        status: "waiting",
+      },
+    ]);
+    expect(JSON.stringify(receipts.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(receipts.jobs)).not.toContain("\\u001b");
+    expect(stored?.closure.id).toBe(closureId);
+    expect(await drawerAudits(audits)).toEqual([
+      expect.objectContaining({
+        actorId: ownerId,
+        authorizerId: null,
+        deviceId: "",
+        siteId: venueId,
+        action: "cash.drawer-opened",
+        entity: paymentId,
+        before: null,
+        reason: "cash.drawer-opened",
+        after: {
+          paymentId,
+          registerId,
+          printerId,
+        },
+      }),
+    ]);
+    expect(
+      (await audits.list(tenantId, null)).filter(
+        (event) => event.action === "sale.charge",
+      ),
+    ).toHaveLength(1);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an absent drawer and a saved cash tender, when POST charge is injected, then the receipt stays waiting without a kick and cash.drawer-opened is not audited", async () => {
+  const printerId = "printer-quiet";
+  const { application, audits } = await openChargeCloud({
+    drawer: "absent",
+    printerId,
+  });
+
+  try {
+    const response = await postCharge(application, "session_owner", chargeBody);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ printed: false });
+
+    const receipts = application.get(PendingSalePrinter);
+    expect(receipts.jobs).toEqual([
+      {
+        commandId,
+        printerId,
+        document: "offline_receipt",
+        kickDrawer: false,
+        status: "waiting",
+      },
+    ]);
+    expect(await drawerAudits(audits)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a present drawer and a card tender, when POST charge is injected, then nothing is queued and the drawer is not audited", async () => {
+  const { application, charges, audits } = await openChargeCloud({
+    drawer: "present",
+    printerId: "printer-front",
+  });
+
+  try {
+    const response = await postCharge(application, "session_owner", cardBody);
+    const receipts = application.get(PendingSalePrinter);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).not.toHaveProperty("printed");
+    expect(receipts.jobs).toEqual([]);
+    expect(charges.insertions).toBe(1);
+    expect(await drawerAudits(audits)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a present drawer without a printer, when POST charge pays cash, then nothing is queued and the drawer is not audited", async () => {
+  const { application, audits } = await openChargeCloud({
+    drawer: "present",
+    printerId: null,
+  });
+
+  try {
+    const response = await postCharge(application, "session_owner", chargeBody);
+    const receipts = application.get(PendingSalePrinter);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).not.toHaveProperty("printed");
+    expect(receipts.jobs).toEqual([]);
+    expect(await drawerAudits(audits)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a present drawer, when POST charge is rejected before the tender is saved, then the drawer is not audited", async () => {
+  const { application, charges, audits } = await openChargeCloud({
+    drawer: "present",
+    printerId: "printer-front",
+  });
+
+  try {
+    const response = await postCharge(
+      application,
+      "session_kitchen",
+      chargeBody,
+    );
+
+    expect(response.statusCode).toBe(403);
+    expect(charges.insertions).toBe(0);
+    expect(await drawerAudits(audits)).toEqual([]);
+    expect(application.get(PendingSalePrinter).jobs).toEqual([]);
   } finally {
     await application.close();
   }
