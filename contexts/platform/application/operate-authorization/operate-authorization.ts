@@ -4,12 +4,19 @@ import type {
   AuthorizationRepository,
 } from "#application/ports/authorization-repository.js";
 import type { IdentityReader } from "#application/ports/identity-reader.js";
-import type { PinVerifier } from "#application/ports/pin-verifier.js";
+import {
+  PinConfirmationRejected,
+  type PinVerifier,
+} from "#application/ports/pin-verifier.js";
 import type {
   SessionReader,
   SessionView,
 } from "#application/ports/session-reader.js";
-import type { Authorization } from "#domain/authorization.js";
+import type { RecordAuditEvent } from "#application/record-audit-event/record-audit-event.js";
+import type {
+  Authorization,
+  AuthorizationShiftTotals,
+} from "#domain/authorization.js";
 import type { ExceededLimit } from "#domain/evaluate.js";
 import type {
   LimitCode,
@@ -30,6 +37,8 @@ const AUTHORIZATION_COMMAND = {
   GRANT_SUPPORT: "grantSupport",
   REVOKE_SUPPORT: "revokeSupport",
 } as const;
+
+const FAILED_PIN_ACTION = "pin.confirmation-failed";
 
 interface CopyRoleCommand {
   type: typeof AUTHORIZATION_COMMAND.COPY_ROLE;
@@ -89,9 +98,11 @@ interface RequestCommand {
   requestId: string;
   permission: PermissionCode;
   venueId: string;
+  targetId?: string;
   value: number | null;
   reason: string;
   expiresAt: number;
+  shiftTotals?: AuthorizationShiftTotals;
 }
 
 interface ResolveCommand {
@@ -189,6 +200,7 @@ export class OperateAuthorization {
     private readonly identities: IdentityReader,
     private readonly pins: PinVerifier,
     private readonly clock: AuthorizationClock,
+    private readonly recordAudit?: RecordAuditEvent,
   ) {}
 
   async execute(
@@ -353,7 +365,7 @@ export class OperateAuthorization {
       at,
       target: { kind: "site", id: command.venueId, brandId: null },
       value: command.value,
-      shiftTotals: { waiterVoidsBeforeKitchen: 0 },
+      shiftTotals: command.shiftTotals ?? { waiterVoidsBeforeKitchen: 0 },
       selfAuthorizationAttempt: false,
       shiftId: null,
     });
@@ -367,9 +379,11 @@ export class OperateAuthorization {
       requesterId: session.userId,
       permission: command.permission,
       venueId: command.venueId,
+      targetId: command.targetId,
       value: command.value,
       reason: command.reason,
       expiresAt: command.expiresAt,
+      shiftTotals: command.shiftTotals,
     });
 
     return {
@@ -393,12 +407,25 @@ export class OperateAuthorization {
       throw new PermissionDenied();
     }
 
-    await this.pins.confirm({
-      tenantId,
-      userId: session.userId,
-      pin: command.pin,
-      sessionId: session.sessionId,
-    });
+    try {
+      await this.pins.confirm({
+        tenantId,
+        userId: session.userId,
+        pin: command.pin,
+        sessionId: session.sessionId,
+      });
+    } catch (error: unknown) {
+      if (error instanceof PinConfirmationRejected) {
+        await this.recordRejectedPin(
+          tenantId,
+          session,
+          request,
+          command.shiftId,
+        );
+      }
+
+      throw error;
+    }
     authorization.resolveAuthorization({
       requestId: command.requestId,
       authorizerId: session.userId,
@@ -414,6 +441,40 @@ export class OperateAuthorization {
     });
 
     return unchanged();
+  }
+
+  private async recordRejectedPin(
+    tenantId: string,
+    session: SessionView,
+    request: {
+      id: string;
+      venueId: string;
+      targetId?: string;
+      status: string;
+    },
+    shiftId: string,
+  ): Promise<void> {
+    if (!this.recordAudit) {
+      return;
+    }
+
+    await this.recordAudit.execute({
+      tenantId,
+      actorId: session.userId,
+      authorizerId: null,
+      deviceId: session.deviceId,
+      siteId: request.venueId,
+      action: FAILED_PIN_ACTION,
+      entity: request.id,
+      before: { status: request.status },
+      after: {
+        status: request.status,
+        requestId: request.id,
+        targetId: request.targetId ?? request.venueId,
+        shiftId,
+      },
+      reason: "PIN confirmation failed",
+    });
   }
 
   private assertManager(

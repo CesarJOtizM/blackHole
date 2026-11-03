@@ -2,14 +2,17 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: PR2 `feat/anti-theft-consume` targeting `feat/anti-theft-binding`
-**Work unit**: 2 — Consume (tasks 2.1 and 2.2)
+**PR slice**: PR3 `feat/anti-theft-grant` targeting `feat/anti-theft-consume`
+**Work unit**: 3 — PIN (task 2.3)
+**Chain strategy**: feature-branch-chain
+**size:exception**: not granted
 
 ## Completed tasks
 
 - [x] 1.1 Domain binding: `targetId`, one consume, mismatch unconsumed, second consume throws, `compShiftCop`
 - [x] 2.1 Consume use case: a failed write after consume needs a new grant
 - [x] 2.2 Count executed operations: successful audits only
+- [x] 2.3 Operate authorization: request carries `targetId` and shift totals; a rejected PIN appends `pin.confirmation-failed` without the PIN
 
 ## Work Unit Evidence
 
@@ -85,16 +88,45 @@ Same command, after `CountExecutedOperations` listed `AuditRepository` events an
 
 The same command after `pnpm biome check --write` on the slice. Exit 0. Test files 1 passed. Tests 1 passed.
 
+### Unit 3 — PIN (task 2.3)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project platform contexts/platform/application/operate-authorization/operate-authorization.test.ts`. RED exit 1: 1 failed, 12 passed (13). GREEN exit 0: 1 file, 13 passed. |
+| Runtime harness command/scenario and exact result | N/A. Application use case with in-memory ports. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/platform/application/operate-authorization/operate-authorization.ts` and `contexts/platform/application/operate-authorization/operate-authorization.test.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project platform contexts/platform/application/operate-authorization/operate-authorization.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests 1 failed, 12 passed (13).
+
+Failure before production changes, on `given a discount request carrying the target and shift totals, when the supervisor PIN is rejected, then those facts stay on the request and the audit records pin.confirmation-failed without the PIN`:
+
+- `targetId` was `organization_venue_1` instead of `check_1`.
+- `shiftTotals` were `{ waiterVoidsBeforeKitchen: 0, compShiftCop: 0 }` instead of `{ waiterVoidsBeforeKitchen: 2, compShiftCop: 90000 }`.
+- `action` was `undefined` instead of `pin.confirmation-failed`.
+- The request stayed `pending` with no resolution, and the PIN value was not stored.
+
+#### GREEN
+
+Same command, after `OperateAuthorization` passed `targetId` and shift totals into the domain request and appended `pin.confirmation-failed` through `RecordAuditEvent` when the PIN was rejected. Exit 0. Test files 1 passed. Tests 13 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on the two edited operate-authorization files. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
 - `compShiftCop` is optional and treated as 0 when absent. The domain does not count audits.
-- The design `after` shape was not added. This slice does not record the audit event. `resolution.action` remains the permission code.
+- The design `after` shape was not added in the consume slice. `resolution.action` remains the permission code. Task 2.3 records only the failed-PIN audit.
 - `ConsumeAuthorization.execute` also takes `tenantId` and reads `AuthorizationClock`. `AuthorizationRepository.load` is keyed by tenant, and `consumeAuthorization` requires `at`. `authorizationId` is the request id.
 - `AuthorizationAlreadyConsumed` is re-exported from the use case because `domain/index` does not export it and this slice must not edit domain files.
 - `CountExecutedOperations` does not accept a client total. It lists the existing audit port (`list(tenantId, null)`) and returns `AuthorizationShiftTotals`: one `sale.void-before-kitchen` event adds 1 to `waiterVoidsBeforeKitchen`; `sale.comp` adds `after.value` to `compShiftCop`.
 - A counted audit is `kind: "event"`, for that actor and `after.shiftId`, with `after` shaped `{ value, shiftId, kitchen }` and `before` different from `after`. `pin.confirmation-failed`, `after.approved === false`, and `kind: "altered"` do not count. No new audit type and no SQL migration.
+- `RequestCommand.targetId` and `RequestCommand.shiftTotals` stay optional. When present, `OperateAuthorization` passes them to `evaluateFor` and `requestAuthorization`. When absent, evaluation still uses `waiterVoidsBeforeKitchen: 0` and the domain keeps the migration defaults. This slice does not edit the HTTP contract.
+- `RecordAuditEvent` is an optional last constructor argument so `authorization.controller.ts` keeps compiling with five arguments. A `PinConfirmationRejected` error appends `pin.confirmation-failed` only when that collaborator is present. The audit stores actor, device, site, request id, target, shift, and the reason `PIN confirmation failed`. It does not store the PIN. `PinConfirmationLocked` does not append this action. This use case does not count audits.
 
 ## Remaining
 
-Tasks 2.3–7.1 are pending. Next assigned batch should stay on work unit 2, task 2.3. Task 2.2 is the only checkbox newly marked in this batch.
+Tasks 2.4–7.1 are pending. The next checkbox is 2.4. Task 2.3 is the only checkbox newly marked in this batch.

@@ -6,6 +6,8 @@ import {
   InMemorySessionReader,
   MemoryPinVerifier,
 } from "#adapters/memory/authorization-doubles.js";
+import { FakeClock } from "#adapters/memory/fast-identity-doubles.js";
+import { InMemoryAuditRepository } from "#adapters/memory/in-memory-audit-repository.js";
 import { InMemoryAuthorizationRepository } from "#adapters/memory/in-memory-authorization-repository.js";
 import {
   ForeignPinSession,
@@ -13,10 +15,12 @@ import {
   PermissionDenied,
   UnknownSession,
 } from "#application/operate-authorization/operate-authorization.js";
+import { AuditDigest } from "#application/ports/audit-digest.js";
 import {
   PinConfirmationLocked,
   PinConfirmationRejected,
 } from "#application/ports/pin-verifier.js";
+import { RecordAuditEvent } from "#application/record-audit-event/record-audit-event.js";
 import {
   Authorization,
   AuthorizerRejected,
@@ -33,8 +37,16 @@ const WAITER_ID = "user_waiter";
 const SITE_1 = "organization_venue_1";
 const SITE_2 = "organization_venue_2";
 const AT = 1_700_000_000_000;
+const CHECK_ID = "check_1";
+const WRONG_PIN = "9753";
 
-const harness = () => {
+class FixedAuditDigest extends AuditDigest {
+  override async digest(): Promise<string> {
+    return "ab".repeat(32);
+  }
+}
+
+const harness = (recordAudit?: RecordAuditEvent) => {
   const authorizations = new InMemoryAuthorizationRepository();
   const sessions = new InMemorySessionReader();
   const identities = new InMemoryIdentityReader();
@@ -52,6 +64,7 @@ const harness = () => {
     identities,
     pins,
     clock,
+    recordAudit,
   );
 
   return { authorizations, sessions, identities, pins, clock, operate };
@@ -730,4 +743,108 @@ it("given five failed PIN confirmations, when the supervisor tries again, then t
   expect(
     (await authorizations.load(TENANT_ID))?.snapshot().resolutions,
   ).toEqual([]);
+});
+
+it("given a discount request carrying the target and shift totals, when the supervisor PIN is rejected, then those facts stay on the request and the audit records pin.confirmation-failed without the PIN", async () => {
+  const audits = new InMemoryAuditRepository();
+  const recordAudit = new RecordAuditEvent(
+    audits,
+    new FixedAuditDigest(),
+    new FakeClock(AT),
+  );
+  const { authorizations, sessions, identities, operate } = harness(recordAudit);
+  const authorization = Authorization.open(TENANT_ID);
+  authorization.appointOwner({
+    assignmentId: "assignment_owner",
+    userId: OWNER_ID,
+  });
+  authorization.assign({
+    assignmentId: "assignment_cashier",
+    userId: CASHIER_ID,
+    roleId: "cashier",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: AT,
+  });
+  authorization.assign({
+    assignmentId: "assignment_supervisor",
+    userId: SUPERVISOR_ID,
+    roleId: "shiftSupervisor",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: AT,
+  });
+  await authorizations.save(authorization, {
+    before: Authorization.open(TENANT_ID).snapshot(),
+    after: authorization.snapshot(),
+  });
+  remember(identities, CASHIER_ID);
+  remember(identities, SUPERVISOR_ID);
+  seat(sessions, {
+    sessionId: "session_cashier",
+    userId: CASHIER_ID,
+    deviceId: "device_cashier",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+  seat(sessions, {
+    sessionId: "session_supervisor",
+    userId: SUPERVISOR_ID,
+    deviceId: "device_supervisor",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+  const shiftTotals = { waiterVoidsBeforeKitchen: 2, compShiftCop: 90_000 };
+  await operate.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_cashier",
+    command: {
+      type: "request",
+      requestId: "request_discount",
+      permission: PERMISSION.SALE_DISCOUNT,
+      venueId: SITE_1,
+      targetId: CHECK_ID,
+      value: 10,
+      reason: "regular",
+      expiresAt: AT + 60_000,
+      shiftTotals,
+    },
+  });
+
+  const act = operate.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_supervisor",
+    command: {
+      type: "resolve",
+      requestId: "request_discount",
+      pin: WRONG_PIN,
+      shiftId: "shift_1",
+      approved: true,
+    },
+  });
+
+  await expect(act).rejects.toBeInstanceOf(PinConfirmationRejected);
+  const snapshot = (await authorizations.load(TENANT_ID))?.snapshot();
+  const stored = await audits.list(TENANT_ID, null);
+  expect({
+    targetId: snapshot?.requests[0]?.targetId,
+    shiftTotals: snapshot?.requests[0]?.shiftTotals,
+    status: snapshot?.requests[0]?.status,
+    resolutions: snapshot?.resolutions.length,
+    action: stored[0]?.action,
+    pinStored: JSON.stringify(stored).includes(WRONG_PIN),
+  }).toEqual({
+    targetId: CHECK_ID,
+    shiftTotals,
+    status: "pending",
+    resolutions: 0,
+    action: "pin.confirmation-failed",
+    pinStored: false,
+  });
 });
