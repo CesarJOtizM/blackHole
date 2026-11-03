@@ -169,7 +169,7 @@ it("given successful sensitive audits, when an owner with audit.view opens the c
     ),
   );
   await audits.append(
-    event(PERMISSION.CASH_OPEN_DRAWER, state(0, null), state(1, null), {
+    event("cash.drawer-opened", state(0, null), state(1, null), {
       actorId: CASHIER_ID,
       authorizerId: null,
       reason: "change fund",
@@ -210,7 +210,7 @@ it("given successful sensitive audits, when an owner with audit.view opens the c
   );
   await audits.append(
     event(
-      PERMISSION.CASH_OPEN_DRAWER,
+      "cash.drawer-opened",
       state(0, null),
       { ...state(1, null), approved: false },
       { actorId: CASHIER_ID, reason: "rejected opening" },

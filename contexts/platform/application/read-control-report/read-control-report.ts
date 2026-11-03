@@ -6,6 +6,7 @@ import type {
 import { PERMISSION } from "#domain/permission-catalog.js";
 
 const FAILED_PIN_ACTION = "pin.confirmation-failed";
+const DRAWER_OPENED = "cash.drawer-opened";
 
 export interface ReadControlReportQuery {
   tenantId: string;
@@ -178,7 +179,7 @@ const appendRow = (
     return;
   }
 
-  if (event.action === PERMISSION.CASH_OPEN_DRAWER) {
+  if (event.action === DRAWER_OPENED) {
     report.drawerOpenings.push({ userId: event.actorId });
     return;
   }
