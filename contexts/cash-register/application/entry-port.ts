@@ -1,6 +1,14 @@
 export type { ApproveVarianceInput } from "#application/approve-variance/approve-variance.js";
 export { ApproveVariance } from "#application/approve-variance/approve-variance.js";
 export type {
+  ChangeTenderInput,
+  OriginalPayment,
+} from "#application/change-tender/change-tender.js";
+export {
+  ChangeTender,
+  OriginalPaymentReader,
+} from "#application/change-tender/change-tender.js";
+export type {
   ChargeCheckInput,
   ChargeCheckResult,
   DrawerOpenedAudit,
@@ -73,15 +81,19 @@ export type {
   CashMovement,
   CashMovementKind,
   PaymentReversal,
+  ShiftPayment,
   ShiftState,
+  TenderMethod,
 } from "#domain/cash-shift.js";
 export {
   CashShift,
   InvalidCashAmount,
   InvalidMovementId,
   InvalidOriginalPayment,
+  InvalidReplacementId,
   InvalidReversalId,
   InvalidShiftId,
+  InvalidTenderMethod,
   MissingReason,
   ShiftAlreadyOpen,
 } from "#domain/cash-shift.js";
