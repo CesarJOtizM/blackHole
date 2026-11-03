@@ -1,9 +1,18 @@
-export interface SaleReceiptJob {
+export interface OfflineReceiptJob {
   commandId: string;
   printerId: string;
   document: "offline_receipt";
   kickDrawer: boolean;
 }
+
+export interface CashCloseJob {
+  commandId: string;
+  printerId: string;
+  document: "cash_close";
+  kickDrawer: false;
+}
+
+export type SaleReceiptJob = OfflineReceiptJob | CashCloseJob;
 
 export interface QueuedSaleReceipt {
   status: "waiting" | "printed" | "failed";

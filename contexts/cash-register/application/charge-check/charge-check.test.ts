@@ -29,6 +29,7 @@ import {
   ChangeExceedsCash,
   IncompleteCard,
   MissingTip,
+  type PaymentTender,
 } from "#domain/payment.js";
 
 const TENANT_ID = "organization_tenant_1";
@@ -281,6 +282,25 @@ const cardTender = (amountCop: number, approvalNumber: string) =>
     brand: BRAND,
     last4: TYPED_LAST_4,
   }) as const;
+
+const NON_CASH_METHODS = [
+  "card",
+  "transfer",
+  "wallet",
+  "voucher",
+  "customer_credit",
+  "corporate_credit",
+] as const;
+
+const nonCashTender = (
+  method: (typeof NON_CASH_METHODS)[number],
+): PaymentTender => {
+  if (method === "card") {
+    return cardTender(85_000, "AP-85000");
+  }
+
+  return { method, amountCop: 85_000 };
+};
 
 const mixedInput = {
   tenantId: TENANT_ID,
@@ -686,4 +706,122 @@ it("given an absent drawer and a cash sale, when the charge is saved, then the r
     CASH_COMMAND_ID,
   );
   expect(stored?.closure.id).toBe(CASH_CLOSURE_ID);
+});
+
+it.each(NON_CASH_METHODS)(
+  "given a present drawer and a %s sale, when the charge is saved, then the drawer is not kicked and cash.drawer-opened is not audited",
+  async (method) => {
+    const { printer, audits, charge } = chargeCash({
+      drawer: "present",
+      printerId: PRINTER_ID,
+    });
+
+    await charge.execute({
+      ...cashInput,
+      commandId: `command_${method}`,
+      paymentId: `payment_${method}`,
+      closureId: `closure_${method}`,
+      tenders: [nonCashTender(method)],
+      tip: { method: "cash", amountCop: 0 },
+    });
+
+    expect(printer.jobs).toEqual([]);
+    expect(audits.events).toEqual([]);
+    expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+    expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+  },
+);
+
+it("given a present drawer and card plus transfer, when the charge has no cash, then the drawer is not kicked and nothing is audited", async () => {
+  const { printer, audits, charge } = chargeCash({
+    drawer: "present",
+    printerId: PRINTER_ID,
+  });
+
+  await charge.execute({
+    ...cashInput,
+    commandId: "command_card_transfer",
+    paymentId: "payment_card_transfer",
+    closureId: "closure_card_transfer",
+    tenders: [
+      cardTender(50_000, "AP-50000"),
+      { method: "transfer", amountCop: 35_000 },
+    ],
+    tip: { method: "cash", amountCop: 0 },
+  });
+
+  expect(printer.jobs).toEqual([]);
+  expect(audits.events).toEqual([]);
+});
+
+it("given a present drawer and a card plus cash sale, when the charge is saved, then that printer is kicked and cash.drawer-opened is audited once", async () => {
+  const { accounts, ledger, printer, audits, charge } = chargeCash({
+    drawer: "present",
+    printerId: PRINTER_ID,
+  });
+  const markPaid = vi.spyOn(accounts, "markPaid");
+  const insert = vi.spyOn(ledger, "insert");
+  const enqueue = vi.spyOn(printer, "enqueue");
+  const record = vi.spyOn(audits, "record");
+
+  await charge.execute(mixedInput);
+  await charge.execute({
+    ...mixedInput,
+    paymentId: "payment_mixed_again",
+    closureId: "closure_mixed_again",
+  });
+
+  expect(printer.jobs).toEqual([
+    {
+      commandId: COMMAND_ID,
+      printerId: PRINTER_ID,
+      document: "offline_receipt",
+      kickDrawer: true,
+    },
+  ]);
+  expect(audits.events).toEqual([
+    {
+      action: "cash.drawer-opened",
+      paymentId: PAYMENT_ID,
+      registerId: REGISTER_ID,
+      printerId: PRINTER_ID,
+    },
+  ]);
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(insert.mock.invocationCallOrder[0]).toBeLessThan(
+    markPaid.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(markPaid.mock.invocationCallOrder[0]).toBeLessThan(
+    enqueue.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(enqueue.mock.invocationCallOrder[0]).toBeLessThan(
+    record.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+  );
+  expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+  expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+});
+
+it("given an absent drawer and a card plus cash sale, when the charge is saved, then the receipt prints with no kick and no drawer audit", async () => {
+  const { ledger, printer, audits, charge } = chargeCash({
+    drawer: "absent",
+    printerId: QUIET_PRINTER_ID,
+  });
+  const record = vi.spyOn(audits, "record");
+
+  await charge.execute(mixedInput);
+
+  expect(printer.jobs).toEqual([
+    {
+      commandId: COMMAND_ID,
+      printerId: QUIET_PRINTER_ID,
+      document: "offline_receipt",
+      kickDrawer: false,
+    },
+  ]);
+  expect(audits.events).toEqual([]);
+  expect(record).not.toHaveBeenCalled();
+  expect(JSON.stringify(printer.jobs)).not.toContain("1B 70");
+  expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
+  const stored = await ledger.findByCommand(TENANT_ID, VENUE_ID, COMMAND_ID);
+  expect(stored?.closure.id).toBe(CLOSURE_ID);
 });

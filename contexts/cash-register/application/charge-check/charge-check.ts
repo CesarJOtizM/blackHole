@@ -110,8 +110,8 @@ const knownRegister = async (
   return known;
 };
 
-const cashSale = (tenders: readonly PaymentTender[]): boolean =>
-  tenders.length > 0 && tenders.every((tender) => tender.method === "cash");
+const includesCash = (tenders: readonly PaymentTender[]): boolean =>
+  tenders.some((tender) => tender.method === "cash");
 
 const printCashReceipt = async (
   printer: Printer,
@@ -120,7 +120,7 @@ const printCashReceipt = async (
   payment: Payment,
   commandId: string,
 ): Promise<void> => {
-  if (!cashSale(payment.tenders) || register.printerId === null) {
+  if (!includesCash(payment.tenders) || register.printerId === null) {
     return;
   }
 

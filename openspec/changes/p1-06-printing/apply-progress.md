@@ -1,5 +1,11 @@
 # Apply progress: p1-06-printing
 
+Work unit 12. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+
+Delivery: feature-branch-chain. This batch is PR 12. It stays on `feat/printing-tenders` and targets `feat/printing`, not `main`, and stops at tasks 5.5–5.6. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
+
+Other tenders and cash close. A charge that includes cash enqueues one `offline_receipt`. Drawer `present` sets `kickDrawer: true` and audits `cash.drawer-opened` once, after the charge is saved. Drawer `absent` enqueues that receipt with `kickDrawer: false` and writes no drawer audit. `card`, `transfer`, `wallet`, `voucher`, `customer_credit`, and `corporate_credit` do not enqueue and do not kick. A mix with no cash does not kick. Final close enqueues `cash_close` with `kickDrawer: false` when the register has a printer. It does not audit `cash.drawer-opened`. A missing printer, a rejected close, and a partial close enqueue nothing. No ESC/POS bytes. The cash-register package does not import `@blackhole/printing`. There is still no open-without-sale action. Units 1–11 stay recorded below.
+
 Work unit 11. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
 Delivery: feature-branch-chain. This batch is PR 11. It targets the previous printing slice (unit 10), not `main`, and stops at tasks 5.3–5.4. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
@@ -46,6 +52,8 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 - [x] 5.2 GREEN `contexts/orders/application/ports/printer.ts`, `take-order.ts`, and `request-check.ts`. No ESC/POS bytes. The orders package does not import `@blackhole/printing`.
 - [x] 5.3 RED `contexts/cash-register/application/charge-check/charge-check.test.ts`: a present drawer and a cash sale kicks that register's printer and audits `cash.drawer-opened` once. An absent drawer prints, with no kick, no drawer audit, and no open-without-sale.
 - [x] 5.4 GREEN `charge-check.ts`, `ports/register-lookup.ts`, and the cash-register `ports/printer.ts`. No ESC/POS bytes. No `@blackhole/printing` import.
+- [x] 5.5 RED `contexts/cash-register/application/close-shift/close-shift.test.ts` and the charge tests: `card`, `transfer`, `wallet`, `voucher`, `customer_credit`, and `corporate_credit` do not kick. `cash_close` does not kick. A mix kicks only when it includes cash and the drawer is `present`.
+- [x] 5.6 GREEN `charge-check.ts` and `close-shift.ts`. A cash tender on a `present` drawer kicks once. Final close enqueues `cash_close` with `kickDrawer: false`. No ESC/POS bytes. No `@blackhole/printing` import.
 
 ## Work Unit Evidence
 
@@ -159,6 +167,16 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | Review line count | 275 insertions, 11 deletions (286 changed lines) against the unit 10 slice, including the new `ports/printer.ts` (15 lines). Under the 400-line budget. |
 | Rollback boundary | `contexts/cash-register/application/charge-check/`, `contexts/cash-register/application/ports/printer.ts`, `contexts/cash-register/application/ports/register-lookup.ts`, and the `drawer: "absent"`, `printerId: null` fields on the other in-package register lookup doubles. No `shared/printing`. No `pnpm-lock.yaml`. No HTTP. |
 
+### Unit 12
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project cash-register charge-check close-shift` — exit 0. `Test Files  2 passed (2)`. `Tests  40 passed (40)`. `pnpm exec biome check --write` on the five touched cash-register files fixed 1 file before this run. |
+| Typecheck | `pnpm exec tsc -b contexts/cash-register --pretty false` — exit 0, after Biome and the GREEN test run. |
+| Runtime harness command/scenario and exact result | In-memory `RegisterLookup`, `Printer`, and `DrawerAudit`. Card plus cash of 85000 on drawer `present` with `printer-front` enqueues one `offline_receipt` with `kickDrawer: true` after the ledger insert and the paid mark, then records one `cash.drawer-opened`. The same `commandId` does not enqueue or audit again. The same mix on drawer `absent` with `printer-quiet` enqueues one receipt with `kickDrawer: false` and records nothing. `card`, `transfer`, `wallet`, `voucher`, `customer_credit`, `corporate_credit`, and card plus transfer enqueue nothing. Final close on a register with a printer enqueues one `cash_close` with `kickDrawer: false` for drawer `present` and drawer `absent`, after the count is saved. A second final close throws `ShiftClosed` and does not enqueue again. No printer, a rejected close, and a partial close enqueue nothing. The job text has no `cash.drawer-opened`, no `1B 70`, and no `\\u001b`. `CloseShift` has no `openDrawer`. No socket, file, database, HTTP, or ESC/POS pulse. |
+| Review line count | 303 insertions, 11 deletions (314 changed lines) against the unit 11 slice. Under the 400-line budget. |
+| Rollback boundary | `contexts/cash-register/application/charge-check/`, `contexts/cash-register/application/close-shift/`, and `contexts/cash-register/application/ports/printer.ts`. No `shared/printing`. No `pnpm-lock.yaml`. No HTTP. No `apps/api-cloud`. |
+
 ### RED then GREEN
 
 | Task | RED (command and result) | GREEN |
@@ -174,6 +192,7 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | 4.3 → 4.4 | `pnpm exec vitest run --project platform drizzle-organization-repository` exit 1. `FAIL` the three new tests — `ENOENT` `0013_register_drawer.sql`. `Test Files  1 failed (1)`. `Tests  3 failed \| 4 passed (7)`. | Same command after `schema.ts`, `0013_register_drawer.sql`, and the repository mapping: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. `pnpm exec tsc -b contexts/platform --pretty false` exit 0. Biome fixed 3 files; the same test command was re-run and exited 0. |
 | 5.1 → 5.2 | `pnpm exec vitest run --project orders take-order request-check` exit 1. `Test Files  2 failed (2)`. `Tests  8 failed \| 7 passed (15)`. Enqueued jobs were `[]`. A waiting send published only `ids`. The printer-only alert was missing. | Same command after `ports/printer.ts`, `take-order.ts`, and `request-check.ts`: exit 0. `Test Files  2 passed (2)`. `Tests  15 passed (15)`. `pnpm exec tsc -b contexts/orders --pretty false` exit 0. Biome fixed 8 files; the same test command was re-run and exited 0. |
 | 5.3 → 5.4 | `pnpm exec vitest run --project cash-register charge-check` exit 1. `Test Files  1 failed (1)`. `Tests  2 failed \| 11 passed (13)`. Both new tests received `jobs` `[]`. | Same command after `charge-check.ts`, `ports/printer.ts`, and `ports/register-lookup.ts`: exit 0. `Test Files  1 passed (1)`. `Tests  13 passed (13)`. `pnpm exec tsc -b contexts/cash-register --pretty false` exit 0. Biome fixed 3 files before that GREEN run. |
+| 5.5 → 5.6 | `pnpm exec vitest run --project cash-register charge-check close-shift` exit 1. `Test Files  2 failed (2)`. `Tests  4 failed \| 36 passed (40)`. Card plus cash, on a present drawer and on an absent drawer, received `jobs` `[]`. Final close with a printer, for both drawers, received `jobs` `[]`. | Same command after `includesCash`, the `cash_close` enqueue, and the `SaleReceiptJob` union: exit 0. `Test Files  2 passed (2)`. `Tests  40 passed (40)`. `pnpm exec tsc -b contexts/cash-register --pretty false` exit 0. Biome fixed 1 file before that GREEN run. |
 
 ## Deviations from Design
 
@@ -203,6 +222,8 @@ Unit 10 enqueues through the orders `Printer` port. `TakeOrder` submits one `kit
 
 Unit 11 enqueues the cash receipt through the cash-register `Printer` port. A cash sale is a charge whose every tender method is `cash`. `drawer: present` sets `kickDrawer: true` on that register's `printerId` and, after `insert` and `markPaid`, records one `cash.drawer-opened` with the payment id, the register id, and the printer id. `drawer: absent` still enqueues `offline_receipt` with `kickDrawer: false` and records nothing. A repeated `commandId` returns the stored charge and does not enqueue again. The job has no number, CUFE, lookup QR, or pulse. Card, transfer, wallet, voucher, customer credit, corporate credit, and a mix that includes cash do not enqueue and do not kick. That matrix stays with tasks 5.5–5.6. `ChargeCheck` has no open-without-sale method. A null `printerId` does not enqueue. The package does not import `@blackhole/printing`.
 
+Unit 12 treats a charge as cash when any tender method is `cash`. Drawer `present` still kicks and audits once after the save. Drawer `absent` still prints with `kickDrawer: false` and writes no drawer audit. A charge with no cash tender does not enqueue. A cash tip on a non-cash tender does not kick. `SaleReceiptJob` is now `offline_receipt` or `cash_close`. The `cash_close` variant types `kickDrawer` as `false`. Final close enqueues that job with `commandId` equal to the count id, after the count is saved, when the injected printer is present and the register `printerId` is set. Partial close, a rejected close, and a null `printerId` enqueue nothing. The job has no register, expected, counted, difference, number, CUFE, or QR. `CloseShift` takes the printer as an optional third argument that defaults to `null`, so `apps/api-cloud/src/composition/application-module.ts` still constructs it with two arguments. That file is outside the allowed roots and was not edited. A null port enqueues nothing. There is still no open-without-sale action. The package does not import `@blackhole/printing`.
+
 ## Issues Found
 
 Unit 7 is 530 changed lines, over the 400-line review budget. The RED/GREEN pair was not split. `pnpm-lock.yaml` is outside the allowed edit roots and now contains the `shared/printing` importer (9 lines). No other file outside `shared/printing` and this change folder was edited for the queue.
@@ -213,22 +234,24 @@ Unit 9 is 314 changed lines, under the 400-line budget. Postgres now stores the 
 
 Unit 10 is 478 changed lines, over the 400-line budget. The RED/GREEN pair was not split. `InMemoryPrinter.fail` still maps to status `failed`, so the existing cloud send test can keep setting `fail` without a new constructor argument on `TakeOrder`.
 
-Unit 11 is 286 changed lines, under the 400-line budget. A mixed tender that includes cash does not kick until tasks 5.5–5.6.
+Unit 11 is 286 changed lines, under the 400-line budget. At the end of unit 11, a mixed tender that includes cash does not kick. Unit 12 changes that.
 
 After unit 11, the cloud composition was updated so `tsc -b apps/api-cloud` passes. `RequestCheck` receives the orders printer and the realtime hub. `ChargeCheck` receives `PendingSalePrinter` and `PendingDrawerAudit`. Those two classes keep a receipt at `waiting` and do not write `cash.drawer-opened`. `OrganizationRegisterDirectory` now returns `drawer` and `printerId`. The HTTP slice (6.1–6.2) still has to enqueue through `@blackhole/printing` and record the audit.
 
+Unit 12 is 314 changed lines, under the 400-line budget. `CloseShift` still defaults its printer to `null`, so a cloud close does not enqueue `cash_close` until tasks 6.1–6.2 pass the port. `PendingSalePrinter` and `PendingDrawerAudit` stay. `SaleReceiptJob` now includes `cash_close` with `kickDrawer: false`, which that pending printer already accepts. `apps/api-cloud` was not edited.
+
 ## Remaining Tasks
 
-- [ ] 5.5 through 6.6 stay unchecked
+- [ ] 5.7 through 6.6 stay unchecked
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 11. Cash sale and the drawer. PR 11, base = previous printing slice (unit 10), not `main`
-- Boundary: tasks 5.3 and 5.4 only. The RED/GREEN pair was not split.
-- Estimated review budget impact: 286 changed lines in this slice (275 insertions, 11 deletions). Under the 400-line budget. The change forecast stays High. `size:exception` was not granted.
+- Current work unit: 12. Other tenders and cash close. PR 12, on `feat/printing-tenders`, base = `feat/printing`, not `main`
+- Boundary: tasks 5.5 and 5.6 only. The RED/GREEN pair was not split.
+- Estimated review budget impact: 314 changed lines in this slice (303 insertions, 11 deletions). Under the 400-line budget. The change forecast stays High. `size:exception` was not granted.
 
 ## Status
 
-22/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.
+24/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.

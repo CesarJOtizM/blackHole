@@ -1,5 +1,7 @@
 import type { CashCountStore } from "#application/ports/cash-count-store.js";
+import type { Printer } from "#application/ports/printer.js";
 import {
+  type KnownRegister,
   type RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
@@ -37,12 +39,31 @@ const knownRegister = async (
   tenantId: string,
   venueId: string,
   registerId: string,
-): Promise<void> => {
+): Promise<KnownRegister> => {
   const known = await lookup.find(tenantId, venueId, registerId);
 
   if (known === null || known.id !== registerId || known.venueId !== venueId) {
     throw new UnknownRegister();
   }
+
+  return known;
+};
+
+const enqueueCashClose = async (
+  printer: Printer | null,
+  register: KnownRegister,
+  commandId: string,
+): Promise<void> => {
+  if (printer === null || register.printerId === null) {
+    return;
+  }
+
+  await printer.enqueue({
+    commandId,
+    printerId: register.printerId,
+    document: "cash_close",
+    kickDrawer: false,
+  });
 };
 
 const gapCop = (count: CashCount): number => {
@@ -69,6 +90,7 @@ export class CloseShift {
   constructor(
     private readonly registerLookup: RegisterLookup,
     private readonly counts: CashCountStore,
+    private readonly printer: Printer | null = null,
   ) {}
 
   async partial(input: PartialCloseInput): Promise<CashCount> {
@@ -102,7 +124,7 @@ export class CloseShift {
   }
 
   async final(input: FinalCloseInput): Promise<CashCount> {
-    await knownRegister(
+    const register = await knownRegister(
       this.registerLookup,
       input.tenantId,
       input.venueId,
@@ -118,6 +140,7 @@ export class CloseShift {
       input.registerId,
       count,
     );
+    await enqueueCashClose(this.printer, register, count.id);
 
     return count;
   }
