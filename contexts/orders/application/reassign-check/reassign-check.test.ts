@@ -553,7 +553,7 @@ const transferHarness = async (options: {
           commands.push(command);
           return Promise.resolve(blank);
         },
-      } as RecordAuditEvent,
+      } as unknown as RecordAuditEvent,
     }),
   };
 };
