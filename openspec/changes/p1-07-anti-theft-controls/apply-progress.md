@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-auth-http` targeting `feat/anti-theft-tender`. Not `main`. No commit or pull request in this batch.
-**Work unit**: Authorization HTTP boundary (task 6.1)
+**PR slice**: `feat/anti-theft-prebill-http` targeting `feat/anti-theft-discount-http` (`86f14d8`). Not `main`. No commit or pull request in this batch.
+**Work unit**: Check HTTP (task 6.4)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -29,6 +29,7 @@
 - [x] 6.1 Cloud authorization HTTP boundary: a request may carry optional `targetId` and `shiftTotals`. The controller passes them to `OperateAuthorization`. The sensitive-action envelope validates with `safeParse`. No void, discount, courtesy, price, drawer, reopen, or tender routes
 - [x] 6.2 Cloud void HTTP: a denied session leaves the line or the account and writes no void audit. A waiter inside the before-kitchen cap, with an open shift, voids the line and the audit authorizer is null. A cashier with a matching grant clears the account and the audit authorizer is the grant's authorizer. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing
 - [x] 6.3 Cloud discount, courtesy, and price HTTP: a kitchen chief on an open shift leaves line prices unchanged and writes no success audit. An owner on an open shift audits `sale.discount` with `after.value` equal to the percent and leaves line prices unchanged. An owner courtesy audits `sale.comp` with `after.value` equal to the COP amount and leaves line prices unchanged. An owner price change saves the new line price, leaves the menu unchanged, and audits `sale.change-price` with `before.value` equal to the previous line price
+- [x] 6.4 Cloud pre-bill and waiter-transfer HTTP: a printed pre-bill refuses a new line when the session is denied or the edit fields are absent, and audits `sale.edit-printed-check` when an owner sends those fields on an open shift. `POST checks/:checkId/transfer-table` audits `sale.transfer-table` with the previous and next waiter. Join and move-lines stay on `POST checks/reassign`
 
 ## Work Unit Evidence
 
@@ -569,6 +570,40 @@ Each controller has one denial and one success. A kitchen chief on an open shift
 
 The pair is 855 additions and 0 deletions: `apply-discount.controller.ts` 96, `apply-courtesy.controller.ts` 96, `change-price.controller.ts` 98, `apply-discount.controller.test.ts` 128, `apply-courtesy.controller.test.ts` 128, `change-price.controller.test.ts` 186, and `application-module.ts` 123. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-discount-http`, based on `feat/anti-theft-void-http` (`754d1ac`). No commit, push, or pull request.
 
+### Unit 13 — Check HTTP (task 6.4)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project api-cloud test/http/take-order.controller.test.ts test/http/reassign-check.controller.test.ts`. RED exit 1: 10 failed, 21 passed (31). GREEN exit 0: 2 files, 31 passed. Same command after Biome: exit 0, 2 files, 31 passed. |
+| Runtime harness command/scenario and exact result | N/A. Tasks forecast says runtime harness N/A. The focused tests boot Nest through `openDiningCloud` and inject the lines and transfer routes. No listening port. |
+| Rollback boundary | `apps/api-cloud/src/http/take-order.controller.ts`, `apps/api-cloud/src/http/reassign-check.controller.ts`, their two HTTP tests, the `TakeOrder` and `ReassignCheck` factories in `apps/api-cloud/src/composition/application-module.ts`, and `addOrderLineCommand` in `shared/contracts/dining-room.ts` |
+
+#### RED
+
+Command: `pnpm vitest run --project api-cloud test/http/take-order.controller.test.ts test/http/reassign-check.controller.test.ts`
+
+Result: exit 1. Test files 2 failed. Tests 10 failed, 21 passed (31).
+
+Failures before the routes and the edit fields existed:
+
+- `routePermissions` was only `POST checks/reassign` → `sale.move-items`. The `POST checks/:checkId/transfer-table` entry was missing.
+- `POST checks/:checkId/transfer-table` returned 404 for a kitchen chief, a closed shift, an owner on an open shift, a missing session, an unknown session, and a body carrying shift totals or `authorizerId`.
+- A kitchen chief posting edit fields after the pre-bill got 400. The strict add-line schema rejected `reason`, `shiftId`, and `authorizationId` before the `sale.open-table` gate.
+- An owner posting the old body after the pre-bill got 409 `{ error: "TableNotOpen" }`. `presentLine` threw `TableNotOpen` because the returned check did not contain the new line.
+- An owner posting the edit fields on an open shift got 400, so the line was not held and `sale.edit-printed-check` was not audited.
+
+#### GREEN
+
+Same command, after `TakeOrder` received `PrintedCheckGuard`, `ReassignCheck` received `TableTransferGuard`, the add-line contract accepted the three optional edit fields, a missing new line returned 409 `PrintedCheckEditRefused`, and `POST checks/:checkId/transfer-table` called `kind: "transfer-table"`. Exit 0. Test files 2 passed. Tests 31 passed. The existing take-order and reassign tests stayed green.
+
+The same command after `pnpm exec biome check --write` on the six TypeScript files. Exit 0. Test files 2 passed. Tests 31 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on those same files. Exit 0. No fixes applied.
+
+The catalog marks `sale.edit-printed-check` and `sale.transfer-table` as yes for owner, general manager, site administrator, and shift supervisor; with authorization for cashier and waiter; and no for kitchen chief and warehouse keeper. The tests use owner and kitchen chief. A kitchen chief still stops at the existing `sale.open-table` gate with 403 `SaleOpenTableDenied`. An owner without the edit fields gets 409 `PrintedCheckEditRefused`, the new line is absent, and no `sale.edit-printed-check` audit is stored. An owner, an open `OpenShiftReader`, and the three edit fields hold the line and audit `sale.edit-printed-check` with `before.value` 0 and `after.value` equal to the quoted price. A check with no pre-bill still accepts the old body. A kitchen chief or a closed shift leaves the waiter unchanged and stores no `sale.transfer-table` audit. An owner on an open shift sets the in-memory waiter and audits `before.waiterId` and `after.waiterId`. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 and stores nothing. `isOpen` accepts `OpenShiftQuery`.
+
+The pair is 552 additions and 16 deletions: `application-module.ts` 78/5, `reassign-check.controller.ts` 73/1, `take-order.controller.ts` 49/8, `reassign-check.controller.test.ts` 195/0, `take-order.controller.test.ts` 150/1, and `dining-room.ts` 7/1. `size:exception` was not granted. The pair is over the 400-line review budget and was not split. It stays on `feat/anti-theft-prebill-http`, based on `feat/anti-theft-discount-http` (`86f14d8`). No commit, push, or pull request.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -642,7 +677,13 @@ The pair is 855 additions and 0 deletions: `apply-discount.controller.ts` 96, `a
 - This pair is 740 additions and 3 deletions. It was not split. `size:exception` was not granted.
 - The three discount, courtesy, and price routes return the same `{ checkId, lineIds }` listing as a void, through the existing `presentVoid` and `rejectionOf` helpers. `voidCommand` was not widened. `percent`, `value`, and `price` live on the controller schemas. A missing session, an unknown session, or a body carrying `authorizerId` or shift totals is 400 before the use case. Those 400 paths are the void controller behavior and are not separate assertions in this pair. The assigned tests are one denial and one success per controller.
 - `TakeOrder` stays a six-argument construction. The existing `OpenShiftReader` provider is reused. No void, drawer, reopen, tender, reprint, pre-bill, or report route was added. The use cases were not edited. Shift totals come from `CountExecutedOperations` inside those use cases.
+- `addOrderLineCommand` extends the existing strict draft with optional `reason`, `shiftId`, and `authorizationId` (`string` or `null`). `orderLineDraft` is unchanged, so send still rejects those fields. `shiftTotals` and `authorizerId` still fail the strict parse. A normal add without the three fields still parses. When all three are present, `POST checks/:checkId/lines` passes them to `hold` as `edit`. `actorId` is `session.userId`, `deviceId` is `session.deviceId`, and `authorizerId` comes from `authorizerOf` when `authorizationId` is set, otherwise null. When the three fields are absent, `hold` is called without `edit`. The `sale.open-table` gate still runs first.
+- A returned check that does not contain the new line is 409 `{ error: "PrintedCheckEditRefused" }`. `presentLine` is not called, so `TableNotOpen` is not thrown and the response is not 500. The use case already skipped the save and the audit.
+- The catalog has no role that is `yes` for `sale.open-table` and `no` for `sale.edit-printed-check`. Kitchen chief is `no` for both, so the existing gate returns 403 `SaleOpenTableDenied` before `hold`. Owner is `yes` for `sale.edit-printed-check`. Cashier and waiter are `with_authorization` and are not used as the allowed session.
+- `TakeOrder` is now constructed with seven arguments. The seventh is `PrintedCheckGuard`, built from the same ports `VoidLine` uses: the existing `OpenShiftReader`, `CountExecutedOperations`, `EvaluatePermission`, `ConsumeAuthorization`, and `RecordAuditEvent`. `ReassignCheck` receives `TableTransferGuard` as the second argument from those same ports. `TakeOrder`, `ReassignCheck`, `Check`, and their application tests were not edited. No migration. Postgres still does not map `waiterId`.
+- `POST checks/reassign` still handles join and move-lines, including its `sale.move-items` gate and `PlatformDiningAudit`. `POST checks/:checkId/transfer-table` is a separate route with permission `sale.transfer-table`. It calls `reassignCheck.execute` with `kind: "transfer-table"` and does not write the move-items audit. The use case writes `sale.transfer-table`. A missing or unknown `x-session-id` is 400 before the use case. A denied session or a closed shift leaves the in-memory waiter unchanged and stores no transfer audit. An authorized session and an open shift set the waiter and audit `before.waiterId` and `after.waiterId`.
+- This pair is 552 additions and 16 deletions. It was not split. `size:exception` was not granted.
 
 ## Remaining
 
-Tasks 6.4–7.1 are pending. The next checkbox is 6.4. Task 6.3 is the only checkbox newly marked in this batch. 20/25 tasks complete. No migration. No local-node. No take-order, reassign, drawer, reopen, tender, reprint, or report route in this batch.
+Tasks 6.5–7.1 are pending. The next checkbox is 6.5. Task 6.4 is the only checkbox newly marked in this batch. 21/25 tasks complete. No migration. No local-node. No drawer, reopen, tender, reprint, or report route in this batch.

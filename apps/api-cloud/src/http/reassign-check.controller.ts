@@ -36,13 +36,24 @@ import {
   Param,
   Post,
 } from "@nestjs/common";
-
+import { z } from "zod";
 import { PlatformDiningAudit } from "#src/http/platform-dining-audit.js";
+import { authorizerOf } from "#src/http/void-command.js";
 
 const SESSION_HEADER = "x-session-id";
 
+const transferTableCommand = z
+  .object({
+    reason: z.string(),
+    shiftId: z.string(),
+    authorizationId: z.string().nullable(),
+    waiterId: z.string(),
+  })
+  .strict();
+
 export const routePermissions = {
   "POST checks/reassign": "sale.move-items",
+  "POST checks/:checkId/transfer-table": "sale.transfer-table",
 } as const;
 
 const ACTION = routePermissions["POST checks/reassign"];
@@ -155,6 +166,63 @@ export class ReassignCheckController {
     }
   }
 
+  @Post("checks/:checkId/transfer-table")
+  @HttpCode(HttpStatus.OK)
+  async transferTable(
+    @Param("tenantId") tenantId: string,
+    @Param("venueId") venueId: string,
+    @Param("checkId") checkId: string,
+    @Headers(SESSION_HEADER) sessionHeader: unknown,
+    @Body() body: unknown,
+  ) {
+    const sessionId = readText(sessionHeader);
+    const parsed = transferTableCommand.safeParse(body);
+
+    if (sessionId === null || !parsed.success) {
+      throw new BadRequestException();
+    }
+
+    const session = await this.sessions.find(tenantId, sessionId);
+
+    if (!session) {
+      throw new BadRequestException();
+    }
+
+    try {
+      const saved = await this.reassignCheck.execute({
+        kind: "transfer-table",
+        tenantId,
+        venueId,
+        checkId,
+        waiterId: parsed.data.waiterId,
+        actorId: session.userId,
+        authorizerId: await authorizerOf(
+          this.authorizations,
+          tenantId,
+          parsed.data.authorizationId,
+        ),
+        sessionId,
+        deviceId: session.deviceId,
+        shiftId: parsed.data.shiftId,
+        reason: parsed.data.reason,
+        authorizationId: parsed.data.authorizationId,
+      });
+
+      return {
+        checkId: saved.id,
+        waiterId: waiterOf(saved),
+      };
+    } catch (error: unknown) {
+      const rejection = domainRejectionName(error);
+
+      if (rejection !== null) {
+        throw new ConflictException({ error: rejection });
+      }
+
+      throw error;
+    }
+  }
+
   private execute(
     tenantId: string,
     venueId: string,
@@ -209,6 +277,12 @@ export class ReassignCheckController {
       throw error;
     }
   }
+}
+
+function waiterOf(check: object): string | null {
+  const waiterId = (check as { waiterId?: unknown }).waiterId;
+
+  return typeof waiterId === "string" ? waiterId : null;
 }
 
 function readText(header: unknown): string | null {

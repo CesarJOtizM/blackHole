@@ -1,5 +1,9 @@
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import {
+  type OpenShiftQuery,
+  OpenShiftReader,
+} from "@blackhole/orders/application/entry-port";
 import { Menu } from "@blackhole/orders/domain";
 import { InMemoryOrganizationRepository } from "@blackhole/platform/adapters/memory/in-memory-organization-repository";
 import type { OrganizationSnapshot } from "@blackhole/platform/application/ports/organization-repository";
@@ -66,7 +70,16 @@ const picture = (organization: Organization): OrganizationSnapshot => ({
   cashRegisters: organization.cashRegisters,
 });
 
-const openOrderCloud = async (printerFails = false) => {
+class OpenCloudShift extends OpenShiftReader {
+  override isOpen(_query: OpenShiftQuery): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+}
+
+const openOrderCloud = async (
+  printerFails = false,
+  shifts?: OpenShiftReader,
+) => {
   const organizations = new InMemoryOrganizationRepository();
   const organization = Organization.registerCompany({
     id: tenantId,
@@ -135,6 +148,7 @@ const openOrderCloud = async (printerFails = false) => {
       menus,
       stationRoutes,
       printer,
+      ...(shifts === undefined ? {} : { shifts }),
     })),
   };
 };
@@ -668,6 +682,141 @@ it("given a kitchen chief session, when POST /checks/:checkId/lines/:lineId/deli
     expect(response.statusCode).toBe(403);
     expect(response.json()).toEqual({ error: "SaleOpenTableDenied" });
     expect(stored?.orders[0]?.lines[0]?.state).toBe("ready");
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+const printedEdit = {
+  reason: "Guest asked after the pre-bill",
+  shiftId: "shift_1",
+  authorizationId: null,
+};
+
+const stampPreBill = async (
+  diningRooms: Awaited<ReturnType<typeof openOrderCloud>>["diningRooms"],
+) => {
+  const check = await seatOccupiedCheck(diningRooms);
+
+  check.requestCheck({ requestedAt: openedAt });
+  await diningRooms.saveCheck(check);
+};
+
+const storedLineIds = async (
+  diningRooms: Awaited<ReturnType<typeof openOrderCloud>>["diningRooms"],
+) => {
+  const stored = await diningRooms.loadCheck(tenantId, venueId, checkId);
+
+  return (
+    stored?.orders.flatMap((order) => order.lines.map((line) => line.id)) ?? []
+  );
+};
+
+it("given a printed pre-bill and a kitchen chief session, when POST /checks/:checkId/lines sends the edit fields, then the response is 403, the check gains no line, and no printed-check edit is audited", async () => {
+  const { application, diningRooms, audits } = await openOrderCloud(
+    false,
+    new OpenCloudShift(),
+  );
+
+  try {
+    await stampPreBill(diningRooms);
+
+    const response = await postDining(
+      application,
+      linesUrl,
+      "session_kitchen",
+      {
+        ...soupLine,
+        ...printedEdit,
+      },
+    );
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({ error: "SaleOpenTableDenied" });
+    expect(await storedLineIds(diningRooms)).toEqual([]);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a printed pre-bill and an owner session, when POST /checks/:checkId/lines omits the edit fields, then the response is 409, the check gains no line, and no printed-check edit is audited", async () => {
+  const { application, diningRooms, audits } = await openOrderCloud(
+    false,
+    new OpenCloudShift(),
+  );
+
+  try {
+    await stampPreBill(diningRooms);
+
+    const response = await postDining(
+      application,
+      linesUrl,
+      "session_owner",
+      soupLine,
+    );
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({ error: "PrintedCheckEditRefused" });
+    expect(await storedLineIds(diningRooms)).toEqual([]);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given a printed pre-bill, an owner session, and an open shift, when POST /checks/:checkId/lines sends the edit fields, then the line is held and the printed-check edit is audited", async () => {
+  const { application, diningRooms, audits } = await openOrderCloud(
+    false,
+    new OpenCloudShift(),
+  );
+
+  try {
+    await stampPreBill(diningRooms);
+
+    const response = await postDining(application, linesUrl, "session_owner", {
+      ...soupLine,
+      ...printedEdit,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(heldSoup);
+    expect(await storedLineIds(diningRooms)).toEqual([lineId]);
+    expect(await audits.list(tenantId, null)).toEqual([
+      expect.objectContaining({
+        action: "sale.edit-printed-check",
+        actorId: ownerId,
+        authorizerId: null,
+        entity: checkId,
+        reason: printedEdit.reason,
+        before: { value: 0 },
+        after: {
+          value: soupPrice,
+          shiftId: printedEdit.shiftId,
+          kitchen: null,
+        },
+      }),
+    ]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an occupied check and no pre-bill, when POST /checks/:checkId/lines sends shift totals or an authorizer id, then the response is 400, the check gains no line, and nothing is audited", async () => {
+  const { application, diningRooms, audits } = await openOrderCloud();
+
+  try {
+    await seatOccupiedCheck(diningRooms);
+
+    const response = await postDining(application, linesUrl, "session_owner", {
+      ...soupLine,
+      shiftTotals: { waiterVoidsBeforeKitchen: 1, compShiftCop: 0 },
+      authorizerId: ownerId,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(await storedLineIds(diningRooms)).toEqual([]);
     expect(await audits.list(tenantId, null)).toEqual([]);
   } finally {
     await application.close();

@@ -56,6 +56,7 @@ import {
   queuedOrderCount,
 } from "#src/composition/sale-receipt.js";
 import { PlatformDiningAudit } from "#src/http/platform-dining-audit.js";
+import { authorizerOf } from "#src/http/void-command.js";
 
 const SESSION_HEADER = "x-session-id";
 
@@ -144,16 +145,50 @@ export class TakeOrderController {
       throw new BadRequestException();
     }
 
-    await this.authorize(tenantId, venueId, sessionId);
+    const { session } = await this.authorize(tenantId, venueId, sessionId);
+    const { reason, shiftId, authorizationId, ...line } = parsed.data;
+    const edit =
+      reason === undefined ||
+      shiftId === undefined ||
+      authorizationId === undefined
+        ? undefined
+        : {
+            actorId: session.userId,
+            authorizerId: await authorizerOf(
+              this.authorizations,
+              tenantId,
+              authorizationId,
+            ),
+            sessionId,
+            deviceId: session.deviceId,
+            shiftId,
+            reason,
+            authorizationId,
+          };
 
     try {
-      const saved = await this.takeOrder.hold({
-        tenantId,
-        brandId: await this.brandOf(tenantId, venueId),
-        venueId,
-        checkId,
-        line: parsed.data,
-      });
+      const brandId = await this.brandOf(tenantId, venueId);
+      const saved =
+        edit === undefined
+          ? await this.takeOrder.hold({
+              tenantId,
+              brandId,
+              venueId,
+              checkId,
+              line: parsed.data,
+            })
+          : await this.takeOrder.hold({
+              tenantId,
+              brandId,
+              venueId,
+              checkId,
+              line,
+              edit,
+            });
+
+      if (!holdsLine(saved, parsed.data.lineId)) {
+        throw new ConflictException({ error: "PrintedCheckEditRefused" });
+      }
 
       return presentLine(saved, parsed.data.lineId);
     } catch (error: unknown) {
@@ -405,6 +440,12 @@ function domainRejectionName(error: unknown): string | null {
   }
 
   return null;
+}
+
+function holdsLine(check: SavedCheck, lineId: string): boolean {
+  return check.orders.some((order) =>
+    order.lines.some((line) => line.id === lineId),
+  );
 }
 
 function presentLine(check: SavedCheck, lineId: string): SavedOrderLine {

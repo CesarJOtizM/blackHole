@@ -153,7 +153,13 @@ const orderLineDraft = z
   })
   .strict();
 
-export const addOrderLineCommand = orderLineDraft;
+export const addOrderLineCommand = orderLineDraft
+  .extend({
+    reason: z.string().optional(),
+    shiftId: z.string().optional(),
+    authorizationId: z.string().nullable().optional(),
+  })
+  .strict();
 
 export type AddOrderLineCommand = z.infer<typeof addOrderLineCommand>;
 
