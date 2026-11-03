@@ -110,6 +110,11 @@ import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
 import { NumberingRangeStore } from "#src/http/invoicing.controller.js";
+import {
+  MemoryReprintAudit,
+  ReprintCap,
+} from "#src/http/printing.controller.js";
+import { StructurePrinters } from "#src/http/update-structure.controller.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
   const application = await createApplication(cloudDependencies());
@@ -451,6 +456,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: NumberingRangeStore,
         useValue: new MemoryNumberingRanges(),
+      },
+      {
+        provide: ReprintCap,
+        useValue: new ReprintCap(null),
+      },
+      {
+        provide: MemoryReprintAudit,
+        useValue: new MemoryReprintAudit(),
+      },
+      {
+        provide: StructurePrinters,
+        useValue: new StructurePrinters(),
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

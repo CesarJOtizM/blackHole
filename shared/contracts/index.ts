@@ -158,6 +158,14 @@ export {
   venueMenu,
 } from "#contracts/menu.js";
 export {
+  type PaperWidth,
+  paperWidth,
+  type RecordedReprint,
+  type ReprintDocumentCommand,
+  recordedReprint,
+  reprintDocumentCommand,
+} from "#contracts/printing.js";
+export {
   type OrganizationChanged,
   organizationChanged,
   type StructureCommand,

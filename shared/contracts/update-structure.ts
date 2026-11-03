@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { paperWidth } from "#contracts/printing.js";
+
 const STRUCTURE_COMMAND = {
   REGISTER_COMPANY: "registerCompany",
   ADD_TAXPAYER: "addTaxpayer",
@@ -24,6 +26,15 @@ const LOCATION_KIND = {
   POINT: "point",
   WAREHOUSE: "warehouse",
 } as const;
+
+const DRAWER = {
+  PRESENT: "present",
+  ABSENT: "absent",
+} as const;
+
+const printerId = z.string().min(1).nullable();
+
+const backupPrinterId = z.string().min(1).nullable();
 
 const registerCompanyCommand = z.object({
   type: z.literal(STRUCTURE_COMMAND.REGISTER_COMPANY),
@@ -70,6 +81,9 @@ const addKitchenStationCommand = z.object({
   id: z.string(),
   venueId: z.string(),
   name: z.string(),
+  printerId: printerId.optional(),
+  paper: paperWidth.optional(),
+  backupPrinterId: backupPrinterId.optional(),
 });
 
 const addCashRegisterCommand = z.object({
@@ -77,6 +91,10 @@ const addCashRegisterCommand = z.object({
   id: z.string(),
   venueId: z.string(),
   name: z.string(),
+  drawer: z.enum([DRAWER.PRESENT, DRAWER.ABSENT]).optional(),
+  printerId: printerId.optional(),
+  paper: paperWidth.optional(),
+  backupPrinterId: backupPrinterId.optional(),
 });
 
 const renameCashRegisterCommand = z.object({
@@ -145,12 +163,15 @@ const organizationKitchenStation = z.object({
   id: z.string(),
   venueId: z.string(),
   name: z.string(),
+  printerId: z.string().nullable(),
 });
 
 const organizationCashRegister = z.object({
   id: z.string(),
   venueId: z.string(),
   name: z.string(),
+  drawer: z.enum([DRAWER.PRESENT, DRAWER.ABSENT]),
+  printerId: z.string().nullable(),
 });
 
 const organizationSnapshot = z.object({

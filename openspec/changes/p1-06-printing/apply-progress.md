@@ -1,5 +1,11 @@
 # Apply progress: p1-06-printing
 
+Work unit 15. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+
+Delivery: feature-branch-chain. This batch stays on `feat/printing-reprint` and targets `feat/printing-http` (PR https://github.com/CesarJOtizM/blackHole/pull/65), not `main`, and stops at tasks 6.3–6.4. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
+
+Reprint HTTP and structure printer fields. Under a numeric cap, `POST /tenants/:tenantId/reprints` records one `sale.reprint` with actor, device, document, and time. A null cap returns 409 `ReprintCapUnconfigured` and stores nothing. The body is `reprintDocumentCommand.safeParse`. A caller cannot send `limit`. `addCashRegister` and `addKitchenStation` accept drawer, printer, paper, and backup. `structureCommand.safeParse` stays. Drawer `present` and the printer id are stored on the organization. Paper is written through `savePrinter`. Backup is kept on the cloud structure printer record. There is no over-cap authorizer, no `ReprintNeedsAuthorization`, and no TCP bridge. Tasks 6.5–6.6 stay unchecked. Units 1–14 stay recorded below.
+
 Work unit 14. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
 Delivery: feature-branch-chain. This batch stays on `feat/printing-http` and targets `feat/printing-documents` (PR https://github.com/CesarJOtizM/blackHole/pull/64), not `main`, and stops at tasks 6.1–6.2. Not committed. `size:exception` was not granted. The RED/GREEN pair was not split.
@@ -70,6 +76,8 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 - [x] 5.8 GREEN `print-document.ts` and the invoicing `entry-port.ts`. No enqueue. No `@blackhole/printing` import.
 - [x] 6.1 RED `apps/api-cloud/test/http` charge, request-check, take-order, and cash-count: `printed: false` while the job is `waiting`. Drawer audit only after a saved cash tender on a drawer `present`.
 - [x] 6.2 GREEN those controllers and `src/composition/application-module.ts`. One `RecordAuditEvent` for `cash.drawer-opened`. No bridge.
+- [x] 6.3 RED `apps/api-cloud/test/http/printing.controller.test.ts` and `update-structure.controller.test.ts`: under the cap, one `sale.reprint` with actor, device, document, and time. A null cap is 409 `ReprintCapUnconfigured` and stores nothing. Structure sets drawer, printer, paper, and backup. `safeParse`.
+- [x] 6.4 GREEN `shared/contracts/printing.ts`, `shared/contracts/index.ts`, and `apps/api-cloud/src/http/printing.controller.ts`. The audit action is `sale.reprint`.
 
 ## Work Unit Evidence
 
@@ -213,6 +221,16 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | Review line count | 534 insertions, 40 deletions (574 changed lines) in the code slice, before the OpenSpec progress edit. Over the 400-line budget. The pair was not split. |
 | Rollback boundary | `apps/api-cloud` HTTP controllers, `src/composition/sale-receipt.ts`, `src/composition/application-module.ts`, `apps/api-cloud/test/http` for charge, request-check, take-order, cash-count, and dining-room session, `apps/api-cloud/test/composition/bootstrap.test.ts`, and the optional `printed` field on `shared/contracts` `chargedCheck`, `cashCountView`, `requestedCheck`, `savedOrderLine`, and `sentCourse`. No `pnpm-lock.yaml`. No `apps/local-node`. No reprint route. |
 
+### Unit 15
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud test/http/printing.controller.test.ts test/http/update-structure.controller.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. `pnpm exec biome check --write` on the ten touched TypeScript files fixed 9 files before this run. |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud shared/contracts --pretty false` — exit 0, after `printing.ts` was added to the contracts `include` list. The first run exited 2 with `TS6307` because that file was not listed. |
+| Runtime harness command/scenario and exact result | Nest `inject`. No socket and no TCP. A numeric cap of 3 records one `sale.reprint` for `identity_cashier`, `device_register`, `invoice_setp990000001`, at `2026-11-02T18:00:00.000Z`. A null cap returns 409 `ReprintCapUnconfigured` and the audit list stays empty. An empty document returns 400 and stores nothing. `reprintDocumentCommand.safeParse` rejects an empty document and a body that includes `limit`. A station and a register posted with drawer, printer, paper, and backup store `drawer: present`, the printer ids, paper `58` and `80`, and the backup printer ids. `structureCommand.safeParse` rejects paper `letter` and drawer `open`. |
+| Review line count | 530 insertions, 3 deletions (533 changed lines) in the code slice, before the OpenSpec progress edit. Over the 400-line budget. The pair was not split. |
+| Rollback boundary | `apps/api-cloud` reprint controller, structure controller, composition, package dependency, and the two HTTP tests, `shared/contracts/printing.ts` plus the structure command fields, the `ReprintDocument` export in `shared/printing/application/entry-port.ts`, and the three-line `@blackhole/printing` importer in `pnpm-lock.yaml`. No SQL migration. No `apps/local-node`. No over-cap authorizer. |
+
 ### RED then GREEN
 
 | Task | RED (command and result) | GREEN |
@@ -231,6 +249,7 @@ Cloud queue in Postgres (D-37). PGlite runs `0012_printing.sql` as role `printin
 | 5.5 → 5.6 | `pnpm exec vitest run --project cash-register charge-check close-shift` exit 1. `Test Files  2 failed (2)`. `Tests  4 failed \| 36 passed (40)`. Card plus cash, on a present drawer and on an absent drawer, received `jobs` `[]`. Final close with a printer, for both drawers, received `jobs` `[]`. | Same command after `includesCash`, the `cash_close` enqueue, and the `SaleReceiptJob` union: exit 0. `Test Files  2 passed (2)`. `Tests  40 passed (40)`. `pnpm exec tsc -b contexts/cash-register --pretty false` exit 0. Biome fixed 1 file before that GREEN run. |
 | 5.7 → 5.8 | `pnpm exec vitest run --project invoicing print-document` exit 1. `FAIL contexts/invoicing/application/print-document/print-document.test.ts` — `Cannot find module '#application/print-document/print-document.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `print-document.ts` and the invoicing entry-port export: exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`. `pnpm exec tsc -b contexts/invoicing --pretty false` exit 0. Biome fixed 4 files before that GREEN run. |
 | 6.1 → 6.2 | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/charge-check.controller.test.ts apps/api-cloud/test/http/request-check.controller.test.ts apps/api-cloud/test/http/take-order.controller.test.ts apps/api-cloud/test/http/cash-count.controller.test.ts` exit 1. `Test Files  4 failed (4)`. `Tests  11 failed \| 25 passed (36)`. Responses omitted `printed: false`. `PendingSalePrinter` was not a Nest provider. | Same command after the controllers, `RecordedDrawerAudit`, and the shared printer: exit 0. `Test Files  4 passed (4)`. `Tests  36 passed (36)`. `pnpm exec tsc -b apps/api-cloud --pretty false` exit 0. Biome fixed 11 files before the first GREEN run. The `PendingSaleJob` type was then changed from an interface to a type alias so `tsc -b apps/api-cloud` exited 0, and the same vitest command was re-run and exited 0. |
+| 6.3 → 6.4 | `pnpm exec vitest run --project api-cloud test/http/printing.controller.test.ts test/http/update-structure.controller.test.ts` exit 1. `FAIL` `printing.controller.test.ts` — `Cannot find module '#src/http/printing.controller.js'`. `FAIL` the structure test — `expected true to be false` because `paper: "letter"` was accepted. `Test Files  2 failed (2)`. `Tests  1 failed \| 7 passed (8)`. | Same command after the reprint controller, the printing contract, and the structure printer fields: exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. `pnpm exec tsc -b apps/api-cloud shared/contracts --pretty false` exit 0. Biome fixed 9 files before that GREEN test run. |
 
 ## Deviations from Design
 
@@ -264,6 +283,8 @@ Unit 13 keeps the payload in invoicing. `pending_issuance` is the offline receip
 
 Unit 14 keeps the cloud on the existing in-memory printer ports. `api-cloud` does not import `@blackhole/printing` and does not edit `pnpm-lock.yaml`. `PendingSalePrinter` records each sale or close job as `waiting`. `CloseShift` receives that printer, so a final close enqueues `cash_close` with `kickDrawer: false`. `RecordedDrawerAudit` is the only new `RecordAuditEvent`. It runs inside `ChargeCheck`, after the ledger insert, and only when the use case asks for `cash.drawer-opened`. The controller still records `sale.charge` and does not record the drawer a second time. The session scope travels on `AsyncLocalStorage` because the drawer port has no actor. `printed: false` is optional on the response schemas and is set only when the job accepted by that request is `waiting`. A failed kitchen job omits it. `PrintDocument` is not called: the charge response is the queued closure, not an invoice or offline-receipt payload. No ESC/POS bytes are rendered in `api-cloud`. No reprint route and no structure fields `drawer`, `printerId`, paper, or backup.
 
+Unit 15 exports `ReprintDocument` and leaves its execute path unchanged. The HTTP cap is injected. `null` is 409 `ReprintCapUnconfigured` and writes no audit. A number records one `sale.reprint`. The body cannot carry `limit`. Structure `safeParse` now keeps drawer, `printerId`, paper, and `backupPrinterId`. Drawer and printer id stay on the organization. Paper goes through `savePrinter`. Backup stays on the in-memory `StructurePrinters` record because `ConfiguredPrinter` and `0012_printing.sql` have no backup column and the organization aggregate has no backup field. No migration was added. There is no TCP bridge and no over-cap authorizer.
+
 Unit 12 treats a charge as cash when any tender method is `cash`. Drawer `present` still kicks and audits once after the save. Drawer `absent` still prints with `kickDrawer: false` and writes no drawer audit. A charge with no cash tender does not enqueue. A cash tip on a non-cash tender does not kick. `SaleReceiptJob` is now `offline_receipt` or `cash_close`. The `cash_close` variant types `kickDrawer` as `false`. Final close enqueues that job with `commandId` equal to the count id, after the count is saved, when the injected printer is present and the register `printerId` is set. Partial close, a rejected close, and a null `printerId` enqueue nothing. The job has no register, expected, counted, difference, number, CUFE, or QR. `CloseShift` takes the printer as an optional third argument that defaults to `null`, so `apps/api-cloud/src/composition/application-module.ts` still constructs it with two arguments. That file is outside the allowed roots and was not edited. A null port enqueues nothing. There is still no open-without-sale action. The package does not import `@blackhole/printing`.
 
 ## Issues Found
@@ -286,18 +307,20 @@ Unit 13 is 189 changed lines, under the 400-line budget. `PrintDocument` is expo
 
 Unit 14 is 574 changed lines in the code slice (534 insertions, 40 deletions), over the 400-line budget. The RED/GREEN pair was not split. `apps/api-cloud/test/composition/bootstrap.test.ts` already expected `RequestCheck` to inject only the dining room and the clock, and its provider list ends before the invoicing providers the module already registers. That equality failure is older than this unit. This unit updates the `ChargeCheck` inject list and adds `PendingSalePrinter` to that expectation. `ChargeCheck`, `RequestCheck`, and `TakeOrder` constructor shapes are unchanged. `pnpm-lock.yaml` was not edited.
 
+Unit 15 is 533 changed lines in the code slice (530 insertions, 3 deletions), over the 400-line budget. The RED/GREEN pair was not split. `ReprintDocument` is exported from `application/entry-port.ts`. Its execute path is unchanged. A null cap still throws `ReprintCapUnconfigured` before `record`. There is no over-cap branch. Paper is stored by `savePrinter`. `ConfiguredPrinter` and `0012_printing.sql` `printers` have no backup column, and the organization aggregate has no backup field. Backup is kept on `StructurePrinters` in `api-cloud`, beside the saved paper. No SQL migration was added. The structure HTTP test that expected a kitchen station without `printerId` now expects `printerId: null`, which the aggregate already stores. `apps/local-node` was not edited. `tools/skeleton/skeleton.test.ts` was not edited.
+
 ## Remaining Tasks
 
-- [ ] 6.3 through 6.6 stay unchecked
+- [ ] 6.5 and 6.6 stay unchecked
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 14. Cloud HTTP `printed: false` and one drawer audit. On `feat/printing-http`, base = `feat/printing-documents`, not `main`
-- Boundary: tasks 6.1 and 6.2 only. The RED/GREEN pair was not split.
-- Estimated review budget impact: 574 changed lines in this slice (534 insertions, 40 deletions), before the OpenSpec progress edit. Over the 400-line budget. The change forecast stays High. `size:exception` was not granted.
+- Current work unit: 15. Reprint HTTP and structure printer fields. On `feat/printing-reprint`, base = `feat/printing-http`, not `main`
+- Boundary: tasks 6.3 and 6.4 only. The RED/GREEN pair was not split.
+- Estimated review budget impact: 533 changed lines in this slice (530 insertions, 3 deletions), before the OpenSpec progress edit. Over the 400-line budget. The change forecast stays High. `size:exception` was not granted.
 
 ## Status
 
-28/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.
+30/32 tasks complete. Ready for the next apply batch. Not ready for verify. Apply remains partial.

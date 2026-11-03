@@ -129,6 +129,11 @@ import {
   RealtimeSocketMiddleware,
 } from "#src/http/orders-realtime.controller.js";
 import { PlaceTableController } from "#src/http/place-table.controller.js";
+import {
+  MemoryReprintAudit,
+  PrintingController,
+  ReprintCap,
+} from "#src/http/printing.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
@@ -137,7 +142,10 @@ import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
 import { UpdateMenuController } from "#src/http/update-menu.controller.js";
-import { UpdateStructureController } from "#src/http/update-structure.controller.js";
+import {
+  StructurePrinters,
+  UpdateStructureController,
+} from "#src/http/update-structure.controller.js";
 import { ViewStationQueueController } from "#src/http/view-station-queue.controller.js";
 import { ViewTableMapController } from "#src/http/view-table-map.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
@@ -183,6 +191,9 @@ export interface CloudApplicationDependencies {
   creditNotes?: MemoryCreditNotes;
   creditNoteAudits?: MemoryCreditNoteAudit;
   numberingRanges?: MemoryNumberingRanges;
+  reprintCap?: ReprintCap;
+  reprintAudits?: MemoryReprintAudit;
+  structurePrinters?: StructurePrinters;
 }
 
 class OrdersClockAdapter extends OrdersClock {
@@ -221,12 +232,18 @@ export class ApplicationModule implements NestModule {
     const numberingRanges =
       dependencies.numberingRanges ?? new MemoryNumberingRanges();
     const salePrinter = new PendingSalePrinter();
+    const reprintCap = dependencies.reprintCap ?? new ReprintCap(null);
+    const reprintAudits =
+      dependencies.reprintAudits ?? new MemoryReprintAudit();
+    const structurePrinters =
+      dependencies.structurePrinters ?? new StructurePrinters();
 
     return {
       module: ApplicationModule,
       controllers: [
         AcceptCloudWriteController,
         UpdateStructureController,
+        PrintingController,
         OperateIdentityController,
         OperateDevicesController,
         AuthorizationController,
@@ -635,6 +652,9 @@ export class ApplicationModule implements NestModule {
           inject: [InvoicingProvider, CreditNoteRepository, CreditNoteAudit],
         },
         { provide: NumberingRangeStore, useValue: numberingRanges },
+        { provide: ReprintCap, useValue: reprintCap },
+        { provide: MemoryReprintAudit, useValue: reprintAudits },
+        { provide: StructurePrinters, useValue: structurePrinters },
       ],
     };
   }

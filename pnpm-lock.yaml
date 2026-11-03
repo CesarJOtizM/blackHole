@@ -229,6 +229,9 @@ importers:
       '@blackhole/platform':
         specifier: workspace:*
         version: link:../../contexts/platform
+      '@blackhole/printing':
+        specifier: workspace:*
+        version: link:../../shared/printing
       '@nestjs/common':
         specifier: 12.1.3
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
