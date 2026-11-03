@@ -2,8 +2,8 @@
 
 **Change**: p1-07-anti-theft-controls
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: `feat/anti-theft-voids` targeting `feat/anti-theft-sql` (PR #74). Not `main`.
-**Work unit**: 6 — Voids (task 4.1)
+**PR slice**: `feat/anti-theft-void-account` targeting `feat/anti-theft-voids` (PR #75). Not `main`.
+**Work unit**: 6 — Voids (task 4.2)
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
 
@@ -17,6 +17,7 @@
 - [x] 2.5 Read control report: voids, discounts, courtesies, cash differences, drawer openings, and accounts reopened or edited after the pre-bill. `audit.view`. Successful audits only
 - [x] 3.1 Postgres binding: `target_id` copied from `venue_id`, `consumed_at` null on existing rows, updatable venue thresholds, insert-only alerts, RLS for `authorization_app`
 - [x] 4.1 Void a line: `held` or `sent` within the before-kitchen cap leaves the account; `in_preparation` and later stay. A missing grant, a mismatch, or a closed shift leaves the line unchanged
+- [x] 4.2 Void an account: a matching `sale.void-account` grant is consumed before the account is cleared. A missing grant, a mismatch, a denied permission, a closed shift, or an unknown reference leaves the account unchanged. A second consume throws
 
 ## Work Unit Evidence
 
@@ -223,6 +224,32 @@ The same command after the Biome import-type and import-order fixes. Exit 0. Tes
 
 `pnpm exec biome check --formatter-enabled=false` on `void-line.ts`, `void-line.test.ts`, `open-shift-reader.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
 
+### Unit 6 — Voids (task 4.2)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm vitest run --project orders contexts/orders/application/void-account/void-account.test.ts`. RED exit 1: 1 failed file, no tests (missing import). GREEN exit 0: 1 file, 8 passed. Re-run after Biome format: exit 0, 1 file, 8 passed. |
+| Runtime harness command/scenario and exact result | N/A. In-memory dining room and the existing open-shift double. Tasks forecast says runtime harness N/A. No HTTP or SQL in this slice. |
+| Rollback boundary | `contexts/orders/application/void-account/`, the `VoidAccount` export in `contexts/orders/application/entry-port.ts`, and the `#application/void-account/*` import in `contexts/orders/package.json` |
+
+#### RED
+
+Command: `pnpm vitest run --project orders contexts/orders/application/void-account/void-account.test.ts`
+
+Result: exit 1. Test files 1 failed. Tests: no tests.
+
+Failure before the use case existed:
+
+- Missing `#application/void-account/void-account.js` specifier in `@blackhole/orders`.
+
+#### GREEN
+
+Same command, after `VoidAccount` evaluated `sale.void-account`, consumed a matching grant before any write, and replaced the saved account with an empty check of the same identity. Exit 0. Test files 1 passed. Tests 8 passed.
+
+The same command after `pnpm exec biome check --write` on the slice. Exit 0. Test files 1 passed. Tests 8 passed.
+
+`pnpm exec biome check --formatter-enabled=false` on `void-account.ts`, `void-account.test.ts`, and `entry-port.ts`. Exit 0. No fixes applied.
+
 ## Deviations
 
 - Binding fields stay optional on the persisted request so current callers and the Postgres mapper keep compiling. `restore` fills the migration defaults. Task 2.3 passes `targetId` and shift totals from `OperateAuthorization`. Task 3.1 adds the columns.
@@ -246,7 +273,9 @@ The same command after the Biome import-type and import-order fixes. Exit 0. Tes
 - `Check` has no void operation, and this slice cannot edit the orders domain. `VoidLine` detaches the line with the public `transfer` onto an unsaved sink check (`check_void_sink`) and saves only the original account. The line leaves that account. The sink is not persisted.
 - A line in `held` or `sent` whose evaluation is `allowed` is voided without a grant. `requires_authorization` consumes first. A null `authorizationId` does not call consume. `UnknownAuthorizationReference` and a `false` consume leave the line unchanged. `in_preparation`, `ready`, and `delivered` return before the platform calls. A closed shift returns after the open-shift read and before count, evaluate, or consume.
 - The consumed value is `1` and `targetId` is the line id. The audit action is `sale.void-before-kitchen`. `after` is `{ value: 1, shiftId, kitchen: "before" }`. `before` is `{ state }` so the successful audit is not the same state twice.
+- `Check` still has no void. `DiningTable.release` and `MarkAccountPaid` only move the table to `to_clean`, which is the paid lifecycle, so this slice does not call them. `VoidAccount` keeps the mutation in the use case: after the platform calls, it saves `Check.open` with the same id, tenant, venue, table, and `openedAt`. That drops every line. It does not transfer them to `check_void_sink`. No new domain method was added.
+- The permission is the existing catalog code `sale.void-account`. The consumed value is the sum of every line price, `targetId` is the check id, and `after.kitchen` is `null`. `allowed` clears the account without a grant. `requires_authorization` consumes first. A null `authorizationId`, a `false` consume, or `UnknownAuthorizationReference` leaves the account unchanged. `AuthorizationAlreadyConsumed` is rethrown. A closed shift returns after `OpenShiftReader` and before count, evaluate, or consume. A denied permission does not consume.
 
 ## Remaining
 
-Tasks 4.2–7.1 are pending. The next checkbox is 4.2. Task 4.1 is the only checkbox newly marked in this batch. 8/25 tasks complete.
+Tasks 4.3–7.1 are pending. The next checkbox is 4.3. Task 4.2 is the only checkbox newly marked in this batch. 9/25 tasks complete.

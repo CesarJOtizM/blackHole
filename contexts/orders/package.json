@@ -39,6 +39,7 @@
     "#application/view-station-queue/*": "./application/view-station-queue/*",
     "#application/get-check/*": "./application/get-check/*",
     "#application/mark-account-paid/*": "./application/mark-account-paid/*",
+    "#application/void-account/*": "./application/void-account/*",
     "#application/void-line/*": "./application/void-line/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
