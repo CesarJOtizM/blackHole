@@ -121,12 +121,12 @@ import {
 } from "#src/composition/attendance-memory.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
+import { createApplication } from "#src/composition/create-application.js";
+import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import {
   MissingOriginalPaymentReader,
   MissingPaidAccountReader,
 } from "#src/composition/missing-sale-readers.js";
-import { createApplication } from "#src/composition/create-application.js";
-import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
