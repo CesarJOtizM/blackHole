@@ -1,3 +1,5 @@
+export type { AdjustTipSettlementCommand } from "#application/adjust-tip-settlement/adjust-tip-settlement.js";
+export { AdjustTipSettlement } from "#application/adjust-tip-settlement/adjust-tip-settlement.js";
 export type { ApproveVarianceInput } from "#application/approve-variance/approve-variance.js";
 export { ApproveVariance } from "#application/approve-variance/approve-variance.js";
 export type {
