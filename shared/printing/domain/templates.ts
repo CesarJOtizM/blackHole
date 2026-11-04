@@ -62,6 +62,11 @@ export interface TransferTemplateInput {
   kickDrawer: boolean;
 }
 
+export interface TipsSettlementMethod {
+  method: string;
+  amount: string;
+}
+
 export interface TipsSettlementLine {
   participant: string;
   amount: string;
@@ -70,10 +75,15 @@ export interface TipsSettlementLine {
 export interface TipsSettlementTemplateInput {
   paper: PaperWidth;
   period: string;
+  methods: readonly TipsSettlementMethod[];
+  rule: string;
+  residue: string;
   lines: readonly TipsSettlementLine[];
   total: string;
   kickDrawer: boolean;
 }
+
+const SIGNATURE_LINE = `Signature ${"_".repeat(22)}`;
 
 export interface InvoiceTemplateInput {
   paper: PaperWidth;
@@ -186,7 +196,17 @@ export const renderTipsSettlement = (
     "Tips settlement",
     "Period",
     input.period,
-    ...input.lines.map((line) => `${line.participant} ${line.amount}`),
+    "Payment methods",
+    ...input.methods.map((method) => `${method.method} ${method.amount}`),
+    "Rule",
+    input.rule,
+    "Residue",
+    input.residue,
+    ...input.lines.flatMap((line) => [
+      "Share",
+      `${line.participant} ${line.amount}`,
+      SIGNATURE_LINE,
+    ]),
     "Total",
     input.total,
   ]);

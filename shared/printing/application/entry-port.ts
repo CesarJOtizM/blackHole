@@ -1,4 +1,15 @@
 export type {
+  DispatchablePrintJob,
+  DispatchPrinter,
+  PrintDelivery,
+} from "#application/dispatch-print-jobs/dispatch-print-jobs.js";
+export {
+  DispatchJobRepository,
+  DispatchPrinterRepository,
+  DispatchPrintJobs,
+  PrintTransport,
+} from "#application/dispatch-print-jobs/dispatch-print-jobs.js";
+export type {
   ConfiguredPrinter,
   EnqueuePrintJobCommand,
   PrintJob,

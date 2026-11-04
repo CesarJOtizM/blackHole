@@ -11,6 +11,7 @@ import {
   renderTipsSettlement,
   renderTransfer,
   type TipsSettlementLine,
+  type TipsSettlementMethod,
 } from "#domain/templates.js";
 
 export class PrinterNotConfigured extends Error {
@@ -98,6 +99,9 @@ export type EnqueuePrintJobCommand =
   | (PrintCommand & {
       document: "tips_settlement";
       period: string;
+      methods: readonly TipsSettlementMethod[];
+      rule: string;
+      residue: string;
       lines: readonly TipsSettlementLine[];
       total: string;
     });
@@ -164,6 +168,9 @@ const renderJob = (
         paper,
         kickDrawer,
         period: command.period,
+        methods: command.methods,
+        rule: command.rule,
+        residue: command.residue,
         lines: command.lines,
         total: command.total,
       });
