@@ -141,6 +141,7 @@ export const checks = pgTable(
     venueId: text("venue_id").notNull(),
     tableId: text("table_id").notNull(),
     openedAt: text("opened_at").notNull(),
+    waiterId: text("waiter_id"),
     firstSentAt: text("first_sent_at"),
     tableState: text("table_state").notNull(),
     preBillRequestedAt: text("pre_bill_requested_at"),

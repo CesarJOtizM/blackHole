@@ -50,20 +50,6 @@ export type ReassignCheckInput =
     })
   | TransferTableInput;
 
-interface OwnedCheck extends Check {
-  waiterId?: string;
-}
-
-const waiterOf = (check: Check): string | null => {
-  const waiterId = (check as OwnedCheck).waiterId;
-
-  return typeof waiterId === "string" ? waiterId : null;
-};
-
-const assignWaiter = (check: Check, waiterId: string): void => {
-  (check as OwnedCheck).waiterId = waiterId;
-};
-
 const loadCheck = async (
   diningRoom: DiningRoomRepository,
   tenantId: string,
@@ -208,9 +194,9 @@ export class ReassignCheck {
       return check;
     }
 
-    const previousWaiter = waiterOf(check);
+    const previousWaiter = check.waiterId;
 
-    assignWaiter(check, input.waiterId);
+    check.assignWaiter(input.waiterId);
     await this.diningRoom.saveCheck(check);
     await guard.audits.execute({
       tenantId: input.tenantId,

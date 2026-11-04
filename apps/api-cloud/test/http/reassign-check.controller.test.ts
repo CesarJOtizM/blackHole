@@ -447,7 +447,7 @@ const waiterOf = (check: Check | null): string | null => {
 const seatWaiter = async (diningRooms: InMemoryDiningRoomRepository) => {
   const check = await seatOccupiedCheck(diningRooms);
 
-  (check as Check & { waiterId?: string }).waiterId = currentWaiter;
+  check.assignWaiter(currentWaiter);
   await diningRooms.saveCheck(check);
 };
 
