@@ -24,7 +24,6 @@ const diningMigration = readFileSync(
   fileURLToPath(new URL("./0002_dining_room.sql", import.meta.url)),
   "utf8",
 );
-const waiterColumn = "ALTER TABLE checks ADD COLUMN waiter_id text";
 
 const clients: PGlite[] = [];
 
@@ -35,7 +34,6 @@ afterAll(async () => {
 const applyMigrations = async (client: PGlite): Promise<void> => {
   await client.exec(menuMigration);
   await client.exec(diningMigration);
-  await client.exec(waiterColumn);
 };
 
 diningRoomRepositoryContract(async () => {
@@ -398,21 +396,4 @@ it("given a line state, when the line is saved, then its timestamp is stored", a
       delivered_at: null,
     },
   ]);
-});
-
-it("given a transferred check, when it is saved and loaded, then the waiter still owns it", async () => {
-  const client = await openClient();
-  const repository = new DrizzleDiningRoomRepository(client);
-  const check = servedCheck();
-
-  check.assignWaiter("user_waiter");
-  await repository.saveCheck(check);
-
-  const stored = await repository.loadCheck(TENANT_A, VENUE_ID, CHECK_ID);
-  const row = await client.query<{ waiter_id: string | null }>(
-    "SELECT waiter_id FROM checks",
-  );
-
-  expect(stored?.waiterId).toBe("user_waiter");
-  expect(row.rows).toEqual([{ waiter_id: "user_waiter" }]);
 });

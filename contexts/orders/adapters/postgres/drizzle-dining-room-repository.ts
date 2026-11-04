@@ -58,7 +58,6 @@ interface StoredCheck {
   venueId: string;
   tableId: string;
   openedAt: string;
-  waiterId: string | null;
   firstSentAt: string | null;
   tableState: string;
   preBillRequestedAt: string | null;
@@ -245,7 +244,6 @@ function snapshotCheck(check: Check): StoredCheck {
     venueId: check.venueId,
     tableId: check.tableId,
     openedAt: check.openedAt,
-    waiterId: check.waiterId,
     firstSentAt: check.firstSentAt ?? null,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequest?.requestedAt ?? null,
@@ -306,7 +304,6 @@ async function replaceCheck(
     venueId: check.venueId,
     tableId: check.tableId,
     openedAt: check.openedAt,
-    waiterId: check.waiterId,
     firstSentAt: check.firstSentAt,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequestedAt,
@@ -427,10 +424,6 @@ function restoreCheck(
     tableId: row.tableId,
     openedAt: row.openedAt,
   });
-
-  if (row.waiterId !== null) {
-    check.assignWaiter(row.waiterId);
-  }
 
   for (const order of storedOrders) {
     for (const line of order.lines) {
