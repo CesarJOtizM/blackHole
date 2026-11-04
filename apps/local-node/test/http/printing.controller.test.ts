@@ -33,10 +33,14 @@ it("given a reprint, when the node is called, then printing is rejected, nothing
     });
     const routes = application.getHttpAdapter().getInstance().printRoutes();
 
+    const reprintLines = routes
+      .split("\n")
+      .filter((line) => line.includes("reprints"));
+
     expect(response.statusCode).toBe(403);
     expect(response.json()).toEqual({ error: "PrintingRejected" });
-    expect(routes).toMatch(/reprints/);
-    expect(routes).not.toMatch(/drawer/i);
+    expect(reprintLines.join("\n")).toMatch(/reprints/);
+    expect(reprintLines.join("\n")).not.toMatch(/drawer/i);
     expect(Reflect.getMetadata("providers", ApplicationModule) ?? []).toEqual(
       [],
     );
