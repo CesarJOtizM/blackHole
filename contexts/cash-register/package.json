@@ -33,6 +33,7 @@
     "#application/close-shift/*": "./application/close-shift/*",
     "#application/adjust-tip-settlement/*": "./application/adjust-tip-settlement/*",
     "#application/configure-tip-rule/*": "./application/configure-tip-rule/*",
+    "#application/print-tip-settlement/*": "./application/print-tip-settlement/*",
     "#application/settle-tips/*": "./application/settle-tips/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",

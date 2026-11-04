@@ -44,6 +44,7 @@ export { OpenShift } from "#application/open-shift/open-shift.js";
 export type {
   QueuedSaleReceipt,
   SaleReceiptJob,
+  TipsSettlementJob,
 } from "#application/ports/printer.js";
 export { Printer } from "#application/ports/printer.js";
 export {
@@ -61,6 +62,11 @@ export type {
   TipPoolQuery,
 } from "#application/ports/tip-pool.js";
 export { TipPool } from "#application/ports/tip-pool.js";
+export type {
+  PrintedTipSettlement,
+  PrintTipSettlementCommand,
+} from "#application/print-tip-settlement/print-tip-settlement.js";
+export { PrintTipSettlement } from "#application/print-tip-settlement/print-tip-settlement.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,
