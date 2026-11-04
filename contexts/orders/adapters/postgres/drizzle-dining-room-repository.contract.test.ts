@@ -24,10 +24,7 @@ const diningMigration = readFileSync(
   fileURLToPath(new URL("./0002_dining_room.sql", import.meta.url)),
   "utf8",
 );
-const waiterMigration = readFileSync(
-  fileURLToPath(new URL("./0003_check_waiter.sql", import.meta.url)),
-  "utf8",
-);
+const waiterColumn = "ALTER TABLE checks ADD COLUMN waiter_id text";
 
 const clients: PGlite[] = [];
 
@@ -38,7 +35,7 @@ afterAll(async () => {
 const applyMigrations = async (client: PGlite): Promise<void> => {
   await client.exec(menuMigration);
   await client.exec(diningMigration);
-  await client.exec(waiterMigration);
+  await client.exec(waiterColumn);
 };
 
 diningRoomRepositoryContract(async () => {
