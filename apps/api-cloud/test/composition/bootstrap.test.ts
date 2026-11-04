@@ -6,9 +6,14 @@ import { ClockEntryRepository } from "@blackhole/attendance/application/ports/cl
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import {
   ApproveVariance,
+  ChangeTender,
   ChargeCheck,
   CloseShift,
+  OpenDrawer,
   OpenShift,
+  OriginalPaymentReader,
+  PaidAccountReader,
+  ReopenPaidAccount,
   SubmitCount,
 } from "@blackhole/cash-register/application/entry-port";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
@@ -33,10 +38,14 @@ import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-pri
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import {
+  ApplyCourtesy,
+  ApplyDiscount,
   ChangeLineState,
+  ChangePrice,
   ConfigureStationRoute,
   GetCheck,
   MarkTableReady,
+  OpenShiftReader,
   OpenTable,
   PlaceTable,
   RealtimeHub,
@@ -46,6 +55,8 @@ import {
   TakeOrder,
   ViewStationQueue,
   ViewTableMap,
+  VoidAccount,
+  VoidLine,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
@@ -71,6 +82,11 @@ import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in
 import { InMemoryRuntimeMetrics } from "@blackhole/platform/adapters/memory/in-memory-runtime-metrics";
 import { InMemorySecrets } from "@blackhole/platform/adapters/memory/in-memory-secrets";
 import { InMemoryVenueOperationRepository } from "@blackhole/platform/adapters/memory/in-memory-venue-operation-repository";
+import {
+  DetectUnusualBehavior,
+  EvaluatePermission,
+  ReadControlReport,
+} from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
 import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
@@ -104,6 +120,11 @@ import {
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
+import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
+import {
+  MissingOriginalPaymentReader,
+  MissingPaidAccountReader,
+} from "#src/composition/missing-sale-readers.js";
 import { createApplication } from "#src/composition/create-application.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
@@ -151,6 +172,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
     const repository = application.get(VenueOperationRepository);
     const organizationRepository = application.get(OrganizationRepository);
     const identityRepository = application.get(IdentityRepository);
+
+    const guardedInject = [
+      DiningRoomRepository,
+      OpenShiftReader,
+      AuditRepository,
+      AuditDigest,
+      Clock,
+      AuthorizationRepository,
+      SessionReader,
+      IdentityReader,
+      AuthorizationClock,
+    ];
 
     expect(registered.providers).toEqual([
       {
@@ -242,6 +275,18 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         useValue: new InMemoryDiningRoomRepository(),
       },
       {
+        provide: OpenShiftReader,
+        useValue: new ClosedShiftReader(),
+      },
+      {
+        provide: PaidAccountReader,
+        useValue: new MissingPaidAccountReader(),
+      },
+      {
+        provide: OriginalPaymentReader,
+        useValue: new MissingOriginalPaymentReader(),
+      },
+      {
         provide: StationRouteRepository,
         useValue: new InMemoryStationRouteRepository(),
       },
@@ -328,7 +373,7 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: ReassignCheck,
         useFactory: expect.any(Function),
-        inject: [DiningRoomRepository],
+        inject: guardedInject,
       },
       {
         provide: Printer,
@@ -353,6 +398,81 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
           Printer,
           OrdersClock,
           RealtimeHub,
+          OpenShiftReader,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: VoidLine,
+        useFactory: expect.any(Function),
+        inject: guardedInject,
+      },
+      {
+        provide: VoidAccount,
+        useFactory: expect.any(Function),
+        inject: guardedInject,
+      },
+      {
+        provide: ApplyDiscount,
+        useFactory: expect.any(Function),
+        inject: guardedInject,
+      },
+      {
+        provide: ApplyCourtesy,
+        useFactory: expect.any(Function),
+        inject: guardedInject,
+      },
+      {
+        provide: ChangePrice,
+        useFactory: expect.any(Function),
+        inject: guardedInject,
+      },
+      {
+        provide: OpenDrawer,
+        useFactory: expect.any(Function),
+        inject: [
+          OrganizationRepository,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: ReopenPaidAccount,
+        useFactory: expect.any(Function),
+        inject: [
+          PaidAccountReader,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: ChangeTender,
+        useFactory: expect.any(Function),
+        inject: [
+          OriginalPaymentReader,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
         ],
       },
       {
@@ -468,6 +588,26 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
       {
         provide: StructurePrinters,
         useValue: new StructurePrinters(),
+      },
+      {
+        provide: EvaluatePermission,
+        useFactory: expect.any(Function),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: ReadControlReport,
+        useFactory: expect.any(Function),
+        inject: [AuditRepository, EvaluatePermission],
+      },
+      {
+        provide: DetectUnusualBehavior,
+        useFactory: expect.any(Function),
+        inject: [AuditRepository],
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);
