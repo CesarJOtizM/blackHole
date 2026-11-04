@@ -31,6 +31,7 @@
     "#application/submit-count/*": "./application/submit-count/*",
     "#application/approve-variance/*": "./application/approve-variance/*",
     "#application/close-shift/*": "./application/close-shift/*",
+    "#application/configure-tip-rule/*": "./application/configure-tip-rule/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/manual-terminal/*": "./adapters/manual-terminal/*",
