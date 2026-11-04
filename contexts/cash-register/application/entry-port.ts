@@ -48,6 +48,17 @@ export {
   RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
+export type {
+  TipParticipant,
+  TipParticipantQuery,
+} from "#application/ports/tip-participant-source.js";
+export { TipParticipantSource } from "#application/ports/tip-participant-source.js";
+export type {
+  RecordedPaymentTip,
+  TipMethodTotal,
+  TipPoolQuery,
+} from "#application/ports/tip-pool.js";
+export { TipPool } from "#application/ports/tip-pool.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,
@@ -61,6 +72,19 @@ export {
   PaidAccountReader,
   ReopenPaidAccount,
 } from "#application/reopen-paid-account/reopen-paid-account.js";
+export type {
+  ClosedTipSettlement,
+  SettleTipsCommand,
+  TipParticipantAddition,
+  TipParticipantEdit,
+  TipParticipantRemoval,
+} from "#application/settle-tips/settle-tips.js";
+export {
+  MissingTipRule,
+  ParticipantChangeReasonRequired,
+  SettleTips,
+  TipSettlementStore,
+} from "#application/settle-tips/settle-tips.js";
 export type {
   PayAccountPartInput,
   SplitAccountInput,
