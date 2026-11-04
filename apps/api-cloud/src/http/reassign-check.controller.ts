@@ -210,7 +210,7 @@ export class ReassignCheckController {
 
       return {
         checkId: saved.id,
-        waiterId: waiterOf(saved),
+        waiterId: saved.waiterId,
       };
     } catch (error: unknown) {
       const rejection = domainRejectionName(error);
@@ -277,12 +277,6 @@ export class ReassignCheckController {
       throw error;
     }
   }
-}
-
-function waiterOf(check: object): string | null {
-  const waiterId = (check as { waiterId?: unknown }).waiterId;
-
-  return typeof waiterId === "string" ? waiterId : null;
 }
 
 function readText(header: unknown): string | null {

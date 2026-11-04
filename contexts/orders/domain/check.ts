@@ -268,6 +268,7 @@ export class Check {
   private firstSentAtValue: string | undefined;
   private tableStateValue: TableState = "occupied";
   private preBillRequestValue: PreBillRequest | undefined;
+  private waiterIdValue: string | null = null;
 
   private constructor(input: OpenCheck) {
     this.id = input.id;
@@ -289,6 +290,14 @@ export class Check {
 
   get tableState(): TableState {
     return this.tableStateValue;
+  }
+
+  get waiterId(): string | null {
+    return this.waiterIdValue;
+  }
+
+  assignWaiter(waiterId: string): void {
+    this.waiterIdValue = waiterId;
   }
 
   get preBillRequest(): PreBillRequest | undefined {

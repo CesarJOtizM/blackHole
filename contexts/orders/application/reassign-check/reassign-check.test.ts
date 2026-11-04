@@ -433,15 +433,11 @@ const needsGrant = (): Decision => ({
 
 const denied = (): Decision => ({ outcome: "denied", selfAuthorized: false });
 
-const waiterOf = (check: Check | null | undefined): string | null => {
-  const waiterId = (check as { waiterId?: unknown } | null | undefined)
-    ?.waiterId;
-
-  return typeof waiterId === "string" ? waiterId : null;
-};
+const waiterOf = (check: Check | null | undefined): string | null =>
+  check?.waiterId ?? null;
 
 const seatWaiter = (check: Check, waiterId: string) => {
-  (check as Check & { waiterId: string }).waiterId = waiterId;
+  check.assignWaiter(waiterId);
 };
 
 const transferCommand = (
