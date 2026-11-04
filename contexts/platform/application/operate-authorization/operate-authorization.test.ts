@@ -752,7 +752,8 @@ it("given a discount request carrying the target and shift totals, when the supe
     new FixedAuditDigest(),
     new FakeClock(AT),
   );
-  const { authorizations, sessions, identities, operate } = harness(recordAudit);
+  const { authorizations, sessions, identities, operate } =
+    harness(recordAudit);
   const authorization = Authorization.open(TENANT_ID);
   authorization.appointOwner({
     assignmentId: "assignment_owner",

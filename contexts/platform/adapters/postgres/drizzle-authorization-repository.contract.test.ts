@@ -364,12 +364,12 @@ it("given an alert, when authorization_app inserts it, then update and delete ar
   await expect(
     client.exec("UPDATE authorization_alerts SET kind = 'discounts'"),
   ).rejects.toThrow(/insert-only/);
-  await expect(
-    client.exec("DELETE FROM authorization_alerts"),
-  ).rejects.toThrow(/insert-only/);
-  await expect(
-    client.exec("TRUNCATE authorization_alerts"),
-  ).rejects.toThrow(/insert-only/);
+  await expect(client.exec("DELETE FROM authorization_alerts")).rejects.toThrow(
+    /insert-only/,
+  );
+  await expect(client.exec("TRUNCATE authorization_alerts")).rejects.toThrow(
+    /insert-only/,
+  );
 
   await asAuthorizationApp(client, "organization_company_a");
   await client.exec(`
@@ -390,9 +390,9 @@ it("given an alert, when authorization_app inserts it, then update and delete ar
   await expect(
     client.exec("UPDATE authorization_alerts SET kind = 'discounts'"),
   ).rejects.toThrow(/permission denied/);
-  await expect(
-    client.exec("DELETE FROM authorization_alerts"),
-  ).rejects.toThrow(/permission denied/);
+  await expect(client.exec("DELETE FROM authorization_alerts")).rejects.toThrow(
+    /permission denied/,
+  );
 
   const visible = await client.query<{ id: string }>(
     "SELECT id FROM authorization_alerts ORDER BY id",
