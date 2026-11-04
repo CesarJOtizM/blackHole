@@ -12,7 +12,14 @@ export interface CashCloseJob {
   kickDrawer: false;
 }
 
-export type SaleReceiptJob = OfflineReceiptJob | CashCloseJob;
+export interface DrawerOpenJob {
+  commandId: string;
+  printerId: string;
+  document: "drawer_open";
+  kickDrawer: true;
+}
+
+export type SaleReceiptJob = OfflineReceiptJob | CashCloseJob | DrawerOpenJob;
 
 export interface QueuedSaleReceipt {
   status: "waiting" | "printed" | "failed";

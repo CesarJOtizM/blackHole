@@ -1,4 +1,17 @@
 export { AcceptCloudWrite } from "#application/accept-cloud-write/accept-cloud-write.js";
+export type { ConsumeAuthorizationInput } from "#application/consume-authorization/consume-authorization.js";
+export {
+  AuthorizationAlreadyConsumed,
+  ConsumeAuthorization,
+} from "#application/consume-authorization/consume-authorization.js";
+export type { CountExecutedOperationsQuery } from "#application/count-executed-operations/count-executed-operations.js";
+export { CountExecutedOperations } from "#application/count-executed-operations/count-executed-operations.js";
+export type {
+  DetectUnusualBehaviorQuery,
+  UnusualBehaviorAlert,
+  VenueUnusualBehaviorThresholds,
+} from "#application/detect-unusual-behavior/detect-unusual-behavior.js";
+export { DetectUnusualBehavior } from "#application/detect-unusual-behavior/detect-unusual-behavior.js";
 export { EvaluatePermission } from "#application/evaluate-permission/evaluate-permission.js";
 export type { AuthorizationCommand } from "#application/operate-authorization/operate-authorization.js";
 export {
@@ -29,6 +42,11 @@ export {
   AuditReadDenied,
   ReadAudit,
 } from "#application/read-audit/read-audit.js";
+export type {
+  ControlReport,
+  ReadControlReportQuery,
+} from "#application/read-control-report/read-control-report.js";
+export { ReadControlReport } from "#application/read-control-report/read-control-report.js";
 export { RecordAuditEvent } from "#application/record-audit-event/record-audit-event.js";
 export { UpdateStructure } from "#application/update-structure/update-structure.js";
 export {

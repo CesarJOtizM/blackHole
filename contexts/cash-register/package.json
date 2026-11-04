@@ -11,6 +11,7 @@
     "./adapters/postgres/drizzle-cash-register-repository": "./adapters/postgres/drizzle-cash-register-repository.js"
   },
   "dependencies": {
+    "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "drizzle-orm": "catalog:"
   },
@@ -21,7 +22,10 @@
     "#domain/*": "./domain/*",
     "#application/*": "./application/*",
     "#application/open-shift/*": "./application/open-shift/*",
+    "#application/open-drawer/*": "./application/open-drawer/*",
+    "#application/reopen-paid-account/*": "./application/reopen-paid-account/*",
     "#application/record-movement/*": "./application/record-movement/*",
+    "#application/change-tender/*": "./application/change-tender/*",
     "#application/charge-check/*": "./application/charge-check/*",
     "#application/split-account/*": "./application/split-account/*",
     "#application/submit-count/*": "./application/submit-count/*",

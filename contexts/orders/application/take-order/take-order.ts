@@ -1,6 +1,16 @@
+import {
+  type ConsumeAuthorization,
+  type CountExecutedOperations,
+  type EvaluatePermission,
+  PERMISSION,
+  type RecordAuditEvent,
+  UnknownAuthorizationReference,
+} from "@blackhole/platform/application/entry-port";
+
 import type { Clock } from "#application/ports/clock.js";
 import type { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
 import type { MenuRepository } from "#application/ports/menu-repository.js";
+import type { OpenShiftReader } from "#application/ports/open-shift-reader.js";
 import type { Printer, PrintJobStatus } from "#application/ports/printer.js";
 import type { RealtimeHub } from "#application/ports/realtime-hub.js";
 import type { StationDirectory } from "#application/ports/station-directory.js";
@@ -40,6 +50,24 @@ export interface TakeOrderLine {
   note?: string;
 }
 
+export interface PrintedCheckEdit {
+  actorId: string;
+  authorizerId: string | null;
+  sessionId: string;
+  deviceId: string;
+  shiftId: string;
+  reason: string;
+  authorizationId: string | null;
+}
+
+export interface PrintedCheckGuard {
+  shifts: OpenShiftReader;
+  counts: CountExecutedOperations;
+  permissions: EvaluatePermission;
+  grants: ConsumeAuthorization;
+  audits: RecordAuditEvent;
+}
+
 export interface TakeOrderInput {
   tenantId: string;
   brandId: string;
@@ -47,6 +75,7 @@ export interface TakeOrderInput {
   checkId: string;
   course: number;
   lines: readonly TakeOrderLine[];
+  edit?: PrintedCheckEdit;
 }
 
 export interface ResendOrderInput {
@@ -62,6 +91,7 @@ export interface HoldOrderLineInput {
   venueId: string;
   checkId: string;
   line: TakeOrderLine;
+  edit?: PrintedCheckEdit;
 }
 
 export interface FireCourseInput {
@@ -109,6 +139,7 @@ export class TakeOrder {
     private readonly printer: Printer,
     private readonly clock: Clock,
     private readonly hub: RealtimeHub,
+    private readonly printedCheck?: PrintedCheckGuard,
   ) {}
 
   async execute(input: TakeOrderInput): Promise<Check> {
@@ -183,6 +214,16 @@ export class TakeOrder {
         modifierIds: [...(line.modifierIds ?? [])],
       }),
     }));
+    const addedValue = priced.reduce((sum, item) => sum + item.price, 0);
+    const accepted = await this.acceptPrintedCheckEdit(
+      check,
+      input.edit,
+      addedValue,
+    );
+
+    if (!accepted) {
+      return check;
+    }
 
     for (const { line, price } of priced) {
       check.addLine({
@@ -206,6 +247,7 @@ export class TakeOrder {
       firing.map((line) => line.lineId),
       tickets,
     );
+    await this.auditPrintedCheckEdit(check, input.edit, addedValue);
 
     return check;
   }
@@ -270,17 +312,28 @@ export class TakeOrder {
       throw new ProductNotOrderable();
     }
 
+    const price = menu.quote({
+      venueId: check.venueId,
+      productId: line.productId,
+      modifierIds: [...(line.modifierIds ?? [])],
+    });
+    const accepted = await this.acceptPrintedCheckEdit(
+      check,
+      input.edit,
+      price,
+    );
+
+    if (!accepted) {
+      return check;
+    }
+
     check.addLine({
       orderId: line.orderId,
       lineId: line.lineId,
       productId: line.productId,
       name: line.name,
       course: line.course,
-      price: menu.quote({
-        venueId: check.venueId,
-        productId: line.productId,
-        modifierIds: [...(line.modifierIds ?? [])],
-      }),
+      price,
       channel: line.channel,
       ...(line.kind === undefined ? {} : { kind: line.kind }),
       variantIds: [...(line.variantIds ?? [])],
@@ -288,6 +341,7 @@ export class TakeOrder {
       ...(line.note === undefined ? {} : { note: line.note }),
     });
     await this.diningRoom.saveCheck(check);
+    await this.auditPrintedCheckEdit(check, input.edit, price);
 
     return check;
   }
@@ -436,6 +490,117 @@ export class TakeOrder {
       lineId: ticket.lineId,
       stationId: ticket.stationId,
       ...(ticket.screen ? {} : { text: rendered.text }),
+    });
+  }
+
+  private async acceptPrintedCheckEdit(
+    check: Check,
+    edit: PrintedCheckEdit | undefined,
+    value: number,
+  ): Promise<boolean> {
+    if (check.preBillRequest === undefined) {
+      return true;
+    }
+
+    const guard = this.printedCheck;
+
+    if (guard === undefined || edit === undefined) {
+      return false;
+    }
+
+    const open = await guard.shifts.isOpen({
+      tenantId: check.tenantId,
+      venueId: check.venueId,
+      shiftId: edit.shiftId,
+    });
+
+    if (!open) {
+      return false;
+    }
+
+    const shiftTotals = await guard.counts.execute({
+      tenantId: check.tenantId,
+      actorId: edit.actorId,
+      shiftId: edit.shiftId,
+    });
+    const decision = await guard.permissions.execute({
+      tenantId: check.tenantId,
+      sessionId: edit.sessionId,
+      permission: PERMISSION.SALE_EDIT_PRINTED_CHECK,
+      target: { kind: "site", id: check.venueId, brandId: null },
+      value,
+      supportGrantId: null,
+      shiftTotals,
+    });
+
+    if (decision.outcome === "denied") {
+      return false;
+    }
+
+    if (decision.outcome === "requires_authorization") {
+      return this.consumePrintedCheckGrant(guard, check, edit, value);
+    }
+
+    return decision.outcome === "allowed";
+  }
+
+  private async consumePrintedCheckGrant(
+    guard: PrintedCheckGuard,
+    check: Check,
+    edit: PrintedCheckEdit,
+    value: number,
+  ): Promise<boolean> {
+    if (edit.authorizationId === null) {
+      return false;
+    }
+
+    try {
+      return await guard.grants.execute({
+        tenantId: check.tenantId,
+        authorizationId: edit.authorizationId,
+        permission: PERMISSION.SALE_EDIT_PRINTED_CHECK,
+        targetId: check.id,
+        value,
+      });
+    } catch (error: unknown) {
+      if (error instanceof UnknownAuthorizationReference) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
+  private async auditPrintedCheckEdit(
+    check: Check,
+    edit: PrintedCheckEdit | undefined,
+    value: number,
+  ): Promise<void> {
+    const guard = this.printedCheck;
+
+    if (
+      check.preBillRequest === undefined ||
+      edit === undefined ||
+      guard === undefined
+    ) {
+      return;
+    }
+
+    await guard.audits.execute({
+      tenantId: check.tenantId,
+      actorId: edit.actorId,
+      authorizerId: edit.authorizerId,
+      deviceId: edit.deviceId,
+      siteId: check.venueId,
+      action: PERMISSION.SALE_EDIT_PRINTED_CHECK,
+      entity: check.id,
+      before: { value: 0 },
+      after: {
+        value,
+        shiftId: edit.shiftId,
+        kitchen: null,
+      },
+      reason: edit.reason,
     });
   }
 }

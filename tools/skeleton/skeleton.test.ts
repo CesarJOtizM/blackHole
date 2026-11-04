@@ -164,6 +164,11 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
         "in-memory-venue-operation-repository.ts",
       ),
       path.join("adapters", "postgres", "drizzle-audit-repository.ts"),
+      path.join(
+        "adapters",
+        "postgres",
+        "drizzle-authorization-repository.contract.test.ts",
+      ),
       path.join("adapters", "postgres", "drizzle-authorization-repository.ts"),
       path.join("adapters", "postgres", "drizzle-identity-repository.ts"),
       path.join(
@@ -194,7 +199,27 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
       path.join("adapters", "metrics-gcp", "gcp-runtime-metrics.ts"),
       path.join("adapters", "metrics-log", "log-runtime-metrics.ts"),
       path.join("application", "accept-cloud-write", "accept-cloud-write.ts"),
+      path.join(
+        "application",
+        "consume-authorization",
+        "consume-authorization.ts",
+      ),
+      path.join(
+        "application",
+        "count-executed-operations",
+        "count-executed-operations.ts",
+      ),
+      path.join(
+        "application",
+        "detect-unusual-behavior",
+        "detect-unusual-behavior.ts",
+      ),
       path.join("application", "evaluate-permission", "evaluate-permission.ts"),
+      path.join(
+        "application",
+        "operate-authorization",
+        "operate-authorization.test.ts",
+      ),
       path.join(
         "application",
         "operate-authorization",
@@ -237,6 +262,7 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
         "venue-operation-repository.contract.ts",
       ),
       path.join("application", "read-audit", "read-audit.ts"),
+      path.join("application", "read-control-report", "read-control-report.ts"),
       path.join(
         "application",
         "record-audit-event",
@@ -284,6 +310,7 @@ it("given local-node, when its sources are listed, then the structure rejection 
       path.join("http", "operate-devices.controller.ts"),
       path.join("http", "operate-identity.controller.ts"),
       path.join("http", "printing.controller.ts"),
+      path.join("http", "sensitive-actions.controller.ts"),
       path.join("http", "tax.controller.ts"),
       path.join("http", "update-menu.controller.ts"),
       path.join("http", "update-structure.controller.ts"),

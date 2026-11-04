@@ -1,7 +1,21 @@
+import {
+  AuthorizationAlreadyConsumed,
+  type ConsumeAuthorization,
+  type ConsumeAuthorizationInput,
+  type CountExecutedOperations,
+  type EvaluatePermission,
+  PERMISSION,
+  type RecordAuditEvent,
+  UnknownAuthorizationReference,
+} from "@blackhole/platform/application/entry-port";
 import { expect, it, vi } from "vitest";
 
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
-import { ReassignCheck } from "#application/reassign-check/reassign-check.js";
+import type { OpenShiftReader } from "#application/ports/open-shift-reader.js";
+import {
+  ReassignCheck,
+  type ReassignCheckInput,
+} from "#application/reassign-check/reassign-check.js";
 import { Check, TableNotOpen } from "#domain/check.js";
 import { DiningTable, type TableState } from "#domain/dining-table.js";
 
@@ -386,4 +400,321 @@ it("given a join, when both checks change, then one save covers both checks", as
   expect(
     (await dining.loadCheck(TENANT_ID, VENUE_ID, SOURCE_CHECK_ID))?.orders,
   ).toEqual([]);
+});
+
+const CURRENT_WAITER = "user_current";
+const NEW_WAITER = "user_w";
+const SUPERVISOR_ID = "user_supervisor";
+const SHIFT_ID = "shift_1";
+const REQUEST_ID = "request_transfer";
+const REASON = "Section change";
+const COUNTED = { waiterVoidsBeforeKitchen: 1, compShiftCop: 0 };
+const blank = {} as never;
+
+type Decision = Awaited<ReturnType<EvaluatePermission["execute"]>>;
+type AuditCommand = Parameters<RecordAuditEvent["execute"]>[0];
+type CountQuery = { tenantId: string; actorId: string; shiftId: string };
+type PermissionInput = Parameters<EvaluatePermission["execute"]>[0];
+type GrantMode = "match" | "consumed" | "unknown";
+
+interface StoredGrant {
+  authorizationId: string;
+  targetId: string;
+  value: number | null;
+}
+
+const allowed = (): Decision => ({ outcome: "allowed", selfAuthorized: false });
+
+const needsGrant = (): Decision => ({
+  outcome: "requires_authorization",
+  exceededLimit: null,
+  selfAuthorized: false,
+});
+
+const denied = (): Decision => ({ outcome: "denied", selfAuthorized: false });
+
+const waiterOf = (check: Check | null | undefined): string | null => {
+  const waiterId = (check as { waiterId?: unknown } | null | undefined)
+    ?.waiterId;
+
+  return typeof waiterId === "string" ? waiterId : null;
+};
+
+const seatWaiter = (check: Check, waiterId: string) => {
+  (check as Check & { waiterId: string }).waiterId = waiterId;
+};
+
+const transferCommand = (
+  authorizationId: string | null = null,
+  authorizerId: string | null = null,
+): ReassignCheckInput => ({
+  kind: "transfer-table",
+  tenantId: TENANT_ID,
+  venueId: VENUE_ID,
+  checkId: TARGET_CHECK_ID,
+  waiterId: NEW_WAITER,
+  actorId: SUPERVISOR_ID,
+  authorizerId,
+  sessionId: "session_supervisor",
+  deviceId: "device_floor",
+  shiftId: SHIFT_ID,
+  reason: REASON,
+  authorizationId,
+});
+
+const matchingGrant = {
+  authorizationId: REQUEST_ID,
+  targetId: TARGET_CHECK_ID,
+  value: STEAK.price,
+};
+
+const consumeCall = {
+  tenantId: TENANT_ID,
+  authorizationId: REQUEST_ID,
+  permission: PERMISSION.SALE_TRANSFER_TABLE,
+  targetId: TARGET_CHECK_ID,
+  value: STEAK.price,
+};
+
+const transferHarness = async (options: {
+  decision?: Decision;
+  open?: boolean;
+  grant?: StoredGrant | null;
+  mode?: GrantMode;
+}) => {
+  const { dining, target } = await seat({
+    targetTable: "occupied",
+    sourceTable: "occupied",
+  });
+  const steps: string[] = [];
+  const queries: CountQuery[] = [];
+  const inputs: PermissionInput[] = [];
+  const calls: ConsumeAuthorizationInput[] = [];
+  const commands: AuditCommand[] = [];
+  const grant = options.grant === undefined ? matchingGrant : options.grant;
+  const mode = options.mode ?? "match";
+  const open = options.open ?? true;
+  const saveCheck = dining.saveCheck.bind(dining);
+
+  seatWaiter(target, CURRENT_WAITER);
+  vi.spyOn(dining, "saveCheck").mockImplementation((check) => {
+    steps.push("save");
+    return saveCheck(check);
+  });
+
+  return {
+    dining,
+    steps,
+    queries,
+    inputs,
+    calls,
+    commands,
+    reassign: new ReassignCheck(dining, {
+      shifts: { isOpen: () => Promise.resolve(open) } as OpenShiftReader,
+      counts: {
+        execute(query: CountQuery) {
+          steps.push("count");
+          queries.push(query);
+          return Promise.resolve(COUNTED);
+        },
+      } as CountExecutedOperations,
+      permissions: {
+        execute(input: PermissionInput) {
+          steps.push("evaluate");
+          inputs.push(input);
+          return Promise.resolve(options.decision ?? needsGrant());
+        },
+      } as EvaluatePermission,
+      grants: {
+        execute(input: ConsumeAuthorizationInput) {
+          steps.push("consume");
+          calls.push(input);
+
+          if (mode === "consumed") {
+            throw new AuthorizationAlreadyConsumed();
+          }
+
+          if (mode === "unknown") {
+            throw new UnknownAuthorizationReference();
+          }
+
+          return Promise.resolve(
+            grant !== null &&
+              input.authorizationId === grant.authorizationId &&
+              input.permission === PERMISSION.SALE_TRANSFER_TABLE &&
+              input.targetId === grant.targetId &&
+              input.value === grant.value,
+          );
+        },
+      } as ConsumeAuthorization,
+      audits: {
+        execute(command: AuditCommand) {
+          steps.push("audit");
+          commands.push(command);
+          return Promise.resolve(blank);
+        },
+      } as unknown as RecordAuditEvent,
+    }),
+  };
+};
+
+const expectCurrentWaiter = async (dining: MemoryDiningRoom) => {
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, TARGET_CHECK_ID);
+
+  expect(waiterOf(stored)).toBe(CURRENT_WAITER);
+  expect(stored?.tableId).toBe(TARGET_TABLE_ID);
+  expect(linesOf(stored).map((line) => line.id)).toEqual(["line_steak"]);
+};
+
+it("given a supervisor allowed to transfer, when she moves table 5 to waiter W, then W owns it and the change is audited", async () => {
+  const { dining, steps, queries, inputs, calls, commands, reassign } =
+    await transferHarness({ decision: allowed(), grant: null });
+
+  await reassign.execute(transferCommand());
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, TARGET_CHECK_ID);
+  expect(waiterOf(stored)).toBe(NEW_WAITER);
+  expect(stored?.tableId).toBe(TARGET_TABLE_ID);
+  expect(linesOf(stored).map((line) => line.id)).toEqual(["line_steak"]);
+  expect(calls).toEqual([]);
+  expect(queries).toEqual([
+    { tenantId: TENANT_ID, actorId: SUPERVISOR_ID, shiftId: SHIFT_ID },
+  ]);
+  expect(inputs[0]).toMatchObject({
+    permission: PERMISSION.SALE_TRANSFER_TABLE,
+    value: STEAK.price,
+    shiftTotals: COUNTED,
+    supportGrantId: null,
+    target: { kind: "site", id: VENUE_ID, brandId: null },
+  });
+  expect(steps).toEqual(["count", "evaluate", "save", "audit"]);
+  expect(commands[0]).toMatchObject({
+    actorId: SUPERVISOR_ID,
+    authorizerId: null,
+    deviceId: "device_floor",
+    siteId: VENUE_ID,
+    action: PERMISSION.SALE_TRANSFER_TABLE,
+    entity: TARGET_CHECK_ID,
+    reason: REASON,
+    before: { waiterId: CURRENT_WAITER },
+    after: {
+      value: STEAK.price,
+      shiftId: SHIFT_ID,
+      kitchen: null,
+      waiterId: NEW_WAITER,
+    },
+  });
+  expect(commands[0]?.after).not.toHaveProperty("pin");
+});
+
+it("given a transfer that requires authorization, when the grant matches the check, then the grant is consumed before waiter W owns table 5", async () => {
+  const { dining, steps, calls, commands, reassign } = await transferHarness({
+    decision: needsGrant(),
+  });
+
+  await reassign.execute(transferCommand(REQUEST_ID, SUPERVISOR_ID));
+
+  expect(
+    waiterOf(await dining.loadCheck(TENANT_ID, VENUE_ID, TARGET_CHECK_ID)),
+  ).toBe(NEW_WAITER);
+  expect(calls).toEqual([consumeCall]);
+  expect(steps).toEqual(["count", "evaluate", "consume", "save", "audit"]);
+  expect(commands[0]?.after).toMatchObject({
+    value: STEAK.price,
+    shiftId: SHIFT_ID,
+    kitchen: null,
+    waiterId: NEW_WAITER,
+  });
+});
+
+it("given a missing grant, a mismatch, a denial, a closed shift, or an unknown authorization, when the supervisor transfers table 5, then the current waiter stays", async () => {
+  const stayed = [
+    {
+      grant: null,
+      authorizationId: null,
+      calls: [],
+      steps: ["count", "evaluate"],
+    },
+    {
+      grant: {
+        authorizationId: REQUEST_ID,
+        targetId: "check_other",
+        value: STEAK.price,
+      },
+      authorizationId: REQUEST_ID,
+      calls: [consumeCall],
+      steps: ["count", "evaluate", "consume"],
+    },
+    {
+      grant: {
+        authorizationId: REQUEST_ID,
+        targetId: TARGET_CHECK_ID,
+        value: 1,
+      },
+      authorizationId: REQUEST_ID,
+      calls: [consumeCall],
+      steps: ["count", "evaluate", "consume"],
+    },
+    {
+      decision: denied(),
+      grant: null,
+      authorizationId: null,
+      calls: [],
+      steps: ["count", "evaluate"],
+    },
+    {
+      open: false,
+      authorizationId: REQUEST_ID,
+      calls: [],
+      steps: [],
+    },
+    {
+      mode: "unknown" as const,
+      authorizationId: REQUEST_ID,
+      calls: [consumeCall],
+      steps: ["count", "evaluate", "consume"],
+    },
+  ];
+
+  for (const attempt of stayed) {
+    const { dining, steps, calls, commands, reassign } =
+      await transferHarness(attempt);
+
+    await reassign.execute(transferCommand(attempt.authorizationId));
+
+    await expectCurrentWaiter(dining);
+    expect(commands).toEqual([]);
+    expect(calls).toEqual(attempt.calls);
+    expect(steps).toEqual(attempt.steps);
+  }
+});
+
+it("given a matching grant that was already consumed, when the supervisor transfers table 5, then the error is raised and the current waiter stays", async () => {
+  const { dining, steps, commands, reassign } = await transferHarness({
+    decision: needsGrant(),
+    mode: "consumed",
+  });
+
+  await expect(
+    reassign.execute(transferCommand(REQUEST_ID, SUPERVISOR_ID)),
+  ).rejects.toBeInstanceOf(AuthorizationAlreadyConsumed);
+  await expectCurrentWaiter(dining);
+  expect(commands).toEqual([]);
+  expect(steps).toEqual(["count", "evaluate", "consume"]);
+});
+
+it("given the transfer ports are absent, when a supervisor moves table 5 to waiter W, then the current waiter stays", async () => {
+  const { dining, reassign, target } = await seat({
+    targetTable: "occupied",
+    sourceTable: "occupied",
+  });
+  const saveCheck = vi.spyOn(dining, "saveCheck");
+  const saveChecks = vi.spyOn(dining, "saveChecks");
+
+  seatWaiter(target, CURRENT_WAITER);
+  await reassign.execute(transferCommand());
+
+  await expectCurrentWaiter(dining);
+  expect(saveCheck).not.toHaveBeenCalled();
+  expect(saveChecks).not.toHaveBeenCalled();
 });

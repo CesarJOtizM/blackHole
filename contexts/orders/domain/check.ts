@@ -58,6 +58,11 @@ interface AddLine {
   note?: string;
 }
 
+interface ChangeLinePrice {
+  lineId: string;
+  price: number;
+}
+
 interface SendCourse {
   course: number;
   sentAt: string;
@@ -362,6 +367,19 @@ export class Check {
     }
 
     order.lines.push(line);
+  }
+
+  changePrice(input: ChangeLinePrice): void {
+    assertPrefixed(input.lineId, LINE_ID_PREFIX, () => new InvalidLineId());
+    assertCop(input.price);
+
+    const line = this.findLine(input.lineId);
+
+    if (!line) {
+      throw new InvalidLineId();
+    }
+
+    line.price = input.price;
   }
 
   send(input: SendCourse): void {

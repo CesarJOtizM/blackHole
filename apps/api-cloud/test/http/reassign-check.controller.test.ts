@@ -1,4 +1,8 @@
 import type { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
+import {
+  type OpenShiftQuery,
+  OpenShiftReader,
+} from "@blackhole/orders/application/entry-port";
 import { Check, DiningTable } from "@blackhole/orders/domain";
 import { expect, it } from "vitest";
 
@@ -13,6 +17,7 @@ import {
   openedAt,
   ownerId,
   postDining,
+  seatOccupiedCheck,
   tenantId,
   venueId,
 } from "#test/http/dining-room-session.js";
@@ -121,6 +126,7 @@ it("given table 6 joined into table 5, when POST /checks/reassign is injected, t
   try {
     expect(routePermissions).toEqual({
       "POST checks/reassign": "sale.move-items",
+      "POST checks/:checkId/transfer-table": "sale.transfer-table",
     });
     expect(application.get(ReassignCheckController)).toBeInstanceOf(
       ReassignCheckController,
@@ -407,6 +413,195 @@ it("given a free source table, when POST /checks/reassign is injected, then the 
     expect(
       (await diningRooms.load(tenantId, venueId, sourceTableId))?.state,
     ).toBe("free");
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+const currentWaiter = "user_current";
+const nextWaiter = "user_w";
+const transferShiftId = "shift_1";
+const transferReason = "Section change";
+const transferUrl = diningPath(`checks/${checkId}/transfer-table`);
+
+class OpenCloudShift extends OpenShiftReader {
+  override isOpen(_query: OpenShiftQuery): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+}
+
+const transferBody = {
+  reason: transferReason,
+  shiftId: transferShiftId,
+  authorizationId: null,
+  waiterId: nextWaiter,
+};
+
+const waiterOf = (check: Check | null): string | null => {
+  const waiterId = (check as { waiterId?: unknown } | null)?.waiterId;
+
+  return typeof waiterId === "string" ? waiterId : null;
+};
+
+const seatWaiter = async (diningRooms: InMemoryDiningRoomRepository) => {
+  const check = await seatOccupiedCheck(diningRooms);
+
+  (check as Check & { waiterId?: string }).waiterId = currentWaiter;
+  await diningRooms.saveCheck(check);
+};
+
+const storedWaiter = async (diningRooms: InMemoryDiningRoomRepository) =>
+  waiterOf(await diningRooms.loadCheck(tenantId, venueId, checkId));
+
+it("given a kitchen chief session and an open shift, when POST /checks/:checkId/transfer-table is injected, then the waiter stays and no transfer is audited", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud({
+    shifts: new OpenCloudShift(),
+  });
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await postDining(
+      application,
+      transferUrl,
+      "session_kitchen",
+      transferBody,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(await storedWaiter(diningRooms)).toBe(currentWaiter);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an owner session and a closed shift, when POST /checks/:checkId/transfer-table is injected, then the waiter stays and no transfer is audited", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud();
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await postDining(
+      application,
+      transferUrl,
+      "session_owner",
+      transferBody,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(await storedWaiter(diningRooms)).toBe(currentWaiter);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an owner session and an open shift, when POST /checks/:checkId/transfer-table is injected, then the waiter changes and the transfer is audited", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud({
+    shifts: new OpenCloudShift(),
+  });
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await postDining(
+      application,
+      transferUrl,
+      "session_owner",
+      transferBody,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(await storedWaiter(diningRooms)).toBe(nextWaiter);
+    expect(await audits.list(tenantId, null)).toEqual([
+      expect.objectContaining({
+        action: "sale.transfer-table",
+        actorId: ownerId,
+        authorizerId: null,
+        entity: checkId,
+        reason: transferReason,
+        before: { waiterId: currentWaiter },
+        after: {
+          value: 0,
+          shiftId: transferShiftId,
+          kitchen: null,
+          waiterId: nextWaiter,
+        },
+      }),
+    ]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an owner session, when POST /checks/:checkId/transfer-table omits x-session-id, then the response is 400 and the waiter stays", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud({
+    shifts: new OpenCloudShift(),
+  });
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await application.inject({
+      method: "POST",
+      url: transferUrl,
+      payload: transferBody,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(await storedWaiter(diningRooms)).toBe(currentWaiter);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an unknown session, when POST /checks/:checkId/transfer-table is injected, then the response is 400 and the waiter stays", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud({
+    shifts: new OpenCloudShift(),
+  });
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await postDining(
+      application,
+      transferUrl,
+      "session_missing",
+      transferBody,
+    );
+
+    expect(response.statusCode).toBe(400);
+    expect(await storedWaiter(diningRooms)).toBe(currentWaiter);
+    expect(await audits.list(tenantId, null)).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+it("given an owner session, when POST /checks/:checkId/transfer-table sends shift totals or an authorizer id, then the response is 400 and the waiter stays", async () => {
+  const { application, diningRooms, audits } = await openDiningCloud({
+    shifts: new OpenCloudShift(),
+  });
+
+  try {
+    await seatWaiter(diningRooms);
+
+    const response = await postDining(
+      application,
+      transferUrl,
+      "session_owner",
+      {
+        ...transferBody,
+        shiftTotals: { waiterVoidsBeforeKitchen: 1, compShiftCop: 0 },
+        authorizerId: ownerId,
+      },
+    );
+
+    expect(response.statusCode).toBe(400);
+    expect(await storedWaiter(diningRooms)).toBe(currentWaiter);
     expect(await audits.list(tenantId, null)).toEqual([]);
   } finally {
     await application.close();

@@ -1,4 +1,5 @@
 import {
+  type AuthorizationCommand as AuthorizationHttpCommand,
   type AuthorizationResult,
   authorizationCommand,
   authorizationResult,
@@ -121,7 +122,7 @@ export class AuthorizationController {
       const result = await operateAuthorization.execute({
         tenantId,
         sessionId,
-        command: parsed.data as AuthorizationCommand,
+        command: operateCommand(parsed.data),
       });
 
       return authorizationResult.parse(result);
@@ -209,6 +210,26 @@ export class AuthorizationController {
     }
   }
 }
+
+const operateCommand = (
+  command: AuthorizationHttpCommand,
+): AuthorizationCommand => {
+  if (command.type !== "request") {
+    return command as AuthorizationCommand;
+  }
+
+  return {
+    type: "request",
+    requestId: command.requestId,
+    permission: command.permission,
+    venueId: command.venueId,
+    targetId: command.targetId,
+    value: command.value,
+    reason: command.reason,
+    expiresAt: command.expiresAt,
+    shiftTotals: command.shiftTotals,
+  } as AuthorizationCommand;
+};
 
 const readHeader = (header: unknown): string | null => {
   if (typeof header !== "string" || header.length === 0) {

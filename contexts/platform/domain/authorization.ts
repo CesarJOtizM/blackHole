@@ -56,15 +56,23 @@ export interface BartenderFlagRecord {
   enabled: boolean;
 }
 
+export interface AuthorizationShiftTotals {
+  waiterVoidsBeforeKitchen: number;
+  compShiftCop?: number;
+}
+
 export interface AuthorizationRequestRecord {
   id: string;
   requesterId: string;
   permission: PermissionCode;
   venueId: string;
+  targetId?: string;
   value: number | null;
   reason: string;
   expiresAt: number;
   status: "pending" | "resolved" | "expired";
+  shiftTotals?: AuthorizationShiftTotals;
+  consumedAt?: number | null;
 }
 
 export interface ResolutionRecord {
@@ -192,9 +200,19 @@ interface RequestAuthorization {
   requesterId: string;
   permission: PermissionCode;
   venueId: string;
+  targetId?: string;
   value: number | null;
   reason: string;
   expiresAt: number;
+  shiftTotals?: AuthorizationShiftTotals;
+}
+
+interface ConsumeAuthorization {
+  requestId: string;
+  permission: PermissionCode;
+  targetId: string;
+  value: number | null;
+  at: number;
 }
 
 interface ResolveAuthorization {
@@ -308,6 +326,13 @@ export class RequestExpired extends Error {
   }
 }
 
+export class AuthorizationAlreadyConsumed extends Error {
+  constructor() {
+    super("The authorization was already consumed.");
+    this.name = "AuthorizationAlreadyConsumed";
+  }
+}
+
 export class Authorization {
   readonly tenantId: string;
 
@@ -342,9 +367,9 @@ export class Authorization {
     authorization.bartenderFlagList = snapshot.bartenderCharge.map((flag) => ({
       ...flag,
     }));
-    authorization.requestList = snapshot.requests.map((request) => ({
-      ...request,
-    }));
+    authorization.requestList = snapshot.requests.map((request) =>
+      completeRequest(request),
+    );
     authorization.resolutionList = snapshot.resolutions.map((resolution) => ({
       ...resolution,
     }));
@@ -371,7 +396,7 @@ export class Authorization {
       assignments: this.assignmentList.map((assignment) => ({ ...assignment })),
       venueLimits: this.venueLimitList.map((limit) => ({ ...limit })),
       bartenderCharge: this.bartenderFlagList.map((flag) => ({ ...flag })),
-      requests: this.requestList.map((request) => ({ ...request })),
+      requests: this.requestList.map((request) => completeRequest(request)),
       resolutions: this.resolutionList.map((resolution) => ({ ...resolution })),
       supportGrants: this.supportGrantList.map((grant) => ({ ...grant })),
       supportActions: this.supportActionList.map((action) => ({ ...action })),
@@ -541,16 +566,52 @@ export class Authorization {
     }
 
     this.reserve(input.requestId);
-    this.requestList.push({
-      id: input.requestId,
-      requesterId: input.requesterId,
-      permission: input.permission,
-      venueId: input.venueId,
-      value: input.value,
-      reason: input.reason,
-      expiresAt: input.expiresAt,
-      status: "pending",
-    });
+    this.requestList.push(
+      completeRequest({
+        id: input.requestId,
+        requesterId: input.requesterId,
+        permission: input.permission,
+        venueId: input.venueId,
+        targetId: input.targetId,
+        value: input.value,
+        reason: input.reason,
+        expiresAt: input.expiresAt,
+        status: "pending",
+        shiftTotals: input.shiftTotals,
+        consumedAt: null,
+      }),
+    );
+  }
+
+  consumeAuthorization(input: ConsumeAuthorization): boolean {
+    const request = this.requestList.find(
+      (item) => item.id === input.requestId,
+    );
+
+    if (!request) {
+      throw new UnknownAuthorizationReference();
+    }
+
+    const approved = this.resolutionList.some(
+      (item) => item.requestId === request.id && item.approved,
+    );
+    const matches =
+      approved &&
+      request.permission === input.permission &&
+      (request.targetId ?? request.venueId) === input.targetId &&
+      request.value === input.value;
+
+    if (!matches) {
+      return false;
+    }
+
+    if (typeof request.consumedAt === "number") {
+      throw new AuthorizationAlreadyConsumed();
+    }
+
+    request.consumedAt = input.at;
+
+    return true;
   }
 
   resolveAuthorization(input: ResolveAuthorization): void {
@@ -731,7 +792,7 @@ export class Authorization {
       at: number;
       target: CoverageTarget;
       value: number | null;
-      shiftTotals: { waiterVoidsBeforeKitchen: number };
+      shiftTotals: AuthorizationShiftTotals;
       selfAuthorizationAttempt: boolean;
       shiftId: string | null;
     },
@@ -1036,6 +1097,19 @@ const matrixRole = (
       return cap === null ? [] : [{ limit, cap }];
     },
   ),
+});
+
+const completeRequest = (
+  request: AuthorizationRequestRecord,
+): AuthorizationRequestRecord => ({
+  ...request,
+  targetId: request.targetId ?? request.venueId,
+  shiftTotals: {
+    waiterVoidsBeforeKitchen:
+      request.shiftTotals?.waiterVoidsBeforeKitchen ?? 0,
+    compShiftCop: request.shiftTotals?.compShiftCop ?? 0,
+  },
+  consumedAt: request.consumedAt ?? null,
 });
 
 const mergeGrants = (

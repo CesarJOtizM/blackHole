@@ -166,6 +166,10 @@ export {
   reprintDocumentCommand,
 } from "#contracts/printing.js";
 export {
+  type SensitiveActionEnvelope,
+  sensitiveActionEnvelope,
+} from "#contracts/sensitive-actions.js";
+export {
   type OrganizationChanged,
   organizationChanged,
   type StructureCommand,

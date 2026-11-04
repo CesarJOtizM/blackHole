@@ -19,6 +19,7 @@
     "identity.ts",
     "menu.ts",
     "printing.ts",
+    "sensitive-actions.ts",
     "update-structure.ts"
   ]
 }

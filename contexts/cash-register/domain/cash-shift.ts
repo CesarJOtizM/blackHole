@@ -1,5 +1,7 @@
 const SHIFT_ID_PREFIX = "shift_";
 const MOVEMENT_ID_PREFIX = "movement_";
+const REVERSAL_ID_PREFIX = "reversal_";
+const ORIGINAL_PAYMENT_PREFIX = "payment_";
 
 const SHIFT_STATE = {
   OPEN: "open",
@@ -21,6 +23,31 @@ export interface CashMovement {
   kind: CashMovementKind;
   amountCop: number;
   reason: string;
+}
+
+const TENDER_METHOD = {
+  CASH: "cash",
+  CARD: "card",
+  TRANSFER: "transfer",
+  WALLET: "wallet",
+  VOUCHER: "voucher",
+  CUSTOMER_CREDIT: "customer_credit",
+  CORPORATE_CREDIT: "corporate_credit",
+} as const;
+
+export type TenderMethod = (typeof TENDER_METHOD)[keyof typeof TENDER_METHOD];
+
+export interface PaymentReversal {
+  id: string;
+  originalPaymentId: string;
+  amountCop: number;
+}
+
+export interface ShiftPayment {
+  id: string;
+  originalPaymentId: string;
+  method: TenderMethod;
+  amountCop: number;
 }
 
 interface OpenShift {
@@ -78,6 +105,34 @@ export class MissingReason extends Error {
   }
 }
 
+export class InvalidReversalId extends Error {
+  constructor() {
+    super("A reversal identifier must use the reversal_ prefix.");
+    this.name = "InvalidReversalId";
+  }
+}
+
+export class InvalidOriginalPayment extends Error {
+  constructor() {
+    super("A reversal must point at a payment_ identifier.");
+    this.name = "InvalidOriginalPayment";
+  }
+}
+
+export class InvalidReplacementId extends Error {
+  constructor() {
+    super("A replacement payment identifier must use the payment_ prefix.");
+    this.name = "InvalidReplacementId";
+  }
+}
+
+export class InvalidTenderMethod extends Error {
+  constructor() {
+    super("A replacement payment must use a known tender method.");
+    this.name = "InvalidTenderMethod";
+  }
+}
+
 class OpenShiftRequired extends Error {
   constructor() {
     super("A cash movement requires an open shift.");
@@ -112,6 +167,48 @@ function assertReason(reason: string): void {
   }
 }
 
+function assertReversalId(id: string): void {
+  if (
+    !id.startsWith(REVERSAL_ID_PREFIX) ||
+    id.length === REVERSAL_ID_PREFIX.length
+  ) {
+    throw new InvalidReversalId();
+  }
+}
+
+function assertOriginalPaymentId(id: string): void {
+  if (
+    !id.startsWith(ORIGINAL_PAYMENT_PREFIX) ||
+    id.length === ORIGINAL_PAYMENT_PREFIX.length
+  ) {
+    throw new InvalidOriginalPayment();
+  }
+}
+
+function assertReplacementId(id: string): void {
+  if (
+    !id.startsWith(ORIGINAL_PAYMENT_PREFIX) ||
+    id.length === ORIGINAL_PAYMENT_PREFIX.length
+  ) {
+    throw new InvalidReplacementId();
+  }
+}
+
+function assertTenderMethod(method: string): asserts method is TenderMethod {
+  switch (method) {
+    case TENDER_METHOD.CASH:
+    case TENDER_METHOD.CARD:
+    case TENDER_METHOD.TRANSFER:
+    case TENDER_METHOD.WALLET:
+    case TENDER_METHOD.VOUCHER:
+    case TENDER_METHOD.CUSTOMER_CREDIT:
+    case TENDER_METHOD.CORPORATE_CREDIT:
+      return;
+    default:
+      throw new InvalidTenderMethod();
+  }
+}
+
 function movementEffectCop(movement: CashMovement): number {
   switch (movement.kind) {
     case MOVEMENT_KIND.CASH_IN:
@@ -132,6 +229,10 @@ export class CashShift {
   private openedShift: OpenedShift | undefined;
 
   private readonly recordedMovements: CashMovement[] = [];
+
+  private readonly recordedReversals: PaymentReversal[] = [];
+
+  private readonly recordedPayments: ShiftPayment[] = [];
 
   private constructor(registerId: string) {
     this.registerId = registerId;
@@ -159,6 +260,14 @@ export class CashShift {
 
   get movements(): readonly CashMovement[] {
     return this.recordedMovements.map((movement) => ({ ...movement }));
+  }
+
+  get reversals(): readonly PaymentReversal[] {
+    return this.recordedReversals.map((reversal) => ({ ...reversal }));
+  }
+
+  get payments(): readonly ShiftPayment[] {
+    return this.recordedPayments.map((payment) => ({ ...payment }));
   }
 
   get expectedCashCop(): number | undefined {
@@ -202,6 +311,40 @@ export class CashShift {
       kind: input.kind,
       amountCop: input.amountCop,
       reason: input.reason,
+    });
+  }
+
+  recordReversal(input: PaymentReversal): void {
+    if (!this.openedShift || this.openedShift.state !== SHIFT_STATE.OPEN) {
+      throw new OpenShiftRequired();
+    }
+
+    assertReversalId(input.id);
+    assertOriginalPaymentId(input.originalPaymentId);
+    assertCop(input.amountCop);
+
+    this.recordedReversals.push({
+      id: input.id,
+      originalPaymentId: input.originalPaymentId,
+      amountCop: input.amountCop,
+    });
+  }
+
+  recordPayment(input: ShiftPayment): void {
+    if (!this.openedShift || this.openedShift.state !== SHIFT_STATE.OPEN) {
+      throw new OpenShiftRequired();
+    }
+
+    assertReplacementId(input.id);
+    assertOriginalPaymentId(input.originalPaymentId);
+    assertTenderMethod(input.method);
+    assertCop(input.amountCop);
+
+    this.recordedPayments.push({
+      id: input.id,
+      originalPaymentId: input.originalPaymentId,
+      method: input.method,
+      amountCop: input.amountCop,
     });
   }
 }

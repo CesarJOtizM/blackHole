@@ -320,6 +320,9 @@ importers:
 
   contexts/cash-register:
     dependencies:
+      '@blackhole/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@electric-sql/pglite':
         specifier: 'catalog:'
         version: 0.5.10
@@ -348,6 +351,9 @@ importers:
 
   contexts/orders:
     dependencies:
+      '@blackhole/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@electric-sql/pglite':
         specifier: 'catalog:'
         version: 0.5.10

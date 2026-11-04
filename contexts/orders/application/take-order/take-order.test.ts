@@ -1,8 +1,16 @@
+import {
+  ConsumeAuthorization,
+  CountExecutedOperations,
+  EvaluatePermission,
+  PERMISSION,
+  RecordAuditEvent,
+} from "@blackhole/platform/application/entry-port";
 import { expect, it, vi } from "vitest";
 
 import { Clock } from "#application/ports/clock.js";
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
 import { MenuRepository } from "#application/ports/menu-repository.js";
+import { OpenShiftReader } from "#application/ports/open-shift-reader.js";
 import { Printer } from "#application/ports/printer.js";
 import {
   RealtimeHub,
@@ -38,6 +46,26 @@ const SINGLE_ID = "menu_variant_single";
 const CHEESE_ID = "menu_modifier_extra_cheese";
 const SENT_AT = Date.parse("2026-10-28T17:03:10.000Z");
 const OPENED_AT = "2026-10-28T12:00:00.000Z";
+const WAITER_ID = "user_waiter";
+const SESSION_ID = "session_waiter";
+const DEVICE_ID = "device_waiter";
+const SHIFT_ID = "shift_1";
+const REASON = "Guest asked for a soda after the pre-bill";
+const SHIFT_TOTALS = {
+  waiterVoidsBeforeKitchen: 2,
+  compShiftCop: 90_000,
+};
+
+type Decision = Awaited<ReturnType<EvaluatePermission["execute"]>>;
+type AuditCommand = Parameters<RecordAuditEvent["execute"]>[0];
+type PermissionInput = Parameters<EvaluatePermission["execute"]>[0];
+
+const blank = {} as never;
+
+const denied = (): Decision => ({
+  outcome: "denied",
+  selfAuthorized: false,
+});
 
 class FixedClock extends Clock {
   override now(): number {
@@ -128,6 +156,77 @@ class MemoryHub extends RealtimeHub {
   }
 }
 
+class MemoryShift extends OpenShiftReader {
+  readonly queries: { tenantId: string; venueId: string; shiftId: string }[] =
+    [];
+
+  override async isOpen(query: {
+    tenantId: string;
+    venueId: string;
+    shiftId: string;
+  }): Promise<boolean> {
+    this.queries.push(query);
+    return true;
+  }
+}
+
+class FixedCounts extends CountExecutedOperations {
+  readonly queries: { tenantId: string; actorId: string; shiftId: string }[] =
+    [];
+
+  constructor() {
+    super(blank);
+  }
+
+  override async execute(query: {
+    tenantId: string;
+    actorId: string;
+    shiftId: string;
+  }) {
+    this.queries.push(query);
+    return SHIFT_TOTALS;
+  }
+}
+
+class ScriptedPermission extends EvaluatePermission {
+  readonly inputs: PermissionInput[] = [];
+
+  constructor(private readonly decision: Decision) {
+    super(blank, blank, blank, blank);
+  }
+
+  override async execute(input: PermissionInput) {
+    this.inputs.push(input);
+    return this.decision;
+  }
+}
+
+class MemoryGrant extends ConsumeAuthorization {
+  readonly calls: unknown[] = [];
+
+  constructor() {
+    super(blank, blank);
+  }
+
+  override async execute(input: unknown): Promise<boolean> {
+    this.calls.push(input);
+    return false;
+  }
+}
+
+class RecordingAudit extends RecordAuditEvent {
+  readonly commands: AuditCommand[] = [];
+
+  constructor() {
+    super(blank, blank, blank);
+  }
+
+  override async execute(command: AuditCommand) {
+    this.commands.push(command);
+    return blank;
+  }
+}
+
 const publishedMenu = (): Menu => {
   const menu = Menu.open({
     id: MENU_ID,
@@ -204,9 +303,19 @@ const stationFor = (
   return router;
 };
 
+const lineIds = (check: Check | null): string[] =>
+  check?.orders.flatMap((order) => order.lines.map((line) => line.id)) ?? [];
+
 const harness = async (
   productIds: readonly string[],
   output: StationOutput = "both",
+  printedCheck?: {
+    shifts: OpenShiftReader;
+    counts: CountExecutedOperations;
+    permissions: EvaluatePermission;
+    grants: ConsumeAuthorization;
+    audits: RecordAuditEvent;
+  },
 ) => {
   const menus = new MemoryMenus();
   const menu = publishedMenu();
@@ -225,14 +334,18 @@ const harness = async (
   stations.remember(TENANT_ID, stationFor(productIds, output));
   const printer = new MemoryPrinter();
   const hub = new MemoryHub();
-  const takeOrder = new TakeOrder(
-    dining,
-    menus,
-    stations,
-    printer,
-    new FixedClock(),
-    hub,
-  );
+  const takeOrder =
+    printedCheck === undefined
+      ? new TakeOrder(dining, menus, stations, printer, new FixedClock(), hub)
+      : new TakeOrder(
+          dining,
+          menus,
+          stations,
+          printer,
+          new FixedClock(),
+          hub,
+          printedCheck,
+        );
   const saveTable = vi.spyOn(dining, "save");
   const saveCheck = vi.spyOn(dining, "saveCheck");
 
@@ -784,4 +897,108 @@ it("given check_requested, when another product is sent, then the table returns 
   const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
   expect(stored?.tableState).toBe("occupied");
   expect(stored?.total).toBe(soup + soda);
+});
+
+it("given a printed pre-bill, when a waiter adds a product without sale.edit-printed-check, then the account stays unchanged", async () => {
+  const shifts = new MemoryShift();
+  const counts = new FixedCounts();
+  const permissions = new ScriptedPermission(denied());
+  const grants = new MemoryGrant();
+  const audits = new RecordingAudit();
+  const { menu, dining, printer, hub, takeOrder, saveCheck } = await harness(
+    [SOUP_ID, SODA_ID],
+    "both",
+    { shifts, counts, permissions, grants, audits },
+  );
+  const soup = menu.quote({
+    venueId: VENUE_ID,
+    productId: SOUP_ID,
+    modifierIds: [],
+  });
+  const soda = menu.quote({
+    venueId: VENUE_ID,
+    productId: SODA_ID,
+    modifierIds: [],
+  });
+
+  await takeOrder.execute({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+    course: 1,
+    lines: [
+      {
+        orderId: ORDER_ID,
+        lineId: "line_soup",
+        productId: SOUP_ID,
+        name: "Soup",
+        course: 1,
+        channel: "waiter",
+      },
+    ],
+  });
+  const open = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  open?.requestCheck({ requestedAt: new Date(SENT_AT).toISOString() });
+
+  if (open) {
+    await dining.saveCheck(open);
+  }
+
+  const stamped = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  const linesBefore = lineIds(stamped);
+  const jobsBefore = printer.jobs.length;
+  const noticesBefore = hub.published.length;
+  const savesBefore = saveCheck.mock.calls.length;
+
+  const held = await takeOrder.hold({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+    line: {
+      orderId: ORDER_ID,
+      lineId: "line_soda",
+      productId: SODA_ID,
+      name: "Soda",
+      course: 1,
+      channel: "waiter",
+    },
+    edit: {
+      actorId: WAITER_ID,
+      authorizerId: null,
+      sessionId: SESSION_ID,
+      deviceId: DEVICE_ID,
+      shiftId: SHIFT_ID,
+      reason: REASON,
+      authorizationId: null,
+    },
+  });
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+  expect(lineIds(stored)).toEqual(linesBefore);
+  expect(stored?.total).toBe(soup);
+  expect(held.total).toBe(soup);
+  expect(saveCheck).toHaveBeenCalledTimes(savesBefore);
+  expect(printer.jobs).toHaveLength(jobsBefore);
+  expect(hub.published).toHaveLength(noticesBefore);
+  expect(shifts.queries).toEqual([
+    { tenantId: TENANT_ID, venueId: VENUE_ID, shiftId: SHIFT_ID },
+  ]);
+  expect(counts.queries).toEqual([
+    { tenantId: TENANT_ID, actorId: WAITER_ID, shiftId: SHIFT_ID },
+  ]);
+  expect(permissions.inputs).toEqual([
+    {
+      tenantId: TENANT_ID,
+      sessionId: SESSION_ID,
+      permission: PERMISSION.SALE_EDIT_PRINTED_CHECK,
+      target: { kind: "site", id: VENUE_ID, brandId: null },
+      value: soda,
+      supportGrantId: null,
+      shiftTotals: SHIFT_TOTALS,
+    },
+  ]);
+  expect(grants.calls).toEqual([]);
+  expect(audits.commands).toEqual([]);
 });

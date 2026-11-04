@@ -246,10 +246,12 @@ export const authorizationRequests = pgTable("authorization_requests", {
   requesterId: text("requester_id").notNull(),
   permission: text("permission").notNull(),
   venueId: text("venue_id").notNull(),
+  targetId: text("target_id").notNull(),
   value: integer("value"),
   reason: text("reason").notNull(),
   expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
   status: text("status").notNull(),
+  consumedAt: bigint("consumed_at", { mode: "number" }),
   position: integer("position").notNull(),
 });
 
@@ -309,6 +311,31 @@ export const authorizationNotices = pgTable("authorization_notices", {
   tenantId: text("tenant_id").notNull(),
   ownerUserId: text("owner_user_id").notNull(),
   kind: text("kind").notNull(),
+  occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
+  position: integer("position").notNull(),
+});
+
+export const authorizationVenueThresholds = pgTable(
+  "authorization_venue_thresholds",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    discount: integer("discount").notNull().default(5),
+    requesterAuthorizerPair: integer("requester_authorizer_pair")
+      .notNull()
+      .default(5),
+    failedPin: integer("failed_pin").notNull().default(5),
+    position: integer("position").notNull(),
+  },
+);
+
+export const authorizationAlerts = pgTable("authorization_alerts", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  venueId: text("venue_id").notNull(),
+  kind: text("kind").notNull(),
+  shiftId: text("shift_id").notNull(),
   occurredAt: bigint("occurred_at", { mode: "number" }).notNull(),
   position: integer("position").notNull(),
 });

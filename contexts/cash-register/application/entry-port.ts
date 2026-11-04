@@ -1,6 +1,14 @@
 export type { ApproveVarianceInput } from "#application/approve-variance/approve-variance.js";
 export { ApproveVariance } from "#application/approve-variance/approve-variance.js";
 export type {
+  ChangeTenderInput,
+  OriginalPayment,
+} from "#application/change-tender/change-tender.js";
+export {
+  ChangeTender,
+  OriginalPaymentReader,
+} from "#application/change-tender/change-tender.js";
+export type {
   ChargeCheckInput,
   ChargeCheckResult,
   DrawerOpenedAudit,
@@ -18,6 +26,8 @@ export type {
   PartialCloseInput,
 } from "#application/close-shift/close-shift.js";
 export { CloseShift } from "#application/close-shift/close-shift.js";
+export type { OpenDrawerInput } from "#application/open-drawer/open-drawer.js";
+export { OpenDrawer } from "#application/open-drawer/open-drawer.js";
 export type { OpenShiftInput } from "#application/open-shift/open-shift.js";
 export { OpenShift } from "#application/open-shift/open-shift.js";
 export type {
@@ -25,12 +35,23 @@ export type {
   SaleReceiptJob,
 } from "#application/ports/printer.js";
 export { Printer } from "#application/ports/printer.js";
-export { UnknownRegister } from "#application/ports/register-lookup.js";
+export {
+  RegisterLookup,
+  UnknownRegister,
+} from "#application/ports/register-lookup.js";
 export type { RecordMovementInput } from "#application/record-movement/record-movement.js";
 export {
   OpenShiftRequired,
   RecordMovement,
 } from "#application/record-movement/record-movement.js";
+export type {
+  PaidAccount,
+  ReopenPaidAccountInput,
+} from "#application/reopen-paid-account/reopen-paid-account.js";
+export {
+  PaidAccountReader,
+  ReopenPaidAccount,
+} from "#application/reopen-paid-account/reopen-paid-account.js";
 export type {
   PayAccountPartInput,
   SplitAccountInput,
@@ -62,13 +83,20 @@ export {
 export type {
   CashMovement,
   CashMovementKind,
+  PaymentReversal,
+  ShiftPayment,
   ShiftState,
+  TenderMethod,
 } from "#domain/cash-shift.js";
 export {
   CashShift,
   InvalidCashAmount,
   InvalidMovementId,
+  InvalidOriginalPayment,
+  InvalidReplacementId,
+  InvalidReversalId,
   InvalidShiftId,
+  InvalidTenderMethod,
   MissingReason,
   ShiftAlreadyOpen,
 } from "#domain/cash-shift.js";

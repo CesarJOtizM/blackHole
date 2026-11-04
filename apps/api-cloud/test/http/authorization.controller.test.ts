@@ -235,6 +235,35 @@ it("given a cashier over the discount cap, when the request is posted, then the 
   }
 });
 
+it("given a cashier request carrying the target and shift totals, when it is posted, then OperateAuthorization stores those values", async () => {
+  const { application, authorizations } = await openCloud();
+
+  try {
+    const response = await postAuthorization(application, "session_cashier", {
+      type: "request",
+      requestId: "request_discount",
+      permission: "sale.discount",
+      venueId,
+      targetId: "check_1",
+      value: 10,
+      reason: "regular",
+      expiresAt: 60_000,
+      shiftTotals: { waiterVoidsBeforeKitchen: 2, compShiftCop: 90_000 },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(
+      (await authorizations.load(tenantId))?.snapshot().requests[0],
+    ).toMatchObject({
+      id: "request_discount",
+      targetId: "check_1",
+      shiftTotals: { waiterVoidsBeforeKitchen: 2, compShiftCop: 90_000 },
+    });
+  } finally {
+    await application.close();
+  }
+});
+
 it("given a waiter session, when a charge is posted, then the response is 403 and nothing is stored", async () => {
   const { application, authorizations } = await openCloud();
 

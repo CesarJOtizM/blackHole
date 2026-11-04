@@ -39,11 +39,17 @@
     "#application/view-station-queue/*": "./application/view-station-queue/*",
     "#application/get-check/*": "./application/get-check/*",
     "#application/mark-account-paid/*": "./application/mark-account-paid/*",
+    "#application/apply-courtesy/*": "./application/apply-courtesy/*",
+    "#application/apply-discount/*": "./application/apply-discount/*",
+    "#application/change-price/*": "./application/change-price/*",
+    "#application/void-account/*": "./application/void-account/*",
+    "#application/void-line/*": "./application/void-line/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*"
   },
   "dependencies": {
+    "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "drizzle-orm": "catalog:"
   },

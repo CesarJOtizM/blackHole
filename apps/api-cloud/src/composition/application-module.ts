@@ -8,10 +8,15 @@ import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-ter
 import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
 import {
   ApproveVariance,
+  ChangeTender,
   ChargeCheck,
   CloseShift,
+  OpenDrawer,
   OpenShift,
+  OriginalPaymentReader,
+  PaidAccountReader,
   type Payment,
+  ReopenPaidAccount,
   SubmitCount,
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
@@ -41,11 +46,15 @@ import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-pri
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import {
+  ApplyCourtesy,
+  ApplyDiscount,
   ChangeLineState,
+  ChangePrice,
   ConfigureStationRoute,
   GetCheck,
   MarkAccountPaid,
   MarkTableReady,
+  OpenShiftReader,
   OpenTable,
   PlaceTable,
   RealtimeHub,
@@ -56,6 +65,8 @@ import {
   ViewStationQueue,
   ViewTableMap,
   ViewVenueMenu,
+  VoidAccount,
+  VoidLine,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
@@ -68,6 +79,14 @@ import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-au
 import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
 import { InMemoryPendingIssuance } from "@blackhole/platform/adapters/memory/in-memory-pending-issuance";
 import { InMemoryProviderRateGate } from "@blackhole/platform/adapters/memory/in-memory-provider-rate-gate";
+import {
+  ConsumeAuthorization,
+  CountExecutedOperations,
+  DetectUnusualBehavior,
+  EvaluatePermission,
+  ReadControlReport,
+  RecordAuditEvent,
+} from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
 import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
@@ -98,7 +117,12 @@ import {
   InMemoryAttendancePolicyRepository,
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
+import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import {
+  MissingOriginalPaymentReader,
+  MissingPaidAccountReader,
+} from "#src/composition/missing-sale-readers.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
@@ -108,19 +132,25 @@ import {
 } from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
+import { ApplyCourtesyController } from "#src/http/apply-courtesy.controller.js";
+import { ApplyDiscountController } from "#src/http/apply-discount.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
 import { AuthorizationController } from "#src/http/authorization.controller.js";
 import { CashCountController } from "#src/http/cash-count.controller.js";
 import { CashShiftController } from "#src/http/cash-shift.controller.js";
 import { ChangeLineStateController } from "#src/http/change-line-state.controller.js";
+import { ChangePriceController } from "#src/http/change-price.controller.js";
+import { ChangeTenderController } from "#src/http/change-tender.controller.js";
 import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
+import { DetectUnusualBehaviorController } from "#src/http/detect-unusual-behavior.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
 import {
   InvoicingController,
   NumberingRangeStore,
 } from "#src/http/invoicing.controller.js";
+import { OpenDrawerController } from "#src/http/open-drawer.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
 import { OperateIdentityController } from "#src/http/operate-identity.controller.js";
@@ -135,8 +165,10 @@ import {
   ReprintCap,
 } from "#src/http/printing.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
+import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
+import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
@@ -149,6 +181,8 @@ import {
 import { ViewStationQueueController } from "#src/http/view-station-queue.controller.js";
 import { ViewTableMapController } from "#src/http/view-table-map.controller.js";
 import { ViewVenueMenuController } from "#src/http/view-venue-menu.controller.js";
+import { VoidAccountController } from "#src/http/void-account.controller.js";
+import { VoidLineController } from "#src/http/void-line.controller.js";
 
 export interface CloudApplicationDependencies {
   venueOperations: VenueOperationRepository;
@@ -180,6 +214,7 @@ export interface CloudApplicationDependencies {
   taxRules?: TaxRuleRepository;
   fiscalProfiles?: FiscalProfileRepository;
   diningRooms?: DiningRoomRepository;
+  shifts?: OpenShiftReader;
   registers?: InMemoryCashRegisterRepository;
   charges?: MemoryChargeLedger;
   counts?: MemoryCashCounts;
@@ -194,6 +229,8 @@ export interface CloudApplicationDependencies {
   reprintCap?: ReprintCap;
   reprintAudits?: MemoryReprintAudit;
   structurePrinters?: StructurePrinters;
+  paidAccounts?: PaidAccountReader;
+  originalPayments?: OriginalPaymentReader;
 }
 
 class OrdersClockAdapter extends OrdersClock {
@@ -248,6 +285,8 @@ export class ApplicationModule implements NestModule {
         OperateDevicesController,
         AuthorizationController,
         ReadAuditController,
+        ReadControlReportController,
+        DetectUnusualBehaviorController,
         UpdateMenuController,
         ViewVenueMenuController,
         PlaceTableController,
@@ -257,6 +296,14 @@ export class ApplicationModule implements NestModule {
         RequestCheckController,
         ReassignCheckController,
         TakeOrderController,
+        VoidLineController,
+        VoidAccountController,
+        ApplyDiscountController,
+        ApplyCourtesyController,
+        ChangePriceController,
+        OpenDrawerController,
+        ReopenPaidAccountController,
+        ChangeTenderController,
         ChangeLineStateController,
         ViewTableMapController,
         ViewStationQueueController,
@@ -362,6 +409,19 @@ export class ApplicationModule implements NestModule {
           provide: DiningRoomRepository,
           useValue:
             dependencies.diningRooms ?? new InMemoryDiningRoomRepository(),
+        },
+        {
+          provide: OpenShiftReader,
+          useValue: dependencies.shifts ?? new ClosedShiftReader(),
+        },
+        {
+          provide: PaidAccountReader,
+          useValue: dependencies.paidAccounts ?? new MissingPaidAccountReader(),
+        },
+        {
+          provide: OriginalPaymentReader,
+          useValue:
+            dependencies.originalPayments ?? new MissingOriginalPaymentReader(),
         },
         {
           provide: StationRouteRepository,
@@ -502,9 +562,43 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: ReassignCheck,
-          useFactory: (diningRoom: DiningRoomRepository) =>
-            new ReassignCheck(diningRoom),
-          inject: [DiningRoomRepository],
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ReassignCheck(diningRoom, {
+              shifts,
+              counts: new CountExecutedOperations(audits),
+              permissions: new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              grants: new ConsumeAuthorization(
+                authorizations,
+                authorizationClock,
+              ),
+              audits: new RecordAuditEvent(audits, digests, clock),
+            }),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
         },
         {
           provide: Printer,
@@ -527,9 +621,40 @@ export class ApplicationModule implements NestModule {
             menus: MenuRepository,
             stations: StationDirectory,
             printer: Printer,
-            clock: OrdersClock,
+            ordersClock: OrdersClock,
             hub: RealtimeHub,
-          ) => new TakeOrder(diningRoom, menus, stations, printer, clock, hub),
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new TakeOrder(
+              diningRoom,
+              menus,
+              stations,
+              printer,
+              ordersClock,
+              hub,
+              {
+                shifts,
+                counts: new CountExecutedOperations(audits),
+                permissions: new EvaluatePermission(
+                  authorizations,
+                  sessions,
+                  identities,
+                  authorizationClock,
+                ),
+                grants: new ConsumeAuthorization(
+                  authorizations,
+                  authorizationClock,
+                ),
+                audits: new RecordAuditEvent(audits, digests, clock),
+              },
+            ),
           inject: [
             DiningRoomRepository,
             MenuRepository,
@@ -537,6 +662,312 @@ export class ApplicationModule implements NestModule {
             Printer,
             OrdersClock,
             RealtimeHub,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: VoidLine,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new VoidLine(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: VoidAccount,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new VoidAccount(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ApplyDiscount,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ApplyDiscount(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ApplyCourtesy,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ApplyCourtesy(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ChangePrice,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            shifts: OpenShiftReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ChangePrice(
+              diningRoom,
+              shifts,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            DiningRoomRepository,
+            OpenShiftReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: OpenDrawer,
+          useFactory: (
+            organizations: OrganizationRepository,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new OpenDrawer(
+              new OrganizationRegisterDirectory(organizations),
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+              salePrinter,
+            ),
+          inject: [
+            OrganizationRepository,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ReopenPaidAccount,
+          useFactory: (
+            accounts: PaidAccountReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ReopenPaidAccount(
+              accounts,
+              registers,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            PaidAccountReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ChangeTender,
+          useFactory: (
+            payments: OriginalPaymentReader,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new ChangeTender(
+              payments,
+              registers,
+              new CountExecutedOperations(audits),
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new ConsumeAuthorization(authorizations, authorizationClock),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            OriginalPaymentReader,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
           ],
         },
         {
@@ -655,6 +1086,41 @@ export class ApplicationModule implements NestModule {
         { provide: ReprintCap, useValue: reprintCap },
         { provide: MemoryReprintAudit, useValue: reprintAudits },
         { provide: StructurePrinters, useValue: structurePrinters },
+        {
+          provide: EvaluatePermission,
+          useFactory: (
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          inject: [
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
+        {
+          provide: ReadControlReport,
+          useFactory: (
+            audits: AuditRepository,
+            permissions: EvaluatePermission,
+          ) => new ReadControlReport(audits, permissions),
+          inject: [AuditRepository, EvaluatePermission],
+        },
+        {
+          provide: DetectUnusualBehavior,
+          useFactory: (audits: AuditRepository) =>
+            new DetectUnusualBehavior(audits),
+          inject: [AuditRepository],
+        },
       ],
     };
   }

@@ -2,6 +2,7 @@ import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/
 import type { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
 import type { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import type { OpenShiftReader } from "@blackhole/orders/application/entry-port";
 import type {
   PrintJobRequest,
   QueuedPrintJob,
@@ -59,10 +60,13 @@ export const openDiningCloud = async (deps?: {
   menus?: InMemoryMenuRepository;
   stationRoutes?: InMemoryStationRouteRepository;
   printer?: InMemoryPrinter;
+  shifts?: OpenShiftReader;
+  people?: readonly (readonly [string, string, string])[];
 }): Promise<{
   application: NestFastifyApplication;
   diningRooms: InMemoryDiningRoomRepository;
   audits: InMemoryAuditRepository;
+  authorizations: InMemoryAuthorizationRepository;
 }> => {
   const identities = new InMemoryIdentityRepository();
   const authorizations = new InMemoryAuthorizationRepository();
@@ -70,8 +74,9 @@ export const openDiningCloud = async (deps?: {
   const audits = new InMemoryAuditRepository();
   const passwords = new FastPasswordHasher();
   const identity = Identity.open(tenantId);
+  const roster = deps?.people ?? people;
 
-  for (const [userId, sessionId] of people) {
+  for (const [userId, sessionId] of roster) {
     identity.registerUser({
       id: userId,
       displayName: userId,
@@ -92,7 +97,7 @@ export const openDiningCloud = async (deps?: {
   const authorization = Authorization.restore({
     tenantId,
     customRoles: [],
-    assignments: people.map(([userId, , roleId]) => ({
+    assignments: roster.map(([userId, , roleId]) => ({
       id: `assignment_${roleId}`,
       userId,
       roleId,
@@ -136,12 +141,13 @@ export const openDiningCloud = async (deps?: {
       ? {}
       : { stationRoutes: deps.stationRoutes }),
     ...(deps?.printer === undefined ? {} : { printer: deps.printer }),
+    ...(deps?.shifts === undefined ? {} : { shifts: deps.shifts }),
     fileStorage: new InMemoryFileStorage(),
     secrets: new InMemorySecrets({}),
     metrics: new InMemoryRuntimeMetrics(),
   });
 
-  return { application, diningRooms, audits };
+  return { application, diningRooms, audits, authorizations };
 };
 
 export const placeFreeTable = async (

@@ -6,6 +6,7 @@ export type PaperWidth = z.infer<typeof paperWidth>;
 
 export const reprintDocumentCommand = z.strictObject({
   document: z.string().min(1),
+  authorizationId: z.string().nullable().optional(),
 });
 
 export type ReprintDocumentCommand = z.infer<typeof reprintDocumentCommand>;
@@ -16,6 +17,7 @@ export const recordedReprint = z.object({
   deviceId: z.string().min(1),
   document: z.string().min(1),
   occurredAt: z.string().min(1),
+  authorizerId: z.string().min(1).optional(),
 });
 
 export type RecordedReprint = z.infer<typeof recordedReprint>;
