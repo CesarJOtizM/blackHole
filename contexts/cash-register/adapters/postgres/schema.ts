@@ -11,7 +11,19 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { CashMovementKind } from "#domain/cash-shift.js";
-import type { PaymentTender, PaymentTip } from "#domain/payment.js";
+import type {
+  PaymentMethod,
+  PaymentTender,
+  PaymentTip,
+} from "#domain/payment.js";
+import type { TipPeriodKind } from "#domain/tip-period.js";
+import type { TipPercentage, TipRuleMode } from "#domain/tip-rule.js";
+import type {
+  TipSettlementMode,
+  TipSettlementParticipant,
+  TipSettlementPercentage,
+  TipSettlementShare,
+} from "#domain/tip-settlement.js";
 
 type CashShiftStatus = "open" | "counting" | "closed";
 
@@ -75,6 +87,7 @@ export const payments = pgTable(
     changeCop: integer("change_cop").notNull(),
     tenders: jsonb("tenders").$type<StoredPaymentAmount[]>().notNull(),
     tip: jsonb("tip").$type<StoredPaymentAmount>().notNull(),
+    recordedAt: text("recorded_at").notNull(),
   },
   (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
 );
@@ -165,4 +178,53 @@ export const saleClosures = pgTable(
       table.checkId,
     ),
   ],
+);
+
+interface StoredTipMethod {
+  method: PaymentMethod;
+  amountCop: number;
+}
+
+interface StoredTipEdit {
+  userId: string;
+  workedMinutes: number | null;
+  reason: string;
+  change: "add" | "remove";
+}
+
+export const tipRules = pgTable(
+  "tip_rules",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    period: text("period").$type<TipPeriodKind>().notNull(),
+    mode: text("mode").$type<TipRuleMode>().notNull(),
+    shares: jsonb("shares").$type<TipPercentage[]>().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.venueId] })],
+);
+
+export const tipSettlements = pgTable(
+  "tip_settlements",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    venueId: text("venue_id").notNull(),
+    poolCop: integer("pool_cop").notNull(),
+    residueCop: integer("residue_cop").notNull(),
+    methods: jsonb("methods").$type<StoredTipMethod[]>().notNull(),
+    participants: jsonb("participants")
+      .$type<TipSettlementParticipant[]>()
+      .notNull(),
+    shares: jsonb("shares").$type<TipSettlementShare[]>().notNull(),
+    rule: jsonb("rule")
+      .$type<{
+        mode: TipSettlementMode;
+        shares: TipSettlementPercentage[];
+      }>()
+      .notNull(),
+    edits: jsonb("edits").$type<StoredTipEdit[]>().notNull(),
+    adjustsSettlementId: text("adjusts_settlement_id"),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
 );

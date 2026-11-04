@@ -210,6 +210,7 @@ const knownRegisters = new Set([
 const chargeFor = (
   accountCop: number,
   terminal: CardTerminal = new MemoryCardTerminal(),
+  clock?: { now(): number },
 ) => {
   const accounts = new MemoryAccounts(TENANT_ID, accountFor(accountCop));
   const ledger = new MemoryChargeLedger();
@@ -217,6 +218,15 @@ const chargeFor = (
 
   const printer = new MemoryPrinter();
   const audits = new MemoryDrawerAudit();
+  const charge = new ChargeCheck(
+    lookup,
+    accounts,
+    terminal,
+    ledger,
+    printer,
+    audits,
+    clock,
+  );
 
   return {
     accounts,
@@ -224,14 +234,7 @@ const chargeFor = (
     terminal,
     printer,
     audits,
-    charge: new ChargeCheck(
-      lookup,
-      accounts,
-      terminal,
-      ledger,
-      printer,
-      audits,
-    ),
+    charge,
   };
 };
 
@@ -824,4 +827,30 @@ it("given an absent drawer and a card plus cash sale, when the charge is saved, 
   expect(JSON.stringify(printer.jobs)).not.toContain("\\u001b");
   const stored = await ledger.findByCommand(TENANT_ID, VENUE_ID, COMMAND_ID);
   expect(stored?.closure.id).toBe(CLOSURE_ID);
+});
+
+it("given the platform clock, when a check is charged and the command repeats, then the stored payment time is that clock", async () => {
+  const firstInstant = Date.parse("2026-11-04T18:21:00.000Z");
+  let calls = 0;
+  const clock = {
+    now: () => {
+      calls += 1;
+
+      return firstInstant + (calls - 1) * 60_000;
+    },
+  };
+  const { ledger, charge } = chargeFor(85_000, new MemoryCardTerminal(), clock);
+
+  await charge.execute(mixedInput);
+  await charge.execute({
+    ...mixedInput,
+    paymentId: "payment_mixed_again",
+    closureId: "closure_mixed_again",
+  });
+
+  const stored = await ledger.findByCommand(TENANT_ID, VENUE_ID, COMMAND_ID);
+
+  expect(stored?.recordedAt).toBe("2026-11-04T18:21:00.000Z");
+  expect(stored?.payment).not.toHaveProperty("taxCop");
+  expect(calls).toBe(1);
 });

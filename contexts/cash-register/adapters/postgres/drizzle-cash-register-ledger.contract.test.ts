@@ -431,23 +431,29 @@ it("given a count before submit and a submitted count that stores expected cash,
 });
 
 it("given one queued closure for a check, when the same closure is inserted again, then the check still has one row and the copied charge stays", async () => {
-  const client = await open();
+  const client = await openTips();
   const ledger = new DrizzleCashRegisterLedger(client);
   const queued = closure();
 
   await ledger.insertClosure({
     tenantId: TENANT_A,
     venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: RECORDED_AT,
     closure: queued,
   });
   await ledger.insertClosure({
     tenantId: TENANT_A,
     venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: RECORDED_AT,
     closure: { ...queued, saleCop: 1 },
   });
   await ledger.insertClosure({
     tenantId: TENANT_A,
     venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: RECORDED_AT,
     closure: {
       ...queued,
       id: "closure_check_2",
@@ -469,6 +475,8 @@ it("given one queued closure for a check, when the same closure is inserted agai
   await ledger.insertClosure({
     tenantId: TENANT_A,
     venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: RECORDED_AT,
     closure: {
       ...queued,
       id: "closure_check_other",
@@ -485,4 +493,239 @@ it("given one queued closure for a check, when the same closure is inserted agai
     { id: "closure_check_1" },
     { id: "closure_check_other" },
   ]);
+});
+
+const EPOCH = "1970-01-01T00:00:00.000Z";
+const RECORDED_AT = "2026-11-04T18:21:00.000Z";
+const SHIFT_ID = "shift_front_1";
+const WAITER_ID = "user_waiter";
+const COOK_ID = "user_cook";
+const SETTLEMENT_ID = "settlement_day_1";
+
+const tipsMigration = () =>
+  readFileSync(
+    fileURLToPath(new URL("./0015_tips.sql", import.meta.url)),
+    "utf8",
+  );
+
+const openTips = async () => {
+  const client = await open();
+  await client.exec(tipsMigration());
+
+  return client;
+};
+
+const settlementRow = () => ({
+  id: SETTLEMENT_ID,
+  poolCop: 50_000,
+  methods: [
+    { method: "cash" as const, amountCop: 20_000 },
+    { method: "card" as const, amountCop: 30_000 },
+  ],
+  participants: [
+    { userId: WAITER_ID, workedMinutes: 480 },
+    { userId: COOK_ID, workedMinutes: 360 },
+  ],
+  shares: [
+    { userId: COOK_ID, baseCop: 25_000, residueCop: 0 },
+    { userId: WAITER_ID, baseCop: 25_000, residueCop: 0 },
+  ],
+  residueCop: 0,
+  rule: { mode: "equal" as const, shares: [] },
+  adjustsSettlementId: null,
+  edits: [
+    {
+      userId: "user_extra",
+      workedMinutes: null,
+      reason: "Called in sick",
+      change: "remove" as const,
+    },
+  ],
+});
+
+it("given a payment stored before tips, when 0015 runs, then recorded_at is the epoch and tax is untouched", async () => {
+  const client = await open();
+  await client.exec(`
+    INSERT INTO payments (
+      tenant_id, id, venue_id, shift_id, sale_cop, change_cop, tenders, tip
+    ) VALUES (
+      '${TENANT_A}', 'payment_old', '${VENUE_ID}', '${SHIFT_ID}',
+      85000, 5000, '[]'::jsonb, '{"method":"cash","amountCop":20000}'::jsonb
+    )
+  `);
+  const source = tipsMigration();
+  await client.exec(source);
+
+  const recorded = await client.query<{ recorded_at: string }>(
+    "SELECT recorded_at FROM payments WHERE id = 'payment_old'",
+  );
+  const columns = await client.query<{ column_name: string }>(
+    "SELECT column_name FROM information_schema.columns WHERE table_name = 'payments'",
+  );
+  const lowered = source.toLowerCase();
+
+  expect(recorded.rows).toEqual([{ recorded_at: EPOCH }]);
+  await expect(
+    client.exec("UPDATE payments SET recorded_at = '2026-11-04T18:21:00.000Z'"),
+  ).rejects.toThrow(/append-only/);
+  const kept = await client.query<{ recorded_at: string; sale_cop: number }>(
+    "SELECT recorded_at, sale_cop FROM payments WHERE id = 'payment_old'",
+  );
+  expect(kept.rows).toEqual([{ recorded_at: EPOCH, sale_cop: 85000 }]);
+  expect(columns.rows.map((row) => row.column_name)).not.toContain("tax_cop");
+  expect(lowered).toContain("create table tip_rules");
+  expect(lowered).toContain("create table tip_settlements");
+  expect(lowered).toContain("1970-01-01t00:00:00.000z");
+  expect(lowered).toContain("cash_register_app");
+  expect(lowered).not.toContain("create role");
+  expect(lowered).not.toContain("tax");
+});
+
+it("given tip rules and settlements for two tenants, when cash_register_app selects, then only the current tenant returns and a settlement cannot change", async () => {
+  const client = await openTips();
+  await client.exec(`
+    INSERT INTO tip_rules (tenant_id, venue_id, period, mode, shares) VALUES
+      ('${TENANT_A}', '${VENUE_ID}', 'day', 'equal', '[]'::jsonb),
+      ('${TENANT_B}', '${VENUE_ID}', 'week', 'hours', '[]'::jsonb);
+
+    INSERT INTO tip_settlements (
+      tenant_id, id, venue_id, pool_cop, residue_cop, methods, participants,
+      shares, rule, edits, adjusts_settlement_id
+    ) VALUES
+      (
+        '${TENANT_A}', '${SETTLEMENT_ID}', '${VENUE_ID}', 50000, 0,
+        '[{"method":"cash","amountCop":20000}]'::jsonb, '[]'::jsonb,
+        '[]'::jsonb, '{"mode":"equal","shares":[]}'::jsonb,
+        '[{"userId":"user_extra","workedMinutes":null,"reason":"Called in sick","change":"remove"}]'::jsonb,
+        NULL
+      ),
+      (
+        '${TENANT_B}', 'settlement_other', '${VENUE_ID}', 1000, 0,
+        '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+        '{"mode":"hours","shares":[]}'::jsonb, '[]'::jsonb, NULL
+      )
+  `);
+  await client.exec("SET ROLE cash_register_app");
+  await client.query("SELECT set_config('app.tenant_id', $1, false)", [
+    TENANT_A,
+  ]);
+
+  const rules = await client.query<{ venue_id: string }>(
+    "SELECT venue_id FROM tip_rules",
+  );
+  const settlements = await client.query<{ id: string }>(
+    "SELECT id FROM tip_settlements",
+  );
+
+  expect(rules.rows).toEqual([{ venue_id: VENUE_ID }]);
+  expect(settlements.rows).toEqual([{ id: SETTLEMENT_ID }]);
+
+  await client.exec("RESET ROLE");
+
+  for (const statement of [
+    "UPDATE tip_settlements SET pool_cop = 1",
+    "DELETE FROM tip_settlements",
+    "TRUNCATE tip_settlements",
+  ]) {
+    await expect(client.exec(statement)).rejects.toThrow(/append-only/);
+  }
+
+  const kept = await client.query<{ id: string; pool_cop: number }>(
+    `SELECT id, pool_cop FROM tip_settlements WHERE tenant_id = '${TENANT_A}'`,
+  );
+
+  expect(kept.rows).toEqual([{ id: SETTLEMENT_ID, pool_cop: 50000 }]);
+
+  await client.exec(
+    `UPDATE tip_rules SET mode = 'hours' WHERE tenant_id = '${TENANT_A}'`,
+  );
+  const replaced = await client.query<{ mode: string }>(
+    `SELECT mode FROM tip_rules WHERE tenant_id = '${TENANT_A}'`,
+  );
+
+  expect(replaced.rows).toEqual([{ mode: "hours" }]);
+});
+
+it("given a closure with a platform timestamp, when it is stored and reloaded, then the payment time, method pool, and edit reason stay", async () => {
+  const client = await openTips();
+  const ledger = new DrizzleCashRegisterLedger(client);
+  const queued = closure();
+  const row = settlementRow();
+  const rule = {
+    period: "day" as const,
+    mode: "percentage" as const,
+    shares: [
+      { employeeId: WAITER_ID, percent: 70 },
+      { employeeId: COOK_ID, percent: 30 },
+    ],
+  };
+
+  await ledger.insertClosure({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: RECORDED_AT,
+    closure: queued,
+  });
+  await ledger.insertClosure({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    shiftId: SHIFT_ID,
+    recordedAt: EPOCH,
+    closure: queued,
+  });
+  await ledger.saveTipRule({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    rule,
+  });
+  await ledger.appendTipSettlement({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    settlement: row,
+  });
+  await ledger.appendTipSettlement({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    settlement: {
+      ...row,
+      poolCop: 1,
+      methods: [{ method: "cash", amountCop: 1 }],
+      shares: [{ userId: WAITER_ID, baseCop: 1, residueCop: 0 }],
+      edits: [
+        {
+          userId: "user_extra",
+          workedMinutes: null,
+          reason: "Replaced",
+          change: "remove",
+        },
+      ],
+    },
+  });
+
+  expect(await ledger.listPaymentTips(TENANT_A, VENUE_ID)).toEqual([
+    {
+      recordedAt: RECORDED_AT,
+      tip: queued.tip,
+      saleCop: queued.saleCop,
+      taxCop: 0,
+    },
+  ]);
+  expect(await ledger.listPaymentTips(TENANT_B, VENUE_ID)).toEqual([]);
+  expect(await ledger.findTipRule(TENANT_A, VENUE_ID)).toEqual(rule);
+  expect(await ledger.findTipRule(TENANT_B, VENUE_ID)).toBeNull();
+  expect(await ledger.listTipSettlements(TENANT_A, VENUE_ID)).toEqual([row]);
+  expect(await ledger.listTipSettlements(TENANT_B, VENUE_ID)).toEqual([]);
+
+  await ledger.saveTipRule({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    rule: { period: "week", mode: "hours", shares: [] },
+  });
+
+  expect(await ledger.findTipRule(TENANT_A, VENUE_ID)).toEqual({
+    period: "week",
+    mode: "hours",
+    shares: [],
+  });
 });

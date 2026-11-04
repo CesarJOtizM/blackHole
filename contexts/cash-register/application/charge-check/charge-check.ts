@@ -59,10 +59,21 @@ export interface ChargeCheckInput {
   tip?: PaymentTip;
 }
 
+export abstract class ChargeClock {
+  abstract now(): number;
+}
+
+class SystemChargeClock extends ChargeClock {
+  override now(): number {
+    return Date.now();
+  }
+}
+
 export interface RecordedCharge {
   commandId: string;
   payment: Payment;
   closure: SaleClosure;
+  recordedAt: string;
 }
 
 export interface ChargeCheckResult {
@@ -211,6 +222,8 @@ const capturedTip = async (
 };
 
 export class ChargeCheck {
+  private readonly clock: ChargeClock;
+
   constructor(
     private readonly registerLookup: RegisterLookup,
     private readonly accounts: AccountGateway,
@@ -218,7 +231,10 @@ export class ChargeCheck {
     private readonly ledger: ChargeLedger,
     private readonly printer: Printer,
     private readonly audits: DrawerAudit,
-  ) {}
+    clock?: ChargeClock,
+  ) {
+    this.clock = clock ?? new SystemChargeClock();
+  }
 
   async execute(input: ChargeCheckInput): Promise<ChargeCheckResult> {
     const register = await knownRegister(
@@ -284,11 +300,13 @@ export class ChargeCheck {
       tenders: payment.tenders,
       tip: payment.tip,
     };
+    const recordedAt = new Date(this.clock.now()).toISOString();
 
     await this.ledger.insert(input.tenantId, input.venueId, {
       commandId: input.commandId,
       payment,
       closure,
+      recordedAt,
     });
     await this.accounts.markPaid(input.tenantId, input.venueId, check.checkId);
     await printCashReceipt(
