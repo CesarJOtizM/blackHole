@@ -1,4 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus, Post } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Put,
+} from "@nestjs/common";
 
 const SENSITIVE_ACTION_REJECTION = {
   ERROR: "SensitiveActionRejected",
@@ -18,6 +25,10 @@ export const routePermissions = {
     "sale.change-tender",
   "GET control-report": "audit.view",
   "GET unusual-behavior": "audit.view",
+  "PUT tip-rule": "cash.settle-tips",
+  "POST tip-settlements": "cash.settle-tips",
+  "POST tip-settlements/:id/adjustments": "cash.settle-tips",
+  "POST tip-settlements/:id/print": "cash.settle-tips",
 } as const;
 
 interface SensitiveActionRejection {
@@ -89,6 +100,30 @@ export class SensitiveActionsController {
   @Get("unusual-behavior")
   @HttpCode(HttpStatus.FORBIDDEN)
   rejectUnusualBehavior(): SensitiveActionRejection {
+    return { error: SENSITIVE_ACTION_REJECTION.ERROR };
+  }
+
+  @Put("tip-rule")
+  @HttpCode(HttpStatus.FORBIDDEN)
+  rejectTipRule(): SensitiveActionRejection {
+    return { error: SENSITIVE_ACTION_REJECTION.ERROR };
+  }
+
+  @Post("tip-settlements")
+  @HttpCode(HttpStatus.FORBIDDEN)
+  rejectTipSettlement(): SensitiveActionRejection {
+    return { error: SENSITIVE_ACTION_REJECTION.ERROR };
+  }
+
+  @Post("tip-settlements/:id/adjustments")
+  @HttpCode(HttpStatus.FORBIDDEN)
+  rejectTipAdjustment(): SensitiveActionRejection {
+    return { error: SENSITIVE_ACTION_REJECTION.ERROR };
+  }
+
+  @Post("tip-settlements/:id/print")
+  @HttpCode(HttpStatus.FORBIDDEN)
+  rejectTipPrint(): SensitiveActionRejection {
     return { error: SENSITIVE_ACTION_REJECTION.ERROR };
   }
 }

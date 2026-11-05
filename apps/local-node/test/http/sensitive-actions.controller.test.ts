@@ -28,9 +28,13 @@ const sensitiveRoutes = [
   ["POST", `${prefix}/cash-registers/register_1/payments/payment_1/tender`],
   ["GET", `${prefix}/control-report`],
   ["GET", `${prefix}/unusual-behavior`],
+  ["PUT", `${prefix}/tip-rule`],
+  ["POST", `${prefix}/tip-settlements`],
+  ["POST", `${prefix}/tip-settlements/settlement_1/adjustments`],
+  ["POST", `${prefix}/tip-settlements/settlement_1/print`],
 ] as const;
 
-it("given each sensitive route, when the node is called, then the response is 403 SensitiveActionRejected", async () => {
+it("given each sensitive route, when the node is called, then the response is 403 SensitiveActionRejected and nothing is stored", async () => {
   expect(routePermissions).toEqual({
     "POST checks/:checkId/lines/:lineId/void": "sale.void-before-kitchen",
     "POST checks/:checkId/void": "sale.void-account",
@@ -45,6 +49,10 @@ it("given each sensitive route, when the node is called, then the response is 40
       "sale.change-tender",
     "GET control-report": "audit.view",
     "GET unusual-behavior": "audit.view",
+    "PUT tip-rule": "cash.settle-tips",
+    "POST tip-settlements": "cash.settle-tips",
+    "POST tip-settlements/:id/adjustments": "cash.settle-tips",
+    "POST tip-settlements/:id/print": "cash.settle-tips",
   });
   expect(PrintingController.length).toBe(0);
   expect(SensitiveActionsController.length).toBe(0);
@@ -60,7 +68,7 @@ it("given each sensitive route, when the node is called, then the response is 40
       const response = await application.inject({
         method,
         url,
-        payload: method === "POST" ? drawerPayload : undefined,
+        payload: method === "GET" ? undefined : drawerPayload,
       });
 
       expect(response.statusCode).toBe(403);
@@ -70,8 +78,11 @@ it("given each sensitive route, when the node is called, then the response is 40
     expect(application.getHttpAdapter().getInstance().printRoutes()).toBe(
       routesBefore,
     );
-    expect(Reflect.getMetadata("providers", ApplicationModule) ?? []).toEqual(
-      [],
+    const providers = Reflect.getMetadata("providers", ApplicationModule) ?? [];
+
+    expect(providers).toEqual([]);
+    expect(JSON.stringify(providers)).not.toMatch(
+      /TipRule|TipSettlement|PrintJob|ConfigureTipRule|SettleTips|AdjustTipSettlement|PrintTipSettlement/,
     );
     expect(Reflect.getMetadata("imports", ApplicationModule) ?? []).toEqual([]);
   } finally {
