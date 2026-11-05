@@ -2,11 +2,11 @@
 
 **Change**: p1-10-tips
 **Mode**: Standard (ADR-017 test-first; `strict_tdd` is false)
-**PR slice**: feature-branch-chain. Each completed slice is its own branch. `size:exception` was not granted. HTTP and the local node are still open.
-**Work unit**: tasks 1.1 through 6.1 and 5.1 through 5.2.
+**PR slice**: feature-branch-chain. Each completed slice is its own branch. `size:exception` was not granted. HTTP remains open.
+**Work unit**: tasks 1.1 through 6.1, 5.1 through 5.2, and 8.1.
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
-**Latest batch**: the completed slices are committed on stacked branches. Tasks 7.1 through 8.1 remain open.
+**Latest batch**: task 8.1 rejects tip routes on the local node. Tasks 7.1 through 7.3 remain open. The earlier slices are on master.
 
 ## Completed tasks
 
@@ -21,6 +21,7 @@
 - [x] 4.2 RED/GREEN `contexts/cash-register/application/adjust-tip-settlement/` `entry-port.ts` `package.json`: permission first. New row, `adjustsSettlementId`, original snapshot after a later rule change. Audit `tips.settlement-adjusted`. cash-register
 - [x] 6.1 RED/GREEN `contexts/cash-register/adapters/postgres/0015_tips.sql` `schema.ts` `drizzle-cash-register-ledger.contract.test.ts` `application/charge-check/`: `tip_rules`, append-only `tip_settlements`. New `payments.recorded_at` from the platform clock. Backfill `1970-01-01T00:00:00.000Z`. Role `cash_register_app`. Tax unchanged. PGlite. cash-register
 - [x] 5.2 RED/GREEN `contexts/cash-register/application/print-tip-settlement/` `ports/printer.ts` `entry-port.ts` `package.json`: permission before enqueue. `tips_settlement`, `kickDrawer: false`. Backup or queued failure. No `@blackhole/printing` import. cash-register
+- [x] 8.1 RED/GREEN `apps/local-node/src/http/sensitive-actions.controller.ts` `test/http/sensitive-actions.controller.test.ts`: rule, settle, adjust, and print return 403 `{ error: "SensitiveActionRejected" }` and store nothing. No providers. local-node
 
 ## Work Unit Evidence
 
@@ -405,3 +406,27 @@ Same command. Exit 0. Test Files 1 passed. Tests 6 passed (6).
 - A kitchen chief, who lacks `cash.settle-tips`, gets 200 and a null body. The rule store stays empty and no audit is written.
 - An owner percentage of 70 and 30 is stored and returned. The only audit is `tips.rule-changed`, with `authorizerId` null and `deviceId` from the session.
 - `equal` with a non-empty shares list returns 400. Nothing is stored or audited. That rejection is the use case `InvalidTipPercentage`, mapped at the HTTP boundary.
+### Unit 11 — Local node rejects tip routes (task 8.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm exec vitest run --project local-node test/http/sensitive-actions.controller.test.ts`. RED exit 1: 1 failed file, 1 failed test. GREEN exit 0: 1 file, 1 passed. Same command after `pnpm exec biome check --write`: exit 0, 1 file, 1 passed. |
+| Runtime harness | Nest HTTP on the local node. `ApplicationModule` providers and imports stay empty. |
+| Rollback boundary | Remove the four tip routes and their `routePermissions` entries from `apps/local-node/src/http/sensitive-actions.controller.ts`. Remove those routes from `apps/local-node/test/http/sensitive-actions.controller.test.ts`. Uncheck task 8.1. Remove this Unit 11 section. |
+| Pair size | 56 changed lines (51 additions + 5 deletions): 37 in the controller and 19 in the test. Under the 400-line budget. The pair was not split. `application-module.ts` was not edited. |
+
+#### RED
+
+Command: `pnpm exec vitest run --project local-node test/http/sensitive-actions.controller.test.ts`
+
+Result: exit 1. Test Files 1 failed. Tests 1 failed. `routePermissions` had no `PUT tip-rule` and no `POST tip-settlements` keys.
+
+#### GREEN
+
+Same command. Exit 0. Test Files 1 passed. Tests 1 passed.
+
+`pnpm exec biome check --write` on the pair. Same command again. Exit 0. Test Files 1 passed. Tests 1 passed.
+
+### Behavior
+
+`PUT tip-rule`, `POST tip-settlements`, `POST tip-settlements/:id/adjustments`, and `POST tip-settlements/:id/print` return 403 `{ error: "SensitiveActionRejected" }`. Each permission is `cash.settle-tips`. The controller has no constructor. The module has no providers and no imports, so nothing is stored. No `POST checks/:checkId/lines` and no `POST reprints` were added.
