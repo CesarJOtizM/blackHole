@@ -13,6 +13,7 @@
     "./application/set-venue-attendance-policy": "./application/set-venue-attendance-policy/set-venue-attendance-policy.js",
     "./application/read-attendance": "./application/read-attendance/read-attendance.js",
     "./application/export-hours": "./application/export-hours/export-hours.js",
+    "./application/list-tip-participants": "./application/list-tip-participants/list-tip-participants.js",
     "./application/ports/clock": "./application/ports/clock.js",
     "./application/ports/pin-check": "./application/ports/pin-check.js",
     "./application/ports/attendance-policy-repository": "./application/ports/attendance-policy-repository.js",
@@ -41,6 +42,7 @@
     "#application/set-venue-attendance-policy/*": "./application/set-venue-attendance-policy/*",
     "#application/read-attendance/*": "./application/read-attendance/*",
     "#application/export-hours/*": "./application/export-hours/*",
+    "#application/list-tip-participants/*": "./application/list-tip-participants/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
     "#adapters/xlsx/*": "./adapters/xlsx/*"

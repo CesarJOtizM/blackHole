@@ -96,3 +96,9 @@ export class HasClockedInCashier {
     return counting && openCashRegisterId(rows) !== null;
   }
 }
+
+export type {
+  ListTipParticipantsCommand,
+  TipParticipant,
+} from "#application/list-tip-participants/list-tip-participants.js";
+export { ListTipParticipants } from "#application/list-tip-participants/list-tip-participants.js";

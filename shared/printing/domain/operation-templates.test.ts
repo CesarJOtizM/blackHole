@@ -24,9 +24,18 @@ const DESTINATION = "Venue north dry storage";
 const TRANSFER_LINE = "Beef ribeye 12 kg lot A-4481";
 const TRANSFER_QR = `https://venue.example/transfer/${"ref".repeat(16)}`;
 const PERIOD = "2026-10-01/2026-10-15";
+const CASH_METHOD = "cash register floor one";
+const CASH_AMOUNT = "20000.00";
+const CARD_METHOD = "card terminal north";
+const CARD_AMOUNT = "30000.00";
+const RULE = "hours by recorded attendance minutes";
+const RESIDUE = "1.00";
 const PARTICIPANT = "Ana Morales service team";
 const TIP_AMOUNT = "185000.00";
+const SECOND_PARTICIPANT = "Luis Herrera kitchen pass";
+const SECOND_SHARE = "454999.00";
 const TIP_TOTAL = "640000.00";
+const SIGNATURE_LINE = `Signature ${"_".repeat(22)}`;
 
 const PAPERS = [
   { paper: "80", columns: 48 },
@@ -148,23 +157,50 @@ it("given a transfer on 80 mm and 58 mm, when it is rendered, then the caller pa
   }
 });
 
-it("given a tips settlement on 80 mm and 58 mm, when it is rendered, then the caller payload stays inside the columns and there is no pulse", () => {
+it("given a tips settlement on 80 mm and 58 mm, when it is rendered, then the methods, rule, residue, shares, and signature lines stay inside the columns and there is no pulse", () => {
   for (const { paper, columns } of PAPERS) {
     const rendered = renderTipsSettlement({
       paper,
       period: PERIOD,
-      lines: [{ participant: PARTICIPANT, amount: TIP_AMOUNT }],
+      methods: [
+        { method: CASH_METHOD, amount: CASH_AMOUNT },
+        { method: CARD_METHOD, amount: CARD_AMOUNT },
+      ],
+      rule: RULE,
+      residue: RESIDUE,
+      lines: [
+        { participant: PARTICIPANT, amount: TIP_AMOUNT },
+        { participant: SECOND_PARTICIPANT, amount: SECOND_SHARE },
+      ],
       total: TIP_TOTAL,
       kickDrawer: false,
     });
 
+    const text = compact(rendered.text);
+
     expectLaidOut(rendered, columns, [
       "Tips settlement",
       PERIOD,
+      "Payment methods",
+      CASH_METHOD,
+      CASH_AMOUNT,
+      CARD_METHOD,
+      CARD_AMOUNT,
+      "Rule",
+      RULE,
+      "Residue",
+      RESIDUE,
+      "Share",
       PARTICIPANT,
       TIP_AMOUNT,
+      SECOND_PARTICIPANT,
+      SECOND_SHARE,
+      SIGNATURE_LINE,
       TIP_TOTAL,
     ]);
+    expect(text.match(/Share/g)).toHaveLength(2);
+    expect(text.match(new RegExp(SIGNATURE_LINE, "g"))).toHaveLength(2);
+    expect(rendered.pulse).toBeNull();
   }
 });
 
@@ -204,6 +240,9 @@ it("given a kick on a kitchen, pre-bill, cash close, transfer, or tips job, when
   const tips = {
     paper: "80" as const,
     period: PERIOD,
+    methods: [{ method: CASH_METHOD, amount: CASH_AMOUNT }],
+    rule: RULE,
+    residue: RESIDUE,
     lines: [{ participant: PARTICIPANT, amount: TIP_AMOUNT }],
     total: TIP_TOTAL,
     kickDrawer: true,
