@@ -16,6 +16,8 @@ Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–
 - [x] 1.8 GREEN `domain/masking.ts` and its export in `domain/index.ts`. No catalog lookup. The domain does not call the network.
 - [x] 1.9 RED `contexts/invoicing/domain/reinvoice-window.test.ts`: `same_day` default, `same_month`, `off`, America/Bogota.
 - [x] 1.10 GREEN `domain/reinvoice-window.ts` and its export in `domain/index.ts`. No provider call. The domain does not call the network.
+- [x] 2.1 RED `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
+- [x] 2.2 GREEN `application/look-up-portal-buyer/look-up-portal-buyer.ts`. `#application/look-up-portal-buyer/*`. Not exported from `entry-port.ts`. `ProviderRateGate` unchanged.
 
 ## Work Unit Evidence
 
@@ -153,3 +155,40 @@ None.
 - Files in this batch: `contexts/invoicing/domain/reinvoice-window.test.ts`, `contexts/invoicing/domain/reinvoice-window.ts`, `contexts/invoicing/domain/index.ts` (reinvoice-window exports), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 190 lines (`reinvoice-window.test.ts` 110, `reinvoice-window.ts` 74, plus 6 `index.ts` export lines). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
 - Next unchecked task: 2.1
+
+## Pair 2.1–2.2
+
+This batch adds use-case pair 2.1–2.2 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `LookUpPortalBuyer` calls the injected store, limiter, and `lookupAcquirer` only. It does not open sockets, call Factus or Twilio, sign HMAC, or touch Postgres. |
+| Rollback boundary | `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`, `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.ts`, and the `#application/look-up-portal-buyer/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/portal-link.test.ts contexts/invoicing/domain/one-time-code.test.ts contexts/invoicing/domain/billing-data.test.ts contexts/invoicing/domain/masking.test.ts contexts/invoicing/domain/reinvoice-window.test.ts` — exit 0. `Test Files  5 passed (5)`. `Tests  41 passed (41)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.1 → 2.2 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` exit 1. `FAIL contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — `Cannot find module '#application/look-up-portal-buyer/look-up-portal-buyer.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `look-up-portal-buyer.ts` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. |
+
+### Deviations from Design
+
+The limiter is `PortalLookupLimiter.acquire(taxId, at, ceiling)` beside the use case. `ProviderRateGate` is unchanged (tasks 3.1–3.2). The use case is not exported from `entry-port.ts` (task 2.16). Cache and `portal_lookups` are one injected `PortalBuyerLookupStore`, not Postgres. A row exactly 30 days old is still a hit. A row older than 30 days, or one whose company does not match, is a miss. Hidden link, limiter throw, provider throw, empty lookup, and a company with no cache all return `{ outcome: "hidden" }`.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.1 and 2.2 only. No postgres, Twilio, HTTP, UI, `ProviderRateGate`, or `entry-port.ts` export.
+- Files in this batch: `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`, `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 474 lines (`look-up-portal-buyer.test.ts` 281, `look-up-portal-buyer.ts` 192, plus 1 `package.json` import). That is 74 lines over the 400-line review budget. `size:exception` was not granted.
+- Next unchecked task: 2.3
