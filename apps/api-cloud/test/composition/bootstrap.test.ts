@@ -15,6 +15,7 @@ import {
   OpenShift,
   OriginalPaymentReader,
   PaidAccountReader,
+  PrintTipSettlement,
   ReopenPaidAccount,
   SettleTips,
   SubmitCount,
@@ -114,6 +115,14 @@ import { Secrets } from "@blackhole/platform/application/ports/secrets";
 import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
+import {
+  DispatchJobRepository,
+  DispatchPrinterRepository,
+  DispatchPrintJobs,
+  EnqueuePrintJob,
+  PrinterRepository,
+  PrintJobRepository,
+} from "@blackhole/printing/application/entry-port";
 import { expect, it } from "vitest";
 import {
   ApplicationModule,
@@ -121,7 +130,11 @@ import {
   MemoryCreditNotes,
   MemoryDocumentBalances,
   MemoryNumberingRanges,
+  MemoryTipDispatchJobs,
+  MemoryTipDispatchPrinters,
   MemoryTipPool,
+  MemoryTipPrinters,
+  MemoryTipPrintJobs,
   MemoryTipRules,
   MemoryTipSettlements,
 } from "#src/composition/application-module.js";
@@ -513,6 +526,38 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
           AuditRepository,
           AuditDigest,
           Clock,
+        ],
+      },
+      { provide: PrintJobRepository, useValue: new MemoryTipPrintJobs() },
+      { provide: PrinterRepository, useValue: new MemoryTipPrinters() },
+      {
+        provide: DispatchJobRepository,
+        useValue: new MemoryTipDispatchJobs(new MemoryTipPrintJobs()),
+      },
+      {
+        provide: DispatchPrinterRepository,
+        useValue: new MemoryTipDispatchPrinters(new MemoryTipPrinters()),
+      },
+      {
+        provide: EnqueuePrintJob,
+        useFactory: expect.any(Function),
+        inject: [PrinterRepository, PrintJobRepository],
+      },
+      {
+        provide: DispatchPrintJobs,
+        useFactory: expect.any(Function),
+        inject: [DispatchJobRepository, DispatchPrinterRepository],
+      },
+      {
+        provide: PrintTipSettlement,
+        useFactory: expect.any(Function),
+        inject: [
+          TipSettlementStore,
+          EnqueuePrintJob,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
         ],
       },
       {

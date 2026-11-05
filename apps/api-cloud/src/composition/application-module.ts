@@ -21,8 +21,12 @@ import {
   OriginalPaymentReader,
   PaidAccountReader,
   type Payment,
+  PrintTipSettlement,
+  type QueuedSaleReceipt,
   type RecordedPaymentTip,
   ReopenPaidAccount,
+  type SaleReceiptJob,
+  Printer as SaleReceiptPrinter,
   SettleTips,
   SubmitCount,
   TipParticipantSource,
@@ -120,6 +124,20 @@ import { SessionReader } from "@blackhole/platform/application/ports/session-rea
 import { SignatureVerifier } from "@blackhole/platform/application/ports/signature-verifier";
 import { VenueOperationRepository } from "@blackhole/platform/application/ports/venue-operation-repository";
 import {
+  type ConfiguredPrinter,
+  type DispatchablePrintJob,
+  DispatchJobRepository,
+  type DispatchPrinter,
+  DispatchPrinterRepository,
+  DispatchPrintJobs,
+  EnqueuePrintJob,
+  type PrintDelivery,
+  PrinterRepository,
+  type PrintJob,
+  PrintJobRepository,
+  PrintTransport,
+} from "@blackhole/printing/application/entry-port";
+import {
   type DynamicModule,
   type MiddlewareConsumer,
   Module,
@@ -174,6 +192,7 @@ import {
   RealtimeSocketMiddleware,
 } from "#src/http/orders-realtime.controller.js";
 import { PlaceTableController } from "#src/http/place-table.controller.js";
+import { PrintTipSettlementController } from "#src/http/print-tip-settlement.controller.js";
 import {
   MemoryReprintAudit,
   PrintingController,
@@ -298,6 +317,11 @@ export class ApplicationModule implements NestModule {
     const tipRules = new MemoryTipRules();
     const tipPool = new MemoryTipPool();
     const tipSettlements = new MemoryTipSettlements();
+    const tipPrintJobs = new MemoryTipPrintJobs();
+    const tipPrinters = new MemoryTipPrinters();
+    const tipDispatchJobs = new MemoryTipDispatchJobs(tipPrintJobs);
+    const tipDispatchPrinters = new MemoryTipDispatchPrinters(tipPrinters);
+    const tipPrintTransport = new MemoryTipPrintTransport();
     const reprintCap = dependencies.reprintCap ?? new ReprintCap(null);
     const reprintAudits =
       dependencies.reprintAudits ?? new MemoryReprintAudit();
@@ -334,6 +358,7 @@ export class ApplicationModule implements NestModule {
         ConfigureTipRuleController,
         SettleTipsController,
         AdjustTipSettlementController,
+        PrintTipSettlementController,
         ReopenPaidAccountController,
         ChangeTenderController,
         ChangeLineStateController,
@@ -1058,6 +1083,53 @@ export class ApplicationModule implements NestModule {
             Clock,
           ],
         },
+        { provide: PrintJobRepository, useValue: tipPrintJobs },
+        { provide: PrinterRepository, useValue: tipPrinters },
+        { provide: DispatchJobRepository, useValue: tipDispatchJobs },
+        { provide: DispatchPrinterRepository, useValue: tipDispatchPrinters },
+        {
+          provide: EnqueuePrintJob,
+          useFactory: (printers: PrinterRepository, jobs: PrintJobRepository) =>
+            new EnqueuePrintJob(printers, jobs),
+          inject: [PrinterRepository, PrintJobRepository],
+        },
+        {
+          provide: DispatchPrintJobs,
+          useFactory: (
+            jobs: DispatchJobRepository,
+            printers: DispatchPrinterRepository,
+          ) => new DispatchPrintJobs(jobs, printers, tipPrintTransport),
+          inject: [DispatchJobRepository, DispatchPrinterRepository],
+        },
+        {
+          provide: PrintTipSettlement,
+          useFactory: (
+            settlements: TipSettlementStore,
+            enqueue: EnqueuePrintJob,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+          ) =>
+            new PrintTipSettlement(
+              settlements,
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new TipSettlementQueue(enqueue),
+            ),
+          inject: [
+            TipSettlementStore,
+            EnqueuePrintJob,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+          ],
+        },
         {
           provide: ReopenPaidAccount,
           useFactory: (
@@ -1444,6 +1516,155 @@ export class MemoryTipRules extends TipRuleStore {
   ): Promise<void> {
     this.rules.set(tipRuleKey(tenantId, venueId), copyTipRule(rule));
 
+    return Promise.resolve();
+  }
+}
+
+interface StoredTipPrinter extends ConfiguredPrinter {
+  retryLimit: number;
+  backupPrinterId: string | null;
+}
+
+type StoredTipPrintJob = Omit<PrintJob, "status"> & {
+  status: "waiting" | "printed" | "failed";
+  deliveredPrinterId: string | null;
+};
+
+const pesos = (amount: number): string => String(amount);
+
+class TipSettlementQueue extends SaleReceiptPrinter {
+  constructor(private readonly printJobs: EnqueuePrintJob) {
+    super();
+  }
+
+  override async enqueue(job: SaleReceiptJob): Promise<QueuedSaleReceipt> {
+    if (job.document !== "tips_settlement") {
+      throw new Error("Tip settlement printing accepts tips_settlement only.");
+    }
+
+    const saved = await this.printJobs.execute({
+      commandId: job.commandId,
+      printerId: job.printerId,
+      kickDrawer: job.kickDrawer,
+      document: "tips_settlement",
+      period: job.period,
+      methods: job.methods.map((method) => ({
+        method: method.method,
+        amount: pesos(method.amountCop),
+      })),
+      rule: job.rule,
+      residue: pesos(job.residueCop),
+      lines: job.shares.map((share) => ({
+        participant: share.userId,
+        amount: pesos(share.amountCop),
+      })),
+      total: pesos(job.poolCop),
+    });
+
+    return { status: "waiting", kickDrawer: saved.kickDrawer };
+  }
+}
+
+export class MemoryTipPrintJobs extends PrintJobRepository {
+  readonly rows: StoredTipPrintJob[] = [];
+
+  override findByCommand(commandId: string): Promise<PrintJob | null> {
+    const found = this.rows.find((row) => row.commandId === commandId);
+
+    if (found === undefined) {
+      return Promise.resolve(null);
+    }
+
+    return Promise.resolve({ ...found, status: "waiting" });
+  }
+
+  override insert(job: PrintJob): Promise<void> {
+    this.rows.push({ ...job, deliveredPrinterId: null });
+
+    return Promise.resolve();
+  }
+}
+
+export class MemoryTipDispatchJobs extends DispatchJobRepository {
+  constructor(private readonly jobs: MemoryTipPrintJobs) {
+    super();
+  }
+
+  override listWaiting(): Promise<DispatchablePrintJob[]> {
+    return Promise.resolve(
+      this.jobs.rows
+        .filter((row) => row.status === "waiting")
+        .map((row) => ({
+          id: row.id,
+          printerId: row.printerId,
+          status: row.status,
+          text: row.text,
+          deliveredPrinterId: row.deliveredPrinterId,
+        })),
+    );
+  }
+
+  override save(job: DispatchablePrintJob): Promise<void> {
+    const found = this.jobs.rows.find((row) => row.id === job.id);
+
+    if (found !== undefined) {
+      found.status = job.status;
+      found.deliveredPrinterId = job.deliveredPrinterId;
+    }
+
+    return Promise.resolve();
+  }
+}
+
+export class MemoryTipPrinters extends PrinterRepository {
+  readonly configured = new Map<string, StoredTipPrinter>();
+
+  override save(printer: ConfiguredPrinter): Promise<void> {
+    const current = this.configured.get(printer.id);
+
+    this.configured.set(printer.id, {
+      id: printer.id,
+      paper: printer.paper,
+      retryLimit: current?.retryLimit ?? 1,
+      backupPrinterId: current?.backupPrinterId ?? null,
+    });
+
+    return Promise.resolve();
+  }
+
+  override find(id: string): Promise<ConfiguredPrinter | null> {
+    const found = this.configured.get(id);
+
+    if (found === undefined) {
+      return Promise.resolve(null);
+    }
+
+    return Promise.resolve({ id: found.id, paper: found.paper });
+  }
+}
+
+export class MemoryTipDispatchPrinters extends DispatchPrinterRepository {
+  constructor(private readonly printers: MemoryTipPrinters) {
+    super();
+  }
+
+  override find(id: string): Promise<DispatchPrinter | null> {
+    const found = this.printers.configured.get(id);
+
+    if (found === undefined) {
+      return Promise.resolve(null);
+    }
+
+    return Promise.resolve({
+      id: found.id,
+      retryLimit: found.retryLimit,
+      backupPrinterId: found.backupPrinterId,
+    });
+  }
+}
+
+class MemoryTipPrintTransport extends PrintTransport {
+  override send(_delivery: PrintDelivery): Promise<void> {
     return Promise.resolve();
   }
 }

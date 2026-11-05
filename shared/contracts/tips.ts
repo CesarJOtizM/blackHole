@@ -135,3 +135,25 @@ export const closedTipSettlement = z
   .strict();
 
 export type ClosedTipSettlement = z.infer<typeof closedTipSettlement>;
+
+export const printTipSettlementCommand = z
+  .object({
+    printerId: z.string(),
+    commandId: z.string(),
+    period: z.string(),
+  })
+  .strict();
+
+export type PrintTipSettlementCommand = z.infer<
+  typeof printTipSettlementCommand
+>;
+
+export const printedTipSettlement = z
+  .object({
+    settlementId: z.string(),
+    status: z.enum(["printed", "backup", "queued", "failed"]),
+    warning: z.string().nullable(),
+  })
+  .strict();
+
+export type PrintedTipSettlement = z.infer<typeof printedTipSettlement>;
