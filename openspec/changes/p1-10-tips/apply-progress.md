@@ -373,6 +373,39 @@ Same command. Exit 0. Test Files 1 passed. Tests 6 passed (6).
 - A waiting receipt is `queued` and warns `The print job stayed queued.` A failed receipt is `failed` and warns `The print job failed.` Both jobs stay enqueued with `kickDrawer: false`.
 - There is no audit event. The use case does not import `@blackhole/printing`. It uses the cash-register `Printer` port. `domain` tip files, `settle-tips.ts`, and `adjust-tip-settlement.ts` were not edited.
 
+### Unit 12 — Configure tip rule HTTP (task 7.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/configure-tip-rule.controller.test.ts`. RED exit 1: 1 failed file, no tests. GREEN exit 0: 1 file, 6 passed. Same command after `pnpm exec biome check --write` fixed 6 files: exit 0, 1 file, 6 passed. |
+| Runtime harness | Nest HTTP on api-cloud through `application.inject` PUT. In-memory `TipRuleStore` and audit repository. No Postgres. |
+| Rollback boundary | Delete `shared/contracts/tips.ts`, `apps/api-cloud/src/http/configure-tip-rule.controller.ts`, and `apps/api-cloud/test/http/configure-tip-rule.controller.test.ts`. Remove the tips export from `shared/contracts/index.ts`. Remove `ConfigureTipRule`, `TipRuleStore`, and `MemoryTipRules` from `apps/api-cloud/src/composition/application-module.ts`. Remove the matching provider expectation from `apps/api-cloud/test/composition/bootstrap.test.ts`. Leave the `ChargeCheck` clock adapter in place. Uncheck task 7.1. Remove this Unit 12 section. Leave tasks 1.1 through 6.1, 5.1, 5.2, and 8.1 and their files in place. |
+| Pair size | 403 lines on the named task files (33 `tips.ts` + 108 controller + 181 test + 6 `index.ts` + 75 `application-module.ts`). Additions only. 3 lines over the 400-line budget. `size:exception` was not granted. The pair was not split. The bootstrap provider snapshot adds 18 lines and is outside that named list. Combined review diff is 421 lines, 21 over the budget. |
+
+#### RED
+
+Command: `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/configure-tip-rule.controller.test.ts`
+
+Result: exit 1. Test Files 1 failed. Tests: no tests.
+
+Failure before the controller existed:
+
+- `Cannot find module '#src/http/configure-tip-rule.controller.js'` imported from `apps/api-cloud/test/http/configure-tip-rule.controller.test.ts`.
+
+#### GREEN
+
+Same command. Exit 0. Test Files 1 passed. Tests 6 passed (6).
+
+`pnpm exec biome check --write` on the pair and `bootstrap.test.ts` fixed 6 files. Same command again. Exit 0. Test Files 1 passed. Tests 6 passed (6). `bootstrap.test.ts` in the same project also passed after that format (3 tests).
+
+### Behavior
+
+- `PUT tenants/:tenantId/venues/:venueId/tip-rule` uses Zod 4 `configureTipRuleCommand.strict()` and `safeParse`. A missing `x-session-id`, an unknown session, or a body that carries `actorId`, `sessionId`, or `deviceId` returns 400. Nothing is stored or audited.
+- Actor, session, and device come from `SessionReader`. `authorizerId` comes from `authorizerOf`. The body may carry `authorizationId`. The use case is not given a consume step.
+- `routePermissions` is `{ "PUT tip-rule": "cash.settle-tips" }`. `ConfigureTipRule` is wired with `EvaluatePermission` and `RecordAuditEvent` only. `ChargeCheck` still receives `ChargeClockAdapter`.
+- A kitchen chief, who lacks `cash.settle-tips`, gets 200 and a null body. The rule store stays empty and no audit is written.
+- An owner percentage of 70 and 30 is stored and returned. The only audit is `tips.rule-changed`, with `authorizerId` null and `deviceId` from the session.
+- `equal` with a non-empty shares list returns 400. Nothing is stored or audited. That rejection is the use case `InvalidTipPercentage`, mapped at the HTTP boundary.
 ### Unit 11 — Local node rejects tip routes (task 8.1)
 
 | Evidence | Required value |

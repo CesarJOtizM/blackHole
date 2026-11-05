@@ -20,6 +20,7 @@
     "menu.ts",
     "printing.ts",
     "sensitive-actions.ts",
+    "tips.ts",
     "update-structure.ts"
   ]
 }
