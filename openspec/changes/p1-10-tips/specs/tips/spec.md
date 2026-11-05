@@ -8,7 +8,7 @@ Distribute each site's common tip pool among those who worked in a period, by a 
 
 ### Requirement: Distribution Rule
 
-Each site SHALL have one active rule with a period (shift, day or week) and a mode: equal, percentage per person or role, or by hours worked. Percentages MUST sum to exactly 100 %. Changes MUST require permission and be audited.
+Each site SHALL have one active rule with a period (shift, day or week) and a mode: equal, percentage per person, or by hours worked. Percentages MUST sum to exactly 100 %. Changes MUST require permission and be audited.
 
 #### Scenario: Valid percentage rule
 - GIVEN an administrator of the site
