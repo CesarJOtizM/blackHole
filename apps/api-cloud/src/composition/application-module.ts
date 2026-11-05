@@ -7,11 +7,13 @@ import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-wor
 import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-terminal/manual-card-terminal";
 import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
 import {
+  type ActiveTipRule,
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
   ChargeClock,
   CloseShift,
+  ConfigureTipRule,
   OpenDrawer,
   OpenShift,
   OriginalPaymentReader,
@@ -19,6 +21,7 @@ import {
   type Payment,
   ReopenPaidAccount,
   SubmitCount,
+  TipRuleStore,
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
@@ -144,6 +147,7 @@ import { ChangePriceController } from "#src/http/change-price.controller.js";
 import { ChangeTenderController } from "#src/http/change-tender.controller.js";
 import { ChargeCheckController } from "#src/http/charge-check.controller.js";
 import { ConfigureStationRouteController } from "#src/http/configure-station-route.controller.js";
+import { ConfigureTipRuleController } from "#src/http/configure-tip-rule.controller.js";
 import { DetectUnusualBehaviorController } from "#src/http/detect-unusual-behavior.controller.js";
 import { GetCheckController } from "#src/http/get-check.controller.js";
 import { HealthController } from "#src/http/health.controller.js";
@@ -280,6 +284,7 @@ export class ApplicationModule implements NestModule {
     const numberingRanges =
       dependencies.numberingRanges ?? new MemoryNumberingRanges();
     const salePrinter = new PendingSalePrinter();
+    const tipRules = new MemoryTipRules();
     const reprintCap = dependencies.reprintCap ?? new ReprintCap(null);
     const reprintAudits =
       dependencies.reprintAudits ?? new MemoryReprintAudit();
@@ -313,6 +318,7 @@ export class ApplicationModule implements NestModule {
         ApplyCourtesyController,
         ChangePriceController,
         OpenDrawerController,
+        ConfigureTipRuleController,
         ReopenPaidAccountController,
         ChangeTenderController,
         ChangeLineStateController,
@@ -910,6 +916,40 @@ export class ApplicationModule implements NestModule {
             AuthorizationClock,
           ],
         },
+        { provide: TipRuleStore, useValue: tipRules },
+        {
+          provide: ConfigureTipRule,
+          useFactory: (
+            rules: TipRuleStore,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+          ) =>
+            new ConfigureTipRule(
+              rules,
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            TipRuleStore,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+          ],
+        },
         {
           provide: ReopenPaidAccount,
           useFactory: (
@@ -1222,6 +1262,41 @@ export class MemoryCashCounts {
   ): Promise<void> {
     this.saves += 1;
     this.counts.set(countKey(tenantId, venueId, registerId), count);
+  }
+}
+
+const tipRuleKey = (tenantId: string, venueId: string): string =>
+  `${tenantId}\u0000${venueId}`;
+
+const copyTipRule = (rule: ActiveTipRule): ActiveTipRule => ({
+  period: rule.period,
+  mode: rule.mode,
+  shares: rule.shares.map((share) => ({
+    employeeId: share.employeeId,
+    percent: share.percent,
+  })),
+});
+
+export class MemoryTipRules extends TipRuleStore {
+  private readonly rules = new Map<string, ActiveTipRule>();
+
+  override find(
+    tenantId: string,
+    venueId: string,
+  ): Promise<ActiveTipRule | null> {
+    const found = this.rules.get(tipRuleKey(tenantId, venueId));
+
+    return Promise.resolve(found === undefined ? null : copyTipRule(found));
+  }
+
+  override save(
+    tenantId: string,
+    venueId: string,
+    rule: ActiveTipRule,
+  ): Promise<void> {
+    this.rules.set(tipRuleKey(tenantId, venueId), copyTipRule(rule));
+
+    return Promise.resolve();
   }
 }
 

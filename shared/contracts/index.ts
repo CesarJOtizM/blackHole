@@ -170,6 +170,12 @@ export {
   sensitiveActionEnvelope,
 } from "#contracts/sensitive-actions.js";
 export {
+  type ConfiguredTipRule,
+  type ConfigureTipRuleCommand,
+  configuredTipRule,
+  configureTipRuleCommand,
+} from "#contracts/tips.js";
+export {
   type OrganizationChanged,
   organizationChanged,
   type StructureCommand,

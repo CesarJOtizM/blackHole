@@ -9,12 +9,14 @@ import {
   ChangeTender,
   ChargeCheck,
   CloseShift,
+  ConfigureTipRule,
   OpenDrawer,
   OpenShift,
   OriginalPaymentReader,
   PaidAccountReader,
   ReopenPaidAccount,
   SubmitCount,
+  TipRuleStore,
 } from "@blackhole/cash-register/application/entry-port";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
@@ -114,6 +116,7 @@ import {
   MemoryCreditNotes,
   MemoryDocumentBalances,
   MemoryNumberingRanges,
+  MemoryTipRules,
 } from "#src/composition/application-module.js";
 import {
   InMemoryAttendancePolicyRepository,
@@ -445,6 +448,21 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
           SessionReader,
           IdentityReader,
           AuthorizationClock,
+        ],
+      },
+      { provide: TipRuleStore, useValue: new MemoryTipRules() },
+      {
+        provide: ConfigureTipRule,
+        useFactory: expect.any(Function),
+        inject: [
+          TipRuleStore,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
         ],
       },
       {
