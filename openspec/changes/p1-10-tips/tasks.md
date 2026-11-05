@@ -49,7 +49,7 @@ Units: PR1 1.1–1.2; PR2 1.3 after PR1; PR3 1.4 after PR2; PR4 2.1 after PR3; P
 
 - [x] 7.1 RED/GREEN `shared/contracts/tips.ts` `index.ts` `apps/api-cloud/src/http/configure-tip-rule.controller.ts` `src/composition/application-module.ts` `test/http/configure-tip-rule.controller.test.ts`: Zod 4 `.strict()` and `safeParse`. `PUT tenants/:tenantId/venues/:venueId/tip-rule`. Denial writes nothing. api-cloud
 - [x] 7.2 RED/GREEN `apps/api-cloud/src/http/settle-tips.controller.ts` `adjust-tip-settlement.controller.ts` + tests + composition: `POST .../tip-settlements` and `POST .../tip-settlements/:id/adjustments`. Wire both entry ports. api-cloud
-- [ ] 7.3 RED/GREEN `apps/api-cloud/src/http/print-tip-settlement.controller.ts` + test + composition: `POST .../tip-settlements/:id/print`. `EnqueuePrintJob`, then `DispatchPrintJobs`. api-cloud
+- [x] 7.3 RED/GREEN `apps/api-cloud/src/http/print-tip-settlement.controller.ts` + test + composition: `POST .../tip-settlements/:id/print`. `EnqueuePrintJob`, then `DispatchPrintJobs`. api-cloud
 
 ## 8. Node
 

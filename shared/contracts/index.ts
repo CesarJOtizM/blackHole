@@ -178,6 +178,10 @@ export {
   closedTipSettlement,
   configuredTipRule,
   configureTipRuleCommand,
+  type PrintedTipSettlement,
+  type PrintTipSettlementCommand,
+  printedTipSettlement,
+  printTipSettlementCommand,
   type SettleTipsCommand,
   settleTipsCommand,
 } from "#contracts/tips.js";
