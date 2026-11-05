@@ -11,6 +11,21 @@ export {
   WithholdingRejected,
 } from "#domain/assess-withholdings.js";
 export type {
+  BillingConsent,
+  BillingConsentDraft,
+  BillingDataDraft,
+  BillingDataRecord,
+  InvoiceSnapshot,
+} from "#domain/billing-data.js";
+export {
+  deleteBillingData,
+  IncompleteBillingIdentity,
+  InvalidBillingInstant,
+  MissingBillingEmail,
+  MissingMunicipalityCode,
+  recordBillingData,
+} from "#domain/billing-data.js";
+export type {
   BagLine,
   CalculateTaxesInput,
   FiscalProfile,
