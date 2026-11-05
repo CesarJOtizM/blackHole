@@ -5,6 +5,7 @@ import { ClockEntryCorrectionRepository } from "@blackhole/attendance/applicatio
 import { ClockEntryRepository } from "@blackhole/attendance/application/ports/clock-entry-repository";
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import {
+  AdjustTipSettlement,
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
@@ -15,8 +16,12 @@ import {
   OriginalPaymentReader,
   PaidAccountReader,
   ReopenPaidAccount,
+  SettleTips,
   SubmitCount,
+  TipParticipantSource,
+  TipPool,
   TipRuleStore,
+  TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
@@ -116,7 +121,9 @@ import {
   MemoryCreditNotes,
   MemoryDocumentBalances,
   MemoryNumberingRanges,
+  MemoryTipPool,
   MemoryTipRules,
+  MemoryTipSettlements,
 } from "#src/composition/application-module.js";
 import {
   InMemoryAttendancePolicyRepository,
@@ -456,6 +463,49 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         useFactory: expect.any(Function),
         inject: [
           TipRuleStore,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      { provide: TipPool, useValue: new MemoryTipPool() },
+      {
+        provide: TipParticipantSource,
+        useFactory: expect.any(Function),
+        inject: [
+          ClockEntryRepository,
+          ClockEntryCorrectionRepository,
+          AttendancePolicyRepository,
+        ],
+      },
+      { provide: TipSettlementStore, useValue: new MemoryTipSettlements() },
+      {
+        provide: SettleTips,
+        useFactory: expect.any(Function),
+        inject: [
+          TipRuleStore,
+          TipPool,
+          TipParticipantSource,
+          TipSettlementStore,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      {
+        provide: AdjustTipSettlement,
+        useFactory: expect.any(Function),
+        inject: [
+          TipRuleStore,
+          TipSettlementStore,
           AuthorizationRepository,
           SessionReader,
           IdentityReader,

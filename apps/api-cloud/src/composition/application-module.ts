@@ -8,10 +8,12 @@ import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-ter
 import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
 import {
   type ActiveTipRule,
+  AdjustTipSettlement,
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
   ChargeClock,
+  type ClosedTipSettlement,
   CloseShift,
   ConfigureTipRule,
   OpenDrawer,
@@ -19,9 +21,15 @@ import {
   OriginalPaymentReader,
   PaidAccountReader,
   type Payment,
+  type RecordedPaymentTip,
   ReopenPaidAccount,
+  SettleTips,
   SubmitCount,
+  TipParticipantSource,
+  TipPool,
+  type TipPoolQuery,
   TipRuleStore,
+  TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
@@ -121,6 +129,7 @@ import {
   InMemoryAttendancePolicyRepository,
   InMemoryClockEntryCorrectionRepository,
 } from "#src/composition/attendance-memory.js";
+import { AttendanceTipParticipants } from "#src/composition/attendance-tip-participants.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import {
@@ -136,6 +145,7 @@ import {
 } from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
+import { AdjustTipSettlementController } from "#src/http/adjust-tip-settlement.controller.js";
 import { ApplyCourtesyController } from "#src/http/apply-courtesy.controller.js";
 import { ApplyDiscountController } from "#src/http/apply-discount.controller.js";
 import { AttendanceController } from "#src/http/attendance.controller.js";
@@ -175,6 +185,7 @@ import { ReassignCheckController } from "#src/http/reassign-check.controller.js"
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
+import { SettleTipsController } from "#src/http/settle-tips.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
@@ -285,6 +296,8 @@ export class ApplicationModule implements NestModule {
       dependencies.numberingRanges ?? new MemoryNumberingRanges();
     const salePrinter = new PendingSalePrinter();
     const tipRules = new MemoryTipRules();
+    const tipPool = new MemoryTipPool();
+    const tipSettlements = new MemoryTipSettlements();
     const reprintCap = dependencies.reprintCap ?? new ReprintCap(null);
     const reprintAudits =
       dependencies.reprintAudits ?? new MemoryReprintAudit();
@@ -319,6 +332,8 @@ export class ApplicationModule implements NestModule {
         ChangePriceController,
         OpenDrawerController,
         ConfigureTipRuleController,
+        SettleTipsController,
+        AdjustTipSettlementController,
         ReopenPaidAccountController,
         ChangeTenderController,
         ChangeLineStateController,
@@ -950,6 +965,99 @@ export class ApplicationModule implements NestModule {
             Clock,
           ],
         },
+        { provide: TipPool, useValue: tipPool },
+        {
+          provide: TipParticipantSource,
+          useFactory: (
+            entries: ClockEntryRepository,
+            corrections: ClockEntryCorrectionRepository,
+            policies: AttendancePolicyRepository,
+          ) => new AttendanceTipParticipants(entries, corrections, policies),
+          inject: [
+            ClockEntryRepository,
+            ClockEntryCorrectionRepository,
+            AttendancePolicyRepository,
+          ],
+        },
+        { provide: TipSettlementStore, useValue: tipSettlements },
+        {
+          provide: SettleTips,
+          useFactory: (
+            rules: TipRuleStore,
+            pool: TipPool,
+            participants: TipParticipantSource,
+            settlements: TipSettlementStore,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+          ) =>
+            new SettleTips(
+              rules,
+              pool,
+              participants,
+              settlements,
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            TipRuleStore,
+            TipPool,
+            TipParticipantSource,
+            TipSettlementStore,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+          ],
+        },
+        {
+          provide: AdjustTipSettlement,
+          useFactory: (
+            rules: TipRuleStore,
+            settlements: TipSettlementStore,
+            authorizations: AuthorizationRepository,
+            sessions: SessionReader,
+            identities: IdentityReader,
+            authorizationClock: AuthorizationClock,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+          ) =>
+            new AdjustTipSettlement(
+              rules,
+              settlements,
+              new EvaluatePermission(
+                authorizations,
+                sessions,
+                identities,
+                authorizationClock,
+              ),
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            TipRuleStore,
+            TipSettlementStore,
+            AuthorizationRepository,
+            SessionReader,
+            IdentityReader,
+            AuthorizationClock,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+          ],
+        },
         {
           provide: ReopenPaidAccount,
           useFactory: (
@@ -1276,6 +1384,46 @@ const copyTipRule = (rule: ActiveTipRule): ActiveTipRule => ({
     percent: share.percent,
   })),
 });
+
+const copyValue = <T>(value: T): T => structuredClone(value);
+
+export class MemoryTipPool extends TipPool {
+  private readonly rows: RecordedPaymentTip[] = [];
+
+  record(payment: RecordedPaymentTip): void {
+    this.rows.push(copyValue(payment));
+  }
+
+  override list(_query: TipPoolQuery): Promise<readonly RecordedPaymentTip[]> {
+    return Promise.resolve(this.rows.map((row) => copyValue(row)));
+  }
+}
+
+export class MemoryTipSettlements extends TipSettlementStore {
+  private readonly rows = new Map<string, ClosedTipSettlement[]>();
+
+  override list(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly ClosedTipSettlement[]> {
+    const stored = this.rows.get(tipRuleKey(tenantId, venueId)) ?? [];
+
+    return Promise.resolve(stored.map((row) => copyValue(row)));
+  }
+
+  override append(
+    tenantId: string,
+    venueId: string,
+    settlement: ClosedTipSettlement,
+  ): Promise<void> {
+    const key = tipRuleKey(tenantId, venueId);
+    const stored = this.rows.get(key) ?? [];
+    stored.push(copyValue(settlement));
+    this.rows.set(key, stored);
+
+    return Promise.resolve();
+  }
+}
 
 export class MemoryTipRules extends TipRuleStore {
   private readonly rules = new Map<string, ActiveTipRule>();
