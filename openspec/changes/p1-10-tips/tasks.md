@@ -53,4 +53,4 @@ Units: PR1 1.1–1.2; PR2 1.3 after PR1; PR3 1.4 after PR2; PR4 2.1 after PR3; P
 
 ## 8. Node
 
-- [ ] 8.1 RED/GREEN `apps/local-node/src/http/sensitive-actions.controller.ts` `src/composition/application-module.ts` `test/http/sensitive-actions.controller.test.ts`: rule, settle, adjust, and print return 403 `{ error: "SensitiveActionRejected" }` and store nothing. No providers. local-node
+- [x] 8.1 RED/GREEN `apps/local-node/src/http/sensitive-actions.controller.ts` `src/composition/application-module.ts` `test/http/sensitive-actions.controller.test.ts`: rule, settle, adjust, and print return 403 `{ error: "SensitiveActionRejected" }` and store nothing. No providers. local-node

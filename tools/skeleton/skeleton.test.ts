@@ -27,10 +27,14 @@ const absent = [
   "apps/venue",
   "apps/deliveries",
   "apps/web-admin",
-  "apps/admin-web",
-  "apps/venue-app",
-  "apps/customer-portal",
+  "apps/delivery-app",
   "contexts/platform/adapters/sqlite",
+] as const;
+
+const appShells = [
+  "apps/admin-web",
+  "apps/customer-portal",
+  "apps/venue-app",
 ] as const;
 
 const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
@@ -108,7 +112,7 @@ it("given Zod declared in the catalog, when imports are reviewed, then Zod stays
   expect(nestjsZodDependencies).toEqual([]);
 });
 
-it("given this change tree, when sync, PWAs, or a use case are sought, then none exist and orders and attendance are allowed contexts", () => {
+it("given this change tree, when sync, rejected app names, or a use case are sought, then the app shells exist and orders and attendance are allowed contexts", () => {
   const contexts = path.join(root, "contexts");
   const platform = path.join(contexts, "platform");
   const directories = readdirSync(contexts, { withFileTypes: true })
@@ -132,6 +136,12 @@ it("given this change tree, when sync, PWAs, or a use case are sought, then none
   expect(directories.sort()).toEqual([...allowedContexts]);
   for (const relativePath of absent) {
     expect(existsSync(path.join(root, relativePath)), relativePath).toBe(false);
+  }
+  for (const relativePath of appShells) {
+    expect(
+      existsSync(path.join(root, relativePath, "package.json")),
+      relativePath,
+    ).toBe(true);
   }
   expect(domainSource).toContain('export const layer = "domain" as const;');
   expect(useCaseFolders).toEqual([]);
@@ -317,7 +327,6 @@ it("given local-node, when its sources are listed, then the structure rejection 
     ].sort(),
   );
   expect(existsSync(path.join(root, "shared/sync"))).toBe(false);
-  expect(existsSync(path.join(root, "apps/admin-web"))).toBe(false);
   expect(deferredCopies).toEqual([]);
 });
 

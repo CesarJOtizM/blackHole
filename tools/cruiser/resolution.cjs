@@ -1,7 +1,7 @@
 module.exports = {
   resolve: {
     extensionAlias: {
-      ".js": [".ts", ".js"],
+      ".js": [".ts", ".tsx", ".js", ".jsx"],
     },
     exportsFields: ["exports"],
     importsFields: ["imports"],
