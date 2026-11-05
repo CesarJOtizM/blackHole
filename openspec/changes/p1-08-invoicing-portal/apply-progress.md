@@ -1,6 +1,6 @@
 # Apply progress: p1-08-invoicing-portal
 
-Work units: domain pairs 1.1–1.2, 1.3–1.4, and 1.5–1.6. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Work units: domain pairs 1.1–1.2, 1.3–1.4, 1.5–1.6, and 1.7–1.8. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
 Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–1.4 followed. This batch adds pair 1.5–1.6 and stops there. Not committed. `size:exception` was not granted.
 
@@ -12,6 +12,8 @@ Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–
 - [x] 1.4 GREEN `domain/one-time-code.ts` and its export in `domain/index.ts`. Not Twilio Verify. The domain does not call the network.
 - [x] 1.5 RED `contexts/invoicing/domain/billing-data.test.ts`: bad NIT (`assertNitCheckDigit`); no consent stores nothing; email and DANE required; `deleted_at` keeps snapshots.
 - [x] 1.6 GREEN `domain/billing-data.ts` and its export in `domain/index.ts`. No catalog lookup. The domain does not call the network.
+- [x] 1.7 RED `contexts/invoicing/domain/masking.test.ts`: `J*** P***`, `j***@gmail.com`.
+- [x] 1.8 GREEN `domain/masking.ts` and its export in `domain/index.ts`. No catalog lookup. The domain does not call the network.
 
 ## Work Unit Evidence
 
@@ -63,8 +65,8 @@ None.
 
 ## Remaining Tasks
 
-- [ ] 1.7 RED `domain/masking.test.ts`
-- [ ] 1.8 onward
+- [ ] 1.9 RED `domain/reinvoice-window.test.ts`
+- [ ] 1.10 onward
 
 ## Workload / PR Boundary
 
@@ -75,3 +77,40 @@ None.
 - Current batch boundary: tasks 1.5 and 1.6 only. No use cases, adapters, HTTP, UI, SQL, or D-48 docs.
 - Files in this batch: `contexts/invoicing/domain/billing-data.test.ts`, `contexts/invoicing/domain/billing-data.ts`, `contexts/invoicing/domain/index.ts` (billing-data exports only), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 394 lines (`billing-data.test.ts` 203, `billing-data.ts` 176, plus 15 `index.ts` export lines). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+
+## Pair 1.7–1.8
+
+This batch adds domain pair 1.7–1.8 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/domain/masking.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  8 passed (8)`. The run is after `pnpm exec biome check --write` on the touched domain files. |
+| Runtime harness command/scenario and exact result | N/A, pure domain. `maskName` and `maskEmail` copy one character and a fixed tail in memory. They do not open sockets, call Factus or Twilio, or sign HMAC. |
+| Rollback boundary | `contexts/invoicing/domain/masking.test.ts`, `contexts/invoicing/domain/masking.ts`, and the `masking` export in `contexts/invoicing/domain/index.ts`. Reverting those leaves the portal-link, one-time-code, and billing-data pairs in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/portal-link.test.ts contexts/invoicing/domain/one-time-code.test.ts contexts/invoicing/domain/billing-data.test.ts` — exit 0. `Test Files  3 passed (3)`. `Tests  23 passed (23)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 1.7 → 1.8 | `pnpm exec vitest run --project invoicing contexts/invoicing/domain/masking.test.ts` exit 1. `FAIL contexts/invoicing/domain/masking.test.ts` — `Cannot find module '#domain/masking.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `domain/masking.ts`, the `domain/index.ts` export, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  8 passed (8)`. |
+
+### Deviations from Design
+
+None. `maskName("Juan Perez")` is `"J*** P***"`. `maskEmail("juan@gmail.com")` is `"j***@gmail.com"`. Each whitespace-separated word keeps its first character and exactly three asterisks. The local part keeps its first character, exactly three asterisks, then `@` and the domain unchanged. The kept character stays in its original case. A one-word name, a one-character local part, and a longer value that would leak if the remainder were appended are covered. The star count does not follow the hidden length.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 1.7 and 1.8 only. No use cases, adapters, HTTP, UI, SQL, or D-48 docs.
+- Files in this batch: `contexts/invoicing/domain/masking.test.ts`, `contexts/invoicing/domain/masking.ts`, `contexts/invoicing/domain/index.ts` (one masking export), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 79 lines (`masking.test.ts` 58, `masking.ts` 20, plus 1 `index.ts` export line). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 1.9

@@ -47,6 +47,7 @@ export {
 } from "#domain/calculate-taxes.js";
 export type { DocumentContent } from "#domain/document-content.js";
 export { createDocumentContent } from "#domain/document-content.js";
+export { maskEmail, maskName } from "#domain/masking.js";
 export type {
   IssuedOneTimeCode,
   OneTimeCodeDigest,
