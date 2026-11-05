@@ -23,7 +23,6 @@ const sourceTrees = ["apps", "contexts", "shared", "tools"] as const;
 
 const absent = [
   "shared/sync",
-  "shared/ui",
   "apps/venue",
   "apps/deliveries",
   "apps/web-admin",
@@ -31,10 +30,11 @@ const absent = [
   "contexts/platform/adapters/sqlite",
 ] as const;
 
-const appShells = [
+const packageShells = [
   "apps/admin-web",
   "apps/customer-portal",
   "apps/venue-app",
+  "shared/ui",
 ] as const;
 
 const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
@@ -112,7 +112,7 @@ it("given Zod declared in the catalog, when imports are reviewed, then Zod stays
   expect(nestjsZodDependencies).toEqual([]);
 });
 
-it("given this change tree, when sync, rejected app names, or a use case are sought, then the app shells exist and orders and attendance are allowed contexts", () => {
+it("given this change tree, when sync, rejected app names, or a use case are sought, then the app shells and shared UI exist and orders and attendance are allowed contexts", () => {
   const contexts = path.join(root, "contexts");
   const platform = path.join(contexts, "platform");
   const directories = readdirSync(contexts, { withFileTypes: true })
@@ -137,7 +137,7 @@ it("given this change tree, when sync, rejected app names, or a use case are sou
   for (const relativePath of absent) {
     expect(existsSync(path.join(root, relativePath)), relativePath).toBe(false);
   }
-  for (const relativePath of appShells) {
+  for (const relativePath of packageShells) {
     expect(
       existsSync(path.join(root, relativePath, "package.json")),
       relativePath,

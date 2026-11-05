@@ -27,6 +27,7 @@ jobs:
       - run: pnpm vitest run --project attendance
       - run: pnpm vitest run --project api-cloud
       - run: pnpm vitest run --project skeleton
+      - run: pnpm vitest run --project ui
       - run: pnpm architecture
       - run: node tools/infra/compare-module-outputs.mjs
       - run: node tools/infra/check-postgres-extensions.mjs

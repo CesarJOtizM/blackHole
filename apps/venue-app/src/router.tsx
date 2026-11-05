@@ -57,38 +57,38 @@ declare module "@tanstack/react-router" {
 }
 
 function PendingScreen() {
-  return <p className="text-stone-600">Cargando</p>;
+  return <p className="text-ink-muted">Cargando</p>;
 }
 
 function VenueLayout() {
   return (
     <div className="min-h-svh">
-      <header className="border-b border-stone-200 bg-white">
+      <header className="border-b border-border bg-surface-raised">
         <nav className="mx-auto flex max-w-3xl gap-2 px-4 py-3 text-base">
           <Link
             to="/"
             activeOptions={{ exact: true }}
-            className="rounded-md px-3 py-2 text-stone-600"
+            className="rounded-md px-3 py-2 text-ink-muted"
             activeProps={{
-              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
             }}
           >
             Plano
           </Link>
           <Link
             to="/kitchen"
-            className="rounded-md px-3 py-2 text-stone-600"
+            className="rounded-md px-3 py-2 text-ink-muted"
             activeProps={{
-              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
             }}
           >
             Cocina
           </Link>
           <Link
             to="/cash-register"
-            className="rounded-md px-3 py-2 text-stone-600"
+            className="rounded-md px-3 py-2 text-ink-muted"
             activeProps={{
-              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
             }}
           >
             Caja

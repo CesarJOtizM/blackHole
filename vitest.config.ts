@@ -62,6 +62,15 @@ export default defineConfig({
         },
       },
       {
+        test: {
+          name: "ui",
+          root: "./shared/ui",
+          include: ["test/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/setup.ts"],
+        },
+      },
+      {
         server: {
           fs: {
             allow: ["../.."],

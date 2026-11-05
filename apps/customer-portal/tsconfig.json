@@ -12,5 +12,6 @@
     "types": ["vite/client"],
     "emitDeclarationOnly": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../../shared/ui" }]
 }
