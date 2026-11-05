@@ -33,6 +33,26 @@ export {
 export type { DocumentContent } from "#domain/document-content.js";
 export { createDocumentContent } from "#domain/document-content.js";
 export type {
+  IssuedOneTimeCode,
+  OneTimeCodeDigest,
+  OneTimeCodeDigit,
+  OneTimeCodeRecord,
+  OneTimeCodeResend,
+  OneTimeCodeVerification,
+} from "#domain/one-time-code.js";
+export {
+  ClearOneTimeCodeRejected,
+  InvalidOneTimeCodeDigit,
+  InvalidOneTimeCodeInstant,
+  issueOneTimeCode,
+  ONE_TIME_CODE_ATTEMPT_LIMIT,
+  ONE_TIME_CODE_LENGTH,
+  ONE_TIME_CODE_RESEND_MS,
+  ONE_TIME_CODE_TTL_MS,
+  resendOneTimeCode,
+  verifyOneTimeCode,
+} from "#domain/one-time-code.js";
+export type {
   EvaluatedPortalLink,
   PortalAccount,
   PortalLinkDisclosure,
