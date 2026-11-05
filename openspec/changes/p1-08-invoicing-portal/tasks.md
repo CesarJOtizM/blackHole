@@ -32,8 +32,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 - [x] 1.6 GREEN `domain/billing-data.ts`.
 - [x] 1.7 RED `domain/masking.test.ts`: `J*** P***`, `j***@gmail.com`.
 - [x] 1.8 GREEN `domain/masking.ts`.
-- [ ] 1.9 RED `domain/reinvoice-window.test.ts`: `same_day` default, `same_month`, `off`, America/Bogota.
-- [ ] 1.10 GREEN `domain/reinvoice-window.ts`.
+- [x] 1.9 RED `domain/reinvoice-window.test.ts`: `same_day` default, `same_month`, `off`, America/Bogota.
+- [x] 1.10 GREEN `domain/reinvoice-window.ts`.
 
 ## 2. Use cases
 
