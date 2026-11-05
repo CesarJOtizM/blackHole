@@ -33,6 +33,13 @@ export {
 export type { DocumentContent } from "#domain/document-content.js";
 export { createDocumentContent } from "#domain/document-content.js";
 export type {
+  EvaluatedPortalLink,
+  PortalAccount,
+  PortalLinkDisclosure,
+  PortalLinkPurpose,
+} from "#domain/portal-link.js";
+export { PORTAL_LINK_PURPOSE, revealPortalLink } from "#domain/portal-link.js";
+export type {
   CreateSalesDocument,
   GenericBuyer,
   SalesDocument,
