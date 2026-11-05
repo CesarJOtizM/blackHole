@@ -6,7 +6,7 @@
 **Work unit**: tasks 1.1 through 6.1, 5.1 through 5.2, and 8.1.
 **Chain strategy**: feature-branch-chain
 **size:exception**: not granted
-**Latest batch**: task 8.1 rejects tip routes on the local node. Tasks 7.1 through 7.3 remain open. The earlier slices are on master.
+**Latest batch**: task 8.1 rejects tip routes on the local node. All 15 tasks are complete (tasks.md 15/15). The earlier slices are on master.
 
 ## Completed tasks
 
@@ -112,7 +112,7 @@ None.
 
 ## Remaining tasks
 
-- [ ] 7.1 through 8.1
+None. All 15 tasks are complete (tasks.md 15/15).
 
 ## Workload / PR Boundary
 
@@ -129,7 +129,7 @@ None.
 
 ## Status
 
-11/15 tasks complete. Ready for the next apply batch. Not ready for verify.
+15/15 tasks complete (tasks.md 15/15).
 
 ### Unit 6.1 — Tip ledger (task 6.1)
 

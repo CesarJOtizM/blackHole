@@ -6,7 +6,7 @@ modules: [M2, M8]
 bounded_contexts: [cash-register, attendance, printing, contracts, sync]
 apps: [api-cloud, local-node, venue-app, admin-web]
 status: tasked
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: pending, verify: pending, archive: pending}
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: pending, archive: pending}
 depends_on: [p0-05-roles-and-permissions, p0-06-audit, p1-03-cash-register, p1-06-printing, p1-09-attendance]
 source_docs:
   - docs/roadmap.md
