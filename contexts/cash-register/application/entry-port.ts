@@ -17,6 +17,7 @@ export type {
 } from "#application/charge-check/charge-check.js";
 export {
   ChargeCheck,
+  ChargeClock,
   DrawerAudit,
   InvalidClosureId,
   UnknownAccount,

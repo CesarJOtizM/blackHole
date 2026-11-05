@@ -10,6 +10,7 @@ import {
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
+  ChargeClock,
   CloseShift,
   OpenDrawer,
   OpenShift,
@@ -234,6 +235,16 @@ export interface CloudApplicationDependencies {
 }
 
 class OrdersClockAdapter extends OrdersClock {
+  constructor(private readonly source: Clock) {
+    super();
+  }
+
+  override now(): number {
+    return this.source.now();
+  }
+}
+
+class ChargeClockAdapter extends ChargeClock {
   constructor(private readonly source: Clock) {
     super();
   }
@@ -500,6 +511,7 @@ export class ApplicationModule implements NestModule {
               charges,
               salePrinter,
               new RecordedDrawerAudit(audits, digests, clock),
+              new ChargeClockAdapter(clock),
             ),
           inject: [
             OrganizationRepository,
@@ -1151,6 +1163,7 @@ interface StoredCharge {
     tenders: Payment["tenders"];
     tip: Payment["tip"];
   };
+  recordedAt: string;
 }
 
 const chargeKey = (
