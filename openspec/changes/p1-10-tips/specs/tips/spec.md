@@ -12,7 +12,7 @@ Each site SHALL have one active rule with a period (shift, day or week) and a mo
 
 #### Scenario: Valid percentage rule
 - GIVEN an administrator of the site
-- WHEN they set waiters 70 % and kitchen 30 %
+- WHEN they set employee A 70 % and employee B 30 %
 - THEN the rule is saved and the change is audited
 
 #### Scenario: Percentages not summing 100
