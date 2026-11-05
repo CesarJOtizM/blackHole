@@ -553,3 +553,27 @@ Same command. Exit 0. Test Files 1 passed. Tests 2 passed (2).
 ### Status
 
 15/15 tasks remain complete. Verify remediation is ready for `sdd-verify`.
+### Unit 11 — Local node rejects tip routes (task 8.1)
+
+| Evidence | Required value |
+| --- | --- |
+| Focused test command and exact result | `pnpm exec vitest run --project local-node test/http/sensitive-actions.controller.test.ts`. RED exit 1: 1 failed file, 1 failed test. GREEN exit 0: 1 file, 1 passed. Same command after `pnpm exec biome check --write`: exit 0, 1 file, 1 passed. |
+| Runtime harness | Nest HTTP on the local node. `ApplicationModule` providers and imports stay empty. |
+| Rollback boundary | Remove the four tip routes and their `routePermissions` entries from `apps/local-node/src/http/sensitive-actions.controller.ts`. Remove those routes from `apps/local-node/test/http/sensitive-actions.controller.test.ts`. Uncheck task 8.1. Remove this Unit 11 section. |
+| Pair size | 56 changed lines (51 additions + 5 deletions): 37 in the controller and 19 in the test. Under the 400-line budget. The pair was not split. `application-module.ts` was not edited. |
+
+#### RED
+
+Command: `pnpm exec vitest run --project local-node test/http/sensitive-actions.controller.test.ts`
+
+Result: exit 1. Test Files 1 failed. Tests 1 failed. `routePermissions` had no `PUT tip-rule` and no `POST tip-settlements` keys.
+
+#### GREEN
+
+Same command. Exit 0. Test Files 1 passed. Tests 1 passed.
+
+`pnpm exec biome check --write` on the pair. Same command again. Exit 0. Test Files 1 passed. Tests 1 passed.
+
+### Behavior
+
+`PUT tip-rule`, `POST tip-settlements`, `POST tip-settlements/:id/adjustments`, and `POST tip-settlements/:id/print` return 403 `{ error: "SensitiveActionRejected" }`. Each permission is `cash.settle-tips`. The controller has no constructor. The module has no providers and no imports, so nothing is stored. No `POST checks/:checkId/lines` and no `POST reprints` were added.
