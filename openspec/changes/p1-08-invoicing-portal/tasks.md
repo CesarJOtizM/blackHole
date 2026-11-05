@@ -37,8 +37,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 
 ## 2. Use cases
 
-- [ ] 2.1 RED `application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
-- [ ] 2.2 GREEN that folder. `#application/look-up-portal-buyer/*`.
+- [x] 2.1 RED `application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
+- [x] 2.2 GREEN that folder. `#application/look-up-portal-buyer/*`.
 - [ ] 2.3 RED `application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
 - [ ] 2.4 GREEN that folder. `ports/one-time-code-sender.ts` and `.contract.ts`.
 - [ ] 2.5 RED `application/verify-remembered-code/verify-remembered-code.test.ts`: valid code reveals; ID alone does not; fifth miss locks; spent code fails.

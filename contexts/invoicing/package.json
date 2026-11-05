@@ -30,6 +30,7 @@
     "#application/issue-credit-note/*": "./application/issue-credit-note/*",
     "#application/document-balance/*": "./application/document-balance/*",
     "#application/issuance-gate/*": "./application/issuance-gate/*",
+    "#application/look-up-portal-buyer/*": "./application/look-up-portal-buyer/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
