@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Tema "Servicio". Los nombres son semánticos: las apps usan bg-surface,
+   text-ink o bg-action, nunca un color de la paleta cruda. Contrastes
+   medidos en docs de diseño: texto 4.5:1, bordes de componentes 3:1. */
+
+@source "../src";
+
+@theme {
+  --color-surface: #fafaf9;
+  --color-surface-raised: #ffffff;
+  --color-ink: #0c0a09;
+  --color-ink-muted: #57534e;
+  --color-border: #78716c;
+  --color-on-strong: #ffffff;
+
+  --color-action: #c2410c;
+  --color-action-pressed: #9a3412;
+  --color-danger: #b91c1c;
+  --color-ready: #15803d;
+
+  --color-table-free: #ffffff;
+  --color-table-occupied: #1e40af;
+  --color-table-check: #fcd34d;
+  --color-table-clean: #57534e;
+
+  --color-kitchen-surface: #0c0a09;
+  --color-kitchen-ink: #f5f5f4;
+  --color-kitchen-late: #f87171;
+  --color-kitchen-ok: #4ade80;
+
+  --font-sans:
+    "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+  --font-display:
+    "Bricolage Grotesque", "Atkinson Hyperlegible Next", sans-serif;
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.5;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.2;
+  --text-numeral: 2.5rem;
+  --text-numeral--line-height: 1;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+}

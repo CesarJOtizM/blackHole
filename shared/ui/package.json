@@ -1,0 +1,32 @@
+{
+  "name": "@blackhole/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fonts": "./src/fonts.ts",
+    "./theme.css": "./src/theme.css"
+  },
+  "imports": {
+    "#ui/*": "./src/*",
+    "#test/*": "./test/*"
+  },
+  "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-mono": "catalog:",
+    "@fontsource-variable/bricolage-grotesque": "catalog:",
+    "@fontsource/atkinson-hyperlegible-next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "catalog:",
+    "@types/node": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "jsdom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}
