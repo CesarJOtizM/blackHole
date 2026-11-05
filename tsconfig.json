@@ -9,6 +9,9 @@
     { "path": "shared/contracts" },
     { "path": "shared/printing" },
     { "path": "apps/api-cloud" },
-    { "path": "apps/local-node" }
+    { "path": "apps/local-node" },
+    { "path": "apps/admin-web" },
+    { "path": "apps/customer-portal" },
+    { "path": "apps/venue-app" }
   ]
 }
