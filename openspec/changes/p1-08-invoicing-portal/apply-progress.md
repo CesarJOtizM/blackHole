@@ -14,6 +14,8 @@ Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–
 - [x] 1.6 GREEN `domain/billing-data.ts` and its export in `domain/index.ts`. No catalog lookup. The domain does not call the network.
 - [x] 1.7 RED `contexts/invoicing/domain/masking.test.ts`: `J*** P***`, `j***@gmail.com`.
 - [x] 1.8 GREEN `domain/masking.ts` and its export in `domain/index.ts`. No catalog lookup. The domain does not call the network.
+- [x] 1.9 RED `contexts/invoicing/domain/reinvoice-window.test.ts`: `same_day` default, `same_month`, `off`, America/Bogota.
+- [x] 1.10 GREEN `domain/reinvoice-window.ts` and its export in `domain/index.ts`. No provider call. The domain does not call the network.
 
 ## Work Unit Evidence
 
@@ -114,3 +116,40 @@ None.
 - Files in this batch: `contexts/invoicing/domain/masking.test.ts`, `contexts/invoicing/domain/masking.ts`, `contexts/invoicing/domain/index.ts` (one masking export), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 79 lines (`masking.test.ts` 58, `masking.ts` 20, plus 1 `index.ts` export line). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
 - Next unchecked task: 1.9
+
+## Pair 1.9–1.10
+
+This batch adds domain pair 1.9–1.10 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/domain/reinvoice-window.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  10 passed (10)`. The run is after `pnpm exec biome check --write` on the touched domain files. |
+| Runtime harness command/scenario and exact result | N/A, pure domain. `isReinvoiceWindowOpen` compares caller-supplied ISO instants on the America/Bogota calendar (UTC-5, no daylight saving). It does not open sockets, call Factus, or sign HMAC. |
+| Rollback boundary | `contexts/invoicing/domain/reinvoice-window.test.ts`, `contexts/invoicing/domain/reinvoice-window.ts`, and the `reinvoice-window` exports in `contexts/invoicing/domain/index.ts`. Reverting those leaves the portal-link, one-time-code, billing-data, and masking pairs in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/portal-link.test.ts contexts/invoicing/domain/one-time-code.test.ts contexts/invoicing/domain/billing-data.test.ts contexts/invoicing/domain/masking.test.ts` — exit 0. `Test Files  4 passed (4)`. `Tests  31 passed (31)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 1.9 → 1.10 | `pnpm exec vitest run --project invoicing contexts/invoicing/domain/reinvoice-window.test.ts` exit 1. `FAIL contexts/invoicing/domain/reinvoice-window.test.ts` — `Cannot find module '#domain/reinvoice-window.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `domain/reinvoice-window.ts`, the `domain/index.ts` export, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  10 passed (10)`. |
+
+### Deviations from Design
+
+None. `isReinvoiceWindowOpen` answers whether the window is open. The default mode is `same_day`. `same_day` is open only when `issuedAt` and `at` share a Bogota calendar date and `at` is not before `issuedAt`. `same_month` is open only when both instants share a Bogota calendar month and year and `at` is not before `issuedAt`. `off` is always closed. An unreadable instant is closed. This pair does not call a provider.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 1.9 and 1.10 only. No use cases, adapters, HTTP, UI, SQL, or D-48 docs.
+- Files in this batch: `contexts/invoicing/domain/reinvoice-window.test.ts`, `contexts/invoicing/domain/reinvoice-window.ts`, `contexts/invoicing/domain/index.ts` (reinvoice-window exports), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 190 lines (`reinvoice-window.test.ts` 110, `reinvoice-window.ts` 74, plus 6 `index.ts` export lines). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 2.1

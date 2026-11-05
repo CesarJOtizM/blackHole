@@ -75,6 +75,12 @@ export type {
   PortalLinkPurpose,
 } from "#domain/portal-link.js";
 export { PORTAL_LINK_PURPOSE, revealPortalLink } from "#domain/portal-link.js";
+export type { ReinvoiceWindowMode } from "#domain/reinvoice-window.js";
+export {
+  DEFAULT_REINVOICE_WINDOW_MODE,
+  isReinvoiceWindowOpen,
+  REINVOICE_WINDOW_MODE,
+} from "#domain/reinvoice-window.js";
 export type {
   CreateSalesDocument,
   GenericBuyer,
