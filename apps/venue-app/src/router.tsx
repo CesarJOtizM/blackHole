@@ -1,0 +1,103 @@
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Link,
+  lazyRouteComponent,
+  Outlet,
+} from "@tanstack/react-router";
+
+const rootRoute = createRootRoute({
+  component: VenueLayout,
+});
+
+const floorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/",
+  component: lazyRouteComponent(
+    () => import("#src/orders/floor-screen.js"),
+    "FloorScreen",
+  ),
+});
+
+const kitchenRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "kitchen",
+  component: lazyRouteComponent(
+    () => import("#src/kitchen/kitchen-screen.js"),
+    "KitchenScreen",
+  ),
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "cash-register",
+  component: lazyRouteComponent(
+    () => import("#src/cash-register/register-screen.js"),
+    "RegisterScreen",
+  ),
+});
+
+const routeTree = rootRoute.addChildren([
+  floorRoute,
+  kitchenRoute,
+  registerRoute,
+]);
+
+export const router = createRouter({
+  routeTree,
+  defaultPreload: "intent",
+  defaultPendingComponent: PendingScreen,
+});
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+function PendingScreen() {
+  return <p className="text-stone-600">Cargando</p>;
+}
+
+function VenueLayout() {
+  return (
+    <div className="min-h-svh">
+      <header className="border-b border-stone-200 bg-white">
+        <nav className="mx-auto flex max-w-3xl gap-2 px-4 py-3 text-base">
+          <Link
+            to="/"
+            activeOptions={{ exact: true }}
+            className="rounded-md px-3 py-2 text-stone-600"
+            activeProps={{
+              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+            }}
+          >
+            Plano
+          </Link>
+          <Link
+            to="/kitchen"
+            className="rounded-md px-3 py-2 text-stone-600"
+            activeProps={{
+              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+            }}
+          >
+            Cocina
+          </Link>
+          <Link
+            to="/cash-register"
+            className="rounded-md px-3 py-2 text-stone-600"
+            activeProps={{
+              className: "rounded-md bg-stone-950 px-3 py-2 text-white",
+            }}
+          >
+            Caja
+          </Link>
+        </nav>
+      </header>
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
