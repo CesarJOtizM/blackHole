@@ -26,8 +26,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 
 - [x] 1.1 RED `contexts/invoicing/domain/portal-link.test.ts`: expired or other account shows nothing. No crypto.
 - [x] 1.2 GREEN `domain/portal-link.ts`, `domain/index.ts`.
-- [ ] 1.3 RED `domain/one-time-code.test.ts`: 6 digits, 10 min, 5 tries, single use, 60 s. Digest only.
-- [ ] 1.4 GREEN `domain/one-time-code.ts`. Not Twilio Verify.
+- [x] 1.3 RED `domain/one-time-code.test.ts`: 6 digits, 10 min, 5 tries, single use, 60 s. Digest only.
+- [x] 1.4 GREEN `domain/one-time-code.ts`. Not Twilio Verify.
 - [ ] 1.5 RED `domain/billing-data.test.ts`: bad NIT (`assertNitCheckDigit`); no consent stores nothing; email and DANE required; `deleted_at` keeps snapshots.
 - [ ] 1.6 GREEN `domain/billing-data.ts`.
 - [ ] 1.7 RED `domain/masking.test.ts`: `J*** P***`, `j***@gmail.com`.
