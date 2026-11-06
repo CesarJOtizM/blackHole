@@ -35,7 +35,7 @@ flowchart TB
   PAS["<b>Pasarela de pagos</b><br/>[Sistema externo, ADR-016]<br/>Nequi, Daviplata, Bre-B, tarjeta"]:::externo
   PLAT["<b>Plataformas de domicilio</b><br/>[Sistema externo]<br/>Rappi, DiDi Food, integrador"]:::externo
   PUSH["<b>Servicios Web Push</b><br/>[Sistema externo]<br/>FCM, APNs, Mozilla"]:::externo
-  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir: PA-37]<br/>Códigos de un solo uso"]:::externo
+  MSG["<b>Correo y SMS</b><br/>[Twilio, D-48]<br/>Códigos de un solo uso"]:::externo
   IMP["<b>Impresoras térmicas y cajón</b><br/>[Dispositivo]<br/>ESC/POS por red o USB"]:::externo
   BANCO["<b>App del banco</b><br/>[Fuera del sistema]<br/>Verificación manual de anticipos"]:::externo
 
@@ -136,7 +136,7 @@ flowchart LR
   PAS["<b>Pasarela</b><br/>[Sistema externo]"]:::externo
   PLAT["<b>Plataformas</b><br/>[Sistema externo]"]:::externo
   PUSH["<b>Web Push</b><br/>[Sistema externo]"]:::externo
-  MSG["<b>Correo y SMS</b><br/>[Sistema externo, por definir: PA-37]"]:::externo
+  MSG["<b>Correo y SMS</b><br/>[Twilio, D-48]"]:::externo
 
   MES --> APPS
   ADM --> WADM

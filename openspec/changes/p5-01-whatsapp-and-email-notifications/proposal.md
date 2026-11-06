@@ -46,7 +46,7 @@ Add WhatsApp, email and SMS adapters to the `Messaging` port (glossary §4); `No
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Email, SMS and WhatsApp providers not chosen | High | Open: PA-37. Port + in-memory adapter; provider choice before build |
+| Twilio is the provider, the adapter is not built yet | Med | D-48. Port + in-memory adapter until the Twilio adapter is built |
 | Stale messages after a hybrid outage | Med | Time-bound types (reminders) expire instead of sending late |
 | Messaging without consent | Med | Customer channel requires recorded consent |
 | SMS cost per message | Med | SMS enabled per site and type, never a default channel |
@@ -57,7 +57,7 @@ Disable external channels per site; the notifier falls back to in-app and Web Pu
 
 ## Dependencies
 
-- WhatsApp Business, email and SMS providers (PA-37); 2.8 shortage alerts, 1.5 bag alerts, 3.6 reservations.
+- Twilio email, SMS and WhatsApp (D-48); 2.8 shortage alerts, 1.5 bag alerts, 3.6 reservations.
 
 ## Success Criteria
 

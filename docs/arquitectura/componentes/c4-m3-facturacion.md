@@ -106,7 +106,7 @@ flowchart LR
   end
 
   FAC["<b>Factus API v2</b><br/>[Sistema externo]"]:::externo
-  MAIL["<b>Correo y SMS</b><br/>[Sistema externo, PA-37]"]:::externo
+  MAIL["<b>Correo y SMS</b><br/>[Twilio, D-48]"]:::externo
   SEC[("<b>Secrets</b><br/>Credenciales de Factus")]:::contenedor
 
   INB --> WIS
@@ -161,7 +161,7 @@ La cola de emisión siempre va antes que las consultas de adquirente: las dos co
 | `FileStorage` | S3, Cloud Storage o Blob Storage | Disco local |
 | `Secrets` | Gestor de secretos de la nube | — (sin credenciales de Factus en la sede) |
 | `Printer` (`shared/printing`) | Trabajo hacia el puente | Cola local ESC/POS |
-| `Messaging` | Proveedor de correo y SMS, por definir (PA-37) | — |
+| `Messaging` | Twilio para correo, SMS y WhatsApp (D-48). El sistema genera el código | — |
 
 ## Contratos con otros módulos
 

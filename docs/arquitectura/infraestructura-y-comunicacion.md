@@ -55,7 +55,7 @@ flowchart LR
     PAS["<b>Pasarela de pagos</b><br/>[ADR-016]"]:::externo
     PLAT["<b>Plataformas</b><br/>[Rappi, DiDi, integrador]"]:::externo
     PUSH["<b>Web Push</b><br/>[FCM, APNs]"]:::externo
-    MSG["<b>Correo y SMS</b><br/>[Por definir: PA-37]"]:::externo
+    MSG["<b>Correo y SMS</b><br/>[Twilio, D-48]"]:::externo
   end
 
   subgraph Obs["Observabilidad como servicio"]
@@ -501,5 +501,5 @@ Cada pendiente vive en el [registro de preguntas abiertas](../preguntas-abiertas
 | D-36 (ADR-006) | El router dedicado se recomienda. Lo compra el dueño. El producto es solo software |
 | D-45 | El pipeline es GitHub Actions |
 | D-46 | Varias pasarelas de pago QR. Bold es una. Canales 10 y 11 |
-| PA-37 | Proveedor de correo y SMS (canal 21) |
+| D-48 | Correo, SMS y WhatsApp por Twilio (canal 21). El código lo genera el sistema |
 | D-40 | Las PWA del MVP son archivos estáticos en la nube y el navegador las instala. El nodo no las sirve |

@@ -152,4 +152,4 @@ M6 arma el resumen mensual por contribuyente y sede, el porcentaje de facturas c
 
 ## 9. Preguntas abiertas
 
-- PA-37: proveedor independiente de correo, SMS y WhatsApp. No es el servicio de la nube (D-47). Ver [registro](../preguntas-abiertas.md).
+- D-48: el correo, el SMS y WhatsApp salen por Twilio. El código de un solo uso lo genera el sistema. No es el servicio de la nube (D-47).

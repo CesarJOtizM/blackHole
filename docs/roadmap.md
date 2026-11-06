@@ -126,7 +126,7 @@ Lo que PRD-00 y TRD-00 marcan como "fase posterior" o "mejora futura".
 
 | Entrega | Alcance | Criterio de salida | Estado |
 |---------|---------|--------------------|--------|
-| **5.1 Notificaciones por WhatsApp, SMS y correo** | Los tres canales (D-03), con sus proveedores (PA-37). Alertas de escasez y de saldo, confirmación y recordatorio de reservas, envío de la factura por WhatsApp | Los avisos llegan por el canal configurado en cada sede | Pendiente |
+| **5.1 Notificaciones por WhatsApp, SMS y correo** | Los tres canales (D-03) por Twilio (D-48). Alertas de escasez y de saldo, confirmación y recordatorio de reservas, envío de la factura por WhatsApp | Los avisos llegan por el canal configurado en cada sede | Pendiente |
 | **5.2 Integración con datáfonos** | Monto enviado al datáfono y aprobación de vuelta, para Credibanco, Bold y Redeban según lo que ofrezca cada uno (ADR-007, PA-43) | Pagos con tarjeta sin digitar el monto ni la aprobación | Pendiente |
 | **5.3 Pasarela de pagos para reservas** | Cobro en línea con confirmación automática (ADR-012, PA-45) | Reservas confirmadas sin verificación manual | Pendiente |
 | **5.4 Foto al marcar asistencia** | Foto en la marcación para evitar que alguien marque por otro | Las marcaciones de una sede llevan su foto | Pendiente |

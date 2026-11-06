@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Vivo |
-| Versión | 0.13 |
-| Fecha | 2026-10-17 |
+| Versión | 0.14 |
+| Fecha | 2026-11-05 |
 | Relación | [Roadmap](roadmap.md), [PRD-00, sección 14](prd/PRD-00-vision-producto.md), [TRD-00, secciones 8.4 y 18](trd/TRD-00-arquitectura-base.md) |
 
 Este es el único lugar donde vive una pregunta sin respuesta. Cada documento que dependa de una la cita por su código (`PA-10`) y no la repite. Cuando llega la respuesta, se anota aquí, se pasa a la sección 2 y se corrigen primero los maestros y después los módulos (roadmap, sección 1).
@@ -39,9 +39,7 @@ El MVP es 100 % modo nube (D-37). Hay que responder las que bloquean la fundaci�
 
 #### Hay que responderlas
 
-| Código | Pregunta | Origen | Bloquea |
-|--------|----------|--------|---------|
-| PA-37 | Proveedor independiente de correo, SMS y WhatsApp, incluido el código de un solo uso del portal. No es el servicio nativo de la nube (D-47). Queda pendiente: se revisa después y no se elige ahora. El código del portal bloquea 1.8; los avisos de la entrega 5.1 usan el mismo proveedor | PRD-M3 §9, C4 | 1.8, 5.1 |
+Ninguna. PA-37 quedó cerrada el 2026-11-05 en D-48.
 
 #### Pueden esperar
 
@@ -116,4 +114,5 @@ No frenan la fundación ni el salón. Se responden cuando arranque la entrega qu
 | D-44 | Se puede pagar por QR con el turno de caja cerrado si ese cobro está activo. El pago no modifica el turno cerrado: queda contra el reporte de la pasarela. El domicilio puede seguir con su QR activo aunque el salón cierre | 2026-10-17 | PRD-00, PRD-M2, TRD-00, openspec `p1-13` |
 | D-45 | El pipeline es GitHub Actions, en el repositorio que ya está en GitHub. Llega a las nubes con identidad de corta duración | 2026-10-17 | TRD-00, TRD-01, roadmap 0.8, openspec `p0-08` |
 | D-46 | El pago QR admite varias pasarelas detrás de `PaymentGateway`. Bold es una de ellas. La sede activa la que contrató. La comisión es la de ese contrato y se ve en la conciliación. Los medios son los que ofrezca ese adaptador, dentro de Nequi, Daviplata, Bre-B y tarjeta | 2026-10-17 | PRD-00, PRD-M2, TRD-00, TRD-M2, openspec `p1-13` |
-| D-47 | El correo, el SMS y WhatsApp no salen del servicio nativo de AWS, GCP ni Azure. GCP no tiene correo ni SMS propios, y WhatsApp no lo da ninguna de las tres. El proveedor concreto sigue en PA-37 | 2026-10-17 | TRD-00, PRD-M3, C4 |
+| D-47 | El correo, el SMS y WhatsApp no salen del servicio nativo de AWS, GCP ni Azure. GCP no tiene correo ni SMS propios, y WhatsApp no lo da ninguna de las tres. El proveedor concreto es Twilio (D-48) | 2026-10-17 | TRD-00, PRD-M3, C4 |
+| D-48 | El correo, el SMS y WhatsApp salen por Twilio. El correo usa SendGrid. El código de un solo uso lo genera el sistema y Twilio solo lo entrega; no se usa Twilio Verify. Bird queda como alternativa si el registro del remitente SMS en Colombia no sale. No es el servicio nativo de la nube (D-47). El mismo proveedor cubre el portal (1.8) y los avisos (5.1) | 2026-11-05 | PRD-M3, C4, roadmap 1.8 y 5.1, openspec `p1-08` y `p5-01` |
