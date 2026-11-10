@@ -351,3 +351,40 @@ None. The first executable draft expected `matches` to record the rejected code.
 - Files in this batch: `contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts`, `contexts/invoicing/application/request-data-deletion/request-data-deletion.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 486 lines (`request-data-deletion.test.ts` 339, `request-data-deletion.ts` 146, plus 1 `package.json` import). That is 86 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is included in the pull request.
 - Next unchecked task: 2.11
+
+## Pair 2.11–2.12
+
+This batch adds use-case pair 2.11–2.12 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 4 files in 16ms. Fixed 3 files.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory provider double. `GetPortalInvoice` calls `revealPortalLink`, `isReinvoiceWindowOpen`, and the injected `downloadPdf` only. It does not open sockets, call Factus or mail, sign HMAC, or touch Postgres. |
+| Rollback boundary | `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts`, `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.ts`, the `downloadPdf` default and `InvoicePdfDownloadFailed` in `contexts/invoicing/application/ports/invoicing-provider.ts`, and the `#application/get-portal-invoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.10 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/portal-link.test.ts contexts/invoicing/domain/reinvoice-window.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.11 → 2.12 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/get-portal-invoice/get-portal-invoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/get-portal-invoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — `Cannot find module '#application/get-portal-invoice/get-portal-invoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `get-portal-invoice.ts`, `downloadPdf(number)` on `ports/invoicing-provider.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The public path stays `/f/<referenceCode>.<hmac>`. This slice does not compute HMAC: the command carries `referenceCode` and `suffixAccepted`. The already-loaded document (`pending`, or `accepted` with `number` and `issuedAt`) and optional `windowMode` are on the command because the use case does not open a repository. A hidden link, a missing suffix on an invoice link, a reference that does not match the document, a pending document, and a closed window (`same_day` next Bogota day, or `off`) do not call `downloadPdf`. A visible `pre_bill` returns `{ outcome: "empty" }` without account fields. The issued pre-bill is still time-valid under `revealPortalLink`; expiry is not reimplemented. `downloadPdf` is a concrete method that rejects with `InvoicePdfDownloadFailed`, same as `lookupAcquirer`. Factus and memory do not override it. No mail method exists and none is called. Provider failure returns `{ outcome: "empty" }` and does not reveal account fields. The use case is not exported from `entry-port.ts`. The hybrid outage scenario stays deferred under D-37 and is not a test of this slice.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.11 and 2.12 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, Factus fetch, `ports/link-signer.ts`, or `entry-port.ts` export. Task 2.13 was not started.
+- Files in this batch: `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts`, `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.ts`, `contexts/invoicing/application/ports/invoicing-provider.ts` (`downloadPdf` default and `InvoicePdfDownloadFailed`), `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 335 lines (`get-portal-invoice.test.ts` 215, `get-portal-invoice.ts` 108, `invoicing-provider.ts` 11, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 2.13

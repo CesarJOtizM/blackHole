@@ -35,6 +35,7 @@
     "#application/verify-remembered-code/*": "./application/verify-remembered-code/*",
     "#application/record-billing-data/*": "./application/record-billing-data/*",
     "#application/request-data-deletion/*": "./application/request-data-deletion/*",
+    "#application/get-portal-invoice/*": "./application/get-portal-invoice/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",

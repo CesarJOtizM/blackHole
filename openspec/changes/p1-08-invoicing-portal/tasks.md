@@ -47,8 +47,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 - [x] 2.8 GREEN that folder. `municipality-catalog.ts`, `billing-data-notifier.ts`, and contracts.
 - [x] 2.9 RED `application/request-data-deletion/request-data-deletion.test.ts`: code required; future use stops; snapshots kept.
 - [x] 2.10 GREEN that folder.
-- [ ] 2.11 RED `application/get-portal-invoice/get-portal-invoice.test.ts`: in process, then `downloadPdf`. `/f/<referenceCode>.<hmac>`. Expired pre-bill empty. No Factus mail.
-- [ ] 2.12 GREEN that folder. `downloadPdf(number)` on `ports/invoicing-provider.ts`.
+- [x] 2.11 RED `application/get-portal-invoice/get-portal-invoice.test.ts`: in process, then `downloadPdf`. `/f/<referenceCode>.<hmac>`. Expired pre-bill empty. No Factus mail.
+- [x] 2.12 GREEN that folder. `downloadPdf(number)` on `ports/invoicing-provider.ts`.
 - [ ] 2.13 RED `application/request-reinvoice/request-reinvoice.test.ts`: outside window or `off` calls no provider. Inside, record only.
 - [ ] 2.14 GREEN that folder.
 - [ ] 2.15 RED `application/approve-reinvoice/approve-reinvoice.test.ts`: `sale.credit-note` only. Audit, code 2, new invoice after accept, two documents. Recheck window; no provider if closed. Do not edit consumer-final.
