@@ -1,0 +1,12 @@
+{
+  "name": "@blackhole/inventory",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": "./domain/index.js"
+  },
+  "imports": {
+    "#domain/*": "./domain/*"
+  }
+}
