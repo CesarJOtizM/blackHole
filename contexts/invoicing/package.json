@@ -36,6 +36,7 @@
     "#application/record-billing-data/*": "./application/record-billing-data/*",
     "#application/request-data-deletion/*": "./application/request-data-deletion/*",
     "#application/get-portal-invoice/*": "./application/get-portal-invoice/*",
+    "#application/request-reinvoice/*": "./application/request-reinvoice/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",

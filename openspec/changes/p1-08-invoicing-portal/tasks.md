@@ -49,8 +49,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 - [x] 2.10 GREEN that folder.
 - [x] 2.11 RED `application/get-portal-invoice/get-portal-invoice.test.ts`: in process, then `downloadPdf`. `/f/<referenceCode>.<hmac>`. Expired pre-bill empty. No Factus mail.
 - [x] 2.12 GREEN that folder. `downloadPdf(number)` on `ports/invoicing-provider.ts`.
-- [ ] 2.13 RED `application/request-reinvoice/request-reinvoice.test.ts`: outside window or `off` calls no provider. Inside, record only.
-- [ ] 2.14 GREEN that folder.
+- [x] 2.13 RED `application/request-reinvoice/request-reinvoice.test.ts`: outside window or `off` calls no provider. Inside, record only.
+- [x] 2.14 GREEN that folder.
 - [ ] 2.15 RED `application/approve-reinvoice/approve-reinvoice.test.ts`: `sale.credit-note` only. Audit, code 2, new invoice after accept, two documents. Recheck window; no provider if closed. Do not edit consumer-final.
 - [ ] 2.16 GREEN that folder via `IssueCreditNote`. Ports `link-signer.ts`, `portal-repository.ts`, `portal-request-limiter.ts` and contracts. Export eight from `entry-port.ts`. One `#application/<folder>/*` each.
 
