@@ -275,3 +275,42 @@ None.
 - Files in this batch: `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts`, `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.ts`, `contexts/invoicing/application/ports/code-digest.ts`, `contexts/invoicing/application/ports/code-digest.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 371 lines (`verify-remembered-code.test.ts` 230, `verify-remembered-code.ts` 111, `code-digest.ts` 3, `code-digest.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
 - Next unchecked task: 2.7
+
+## Pair 2.7–2.8
+
+This batch adds use-case pair 2.7–2.8 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `RecordBillingData` calls `recordBillingData`, the injected store, `MunicipalityCatalog.find`, and `BillingDataNotifier.billingDataReceived` only. It does not open sockets, call Factus, Twilio, or Postgres, and it does not seed municipalities. `municipalityCatalogContract` and `billingDataNotifierContract` are not executed in this slice; an adapter imports them in tasks 3.7–3.8 and 4.2. |
+| Rollback boundary | `contexts/invoicing/application/record-billing-data/record-billing-data.test.ts`, `contexts/invoicing/application/record-billing-data/record-billing-data.ts`, `contexts/invoicing/application/ports/municipality-catalog.ts`, `contexts/invoicing/application/ports/municipality-catalog.contract.ts`, `contexts/invoicing/application/ports/billing-data-notifier.ts`, `contexts/invoicing/application/ports/billing-data-notifier.contract.ts`, and the `#application/record-billing-data/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.6 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts contexts/invoicing/domain/billing-data.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.7 → 2.8 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` exit 1. With no import pattern yet: `Missing "#application/record-billing-data/record-billing-data.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/record-billing-data/*` and with no use case file yet: `FAIL contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` — `Cannot find module '#application/record-billing-data/record-billing-data.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `record-billing-data.ts`, `ports/municipality-catalog.ts`, `ports/municipality-catalog.contract.ts`, `ports/billing-data-notifier.ts`, `ports/billing-data-notifier.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+The sequence says validate DANE before store. This use case calls `MunicipalityCatalog.find` and passes a hit through to `recordBillingData`. A miss, including `99999`, still follows `recordBillingData`, so an unknown code is stored. Rejecting an unknown DANE code stays in tasks 3.7–3.8. A blank code stays `MissingMunicipalityCode` from the domain. `InvalidNitCheckDigit` is the only domain error mapped to `{ outcome: "field_error", field: "documentNumber" }`. Other domain throws propagate.
+
+`BillingDataStore` lives in the use case file, as `RememberedCodeStore` does. `portal-repository.ts` stays in task 2.16. The use case is not exported from `entry-port.ts`. `realtime-hub.ts` is not edited. The notifier stand-in is `billingDataReceived({ checkId })`. The contracts are written and not run here. No Factus municipalities JSON and no SQL. The use case does not log the billing payload.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.7 and 2.8 only. No HTTP, UI, SQL, Twilio, Postgres, local-node, sqlite, sync, Factus, or `entry-port.ts` export. Task 2.9 was not started.
+- Files in this batch: `contexts/invoicing/application/record-billing-data/record-billing-data.test.ts`, `contexts/invoicing/application/record-billing-data/record-billing-data.ts`, `contexts/invoicing/application/ports/municipality-catalog.ts`, `contexts/invoicing/application/ports/municipality-catalog.contract.ts`, `contexts/invoicing/application/ports/billing-data-notifier.ts`, `contexts/invoicing/application/ports/billing-data-notifier.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 377 lines (`record-billing-data.test.ts` 213, `record-billing-data.ts` 105, `municipality-catalog.ts` 3, `municipality-catalog.contract.ts` 22, `billing-data-notifier.ts` 7, `billing-data-notifier.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 2.9
