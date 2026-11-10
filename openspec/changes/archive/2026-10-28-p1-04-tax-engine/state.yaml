@@ -5,8 +5,9 @@ phase: 1
 modules: [M3]
 bounded_contexts: [invoicing, platform, contracts, sync]
 apps: [api-cloud, local-node, admin-web]
-status: applying
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
+status: archived
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: done, archive: done}
+verify_verdict: pass-with-warnings
 depends_on: [p0-02-skeleton-and-sync, p0-03-organization, p0-06-audit, p1-01-menu-and-catalog, p1-03-cash-register]
 source_docs:
   - docs/roadmap.md

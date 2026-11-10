@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -2799,7 +2799,7 @@
                               "fill": "$ink",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "Saldo $298.500",
+                              "content": "Saldo $486.000",
                               "lineHeight": 1.1,
                               "fontFamily": "$sans",
                               "fontSize": 28,
@@ -2972,7 +2972,7 @@
                                   "id": "GwXPP",
                                   "name": "Precio",
                                   "fill": "$ink",
-                                  "content": "$259.000",
+                                  "content": "$251.000",
                                   "fontFamily": "$mono",
                                   "fontSize": 13,
                                   "fontWeight": "700"
@@ -3023,7 +3023,7 @@
                                   "id": "R2QWI",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$398.000",
+                                  "content": "$486.000",
                                   "fontFamily": "$mono",
                                   "fontSize": 14,
                                   "fontWeight": "700"
@@ -3053,7 +3053,7 @@
                                   "id": "Lr9kn",
                                   "name": "Valor",
                                   "fill": "$go",
-                                  "content": "-$99.500",
+                                  "content": "$36.000",
                                   "fontFamily": "$mono",
                                   "fontSize": 14,
                                   "fontWeight": "700"
@@ -3134,7 +3134,7 @@
                                   "id": "uV3It",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$298.500",
+                                  "content": "$486.000",
                                   "fontFamily": "$mono",
                                   "fontSize": 20,
                                   "fontWeight": "700"
@@ -3424,7 +3424,7 @@
                               "fill": "$ink",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "Tu parte $99.500",
+                              "content": "Tu parte $121.500",
                               "lineHeight": 1.1,
                               "fontFamily": "$sans",
                               "fontSize": 28,
@@ -3620,7 +3620,7 @@
                                       "id": "hJE1X",
                                       "name": "Texto",
                                       "fill": "$sheet",
-                                      "content": "10% · $9.950",
+                                      "content": "10% · $12.150",
                                       "textAlign": "center",
                                       "fontFamily": "$mono",
                                       "fontSize": 11,
@@ -3697,7 +3697,7 @@
                                   "id": "skrQG",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$99.500",
+                                  "content": "$121.500",
                                   "fontFamily": "$mono",
                                   "fontSize": 14,
                                   "fontWeight": "700"
@@ -3727,7 +3727,7 @@
                                   "id": "JS5VX",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$9.950",
+                                  "content": "$12.150",
                                   "fontFamily": "$mono",
                                   "fontSize": 14,
                                   "fontWeight": "700"
@@ -3778,7 +3778,7 @@
                                   "id": "zXLLU",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$109.450",
+                                  "content": "$133.650",
                                   "fontFamily": "$mono",
                                   "fontSize": 20,
                                   "fontWeight": "700"
@@ -3898,7 +3898,7 @@
                               "id": "tuH4v",
                               "name": "Etiqueta",
                               "fill": "$sheet",
-                              "content": "PAGAR $109.450",
+                              "content": "PAGAR $133.650",
                               "fontFamily": "$mono",
                               "fontSize": 15,
                               "fontWeight": "700",
@@ -4075,7 +4075,7 @@
                               "id": "U3kqB",
                               "name": "Valor",
                               "fill": "$sheet",
-                              "content": "$109.450",
+                              "content": "$133.650",
                               "fontFamily": "$mono",
                               "fontSize": 32,
                               "fontWeight": "700"
@@ -4527,7 +4527,7 @@
                               "id": "OKZH2",
                               "name": "Etiqueta",
                               "fill": "$sheet",
-                              "content": "PAGAR $109.450",
+                              "content": "PAGAR $133.650",
                               "fontFamily": "$mono",
                               "fontSize": 15,
                               "fontWeight": "700",
@@ -4767,7 +4767,7 @@
                                   "id": "J2W51V",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$109.450",
+                                  "content": "$133.650",
                                   "fontFamily": "$mono",
                                   "fontSize": 16,
                                   "fontWeight": "700"
@@ -4797,7 +4797,7 @@
                                   "id": "O1MI7",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$9.950",
+                                  "content": "$12.150",
                                   "fontFamily": "$mono",
                                   "fontSize": 14,
                                   "fontWeight": "700"
@@ -5247,7 +5247,7 @@
                                   "id": "HZ0Hg",
                                   "name": "Contexto",
                                   "fill": "$faded",
-                                  "content": "PAGO DE $109.450 · 20:41",
+                                  "content": "PAGO DE $133.650 · 20:41",
                                   "fontFamily": "$mono",
                                   "fontSize": 10,
                                   "fontWeight": "700",
@@ -6452,7 +6452,7 @@
                                   "id": "ivWWM",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$99.500",
+                                  "content": "$121.500",
                                   "fontFamily": "$mono",
                                   "fontSize": 18,
                                   "fontWeight": "700"
@@ -6472,7 +6472,7 @@
                                   "id": "cqLNT",
                                   "name": "Clave",
                                   "fill": "$faded",
-                                  "content": "INC 8%",
+                                  "content": "INC 8% incluido",
                                   "fontFamily": "$sans",
                                   "fontSize": 15,
                                   "fontWeight": "500"
@@ -6482,7 +6482,7 @@
                                   "id": "Do0Q6",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$99.500",
+                                  "content": "$9.000",
                                   "fontFamily": "$mono",
                                   "fontSize": 13,
                                   "fontWeight": "700"
@@ -6512,7 +6512,7 @@
                                   "id": "BGZeY",
                                   "name": "Valor",
                                   "fill": "$ink",
-                                  "content": "$9.950",
+                                  "content": "$12.150",
                                   "fontFamily": "$mono",
                                   "fontSize": 13,
                                   "fontWeight": "700"
@@ -7184,6 +7184,298 @@
                               "fontSize": 15,
                               "fontWeight": "700",
                               "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Gu5U4",
+              "name": "Paso 5",
+              "width": 390,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iT7is",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xRD4L",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "05",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "SyNyh",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "EN ESPERA DE LA SEDE",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HtdNl",
+                  "name": "En espera",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Vy9fM",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dUhL4",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "20:14",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "blbb7",
+                          "name": "Dirección",
+                          "fill": "$faded",
+                          "content": "blackhole.co/f/FECH-41392",
+                          "fontFamily": "$mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zys6v",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        8,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CLFaC",
+                          "name": "Antetítulo",
+                          "fill": "$faded",
+                          "content": "FECH-41392",
+                          "fontFamily": "$mono",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Gxb8P",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": 350,
+                          "content": "Quedó en manos de la sede",
+                          "fontFamily": "$mono",
+                          "fontSize": 28,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "R4bytH",
+                          "name": "Aviso",
+                          "width": "fill_container",
+                          "fill": "#E4CBB6",
+                          "cornerRadius": 4,
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 14,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EkViT",
+                              "name": "Estado",
+                              "fill": "#6B442E",
+                              "content": "EN ESPERA DE APROBACIÓN",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "E7JEv",
+                              "name": "Detalle",
+                              "fill": "#6B442E",
+                              "textGrowth": "fixed-width",
+                              "width": 322,
+                              "content": "Pediste la factura a nombre de Constructora Andes SAS. Hasta que un administrador apruebe, no se emite la nota crédito ni la factura nueva.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SVyap",
+                          "name": "Qué sigue vigente",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 4,
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "c4Oco",
+                              "name": "Factura vigente",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Rmhsw",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Factura vigente",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "x1aomE",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "FECH-41392",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "xEGIk",
+                              "name": "A nombre de",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Qod1p",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "A nombre de",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "XSneC",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "Andrea Castro",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "c9quy",
+                              "name": "Si la aprueban",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "PoyNM",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Si la aprueban",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "o6TlO",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "Nota crédito y factura nueva",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "lWxjL",
+                              "name": "Documentos",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "rFwRY",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Documentos",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Go5ls",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "2 del cupo de Factus",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
                             }
                           ]
                         }
