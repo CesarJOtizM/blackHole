@@ -18,6 +18,8 @@ Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–
 - [x] 1.10 GREEN `domain/reinvoice-window.ts` and its export in `domain/index.ts`. No provider call. The domain does not call the network.
 - [x] 2.1 RED `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
 - [x] 2.2 GREEN `application/look-up-portal-buyer/look-up-portal-buyer.ts`. `#application/look-up-portal-buyer/*`. Not exported from `entry-port.ts`. `ProviderRateGate` unchanged.
+- [x] 2.3 RED `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
+- [x] 2.4 GREEN `application/request-remembered-code/request-remembered-code.ts`. `ports/one-time-code-sender.ts` and `.contract.ts`. Not exported from `entry-port.ts`.
 
 ## Work Unit Evidence
 
@@ -69,8 +71,11 @@ None.
 
 ## Remaining Tasks
 
-- [ ] 1.9 RED `domain/reinvoice-window.test.ts`
-- [ ] 1.10 onward
+- [x] 1.9 RED `domain/reinvoice-window.test.ts`
+- [x] 1.10 GREEN `domain/reinvoice-window.ts`
+- [x] 2.1–2.2 `look-up-portal-buyer`
+- [x] 2.3–2.4 `request-remembered-code`
+- [ ] 2.5 onward
 
 ## Workload / PR Boundary
 
@@ -192,3 +197,42 @@ None.
 - Files in this batch: `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`, `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 474 lines (`look-up-portal-buyer.test.ts` 281, `look-up-portal-buyer.ts` 192, plus 1 `package.json` import). That is 74 lines over the 400-line review budget. `size:exception` was not granted.
 - Next unchecked task: 2.3
+
+## Pair 2.3–2.4
+
+This batch adds use-case pair 2.3–2.4 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `RequestRememberedCode` calls the injected store, the caller-supplied digest and digits, and `OneTimeCodeSender.send` only. It does not open sockets, call Twilio or SendGrid, sign HMAC, or touch Postgres. `oneTimeCodeSenderContract` is not executed in this slice; an adapter imports it in task 3.4. |
+| Rollback boundary | `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`, `contexts/invoicing/application/request-remembered-code/request-remembered-code.ts`, `contexts/invoicing/application/ports/one-time-code-sender.ts`, `contexts/invoicing/application/ports/one-time-code-sender.contract.ts`, and the `#application/request-remembered-code/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pair 2.1–2.2 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.3 → 2.4 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` exit 1. `FAIL contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — `Cannot find module '#application/ports/one-time-code-sender.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-remembered-code.ts`, `ports/one-time-code-sender.ts`, `ports/one-time-code-sender.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+The sender message matches the design: `channel`, `destination`, `code`, `companyName`, `expiresInMinutes`. `expiresInMinutes` is 10, from `ONE_TIME_CODE_TTL_MS`. An unconfigured sender throws `OneTimeCodeDeliveryFailed`; the use case does not catch it and does not store the record. The clear code is passed only to `send`. It is absent from the result, the stored record, and console logs. A remembered contact for another company, or no contact, returns `{ outcome: "hidden" }` and does not send. The result does not include billing data.
+
+`RememberedContactStore` lives in the use case file, as `PortalBuyerLookupStore` does. `portal-repository.ts` stays in task 2.16. Digest and digits are constructor arguments. `ports/code-digest.ts` stays in task 2.6. The use case is not exported from `entry-port.ts`. The contract suite is written and not run here.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.3 and 2.4 only. No HTTP, UI, SQL, Twilio adapter, crypto, `code-digest`, or `entry-port.ts` export.
+- Files in this batch: `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`, `contexts/invoicing/application/request-remembered-code/request-remembered-code.ts`, `contexts/invoicing/application/ports/one-time-code-sender.ts`, `contexts/invoicing/application/ports/one-time-code-sender.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 458 lines (`request-remembered-code.test.ts` 285, `request-remembered-code.ts` 115, `one-time-code-sender.ts` 26, `one-time-code-sender.contract.ts` 31, plus 1 `package.json` import). That is 58 lines over the 400-line review budget. `size:exception` was not granted.
+- Next unchecked task: 2.5
