@@ -314,3 +314,40 @@ None.
 - Files in this batch: `contexts/invoicing/application/record-billing-data/record-billing-data.test.ts`, `contexts/invoicing/application/record-billing-data/record-billing-data.ts`, `contexts/invoicing/application/ports/municipality-catalog.ts`, `contexts/invoicing/application/ports/municipality-catalog.contract.ts`, `contexts/invoicing/application/ports/billing-data-notifier.ts`, `contexts/invoicing/application/ports/billing-data-notifier.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 377 lines (`record-billing-data.test.ts` 213, `record-billing-data.ts` 105, `municipality-catalog.ts` 3, `municipality-catalog.contract.ts` 22, `billing-data-notifier.ts` 7, `billing-data-notifier.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
 - Next unchecked task: 2.9
+
+## Pair 2.9–2.10
+
+This batch adds use-case pair 2.9–2.10 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. The run is after `pnpm exec biome check --write` on the touched files. The final Biome run reported `Checked 3 files in 18ms. No fixes applied.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory store. `RequestDataDeletion` calls `verifyOneTimeCode`, `deleteBillingData`, the injected store, and `CodeDigest.matches` only. It does not open sockets, call Twilio, Factus, or Postgres. |
+| Rollback boundary | `contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts`, `contexts/invoicing/application/request-data-deletion/request-data-deletion.ts`, and the `#application/request-data-deletion/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.8 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts contexts/invoicing/domain/billing-data.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.9 → 2.10 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` exit 1. With no import pattern yet: `Missing "#application/request-data-deletion/request-data-deletion.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/request-data-deletion/*` and with no use case file yet: `FAIL contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` — `Cannot find module '#application/request-data-deletion/request-data-deletion.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-data-deletion.ts` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The code is the one already stored for the registered row. `CodeDigest.matches` and `verifyOneTimeCode` decide it. A blank code, a missing row, or another company's row returns `{ outcome: "hidden" }` and does not save. A rejected, locked, expired, or spent code saves the updated one-time-code record and leaves `deletedAt` null with the same invoice numbers. An accepted code saves the record returned by `deleteBillingData({ record, at })`: `deletedAt` is the command `at`, the invoice numbers stay, and the spent code is stored on that same row. `findUsable` offers billing fields only while `deletedAt` is null, so a later lookup for that company and document returns nothing while the saved row still holds the snapshots. `DataDeletionStore` lives in the use case file. No new port. The use case is not exported from `entry-port.ts`. It does not log the code or the billing payload.
+
+### Issues Found
+
+None. The first executable draft expected `matches` to record the rejected code. `CodeDigest.matches` receives the stored digest, as in `VerifyRememberedCode`. That expectation was corrected before the passing run.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.9 and 2.10 only. No HTTP, UI, SQL, Twilio, Postgres, local-node, sqlite, sync, Factus, `entry-port.ts`, or `realtime-hub.ts`. Task 2.11 was not started.
+- Files in this batch: `contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts`, `contexts/invoicing/application/request-data-deletion/request-data-deletion.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 486 lines (`request-data-deletion.test.ts` 339, `request-data-deletion.ts` 146, plus 1 `package.json` import). That is 86 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is included in the pull request.
+- Next unchecked task: 2.11
