@@ -236,3 +236,42 @@ None.
 - Files in this batch: `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`, `contexts/invoicing/application/request-remembered-code/request-remembered-code.ts`, `contexts/invoicing/application/ports/one-time-code-sender.ts`, `contexts/invoicing/application/ports/one-time-code-sender.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 458 lines (`request-remembered-code.test.ts` 285, `request-remembered-code.ts` 115, `one-time-code-sender.ts` 26, `one-time-code-sender.contract.ts` 31, plus 1 `package.json` import). That is 58 lines over the 400-line review budget. `size:exception` was not granted.
 - Next unchecked task: 2.5
+
+## Pair 2.5–2.6
+
+This batch adds use-case pair 2.5–2.6 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `VerifyRememberedCode` calls the injected store and `CodeDigest.matches` only, then `verifyOneTimeCode`. It does not open sockets, call Twilio, Factus, or Postgres, and it does not sign HMAC. `codeDigestContract` is not executed in this slice; a crypto adapter imports it in tasks 3.5–3.6. |
+| Rollback boundary | `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts`, `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.ts`, `contexts/invoicing/application/ports/code-digest.ts`, `contexts/invoicing/application/ports/code-digest.contract.ts`, and the `#application/verify-remembered-code/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.4 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  9 passed (9)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.5 → 2.6 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` exit 1. With no import pattern yet, the same command failed as `Missing "#application/verify-remembered-code/verify-remembered-code.js" specifier in "@blackhole/invoicing" package`. After adding only `#application/verify-remembered-code/*` and with no use case file yet: `FAIL contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` — `Cannot find module '#application/verify-remembered-code/verify-remembered-code.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `verify-remembered-code.ts`, `ports/code-digest.ts`, `ports/code-digest.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+The sequence diagram labels the customer response "remembered data (masked)". This use case returns the stored billing fields for confirmation (`documentType`, `documentNumber`, `personType`, `name`, `email`, `municipalityCode`) and does not mask them. HTTP masking is not this slice.
+
+`RememberedCodeStore` lives in the use case file, as `RememberedContactStore` does. `portal-repository.ts` stays in task 2.16. The use case is not exported from `entry-port.ts`. `codeDigestContract` is written and not run here. `CodeDigest.matches` answers whether the clear code matches the stored digest. `verifyOneTimeCode` still applies expiry, attempts, spent, and lock. When `matches` is true the use case passes the stored digest through; when it is not, it passes a different string so the domain comparison stays in the domain. The use case does not hash. A blank code, a missing row, or another company's row returns `{ outcome: "hidden" }` and does not call `matches`. The fifth wrong check saves `attemptsRemaining` 0. A later check stays locked, does not call `matches`, and reveals nothing. A spent code saves the spent record and reveals nothing.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.5 and 2.6 only. No HTTP, UI, SQL, Twilio, crypto adapter, Postgres, or `entry-port.ts` export. Task 2.7 was not started.
+- Files in this batch: `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts`, `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.ts`, `contexts/invoicing/application/ports/code-digest.ts`, `contexts/invoicing/application/ports/code-digest.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 371 lines (`verify-remembered-code.test.ts` 230, `verify-remembered-code.ts` 111, `code-digest.ts` 3, `code-digest.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 2.7

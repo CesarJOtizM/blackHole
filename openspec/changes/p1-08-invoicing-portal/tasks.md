@@ -41,8 +41,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 - [x] 2.2 GREEN that folder. `#application/look-up-portal-buyer/*`.
 - [x] 2.3 RED `application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
 - [x] 2.4 GREEN that folder. `ports/one-time-code-sender.ts` and `.contract.ts`.
-- [ ] 2.5 RED `application/verify-remembered-code/verify-remembered-code.test.ts`: valid code reveals; ID alone does not; fifth miss locks; spent code fails.
-- [ ] 2.6 GREEN that folder. `ports/code-digest.ts` and `.contract.ts`.
+- [x] 2.5 RED `application/verify-remembered-code/verify-remembered-code.test.ts`: valid code reveals; ID alone does not; fifth miss locks; spent code fails.
+- [x] 2.6 GREEN that folder. `ports/code-digest.ts` and `.contract.ts`.
 - [ ] 2.7 RED `application/record-billing-data/record-billing-data.test.ts`: bad NIT is a field error; no consent writes nothing; consent stores date, policy, link; per company; `billing_data_received`.
 - [ ] 2.8 GREEN that folder. `municipality-catalog.ts`, `billing-data-notifier.ts`, and contracts.
 - [ ] 2.9 RED `application/request-data-deletion/request-data-deletion.test.ts`: code required; future use stops; snapshots kept.
