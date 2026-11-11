@@ -499,7 +499,9 @@ it("given the PDF download fails, when it is attempted, then the download fails"
   );
 
   await expect(
-    withHostSecrets((factus) => factus.downloadPdf(BILL_NUMBER)),
+    withHostSecrets(async (factus) => {
+      await factus.downloadPdf(BILL_NUMBER);
+    }),
   ).rejects.toBeInstanceOf(InvoicePdfDownloadFailed);
 
   expect(recorded[1]).toMatchObject({
@@ -521,7 +523,9 @@ it("given Factus omits the PDF bytes, when the download returns, then the downlo
   );
 
   await expect(
-    withHostSecrets((factus) => factus.downloadPdf(BILL_NUMBER)),
+    withHostSecrets(async (factus) => {
+      await factus.downloadPdf(BILL_NUMBER);
+    }),
   ).rejects.toBeInstanceOf(InvoicePdfDownloadFailed);
 
   expect(recorded[1]).toMatchObject({
