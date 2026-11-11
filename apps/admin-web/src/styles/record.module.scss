@@ -1,0 +1,101 @@
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.metric {
+  padding: 16px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+}
+
+.metricLabel,
+.metricDetail {
+  margin: 0;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  margin: 8px 0 4px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.fact {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.fact span {
+  color: var(--faded);
+}
+
+.attention {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.attentionItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+  text-align: left;
+  cursor: pointer;
+}
+
+.attentionItem strong {
+  font-size: 16px;
+}
+
+.attentionItem span {
+  color: var(--faded);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .metrics,
+  .split {
+    grid-template-columns: 1fr;
+  }
+}

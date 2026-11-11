@@ -3,7 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
@@ -12,6 +12,5 @@
     "types": ["vite/client"],
     "emitDeclarationOnly": true
   },
-  "include": ["src"],
-  "references": [{ "path": "../../shared/ui" }]
+  "include": ["src", "test"]
 }

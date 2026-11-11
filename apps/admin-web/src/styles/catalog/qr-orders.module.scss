@@ -1,0 +1,119 @@
+.content {
+  padding: 4px 32px 48px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode,
+.modeActive {
+  padding: 16px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+  text-align: left;
+}
+
+.modeActive {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.modeTitle {
+  display: block;
+  font-weight: 700;
+}
+
+.modeDetail {
+  display: block;
+  margin-top: 6px;
+  color: var(--faded);
+  font-size: 14px;
+}
+
+.sectionTitle {
+  margin: 28px 0 12px;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--board);
+}
+
+.row strong,
+.row span {
+  display: block;
+}
+
+.row span {
+  color: var(--faded);
+  font-size: 14px;
+}
+
+.limitValue {
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.phone {
+  padding: 18px;
+  border: 1px solid var(--ink);
+  border-radius: 28px;
+  background: var(--sheet);
+}
+
+.phoneKicker {
+  margin: 0;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phoneTitle {
+  margin: 8px 0 16px;
+  font-size: 22px;
+}
+
+.phoneItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid var(--board);
+}
+
+.phoneButton {
+  width: 100%;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .content {
+    padding-inline: 16px;
+  }
+
+  .layout,
+  .modes {
+    grid-template-columns: 1fr;
+  }
+}

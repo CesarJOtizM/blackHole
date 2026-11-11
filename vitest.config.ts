@@ -77,6 +77,15 @@ export default defineConfig({
         },
       },
       {
+        test: {
+          name: "admin-web",
+          root: "./apps/admin-web",
+          include: ["test/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/setup.ts"],
+        },
+      },
+      {
         server: {
           fs: {
             allow: ["../.."],

@@ -1,0 +1,101 @@
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.manifesto {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  background: var(--carbon);
+  color: var(--carbon-text);
+}
+
+.brand {
+  margin: 0;
+  color: var(--sheet);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.pitch {
+  margin: 0;
+  max-width: 12ch;
+  color: var(--sheet);
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.rule {
+  margin: 24px 0;
+  color: var(--carbon-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--carbon-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.digits {
+  display: flex;
+  gap: 12px;
+}
+
+.digit {
+  width: 64px;
+  min-height: 72px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+  font-size: 32px;
+  text-align: center;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .stage {
+    grid-template-columns: 1fr;
+  }
+
+  .pitch {
+    font-size: 40px;
+  }
+
+  .manifesto,
+  .panel {
+    padding: 28px 20px;
+  }
+}
