@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button, Field } from "@blackhole/ui";
+import { useState } from "react";
 
 const ACCOUNT_DOCUMENT = "1010101010";
 
@@ -34,8 +34,8 @@ export function HomeScreen() {
       <p className="font-mono text-numeral">$128.400</p>
       {step === "issued" ? (
         <p role="status">
-          La factura queda a tu nombre. Puedes consultarla con este mismo
-          enlace mientras siga vigente.
+          La factura queda a tu nombre. Puedes consultarla con este mismo enlace
+          mientras siga vigente.
         </p>
       ) : (
         <form
@@ -59,7 +59,9 @@ export function HomeScreen() {
             <div className="grid gap-1 rounded-2xl border-2 border-border p-4">
               <p>C••••• M•••••</p>
               <p className="text-ink-muted">c••••@correo.com</p>
-              <p className="text-ink-muted">Consumidor con documento, INC 8 %.</p>
+              <p className="text-ink-muted">
+                Consumidor con documento, INC 8 %.
+              </p>
             </div>
           ) : null}
           <Button type="submit">
