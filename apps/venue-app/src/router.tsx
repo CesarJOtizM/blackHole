@@ -5,7 +5,9 @@ import {
   Link,
   lazyRouteComponent,
   Outlet,
+  useRouterState,
 } from "@tanstack/react-router";
+import { ServiceProvider } from "#src/service/service-session.js";
 
 const rootRoute = createRootRoute({
   component: VenueLayout,
@@ -38,10 +40,20 @@ const registerRoute = createRoute({
   ),
 });
 
+const clockRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "attendance",
+  component: lazyRouteComponent(
+    () => import("#src/attendance/clock-screen.js"),
+    "ClockScreen",
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   floorRoute,
   kitchenRoute,
   registerRoute,
+  clockRoute,
 ]);
 
 export const router = createRouter({
@@ -61,43 +73,65 @@ function PendingScreen() {
 }
 
 function VenueLayout() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const wide = pathname.startsWith("/kitchen");
+
   return (
-    <div className="min-h-svh">
-      <header className="border-b border-border bg-surface-raised">
-        <nav className="mx-auto flex max-w-3xl gap-2 px-4 py-3 text-base">
-          <Link
-            to="/"
-            activeOptions={{ exact: true }}
-            className="rounded-md px-3 py-2 text-ink-muted"
-            activeProps={{
-              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
-            }}
-          >
-            Plano
-          </Link>
-          <Link
-            to="/kitchen"
-            className="rounded-md px-3 py-2 text-ink-muted"
-            activeProps={{
-              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
-            }}
-          >
-            Cocina
-          </Link>
-          <Link
-            to="/cash-register"
-            className="rounded-md px-3 py-2 text-ink-muted"
-            activeProps={{
-              className: "rounded-md bg-ink px-3 py-2 text-on-strong",
-            }}
-          >
-            Caja
-          </Link>
-        </nav>
-      </header>
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <Outlet />
-      </main>
-    </div>
+    <ServiceProvider>
+      <div className="min-h-svh">
+        <header className="border-b border-border bg-surface-raised">
+          <nav className="mx-auto flex max-w-5xl gap-2 overflow-x-auto px-4 py-3 text-base">
+            <Link
+              to="/"
+              activeOptions={{ exact: true }}
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Salón
+            </Link>
+            <Link
+              to="/kitchen"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Cocina
+            </Link>
+            <Link
+              to="/cash-register"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Caja
+            </Link>
+            <Link
+              to="/attendance"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Asistencia
+            </Link>
+          </nav>
+        </header>
+        <main
+          className={
+            wide
+              ? "px-4 py-6"
+              : "mx-auto max-w-3xl px-4 py-8"
+          }
+        >
+          <Outlet />
+        </main>
+      </div>
+    </ServiceProvider>
   );
 }
