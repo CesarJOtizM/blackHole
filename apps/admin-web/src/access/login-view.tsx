@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "#src/styles/access.module.scss";
 import ui from "#src/styles/ui.module.scss";
 
@@ -72,6 +72,32 @@ export function FactorView({
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [trust, setTrust] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const boxes = useRef<Array<HTMLInputElement | null>>([]);
+
+  function applyDigits(start: number, raw: string) {
+    const chars = raw
+      .replace(/\D/g, "")
+      .slice(0, digits.length - start)
+      .split("");
+
+    if (chars.length === 0) {
+      return;
+    }
+
+    const next = [...digits];
+
+    chars.forEach((char, offset) => {
+      next[start + offset] = char;
+    });
+
+    setDigits(next);
+    const focusAt = Math.min(start + chars.length, digits.length - 1);
+    boxes.current[focusAt]?.focus();
+
+    if (next.every((digit) => digit.length === 1)) {
+      setError(onVerify(next.join("")));
+    }
+  }
 
   return (
     <div className={styles.stage}>
@@ -96,15 +122,32 @@ export function FactorView({
             {digits.map((digit, index) => (
               <input
                 key={index}
+                ref={(node) => {
+                  boxes.current[index] = node;
+                }}
                 className={styles.digit}
                 inputMode="numeric"
-                maxLength={1}
+                autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`Dígito ${index + 1}`}
                 value={digit}
-                onChange={(event) => {
+                onChange={(event) => applyDigits(index, event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key !== "Backspace" ||
+                    digit !== "" ||
+                    index === 0
+                  ) {
+                    return;
+                  }
+
                   const next = [...digits];
-                  next[index] = event.target.value.replace(/\D/g, "").slice(-1);
+                  next[index - 1] = "";
                   setDigits(next);
+                  boxes.current[index - 1]?.focus();
+                }}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  applyDigits(index, event.clipboardData.getData("text"));
                 }}
               />
             ))}

@@ -1,10 +1,3 @@
-import {
-  Button,
-  EmptyState,
-  Field,
-  ScreenError,
-  Skeleton,
-} from "@blackhole/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { AdminPage } from "#src/catalog/admin-page.js";
@@ -28,7 +21,10 @@ import {
   type UpsertIngredientCommand,
   upsertIngredientCommand,
 } from "#src/catalog/cloud-recipe-api.js";
+import { TextField } from "#src/catalog/text-field.js";
 import { useRecipeCatalog } from "#src/catalog/use-recipe-catalog.js";
+import cloud from "#src/styles/catalog/cloud.module.scss";
+import ui from "#src/styles/ui.module.scss";
 
 const EMPTY_INGREDIENT: IngredientForm = {
   id: "",
@@ -40,6 +36,15 @@ const EMPTY_INGREDIENT: IngredientForm = {
   recipeBaseQuantity: "",
   referenceCostCop: "",
 };
+
+const SAMPLE_INGREDIENTS = [
+  ["Churrasco (pieza)", "g", "kg", "1000", "g", "1", "$38.900"],
+  ["Entraña", "g", "kg", "1000", "g", "1", "$41.200"],
+  ["Papa criolla", "g", "kg", "1000", "g", "1", "$4.300"],
+  ["Queso doble crema", "g", "kg", "1000", "g", "1", "$22.500"],
+  ["Limón tahití", "g", "kg", "1000", "g", "1", "$3.800"],
+  ["Caja domicilio", "unit", "und", "1", "und", "1", "$1.150"],
+] as const;
 
 const BASE_UNIT_OPTIONS = [
   { value: BASE_UNIT.GRAM, label: "g" },
@@ -96,55 +101,80 @@ export function IngredientsScreen() {
   return (
     <AdminPage
       title="Ingredientes"
-      lede="Unidades, factores y costo de referencia en la nube."
+      lede="Unidades, factores y costo de referencia"
     >
-      <form onSubmit={handleLoad} className="grid gap-4">
+      <div className={ui.tableWrap}>
+        <table className={ui.table}>
+          <caption className="srOnly">Ingredientes de la muestra</caption>
+          <thead>
+            <tr>
+              <th>Ingrediente</th>
+              <th>Base</th>
+              <th>Compra</th>
+              <th>Factor</th>
+              <th>Receta</th>
+              <th>Factor</th>
+              <th>Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SAMPLE_INGREDIENTS.map((row) => (
+              <tr key={row[0]}>
+                {row.map((cell, index) => (
+                  <td key={`${row[0]}-${index}`}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <form onSubmit={handleLoad} className={cloud.panel}>
+        <h2 className={cloud.panelTitle}>Catálogo en la nube</h2>
         <CatalogScopeFields />
-        {scopeError ? (
-          <p className="font-semibold text-danger">{scopeError}</p>
-        ) : null}
-        <div>
-          <Button type="submit">Cargar catálogo</Button>
+        {scopeError ? <p className={ui.error}>{scopeError}</p> : null}
+        <div className={cloud.actions}>
+          <button type="submit" className={ui.button}>
+            Cargar catálogo
+          </button>
         </div>
       </form>
-      {query.isLoading ? <Skeleton className="h-24" /> : null}
+      {query.isLoading ? <p className={ui.note}>Cargando catálogo…</p> : null}
       {query.isError ? (
-        <ScreenError
-          title="Catálogo"
-          message="No se pudo llamar a la nube."
-          onRetry={() => void query.refetch()}
-        />
+        <p className={ui.error} role="alert">
+          No se pudo llamar a la nube.{" "}
+          <button
+            type="button"
+            className={ui.textButton}
+            onClick={() => void query.refetch()}
+          >
+            Reintentar
+          </button>
+        </p>
       ) : null}
       {query.data && query.data.status !== 200 ? (
-        <ScreenError
-          title="Catálogo"
-          message={
-            errorNameFromPayload(query.data.body) ??
-            "No se pudo leer el catálogo."
-          }
-        />
+        <p className={ui.error} role="alert">
+          {errorNameFromPayload(query.data.body) ??
+            "No se pudo leer el catálogo."}
+        </p>
       ) : null}
       {query.data?.status === 200 && catalog === null ? (
-        <ScreenError
-          title="Catálogo"
-          message="La respuesta no es un catálogo."
-        />
+        <p className={ui.error} role="alert">
+          La respuesta no es un catálogo.
+        </p>
       ) : null}
       {catalog !== null && publication === null ? (
-        <EmptyState title="Sin versión publicada" />
+        <p className={ui.empty}>Sin versión publicada</p>
       ) : null}
       {publication ? (
-        <section className="grid gap-4">
-          <p className="text-ink-muted">Versión {publication.version}</p>
+        <section className={cloud.panel}>
+          <h2 className={cloud.panelTitle}>Versión {publication.version}</h2>
           <IngredientList ingredients={publication.ingredients} />
         </section>
       ) : null}
-      <form onSubmit={handlePublish} className="grid gap-4">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Publicar ingrediente
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
+      <form onSubmit={handlePublish} className={cloud.panel}>
+        <h2 className={cloud.panelTitle}>Publicar ingrediente</h2>
+        <div className={cloud.grid}>
+          <TextField
             label="Id"
             value={form.id}
             autoComplete="off"
@@ -152,7 +182,7 @@ export function IngredientsScreen() {
               setForm((current) => ({ ...current, id: event.target.value }))
             }
           />
-          <Field
+          <TextField
             label="Nombre"
             value={form.name}
             autoComplete="off"
@@ -168,7 +198,7 @@ export function IngredientsScreen() {
               setForm((current) => ({ ...current, baseUnit }))
             }
           />
-          <Field
+          <TextField
             label="Unidad de compra"
             value={form.purchaseUnitName}
             autoComplete="off"
@@ -179,7 +209,7 @@ export function IngredientsScreen() {
               }))
             }
           />
-          <Field
+          <TextField
             label="Factor de compra"
             value={form.purchaseBaseQuantity}
             inputMode="numeric"
@@ -191,7 +221,7 @@ export function IngredientsScreen() {
               }))
             }
           />
-          <Field
+          <TextField
             label="Unidad de receta"
             value={form.recipeUnitName}
             autoComplete="off"
@@ -202,7 +232,7 @@ export function IngredientsScreen() {
               }))
             }
           />
-          <Field
+          <TextField
             label="Factor de receta"
             value={form.recipeBaseQuantity}
             inputMode="numeric"
@@ -214,7 +244,7 @@ export function IngredientsScreen() {
               }))
             }
           />
-          <Field
+          <TextField
             label="Costo de referencia (COP)"
             value={form.referenceCostCop}
             inputMode="numeric"
@@ -227,22 +257,23 @@ export function IngredientsScreen() {
             }
           />
         </div>
-        {formError ? (
-          <p className="font-semibold text-danger">{formError}</p>
-        ) : null}
+        {formError ? <p className={ui.error}>{formError}</p> : null}
         {publish.isError ? (
-          <ScreenError
-            title="Publicación"
-            message="No se pudo llamar a la nube."
-          />
+          <p className={ui.error} role="alert">
+            No se pudo llamar a la nube.
+          </p>
         ) : null}
         {publish.data ? (
-          <p className="text-ink">{actionMessage(publish.data)}</p>
+          <p className={ui.note}>{actionMessage(publish.data)}</p>
         ) : null}
-        <div>
-          <Button type="submit" disabled={publish.isPending}>
+        <div className={cloud.actions}>
+          <button
+            type="submit"
+            className={ui.button}
+            disabled={publish.isPending}
+          >
             Publicar ingrediente
-          </Button>
+          </button>
         </div>
       </form>
     </AdminPage>

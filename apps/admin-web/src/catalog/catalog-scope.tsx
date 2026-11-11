@@ -1,4 +1,3 @@
-import { Field } from "@blackhole/ui";
 import {
   createContext,
   type ReactNode,
@@ -8,6 +7,8 @@ import {
   useState,
 } from "react";
 import type { CatalogScope } from "#src/catalog/cloud-recipe-api.js";
+import { TextField } from "#src/catalog/text-field.js";
+import cloud from "#src/styles/catalog/cloud.module.scss";
 
 export interface CatalogDraft {
   tenantId: string;
@@ -79,29 +80,33 @@ export function CatalogScopeFields({
   const { draft, updateDraft } = useCatalogScope();
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Field
+    <div className={cloud.grid}>
+      <TextField
         label="Empresa"
         value={draft.tenantId}
+        placeholder="pilot"
         autoComplete="off"
         onChange={(event) => updateDraft({ tenantId: event.target.value })}
       />
-      <Field
+      <TextField
         label="Marca"
         value={draft.brandId}
+        placeholder="parrilla"
         autoComplete="off"
         onChange={(event) => updateDraft({ brandId: event.target.value })}
       />
-      <Field
+      <TextField
         label="Sesión"
         value={draft.sessionId}
+        placeholder="admin-web"
         autoComplete="off"
         onChange={(event) => updateDraft({ sessionId: event.target.value })}
       />
       {includeVenue ? (
-        <Field
+        <TextField
           label="Sede"
           value={draft.venueId}
+          placeholder="chapinero"
           autoComplete="off"
           onChange={(event) => updateDraft({ venueId: event.target.value })}
         />
