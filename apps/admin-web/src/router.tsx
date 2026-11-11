@@ -6,6 +6,9 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { isSignedIn, signedInEmail } from "#src/access/session.js";
+import { ImportScreen } from "#src/catalog/import-screen.js";
+import { IngredientsScreen } from "#src/catalog/ingredients-screen.js";
+import { RecipesScreen } from "#src/catalog/recipes-screen.js";
 import { RootFrame } from "#src/shell/app-shell.js";
 
 const rootRoute = createRootRoute({
@@ -341,6 +344,21 @@ const routeTree = rootRoute.addChildren([
     () => import("#src/platform/platform-screen.js"),
     "CaseScreen",
   ),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "ingredients",
+    component: IngredientsScreen,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "recipes",
+    component: RecipesScreen,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "import",
+    component: ImportScreen,
+  }),
 ]);
 
 export const router = createRouter({

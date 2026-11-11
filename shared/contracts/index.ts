@@ -166,6 +166,20 @@ export {
   reprintDocumentCommand,
 } from "#contracts/printing.js";
 export {
+  type RecipeCatalog,
+  type RecipeCatalogCommand,
+  type RecipeCost,
+  type RecipeImportCommand,
+  type RecipeImportReport,
+  type RecipePublication,
+  recipeCatalog,
+  recipeCatalogCommand,
+  recipeCost,
+  recipeImportCommand,
+  recipeImportReport,
+  recipePublication,
+} from "#contracts/recipe-catalog.js";
+export {
   type SensitiveActionEnvelope,
   sensitiveActionEnvelope,
 } from "#contracts/sensitive-actions.js";

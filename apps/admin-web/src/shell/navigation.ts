@@ -32,6 +32,13 @@ export const navigation: NavSection[] = [
         match: (pathname) => pathname.startsWith("/catalog"),
       },
       { to: "/inventory", label: "Inventario", match: nested("/inventory") },
+      {
+        to: "/ingredients",
+        label: "Ingredientes",
+        match: exact("/ingredients"),
+      },
+      { to: "/recipes", label: "Recetas", match: exact("/recipes") },
+      { to: "/import", label: "Importar", match: exact("/import") },
       { to: "/deliveries", label: "Domicilios", match: nested("/deliveries") },
       {
         to: "/reservations",

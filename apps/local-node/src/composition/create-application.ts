@@ -1,16 +1,29 @@
 import "reflect-metadata";
 
+import type { RecipeCopyRepository } from "@blackhole/inventory/application/ports/recipe-copy-repository";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
 
-import { ApplicationModule } from "#src/composition/application-module.js";
+import {
+  ApplicationModule,
+  registerRecipeCopies,
+} from "#src/composition/application-module.js";
 
-export async function createApplication(): Promise<NestFastifyApplication> {
+export interface NodeApplicationDependencies {
+  recipeCopies?: RecipeCopyRepository;
+}
+
+export async function createApplication(
+  dependencies: NodeApplicationDependencies = {},
+): Promise<NestFastifyApplication> {
+  const root = dependencies.recipeCopies
+    ? registerRecipeCopies(dependencies.recipeCopies)
+    : ApplicationModule;
   const application = await NestFactory.create<NestFastifyApplication>(
-    ApplicationModule,
+    root,
     new FastifyAdapter(),
   );
 

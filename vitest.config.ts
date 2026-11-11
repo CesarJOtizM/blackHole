@@ -33,6 +33,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "inventory",
+          include: ["contexts/inventory/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "attendance",
           include: ["contexts/attendance/**/*.test.ts"],
         },

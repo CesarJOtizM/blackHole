@@ -1,4 +1,5 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
+import { CatalogScopeProvider } from "#src/catalog/catalog-scope.js";
 import { Sidebar } from "#src/shell/sidebar.js";
 import styles from "#src/styles/shell.module.scss";
 
@@ -11,7 +12,9 @@ export function AppShell() {
     <div className={styles.frame}>
       <Sidebar pathname={pathname} />
       <div className={styles.main}>
-        <Outlet />
+        <CatalogScopeProvider>
+          <Outlet />
+        </CatalogScopeProvider>
       </div>
     </div>
   );
