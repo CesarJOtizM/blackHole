@@ -8,6 +8,7 @@ import {
   type CreditNoteValidation,
   CreditNoteValidationFailed,
   type DocumentIssuance,
+  InvoicePdfDownloadFailed,
   type InvoiceValidation,
   InvoicingProvider,
   REFERENCE_LOOKUP,
@@ -86,7 +87,8 @@ const providerError = (error: Error): boolean =>
   error instanceof FactusValidationFailed ||
   error instanceof ReferenceQueryFailed ||
   error instanceof AcquirerLookupFailed ||
-  error instanceof CreditNoteValidationFailed;
+  error instanceof CreditNoteValidationFailed ||
+  error instanceof InvoicePdfDownloadFailed;
 
 const toFactusBill = (invoice: InvoiceValidation): FactusBillBody => ({
   document: FACTUS_DOCUMENT.SALES_INVOICE,
@@ -234,6 +236,28 @@ const acquirerLookup = (payload: unknown): AcquirerLookup => {
   };
 };
 
+const pdfBytes = (payload: unknown): Uint8Array => {
+  if (!isRecord(payload) || !isRecord(payload.data)) {
+    throw new InvoicePdfDownloadFailed();
+  }
+
+  const encoded = text(payload.data.pdf_base_64_encoded);
+
+  if (encoded === null) {
+    throw new InvoicePdfDownloadFailed();
+  }
+
+  let binary: string;
+
+  try {
+    binary = atob(encoded);
+  } catch {
+    throw new InvoicePdfDownloadFailed();
+  }
+
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
 export class FactusInvoicingProvider extends InvoicingProvider<DocumentIssuance> {
   constructor(private readonly secrets: Secrets) {
     super();
@@ -283,6 +307,16 @@ export class FactusInvoicingProvider extends InvoicingProvider<DocumentIssuance>
     );
 
     return acquirerLookup(payload);
+  }
+
+  override async downloadPdf(number: string): Promise<Uint8Array> {
+    const payload = await this.send(
+      `${FACTUS_PATH.BILLS}/${encodeURIComponent(number)}/download-pdf`,
+      { method: "GET" },
+      () => new InvoicePdfDownloadFailed(),
+    );
+
+    return pdfBytes(payload);
   }
 
   override async validateCreditNote(note: CreditNoteValidation): Promise<void> {

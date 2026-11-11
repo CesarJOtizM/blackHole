@@ -10,6 +10,7 @@ import {
   ACQUIRER_LOOKUP,
   AcquirerLookupFailed,
   CreditNoteValidationFailed,
+  InvoicePdfDownloadFailed,
   REFERENCE_LOOKUP,
   ReferenceQueryFailed,
 } from "#application/ports/invoicing-provider.js";
@@ -24,6 +25,10 @@ const CUFE = "cufe-recorded";
 const QR = "qr-recorded";
 const ACQUIRER_NAME = "Comprador registrado";
 const ACQUIRER_EMAIL = "buyer@example.test";
+const PDF_BYTES = Uint8Array.from([
+  0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37,
+]);
+const PDF_BASE64 = Buffer.from(PDF_BYTES).toString("base64");
 
 interface RecordedHttp {
   url: string;
@@ -369,6 +374,10 @@ it("given an identification, when the acquirer is looked up, then name and email
     `${BASE_URL}/v2/dian/acquirer?identification_document_code=31&identification_number=900123456`,
   );
   expect(recorded[1]?.method).toBe("GET");
+  expect(recorded).toHaveLength(2);
+  expect(recorded.some((call) => call.url.includes("/v2/bills/validate"))).toBe(
+    false,
+  );
   expect(recorded[1]?.url).not.toContain("documentType");
   expectBearer(recorded[1] as RecordedHttp);
   expect(lookup).toEqual({
@@ -450,4 +459,73 @@ it("given the credit note is refused, when it is validated, then validation fail
       }),
     ),
   ).rejects.toBeInstanceOf(CreditNoteValidationFailed);
+});
+
+it("given an accepted bill number, when the PDF is downloaded, then Factus receives a GET and the bytes are the decoded PDF", async () => {
+  const recorded = installFetch(
+    tokenResponse(),
+    jsonResponse(200, {
+      status: "OK",
+      message: "Solicitud exitosa",
+      data: {
+        file_name: `${BILL_NUMBER}.pdf`,
+        pdf_base_64_encoded: PDF_BASE64,
+      },
+    }),
+  );
+
+  let bytes: Uint8Array | null = null;
+
+  await withHostSecrets(async (factus) => {
+    bytes = await factus.downloadPdf(BILL_NUMBER);
+  });
+
+  expect(recorded[1]).toMatchObject({
+    url: `${BASE_URL}/v2/bills/${BILL_NUMBER}/download-pdf`,
+    method: "GET",
+  });
+  expect(recorded[1]?.body).toBeNull();
+  expect(recorded.some((call) => call.url.includes("/v2/bills/validate"))).toBe(
+    false,
+  );
+  expectBearer(recorded[1] as RecordedHttp);
+  expect(bytes).toEqual(PDF_BYTES);
+});
+
+it("given the PDF download fails, when it is attempted, then the download fails", async () => {
+  const recorded = installFetch(
+    tokenResponse(),
+    jsonResponse(500, { status: "Error" }),
+  );
+
+  await expect(
+    withHostSecrets((factus) => factus.downloadPdf(BILL_NUMBER)),
+  ).rejects.toBeInstanceOf(InvoicePdfDownloadFailed);
+
+  expect(recorded[1]).toMatchObject({
+    url: `${BASE_URL}/v2/bills/${BILL_NUMBER}/download-pdf`,
+    method: "GET",
+  });
+  expect(recorded.some((call) => call.url.includes("/v2/bills/validate"))).toBe(
+    false,
+  );
+});
+
+it("given Factus omits the PDF bytes, when the download returns, then the download fails", async () => {
+  const recorded = installFetch(
+    tokenResponse(),
+    jsonResponse(200, {
+      status: "OK",
+      data: { file_name: `${BILL_NUMBER}.pdf` },
+    }),
+  );
+
+  await expect(
+    withHostSecrets((factus) => factus.downloadPdf(BILL_NUMBER)),
+  ).rejects.toBeInstanceOf(InvoicePdfDownloadFailed);
+
+  expect(recorded[1]).toMatchObject({
+    url: `${BASE_URL}/v2/bills/${BILL_NUMBER}/download-pdf`,
+    method: "GET",
+  });
 });
