@@ -12,10 +12,12 @@ export function PlanView({
   onSetup,
   onSupport,
   onBag,
+  onFactus,
 }: {
   onSetup: () => void;
   onSupport: () => void;
   onBag: () => void;
+  onFactus: () => void;
 }) {
   return (
     <RecordPage
@@ -41,6 +43,9 @@ export function PlanView({
       </button>
       <button type="button" className={ui.textButton} onClick={onBag}>
         Bolsa de documentos
+      </button>
+      <button type="button" className={ui.textButton} onClick={onFactus}>
+        Requisitos de Factus
       </button>
     </RecordPage>
   );

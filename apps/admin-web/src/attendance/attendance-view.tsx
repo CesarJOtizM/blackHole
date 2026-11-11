@@ -75,15 +75,20 @@ export function RulesView({
 export function HoursView({
   status,
   onClose,
+  onExport,
 }: {
   status?: string;
   onClose: () => void;
+  onExport: () => void;
 }) {
   return (
     <RecordPage
       eyebrow="Jorge Díaz · mesero · Chapinero"
       title="Horas sin salida"
-      actions={[{ label: "Cerrar turno", tone: "solid", onPress: onClose }]}
+      actions={[
+        { label: "Exportar nómina", tone: "ghost", onPress: onExport },
+        { label: "Cerrar turno", tone: "solid", onPress: onClose },
+      ]}
       columns={["Día", "Turno", "Entrada", "Salida", "Estado"]}
       rows={[
         [

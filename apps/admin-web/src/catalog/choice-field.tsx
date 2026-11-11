@@ -1,4 +1,5 @@
 import { useId } from "react";
+import ui from "#src/styles/ui.module.scss";
 
 interface Choice {
   value: string;
@@ -19,15 +20,13 @@ export function ChoiceField({
   const id = useId();
 
   return (
-    <div className="grid gap-2">
-      <label htmlFor={id} className="text-base font-semibold text-ink">
-        {label}
-      </label>
+    <label className={ui.field} htmlFor={id}>
+      <span className={ui.fieldLabel}>{label}</span>
       <select
         id={id}
         value={value}
+        className={ui.select}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-12 rounded-xl border-2 border-border bg-surface-raised px-4 text-body text-ink focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-action"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -35,6 +34,6 @@ export function ChoiceField({
           </option>
         ))}
       </select>
-    </div>
+    </label>
   );
 }

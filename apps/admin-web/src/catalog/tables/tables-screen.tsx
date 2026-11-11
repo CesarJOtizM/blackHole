@@ -38,7 +38,12 @@ export function TablesScreen() {
             label: item.label,
           })),
           onChange: (next) => {
-            void navigate({ search: { venue: next } });
+            void navigate({
+              // The registered route tree does not expose this route's search.
+              search: {
+                venue: next === "usaquen" ? "usaquen" : "chapinero",
+              } as never,
+            });
           },
         }}
       />

@@ -27,7 +27,12 @@ export function QrOrdersScreen() {
             label: venue.label,
           })),
           onChange: (next) => {
-            void navigate({ search: { venue: next } });
+            void navigate({
+              // The registered route tree does not expose this route's search.
+              search: {
+                venue: next === "usaquen" ? "usaquen" : "chapinero",
+              } as never,
+            });
           },
         }}
       />

@@ -1,4 +1,3 @@
-import { Button, ScreenError } from "@blackhole/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ChangeEvent, type FormEvent, useId, useState } from "react";
 import { AdminPage } from "#src/catalog/admin-page.js";
@@ -17,6 +16,14 @@ import {
   importWorkbook,
   publicationFromPayload,
 } from "#src/catalog/cloud-recipe-api.js";
+import cloud from "#src/styles/catalog/cloud.module.scss";
+import ui from "#src/styles/ui.module.scss";
+
+const SAMPLE_ROWS = [
+  ["Churrasco (pieza)", "kg", "1000", "38900"],
+  ["Papa criolla", "kg", "1000", "4300"],
+  ["Caja domicilio", "und", "1", "1150"],
+] as const;
 
 export function ImportScreen() {
   const fileId = useId();
@@ -64,57 +71,78 @@ export function ImportScreen() {
     : null;
 
   return (
-    <AdminPage
-      title="Importar"
-      lede="El Excel se envía a la nube como base64. El costo no se inventa aquí."
-    >
-      <form onSubmit={handleImport} className="grid gap-4">
+    <AdminPage title="Importar" lede="Excel de ingredientes y recetas">
+      <form onSubmit={handleImport} className={cloud.panel}>
+        <h2 className={cloud.panelTitle}>Archivo</h2>
         <CatalogScopeFields />
-        <div className="grid gap-2">
-          <label htmlFor={fileId} className="text-base font-semibold text-ink">
-            Archivo Excel
-          </label>
+        <label className={cloud.file} htmlFor={fileId}>
+          <span className={ui.fieldLabel}>Archivo Excel</span>
           <input
             id={fileId}
             type="file"
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={handleFile}
-            className="min-h-12 text-body text-ink"
           />
-        </div>
-        {formError ? (
-          <p className="font-semibold text-danger">{formError}</p>
-        ) : null}
+          <span className={cloud.meta}>
+            {file ? file.name : "Elige un .xlsx. Se envía a la nube en base64."}
+          </span>
+        </label>
+        {formError ? <p className={ui.error}>{formError}</p> : null}
         {imported.isError ? (
-          <ScreenError
-            title="Importación"
-            message="No se pudo llamar a la nube."
-          />
+          <p className={ui.error} role="alert">
+            No se pudo llamar a la nube.
+          </p>
         ) : null}
         {imported.data ? (
-          <p className="text-ink">{actionMessage(imported.data)}</p>
+          <p className={ui.note}>{actionMessage(imported.data)}</p>
         ) : null}
         {rows.length > 0 ? (
-          <ul className="grid gap-2">
+          <ul className={cloud.list}>
             {rows.map((row) => (
-              <li key={`${row.row}:${row.reason}`} className="text-danger">
+              <li key={`${row.row}:${row.reason}`} className={ui.error}>
                 Fila {row.row}: {row.reason}
               </li>
             ))}
           </ul>
         ) : null}
         {published ? (
-          <section className="grid gap-4">
-            <p className="text-ink-muted">Versión {published.version}</p>
+          <section>
+            <h2 className={cloud.panelTitle}>Versión {published.version}</h2>
             <RecipeList recipes={published.recipes} />
           </section>
         ) : null}
-        <div>
-          <Button type="submit" disabled={imported.isPending}>
+        <div className={cloud.actions}>
+          <button
+            type="submit"
+            className={ui.button}
+            disabled={imported.isPending}
+          >
             Importar
-          </Button>
+          </button>
         </div>
       </form>
+      <div className={ui.tableWrap}>
+        <table className={ui.table}>
+          <caption className="srOnly">Columnas esperadas del Excel</caption>
+          <thead>
+            <tr>
+              <th>Ingrediente</th>
+              <th>Unidad</th>
+              <th>Factor</th>
+              <th>Costo COP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SAMPLE_ROWS.map((row) => (
+              <tr key={row[0]}>
+                {row.map((cell) => (
+                  <td key={cell}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </AdminPage>
   );
 }

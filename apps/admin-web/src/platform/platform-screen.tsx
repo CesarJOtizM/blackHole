@@ -24,6 +24,9 @@ export function PlanScreen() {
       onBag={() => {
         void navigate({ to: "/plan/bag" });
       }}
+      onFactus={() => {
+        void navigate({ to: "/plan/factus" });
+      }}
     />
   );
 }

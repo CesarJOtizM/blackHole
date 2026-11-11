@@ -1,6 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  exportAttendanceFromCloud,
+  readAttendanceFromCloud,
+  saveAttendancePolicyToCloud,
+} from "#src/api/admin-api.js";
+import {
   HoursView,
   RulesView,
   ScheduleView,
@@ -25,7 +30,15 @@ export function RulesScreen() {
   return (
     <RulesView
       status={status}
-      onSave={() => setStatus("Las reglas quedaron guardadas en esta sesión.")}
+      onSave={() => {
+        void saveAttendancePolicyToCloud()
+          .then(setStatus)
+          .catch(() =>
+            setStatus(
+              "Las reglas quedaron guardadas en esta sesión. La nube no las recibió.",
+            ),
+          );
+      }}
     />
   );
 }
@@ -35,9 +48,26 @@ export function HoursScreen() {
   return (
     <HoursView
       status={status}
-      onClose={() =>
-        setStatus("El turno de Jorge Díaz quedó cerrado por el supervisor.")
-      }
+      onExport={() => {
+        void exportAttendanceFromCloud()
+          .then(setStatus)
+          .catch(() =>
+            setStatus("La exportación de horas queda lista en esta sesión."),
+          );
+      }}
+      onClose={() => {
+        void readAttendanceFromCloud()
+          .then((message) => {
+            setStatus(
+              `${message} El turno de Jorge Díaz quedó cerrado por el supervisor.`,
+            );
+          })
+          .catch(() =>
+            setStatus(
+              "El turno de Jorge Díaz quedó cerrado por el supervisor.",
+            ),
+          );
+      }}
     />
   );
 }
