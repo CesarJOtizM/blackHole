@@ -60,4 +60,4 @@ Chain strategy: feature-branch-chain
 
 ## Phase 6: Admin web
 
-- [ ] 6.1 `apps/admin-web/src/router.tsx`: ingredient, recipe, and import screens on the cloud API. Cost only when the payload includes it.
+- [x] 6.1 `apps/admin-web/src/router.tsx`: ingredient, recipe, and import screens on the cloud API. Cost only when the payload includes it.

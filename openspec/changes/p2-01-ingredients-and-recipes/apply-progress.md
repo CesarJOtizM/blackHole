@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Tasks 1.1 through 5.6. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Tasks 1.1 through 6.1. Mode: Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. Admin-web has no vitest project, so task 6.1 is verified with `tsc -b`.
 
-Delivery: feature-branch-chain. Current branch `p2-01/node-http`. PR base `p2-01/cloud-http`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/admin`. PR base `p2-01/node-http`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for tasks 1.1–5.4 was read and merged below. Those tasks stay complete. This batch adds tasks 5.5 and 5.6 only. Admin screens stay out.
+Previous apply-progress for tasks 1.1–5.6 was read and merged below. Those tasks stay complete. This batch adds task 6.1 only. Domain, Postgres, SQLite, and the node were not edited.
 
 ## Completed tasks
 
@@ -25,6 +25,7 @@ Previous apply-progress for tasks 1.1–5.4 was read and merged below. Those tas
 - [x] 5.4 api-cloud Excel `RecipeWorkbook`. Site price and catalog ids go through `ViewVenueMenu` on `@blackhole/orders/application/entry-port`. Module, composition, and `@blackhole/inventory` dependency are wired. `postgresRecipeCatalogs` builds the Postgres catalog store. The HTTP tests use the in-memory catalog adapter. Drizzle is not mocked. api-cloud does not import sqlite.
 - [x] 5.5 `apps/local-node/test/http/recipe-copy.controller.test.ts` written first and observed failing. Fastify `inject` only. No `listen`. POST is 403 `RecipeRejected`. GET returns the last stored copy. The node does not parse the body with Zod.
 - [x] 5.6 `apps/local-node/src/http/recipe-copy.controller.ts`, `sqliteRecipeCopies`, and the skeleton source list. Startup still has no persistence provider. The node does not import the postgres adapter.
+- [x] 6.1 Admin screens for ingredients, recipes, and Excel import on the cloud API. Theoretical cost and margin render only when the payload includes those fields.
 
 ## Work unit 1 evidence
 
@@ -242,6 +243,20 @@ Scenarios covered in this batch:
 
 `sqliteRecipeCopies` calls `prepareRecipeCopyDatabase` and returns `DrizzleRecipeCopyRepository`. The schema runs once, when `recipe_copies` is absent. `registerRecipeCopies` supplies that repository only when a caller has a client. The default `createApplication()` path does not open SQLite.
 
+## Work unit: Admin catalog screens (task 6.1)
+
+Task 6.1 only. Branch `p2-01/admin`. PR base `p2-01/node-http`. Domain, use cases, Postgres, SQLite, cloud HTTP, and the node were not edited. Cloud HTTP already exists on the parent commit.
+
+| Evidence | Required value |
+|---|---|
+| Typecheck | `pnpm --filter @blackhole/admin-web exec tsc -b --pretty false` — exit 0. Re-run after Biome. |
+| Lint | `pnpm exec biome check --write apps/admin-web` — exit 0. `Checked 18 files`. |
+| Tests | N/A. `apps/admin-web` is not a vitest project. `strict_tdd` is false. No Zod in the browser. |
+| Runtime harness | The screens call `GET` and `POST /tenants/:tenantId/brands/:brandId/recipe-catalog`, `POST .../recipe-catalog/import` with `{ contents: base64 }`, and `GET /tenants/:tenantId/venues/:venueId/recipes/:productId/cost`. The dev server proxies `/tenants` to `http://127.0.0.1:4310`. Session header `x-session-id`. |
+| Rollback boundary | `apps/admin-web/src/router.tsx`, `apps/admin-web/src/home-screen.tsx`, `apps/admin-web/src/catalog/`, the `/tenants` proxy in `apps/admin-web/vite.config.ts`, and the task 6.1 mark in this change's `tasks.md`, `state.yaml`, and `apply-progress.md`. |
+
+`recipeCostFromPayload` returns cost and margin only when both `costCop` and `marginPercent` are own finite numbers. `{ error: "CostViewDenied" }` has neither field, so the recipe screen prints the error name and no amount. A missing field is not rendered as zero. Ingredient reference cost stays on the ingredient list and is not labeled as theoretical cost. The import screen shows version, yields, and rejected rows. It does not invent a dish cost.
+
 ## Deviations from Design
 
 Unit 1 deviations above still stand.
@@ -288,16 +303,18 @@ A menu variant has no separate price. `MenuSitePrice` returns the product price 
 
 The skeleton route scan was already red after the cloud controller: its POST keys did not match the Nest paths. This batch added the matching keys. The node copy route uses the Nest path from the start.
 
+Task 6.1 does not add Zod to the browser. Response shapes are read with presence checks. A payload that has only one of `costCop` or `marginPercent` is treated as no theoretical cost, so the screen does not invent the missing number. The Vite dev server proxies `/tenants` to port 4310 because api-cloud does not enable CORS. The home route stays. Links live in the same page frame as the existing home screen. There is no new app shell. Task 6.1 is about 1600 non-blank lines, above the 400-line review budget. The assigned slice is the whole admin screen task. `size:exception` was not granted.
+
 ## Remaining Tasks
 
-- [ ] 6.1 Admin screens for ingredient, recipe, and import. Cost only when the payload includes it.
+None. Tasks 1.1 through 6.1 are complete. Verify stays pending.
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: tasks 5.5–5.6, node recipe copy HTTP
-- Branch: `p2-01/node-http`
-- PR base: `p2-01/cloud-http` (not `master`, not `phase-2/inventory`, not `p2-01/skeleton`, not `feat/portal-customer-billing`)
-- Boundary: tasks 5.5–5.6 only. Local-node recipe copy HTTP, sqlite wiring, skeleton source list, and the two cloud permission keys required by the route scanner. No admin screens, domain, use cases, Postgres repository, or SQLite table changes.
-- Estimated review budget impact: about 250 lines, including the new controller, test, and wiring. Inside the 400-line budget. `size:exception` was not granted. The change forecast stays High because the admin screens remain.
+- Current work unit: task 6.1, admin catalog screens
+- Branch: `p2-01/admin`
+- PR base: `p2-01/node-http` (not `master`, not `phase-2/inventory`, not `p2-01/cloud-http`, not `feat/portal-customer-billing`)
+- Boundary: task 6.1 only. Admin router, home links, ingredient, recipe, and import screens, and the dev proxy for `/tenants`. No domain, Postgres, SQLite, cloud HTTP, or node changes.
+- Estimated review budget impact: about 1600 non-blank lines under `apps/admin-web`. Above the 400-line budget. The assigned slice is the whole admin screen task, so the three screens stay together. `size:exception` was not granted.
