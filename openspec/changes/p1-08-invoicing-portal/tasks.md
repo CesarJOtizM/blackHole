@@ -58,8 +58,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 
 - [x] 3.1 RED `contexts/platform/application/ports/provider-rate-gate.contract.ts`: default stops at 80; ceiling 60 stops at 60.
 - [x] 3.2 GREEN `acquire(taxId, at, ceiling = 80)` on port, memory, and drizzle gates.
-- [ ] 3.3 RED `contexts/invoicing/adapters/twilio`: stubbed `fetch`. SMS Twilio Messages. Email SendGrid v3. Secrets via `Secrets`: `twilio.account-sid`, `twilio.auth-token`, `twilio.sms-from`, `sendgrid.api-key`, `sendgrid.from-email`. `OneTimeCodeDeliveryFailed`. Not Verify, Bird, SES, SNS.
-- [ ] 3.4 GREEN `adapters/twilio`, `#adapters/twilio/*`. Tests: `adapters/memory`. No secret files.
+- [x] 3.3 RED `contexts/invoicing/adapters/twilio`: stubbed `fetch`. SMS Twilio Messages. Email SendGrid v3. Secrets via `Secrets`: `twilio.account-sid`, `twilio.auth-token`, `twilio.sms-from`, `sendgrid.api-key`, `sendgrid.from-email`. `OneTimeCodeDeliveryFailed`. Not Verify, Bird, SES, SNS.
+- [x] 3.4 GREEN `adapters/twilio`, `#adapters/twilio/*`. Tests: `adapters/memory`. No secret files.
 - [ ] 3.5 RED `adapters/crypto`: HMAC-SHA256, key `portal.link-key`. `/f/` suffix verifies. Digest matches.
 - [ ] 3.6 GREEN `HmacLinkSigner`, `#adapters/crypto/*`. Domain stays crypto-free.
 - [ ] 3.7 RED memory and PGlite: forced RLS. No SQLite. Unknown DANE fails. Seed the committed Factus municipalities JSON. No DIVIPOLA. Stop if that JSON is absent.

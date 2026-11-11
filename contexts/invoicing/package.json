@@ -41,6 +41,7 @@
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
-    "#adapters/factus/*": "./adapters/factus/*"
+    "#adapters/factus/*": "./adapters/factus/*",
+    "#adapters/twilio/*": "./adapters/twilio/*"
   }
 }
