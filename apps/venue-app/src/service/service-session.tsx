@@ -1,10 +1,4 @@
-import {
-  createContext,
-  use,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, type ReactNode, use, useMemo, useState } from "react";
 
 export type TableState = "free" | "occupied" | "check" | "clean";
 
@@ -210,7 +204,9 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
           ...current,
         ]);
         setSequence((current) => current + 1);
-        setNotice("Fuego enviado a la estación. La comanda sale por la impresora.");
+        setNotice(
+          "Fuego enviado a la estación. La comanda sale por la impresora.",
+        );
       },
       requestCheck: (tableId) => {
         setTables((current) =>

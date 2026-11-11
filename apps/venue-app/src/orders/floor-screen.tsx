@@ -1,9 +1,9 @@
+import { Button, type ChipTone, StatusChip } from "@blackhole/ui";
 import { useState } from "react";
-import { Button, StatusChip, type ChipTone } from "@blackhole/ui";
 import {
+  type TableState,
   tableTotal,
   useService,
-  type TableState,
 } from "#src/service/service-session.js";
 
 const SUPERVISOR_PIN = "2468";
@@ -93,7 +93,10 @@ export function FloorScreen() {
           <p className="font-mono text-numeral">{cop(tableTotal(selected))}</p>
           <ul className="grid gap-2">
             {selected.lines.map((line) => (
-              <li key={line.id} className="flex items-center justify-between gap-3">
+              <li
+                key={line.id}
+                className="flex items-center justify-between gap-3"
+              >
                 <span>
                   {line.name}
                   <span className="block text-sm text-ink-muted">
@@ -146,7 +149,10 @@ export function FloorScreen() {
                 if (pending) authorizeVoid(pending.id);
               }}
             >
-              <label className="grid gap-2 text-base font-semibold" htmlFor="supervisor-pin">
+              <label
+                className="grid gap-2 text-base font-semibold"
+                htmlFor="supervisor-pin"
+              >
                 Anular lo que no se ha enviado
                 <input
                   id="supervisor-pin"

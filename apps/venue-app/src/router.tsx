@@ -122,13 +122,7 @@ function VenueLayout() {
             </Link>
           </nav>
         </header>
-        <main
-          className={
-            wide
-              ? "px-4 py-6"
-              : "mx-auto max-w-3xl px-4 py-8"
-          }
-        >
+        <main className={wide ? "px-4 py-6" : "mx-auto max-w-3xl px-4 py-8"}>
           <Outlet />
         </main>
       </div>

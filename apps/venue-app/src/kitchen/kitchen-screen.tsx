@@ -26,7 +26,9 @@ export function KitchenScreen() {
               className={`grid gap-3 rounded-2xl border-2 p-4 ${late ? "border-kitchen-late" : "border-kitchen-ok"}`}
             >
               <div className="flex items-baseline justify-between">
-                <h2 className="font-display text-title">Mesa {ticket.tableLabel}</h2>
+                <h2 className="font-display text-title">
+                  Mesa {ticket.tableLabel}
+                </h2>
                 <p className={late ? "text-kitchen-late" : "text-kitchen-ok"}>
                   {ticket.minutes} min
                 </p>
