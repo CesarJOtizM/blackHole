@@ -47,7 +47,7 @@ Chain strategy: feature-branch-chain
 
 - [x] 4.1 PGlite contract, then `contexts/inventory/adapters/postgres/0001_recipe_catalog.sql`, `schema.ts`, and `drizzle-recipe-catalog-repository.ts`. `inventory_app`, forced RLS, no stock tables.
 - [x] 4.2 SQLite contract, then `contexts/inventory/adapters/sqlite/drizzle-recipe-copy-repository.ts`. A missed publication keeps the last copy.
-- [ ] 4.3 `tools/skeleton/skeleton.test.ts`: allow `inventory` and only this sqlite adapter. `shared/sync` stays absent.
+- [x] 4.3 `tools/skeleton/skeleton.test.ts`: allow `inventory` and only this sqlite adapter. `shared/sync` stays absent.
 
 ## Phase 5: HTTP entry
 

@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Tasks 1.1 through 4.2. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Tasks 1.1 through 4.3. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Current branch `p2-01/sqlite`. PR base `p2-01/postgres`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/skeleton`. PR base `p2-01/sqlite`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for tasks 1.1–4.1 was read and merged below. Those tasks stay complete. This batch adds task 4.2 only. The skeleton allowlist, HTTP, and admin screens stay out.
+Previous apply-progress for tasks 1.1–4.2 was read and merged below. Those tasks stay complete. This batch adds task 4.3 only. HTTP and admin screens stay out.
 
 ## Completed tasks
 
@@ -18,6 +18,7 @@ Previous apply-progress for tasks 1.1–4.1 was read and merged below. Those tas
 - [x] 3.1 Memory contract tests: round-trip, other tenant hidden, copy apply. Drizzle is not mocked. No Postgres, SQLite, HTTP, or admin screens.
 - [x] 4.1 PGlite contract, then the Postgres recipe catalog. `inventory_app`, forced RLS, no stock tables. Drizzle is not mocked.
 - [x] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy. An older or repeated version does not replace it. Drizzle is not mocked.
+- [x] 4.3 Skeleton allowlist: `inventory` is an allowed context. The only sqlite adapter is `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent. Postgres is not on the local-node source list.
 
 ## Work unit 1 evidence
 
@@ -149,7 +150,27 @@ Scenarios covered in task 4.2:
 - Tenants A and B each keep their own copy for the same brand id. Loading one tenant does not return the other tenant's publication.
 - A node holds version 3, including onion (purchase factor `50000 * QUANTITY_SCALE`), variant `double`, an ingredient line, a stocked bechamel line, modifier `extra cheese`, and an empty modifier. Version 4 is not applied. Load still returns that version 3 copy.
 
-The copy tables are `recipe_copies`, `recipe_copy_ingredients`, `recipe_copy_units`, `recipe_copy_recipes`, `recipe_copy_lines`, `recipe_copy_modifiers`, and `recipe_copy_deltas`. They are not the cloud catalog tables. No stock table is created. `api-cloud` does not import this adapter. `local-node` is not wired to it. `tools/skeleton/skeleton.test.ts` was not edited.
+The copy tables are `recipe_copies`, `recipe_copy_ingredients`, `recipe_copy_units`, `recipe_copy_recipes`, `recipe_copy_lines`, `recipe_copy_modifiers`, and `recipe_copy_deltas`. They are not the cloud catalog tables. No stock table is created. `api-cloud` does not import this adapter. `local-node` is not wired to it. `tools/skeleton/skeleton.test.ts` was not edited in task 4.2.
+
+## Work unit: Skeleton allowlist (task 4.3)
+
+Task 4.3 only. Branch `p2-01/skeleton`. PR base `p2-01/sqlite`. HTTP and admin screens are not in this batch. Recipe domain, use cases, Postgres, and the SQLite repository were not edited. `shared/sync` was not created.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project skeleton` — exit 0. `Test Files  2 passed (2)`. `Tests  10 passed (10)`. The run is after `pnpm exec biome check --write tools/skeleton/skeleton.test.ts`. |
+| Inventory regression | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  10 passed (10)`. `Tests  26 passed (26)`. Node prints `ExperimentalWarning: SQLite is an experimental feature`. |
+| RED command and exact result | Before the allowlist change, `pnpm exec vitest run --project skeleton` — exit 1. `Test Files  1 failed \| 1 passed (2)`. `Tests  2 failed \| 8 passed (10)`. Context directories included `inventory`, and deferred copies listed the five files under `contexts/inventory/adapters/sqlite`. After the failing assertions and before the allowlist change, `pnpm exec vitest run --project skeleton tools/skeleton/skeleton.test.ts` — exit 1. `expected [ 'attendance', 'cash-register', …(3) ] to include 'inventory'`. `expected` the recipe copy repository path `to be undefined` because that file was still a deferred copy. `Test Files  1 failed (1)`. `Tests  2 failed \| 7 passed (9)`. |
+| Runtime harness command/scenario and exact result | N/A. The skeleton test reads the tree. It does not open Postgres, SQLite, or a socket. |
+| Rollback boundary | `tools/skeleton/skeleton.test.ts` and the task 4.3 mark in this change's `tasks.md` and `apply-progress.md`. |
+
+### RED then GREEN (task 4.3)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.3 | `pnpm exec vitest run --project skeleton tools/skeleton/skeleton.test.ts` exit 1. `allowedContexts` did not include `inventory`. The sqlite recipe copy repository was still a deferred copy. `Tests  2 failed \| 7 passed (9)`. | `pnpm exec vitest run --project skeleton` after adding `inventory` and exempting only `contexts/inventory/adapters/sqlite`: exit 0. `Test Files  2 passed (2)`. `Tests  10 passed (10)`. `pnpm exec vitest run --project inventory` stayed exit 0. `Test Files  10 passed (10)`. `Tests  26 passed (26)`. |
+
+`allowedContexts` now lists attendance, cash-register, inventory, invoicing, orders, and platform. A path segment named `sqlite` is ignored only inside `contexts/inventory/adapters/sqlite`. `cursor`, `outbox`, and `pairing` stay rejected, including inside that folder. `contexts/platform/adapters/sqlite` stays absent. `shared/sync` stays absent. The local-node source list is unchanged, so the Postgres adapter is not a node source.
 
 ## Deviations from Design
 
@@ -183,11 +204,10 @@ Task 4.1 is about 1100 lines: the SQL migration, Drizzle schema, repository, PGl
 
 Task 4.2 is about 930 lines: the copy SQL, Drizzle schema, `node:sqlite` session, repository, contract, and the package import plus export. That is above the 400-line review budget. The assigned slice is the whole node copy repository, so the schema and the repository stay together. `size:exception` was not granted. Node 24 prints `ExperimentalWarning` for `node:sqlite`. The warning does not fail the inventory suite.
 
-`tools/skeleton/skeleton.test.ts` still omits `inventory` and this sqlite adapter. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
+Task 4.3 now allows `inventory` and only `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent.
 
 ## Remaining Tasks
 
-- [ ] 4.3 Skeleton allowlist for `inventory` and this sqlite adapter. `shared/sync` stays absent.
 - [ ] Phase 5: Cloud and node HTTP. `inject` only.
 - [ ] Phase 6: Admin screens. Cost only when the payload includes it.
 
@@ -195,8 +215,8 @@ Task 4.2 is about 930 lines: the copy SQL, Drizzle schema, `node:sqlite` session
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: task 4.2, SQLite recipe copy
-- Branch: `p2-01/sqlite`
-- PR base: `p2-01/postgres` (not `master`, not `phase-2/inventory`, not `p2-01/port-contract`, not `feat/portal-customer-billing`)
-- Boundary: task 4.2 only. SQLite contract, `0001_recipe_copy.sql`, Drizzle schema, `node:sqlite` session, and `DrizzleRecipeCopyRepository`. No skeleton allowlist, HTTP, admin screens, stock commands, stock ports, or stock tables. The Postgres catalog repository was not edited. Drizzle is not mocked.
-- Estimated review budget impact: about 930 lines. Above the 400-line budget. `size:exception` was not granted. The change forecast stays High.
+- Current work unit: task 4.3, skeleton allowlist
+- Branch: `p2-01/skeleton`
+- PR base: `p2-01/sqlite` (not `master`, not `phase-2/inventory`, not `p2-01/postgres`, not `feat/portal-customer-billing`)
+- Boundary: task 4.3 only. `tools/skeleton/skeleton.test.ts` allows the `inventory` context and only `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent. The local-node source list does not gain Postgres. No HTTP, admin screens, domain, use cases, Postgres repository, or SQLite repository edits.
+- Estimated review budget impact: about 40 lines in the skeleton test. Inside the 400-line budget. The change forecast stays High because later units remain. `size:exception` was not granted.
