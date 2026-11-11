@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Work units 1, 2, and 3 of 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Tasks 1.1 through 4.1. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Current branch `p2-01/port-contract`. PR base `p2-01/use-cases` (commit `58c92ef`). Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/postgres`. PR base `p2-01/port-contract`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for work units 1 and 2 was read and merged below. Tasks 1.1–2.4 stay complete.
+Previous apply-progress for tasks 1.1–3.1 was read and merged below. Those tasks stay complete. This batch adds task 4.1 only. SQLite, the skeleton allowlist, HTTP, and admin screens stay out.
 
 ## Completed tasks
 
@@ -16,6 +16,7 @@ Previous apply-progress for work units 1 and 2 was read and merged below. Tasks 
 - [x] 2.3 Five use cases. One save writes version N+1 and one publication row. Margin 60 for cost 8000 and price 20000. A rejected import writes nothing.
 - [x] 2.4 Exported from `contexts/inventory/application/entry-port.ts`. No stock command.
 - [x] 3.1 Memory contract tests: round-trip, other tenant hidden, copy apply. Drizzle is not mocked. No Postgres, SQLite, HTTP, or admin screens.
+- [x] 4.1 PGlite contract, then the Postgres recipe catalog. `inventory_app`, forced RLS, no stock tables. Drizzle is not mocked.
 
 ## Work unit 1 evidence
 
@@ -37,7 +38,7 @@ Work unit 1 of 5: RecipeCatalog package (tasks 1.1, 1.2, and 1.3). Branch at the
 
 Scenarios covered in unit 1: zero purchase factor names `50 kg sack` and stores nothing; 2 × 50 kg sack (50000 g) converts to `100000 * QUANTITY_SCALE`; 150 g onion at 75% yield explodes to `200 * QUANTITY_SCALE`; variant `double` is selected; non-stocked bechamel (40 g butter × 2 batches) explodes to `80 * QUANTITY_SCALE`; sauce A → sauce B → sauce A publish throws `RecipeCycle` and version 1 stays; extra cheese and no onion yield 60 g and 0 g; a −50 g delta on a 20 g line floors at 0; version 3 stays frozen when version 4 is published.
 
-Unit 1 deviations kept: command quantities are whole base units. The catalog stores factors, net quantities, and modifier deltas as milli-units (`× QUANTITY_SCALE`). `convertPurchase` and `explode` return those scaled integers. A stocked sub-recipe does not expand; task 2.1 owns that test. `contexts/inventory/tsconfig.json` does not set `types: ["node"]`. `tools/skeleton/skeleton.test.ts` still omits `inventory` until task 4.3.
+Unit 1 deviations kept: command quantities are whole base units. The catalog stores factors, net quantities, and modifier deltas as milli-units (`× QUANTITY_SCALE`). `convertPurchase` and `explode` return those scaled integers. A stocked sub-recipe does not expand; task 2.1 owns that test. At the end of unit 1, `contexts/inventory/tsconfig.json` did not set `types: ["node"]`. Task 4.1 sets it. `tools/skeleton/skeleton.test.ts` still omits `inventory` until task 4.3.
 
 ## Work unit 2 evidence
 
@@ -96,6 +97,32 @@ Scenarios covered in unit 3:
 
 The in-memory catalog and copy repositories already implemented these rules. Task 3.1 did not change their source.
 
+## Work unit: Postgres catalog (task 4.1)
+
+Task 4.1 only. Branch `p2-01/postgres`. PR base `p2-01/port-contract`. The copy repository, skeleton allowlist, HTTP, and admin screens are not in this batch.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  9 passed (9)`. `Tests  23 passed (23)`. The run is after `pnpm exec biome check --write` on `contexts/inventory/adapters/postgres` and `contexts/inventory/tsconfig.json`. |
+| Runtime harness command/scenario and exact result | PGlite executes `contexts/inventory/adapters/postgres/0001_recipe_catalog.sql`. The shared `recipeCatalogRepositoryContract` runs against `DrizzleRecipeCatalogRepository`. A second case inserts ingredients for tenants A and B, `SET ROLE inventory_app`, sets `app.tenant_id` to tenant A, and selects without a tenant filter. Only tenant A's ingredient returns. |
+| Typecheck | `pnpm exec tsc -b contexts/inventory --pretty false` — exit 0. |
+| Import boundaries | `pnpm exec dependency-cruiser --output-type err contexts/inventory` — exit 0. `no dependency violations found (34 modules, 73 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. |
+| Rollback boundary | `contexts/inventory/adapters/postgres/`, the `#adapters/postgres/*` import and the postgres repository export in `contexts/inventory/package.json`, the `types: ["node"]` entry in `contexts/inventory/tsconfig.json`, the inventory importer in `pnpm-lock.yaml`, and the task 4.1 mark in this change's `tasks.md` and `apply-progress.md`. |
+
+### RED then GREEN (task 4.1)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.1 | `pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-recipe-catalog-repository.contract.test.ts` exit 1. `FAIL contexts/inventory/adapters/postgres/drizzle-recipe-catalog-repository.contract.test.ts` — `Cannot find module '#adapters/postgres/drizzle-recipe-catalog-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. The package import map already resolved `#adapters/postgres/*`. | `pnpm exec vitest run --project inventory` after the SQL migration, Drizzle schema, repository, and Biome: exit 0. `Test Files  9 passed (9)`. `Tests  23 passed (23)`. |
+
+Scenarios covered in task 4.1:
+
+- A published catalog with onion (150 g at 75% yield, reference cost 80) and modifier `extra cheese` (+30 g) is saved in PGlite. Load returns that catalog at version 1. Explode without the modifier is `200 * QUANTITY_SCALE` of onion. Explode with the modifier adds `30 * QUANTITY_SCALE` of cheese. `listPublications` returns that one publication. Another brand loads as null and lists no publications.
+- Tenants A and B share a brand id and save different recipe ids. Each load and each publication list contains only that tenant's recipe. The repository sets `SET LOCAL ROLE inventory_app` and `set_config('app.tenant_id', ..., true)` and does not add a tenant predicate to the brand read, so the other tenant stays hidden by forced RLS.
+- `inventory_app` selects `ingredients` with no tenant filter after the session tenant is A. Only `ingredient_onion` returns.
+
+No stock table is created. `api-cloud` can import the postgres adapter through the package export. `local-node` is not wired to it. `tools/skeleton/skeleton.test.ts` was not edited.
+
 ## Deviations from Design
 
 Unit 1 deviations above still stand.
@@ -108,11 +135,15 @@ Unit 1 deviations above still stand.
 
 `savePublishedVersion` is an internal helper used by update and import so both paths write one catalog version and one publication in the same `save`. It is not a sixth use case and it is not exported.
 
-Unit 3 adds no further deviation. The catalog contract compares the public aggregate (identity, published version, explode, publication list). It does not require a new `RecipeCatalog` instance, matching the menu repository contract. Postgres reconstruction stays in task 4.1 and can reuse this contract.
+Unit 3 adds no further deviation. The catalog contract compares the public aggregate (identity, published version, explode, publication list). It does not require a new `RecipeCatalog` instance, matching the menu repository contract.
+
+Task 4.1 keeps the eight design tables and does not add a JSON payload on `recipe_publications`. That row is the version header (`tenant_id`, `brand_id`, `version`, `author_id`). `listPublications` assembles ingredients, recipes, and modifiers from the normalized rows. `ingredients`, `unit_conversions`, and `modifier_deltas` carry a `version` column so a frozen version can be rebuilt. `recipes` and `recipe_lines` are the latest version. `recipe_versions` and `recipe_version_lines` keep every published recipe. A modifier with no deltas is one row whose ingredient and quantity are null.
+
+The domain has no restore method, and this batch does not change it. Load opens a catalog and replays each published version through `upsertIngredient`, `upsertRecipe`, `upsertModifier`, and `publish`. That matches catalogs the domain can produce, because those commands replace by id and do not delete an ingredient, recipe, or modifier. `contexts/inventory/tsconfig.json` now sets `types: ["node"]`, matching the orders PGlite contract. Unit 1 had left that unset.
 
 ## Issues Found
 
-The in-memory catalog repository keeps the live aggregate. Import rejection validates unknown rows before any upsert, so a rejected file does not dirty the stored draft. A domain exception thrown after a later upsert on that same instance would change the draft before `save`. Postgres reconstruction belongs to phase 4.
+The in-memory catalog repository keeps the live aggregate. Import rejection validates unknown rows before any upsert, so a rejected file does not dirty the stored draft. A domain exception thrown after a later upsert on that same instance would change the draft before `save`. The Postgres repository reloads a new aggregate from the stored versions.
 
 `tools/skeleton/skeleton.test.ts` still omits `inventory`. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
 
@@ -120,9 +151,10 @@ Work unit 2 is about 1360 lines and stays above the 400-line review budget. `siz
 
 Work unit 3 is about 230 lines across four new files. It stays inside the 400-line budget. No adapter implementation changed.
 
+Task 4.1 is about 1100 lines: the SQL migration, Drizzle schema, repository, PGlite contract, package export, lockfile importer, and `types: ["node"]`. That is above the 400-line review budget. The assigned slice is the whole cloud catalog repository, so the migration and the repository stay together. `size:exception` was not granted. SQLite remains task 4.2.
+
 ## Remaining Tasks
 
-- [ ] 4.1 PGlite contract, then the Postgres recipe catalog repository. `inventory_app`, forced RLS, no stock tables.
 - [ ] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy.
 - [ ] 4.3 Skeleton allowlist for `inventory` and this sqlite adapter. `shared/sync` stays absent.
 - [ ] Phase 5: Cloud and node HTTP. `inject` only.
@@ -132,8 +164,8 @@ Work unit 3 is about 230 lines across four new files. It stays inside the 400-li
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 3 of 5, port contract
-- Branch: `p2-01/port-contract`
-- PR base: `p2-01/use-cases` (not `master`, not `phase-2/inventory`, not `p2-01/recipe-catalog`, not `feat/portal-customer-billing`)
-- Boundary: task 3.1 only. Memory contract tests for both repositories. No Postgres, SQLite, HTTP, admin screens, stock commands, stock ports, or stock tables. Drizzle is not mocked.
-- Estimated review budget impact: about 230 lines. Inside the 400-line budget. The change forecast stays High because later units are larger.
+- Current work unit: task 4.1, Postgres recipe catalog
+- Branch: `p2-01/postgres`
+- PR base: `p2-01/port-contract` (not `master`, not `phase-2/inventory`, not `p2-01/use-cases`, not `feat/portal-customer-billing`)
+- Boundary: task 4.1 only. PGlite contract, `0001_recipe_catalog.sql`, Drizzle schema, and `DrizzleRecipeCatalogRepository`. No SQLite, skeleton allowlist, HTTP, admin screens, stock commands, stock ports, or stock tables. Drizzle is not mocked.
+- Estimated review budget impact: about 1100 lines. Above the 400-line budget. `size:exception` was not granted. The change forecast stays High.
