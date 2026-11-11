@@ -4,9 +4,25 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./domain": "./domain/index.js"
+    "./domain": "./domain/index.js",
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/ports/recipe-catalog-repository": "./application/ports/recipe-catalog-repository.js",
+    "./application/ports/recipe-copy-repository": "./application/ports/recipe-copy-repository.js",
+    "./application/ports/site-price": "./application/ports/site-price.js",
+    "./application/ports/venue-directory": "./application/ports/venue-directory.js",
+    "./application/ports/recipe-workbook": "./application/ports/recipe-workbook.js",
+    "./adapters/memory/in-memory-recipe-catalog-repository": "./adapters/memory/in-memory-recipe-catalog-repository.js",
+    "./adapters/memory/in-memory-recipe-copy-repository": "./adapters/memory/in-memory-recipe-copy-repository.js"
   },
   "imports": {
-    "#domain/*": "./domain/*"
+    "#domain/*": "./domain/*",
+    "#application/update-recipe-catalog/*": "./application/update-recipe-catalog/*",
+    "#application/import-recipes/*": "./application/import-recipes/*",
+    "#application/view-theoretical-cost/*": "./application/view-theoretical-cost/*",
+    "#application/explode-recipe/*": "./application/explode-recipe/*",
+    "#application/apply-recipe-copy/*": "./application/apply-recipe-copy/*",
+    "#application/save-published-version/*": "./application/save-published-version/*",
+    "#application/ports/*": "./application/ports/*",
+    "#adapters/memory/*": "./adapters/memory/*"
   }
 }

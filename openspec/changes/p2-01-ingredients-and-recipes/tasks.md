@@ -34,10 +34,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Use cases with in-memory adapters
 
-- [ ] 2.1 Failing tests: import row 17 saves nothing; older copy ignored; stocked sub-recipe stays collapsed.
-- [ ] 2.2 Add the five ports under `contexts/inventory/application/ports/` and memory adapters for both repositories. No stock port.
-- [ ] 2.3 Implement the five use cases. One transaction writes version N+1 and one `recipe_publications` row. Margin 60 for 8000/20000. Import writes nothing.
-- [ ] 2.4 Export them from `contexts/inventory/application/entry-port.ts`. No stock command.
+- [x] 2.1 Failing tests: import row 17 saves nothing; older copy ignored; stocked sub-recipe stays collapsed.
+- [x] 2.2 Add the five ports under `contexts/inventory/application/ports/` and memory adapters for both repositories. No stock port.
+- [x] 2.3 Implement the five use cases. One transaction writes version N+1 and one `recipe_publications` row. Margin 60 for 8000/20000. Import writes nothing.
+- [x] 2.4 Export them from `contexts/inventory/application/entry-port.ts`. No stock command.
 
 ## Phase 3: Port contract
 

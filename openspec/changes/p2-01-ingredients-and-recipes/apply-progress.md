@@ -1,18 +1,24 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Work unit 1 of 5: RecipeCatalog package (tasks 1.1, 1.2, and 1.3). Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Work units 1 and 2 of 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Branch `p2-01/recipe-catalog`. PR base `phase-2/inventory` (points at `origin/master`, `8816366`). Not committed. Not pushed. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/use-cases`. PR base `p2-01/recipe-catalog` (commit `4931ce8`). Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-No previous apply-progress existed for this change.
+Previous apply-progress for work unit 1 was read and merged below. Tasks 1.1–1.3 stay complete.
 
 ## Completed tasks
 
 - [x] 1.1 `@blackhole/inventory` package, root `tsconfig.json` reference, vitest project `inventory`.
 - [x] 1.2 `contexts/inventory/domain/recipe-catalog.test.ts` written first and observed failing.
 - [x] 1.3 `contexts/inventory/domain/recipe-catalog.ts` and `domain/index.ts`. `RecipeCatalog.open` id `recipe_catalog_<brandId>`. `BASE_UNIT` `g` / `ml` / `unit`. `QUANTITY_SCALE` 1000. `referenceCostCop`. `explode` returns scaled integers. Non-stocked sub-recipes expand. `RecipeCycle` on publish. No Nest, Drizzle, Zod, or `node:crypto`.
+- [x] 2.1 Failing use-case tests written first: import row 17 saves nothing; an older copy is ignored; a stocked sub-recipe stays collapsed.
+- [x] 2.2 Five ports under `contexts/inventory/application/ports/` and memory adapters for both repositories. No stock port.
+- [x] 2.3 Five use cases. One save writes version N+1 and one publication row. Margin 60 for cost 8000 and price 20000. A rejected import writes nothing.
+- [x] 2.4 Exported from `contexts/inventory/application/entry-port.ts`. No stock command.
 
-## Work Unit Evidence
+## Work unit 1 evidence
+
+Work unit 1 of 5: RecipeCatalog package (tasks 1.1, 1.2, and 1.3). Branch at the time: `p2-01/recipe-catalog`. PR base `phase-2/inventory` (points at `origin/master`, `8816366`).
 
 | Evidence | Required value |
 |---|---|
@@ -22,44 +28,77 @@ No previous apply-progress existed for this change.
 | Import boundaries | `pnpm exec dependency-cruiser --output-type err contexts/inventory` — exit 0. `no dependency violations found (3 modules, 2 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. |
 | Rollback boundary | `contexts/inventory/`, the `inventory` project in `vitest.config.ts`, the `contexts/inventory` reference in `tsconfig.json`, and the phase-1 marks in this change's `tasks.md` / `state.yaml` / `apply-progress.md`. |
 
-### RED then GREEN
+### RED then GREEN (unit 1)
 
 | Task | RED (command and result) | GREEN |
 |---|---|---|
 | 1.2 → 1.3 | `pnpm exec vitest run --project inventory contexts/inventory/domain/recipe-catalog.test.ts` exit 1. `FAIL contexts/inventory/domain/recipe-catalog.test.ts` — `Cannot find module '#domain/recipe-catalog.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. Package shell from 1.1 was already in place so the import map resolved and the missing domain module failed the suite. | Same command after `domain/recipe-catalog.ts`, `domain/index.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  9 passed (9)`. Re-run after narrowing `assertFactor`: same result. |
 
-Scenarios covered: zero purchase factor names `50 kg sack` and stores nothing; 2 × 50 kg sack (50000 g) converts to `100000 * QUANTITY_SCALE`; 150 g onion at 75% yield explodes to `200 * QUANTITY_SCALE`; variant `double` is selected; non-stocked bechamel (40 g butter × 2 batches) explodes to `80 * QUANTITY_SCALE`; sauce A → sauce B → sauce A publish throws `RecipeCycle` and version 1 stays; extra cheese and no onion yield 60 g and 0 g; a −50 g delta on a 20 g line floors at 0; version 3 stays frozen when version 4 is published.
+Scenarios covered in unit 1: zero purchase factor names `50 kg sack` and stores nothing; 2 × 50 kg sack (50000 g) converts to `100000 * QUANTITY_SCALE`; 150 g onion at 75% yield explodes to `200 * QUANTITY_SCALE`; variant `double` is selected; non-stocked bechamel (40 g butter × 2 batches) explodes to `80 * QUANTITY_SCALE`; sauce A → sauce B → sauce A publish throws `RecipeCycle` and version 1 stays; extra cheese and no onion yield 60 g and 0 g; a −50 g delta on a 20 g line floors at 0; version 3 stays frozen when version 4 is published.
+
+Unit 1 deviations kept: command quantities are whole base units. The catalog stores factors, net quantities, and modifier deltas as milli-units (`× QUANTITY_SCALE`). `convertPurchase` and `explode` return those scaled integers. A stocked sub-recipe does not expand; task 2.1 owns that test. `contexts/inventory/tsconfig.json` does not set `types: ["node"]`. `tools/skeleton/skeleton.test.ts` still omits `inventory` until task 4.3.
+
+## Work unit 2 evidence
+
+Work unit 2 of 5: memory-port use cases (tasks 2.1, 2.2, 2.3, and 2.4).
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  6 passed (6)`. `Tests  16 passed (16)`. The run is after `pnpm exec biome check --write contexts/inventory`. A second run after Biome matched that result. |
+| Runtime harness command/scenario and exact result | N/A. Use cases run against in-memory repository adapters. They do not open files, sockets, Postgres, or SQLite. |
+| Typecheck | `pnpm exec tsc -b contexts/inventory --pretty false` — exit 0. |
+| Import boundaries | `pnpm exec dependency-cruiser --output-type err contexts/inventory` — exit 0. `no dependency violations found (22 modules, 55 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. |
+| Rollback boundary | `contexts/inventory/application/`, `contexts/inventory/adapters/memory/`, the `#application` and `#adapters/memory` import map and exports in `contexts/inventory/package.json`, the `application` and `adapters` entries in `contexts/inventory/tsconfig.json`, and the phase-2 marks in this change's `tasks.md` and `apply-progress.md`. |
+
+### RED then GREEN (unit 2)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.1 → 2.3 | `pnpm exec vitest run --project inventory` exit 1. Five suites failed to load: `Cannot find module '#adapters/memory/in-memory-recipe-catalog-repository.js'` and `Cannot find module '#adapters/memory/in-memory-recipe-copy-repository.js'`. `Test Files  5 failed | 1 passed (6)`. `Tests  9 passed (9)`. The domain suite from unit 1 still passed. The package import map already resolved `#` aliases. | Same command after ports, memory adapters, five use cases, `entry-port.ts`, and Biome: exit 0. `Test Files  6 passed (6)`. `Tests  16 passed (16)`. |
+
+Scenarios covered in unit 2:
+
+- Row 17 names an unknown ingredient. `RecipeImportRejected` reports `{ row: 17, reason: "Unknown ingredient." }`. `save` is not called. Version 1 and its single publication stay. The valid onion row in that file is not stored.
+- A valid workbook publishes version 1 with yield 100 and the ingredient reference cost.
+- The node holds publication version 4. Applying version 3 returns and keeps version 4.
+- Lasagna uses stocked bechamel (2 batches). `ExplodeRecipe` returns one line `{ ingredientId: recipe_bechamel, quantity: 2 * QUANTITY_SCALE }` and does not add a publication.
+- Version 1 is current. The next publish stores version 2 and exactly one new publication row. Version 1 stays frozen.
+- 100 g at 80 COP per gram and site price 20000 show `{ costCop: 8000, marginPercent: 60 }`.
+- Stocked bechamel (40 g butter at 10 COP, 2 batches) and price 2000 show `{ costCop: 800, marginPercent: 60 }`.
 
 ## Deviations from Design
 
-Command quantities are whole base units (grams, millilitres, units, or batches). The catalog stores purchase and recipe factors, recipe net quantities, and modifier deltas as milli-units (`× QUANTITY_SCALE`). `convertPurchase` and `explode` return those scaled integers. `2 × 50000 g` is `100000 * 1000`.
+Unit 1 deviations above still stand.
 
-A stocked sub-recipe does not expand. The collapsed line uses the sub-recipe id as `ingredientId` and the scaled batch quantity. Task 2.1 owns the test for that shape.
+`referenceCostCop` is the cost of one purchase unit. Theoretical cost is `floor(explodedScaled * referenceCostCop / purchaseUnit.factor)`. A collapsed stocked line is costed from that sub-recipe's own exploded ingredients, then scaled by the collapsed batch quantity.
 
-`contexts/inventory/tsconfig.json` does not set `types: ["node"]`. This package has no `@types/node` dependency. The domain does not import Node.
+`ApplyRecipeCopy` keeps the stored copy when the incoming version is older or equal. The design names the older case. An equal version is treated as a replay and does not replace the copy.
 
-`tools/skeleton/skeleton.test.ts` still omits `inventory` from `allowedContexts`. Task 4.3 owns that allowlist. This slice does not edit it.
+`UpdateRecipeCatalog` commands are `upsertIngredient` and `upsertRecipe`. Execute publishes once. There is no modifier command and no stock command. Publication rows still carry `modifiers`, which stay empty unless the aggregate already has them.
+
+`savePublishedVersion` is an internal helper used by update and import so both paths write one catalog version and one publication in the same `save`. It is not a sixth use case and it is not exported.
 
 ## Issues Found
 
-Adding `contexts/inventory` makes the skeleton context-directory assertion fail until task 4.3 allows `inventory`. This batch did not run the skeleton project.
+The in-memory catalog repository keeps the live aggregate. Import rejection validates unknown rows before any upsert, so a rejected file does not dirty the stored draft. A domain exception thrown after a later upsert on that same instance would change the draft before `save`. Postgres reconstruction belongs to phase 4.
 
-This work unit is about 1233 source lines (`recipe-catalog.ts` 771, `recipe-catalog.test.ts` 408, `index.ts` 25, package and tsconfig 22, plus 7 lines in the root vitest and tsconfig files). That is above the 400-line review budget. The assigned unit was the whole RecipeCatalog package. `size:exception` was not granted.
+`tools/skeleton/skeleton.test.ts` still omits `inventory`. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
+
+This work unit is about 1360 lines under `contexts/inventory/application` and `contexts/inventory/adapters/memory` (about 780 implementation, about 560 tests), plus the package import map and the tsconfig `include`. That is above the 400-line review budget. The assigned unit was the whole memory-port use-case slice. `size:exception` was not granted.
 
 ## Remaining Tasks
 
-- [ ] 2.1 Failing tests: import row 17 saves nothing; older copy ignored; stocked sub-recipe stays collapsed.
-- [ ] 2.2 Ports and memory adapters. No stock port.
-- [ ] 2.3 Five use cases.
-- [ ] 2.4 `entry-port.ts`.
-- [ ] Phases 3–6.
+- [ ] 3.1 Memory contract tests: round-trip, hidden tenant, copy apply. Do not mock Drizzle.
+- [ ] Phase 4: Postgres and SQLite. No stock tables.
+- [ ] Phase 5: Cloud and node HTTP. `inject` only.
+- [ ] Phase 6: Admin screens. Cost only when the payload includes it.
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 1 of 5, RecipeCatalog package
-- Branch: `p2-01/recipe-catalog`
-- PR base: `phase-2/inventory` (not `master`, not `feat/portal-customer-billing`)
-- Boundary: tasks 1.1–1.3 only. No use cases, persistence, HTTP, or admin screens. No stock commands, stock tables, or ledger.
-- Estimated review budget impact: about 1233 source lines. Above the 400-line budget. The change forecast stays High.
+- Current work unit: 2 of 5, memory-port use cases
+- Branch: `p2-01/use-cases`
+- PR base: `p2-01/recipe-catalog` (not `master`, not `phase-2/inventory`, not `feat/portal-customer-billing`)
+- Boundary: tasks 2.1–2.4 only. No Postgres, SQLite, HTTP, admin screens, stock commands, stock ports, or stock tables.
+- Estimated review budget impact: about 1360 lines. Above the 400-line budget. The change forecast stays High.
