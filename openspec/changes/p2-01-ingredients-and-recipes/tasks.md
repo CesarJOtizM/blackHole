@@ -41,7 +41,7 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Port contract
 
-- [ ] 3.1 Memory contract tests: round-trip, hidden tenant, copy apply. Do not mock Drizzle.
+- [x] 3.1 Memory contract tests: round-trip, hidden tenant, copy apply. Do not mock Drizzle.
 
 ## Phase 4: External adapters
 

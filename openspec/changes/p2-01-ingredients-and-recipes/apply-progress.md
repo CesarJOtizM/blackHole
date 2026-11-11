@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Work units 1 and 2 of 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Work units 1, 2, and 3 of 5. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Current branch `p2-01/use-cases`. PR base `p2-01/recipe-catalog` (commit `4931ce8`). Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/port-contract`. PR base `p2-01/use-cases` (commit `58c92ef`). Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for work unit 1 was read and merged below. Tasks 1.1–1.3 stay complete.
+Previous apply-progress for work units 1 and 2 was read and merged below. Tasks 1.1–2.4 stay complete.
 
 ## Completed tasks
 
@@ -15,6 +15,7 @@ Previous apply-progress for work unit 1 was read and merged below. Tasks 1.1–1
 - [x] 2.2 Five ports under `contexts/inventory/application/ports/` and memory adapters for both repositories. No stock port.
 - [x] 2.3 Five use cases. One save writes version N+1 and one publication row. Margin 60 for cost 8000 and price 20000. A rejected import writes nothing.
 - [x] 2.4 Exported from `contexts/inventory/application/entry-port.ts`. No stock command.
+- [x] 3.1 Memory contract tests: round-trip, other tenant hidden, copy apply. Drizzle is not mocked. No Postgres, SQLite, HTTP, or admin screens.
 
 ## Work unit 1 evidence
 
@@ -40,7 +41,7 @@ Unit 1 deviations kept: command quantities are whole base units. The catalog sto
 
 ## Work unit 2 evidence
 
-Work unit 2 of 5: memory-port use cases (tasks 2.1, 2.2, 2.3, and 2.4).
+Work unit 2 of 5: memory-port use cases (tasks 2.1, 2.2, 2.3, and 2.4). Branch at the time: `p2-01/use-cases`. PR base `p2-01/recipe-catalog` (commit `4931ce8`).
 
 | Evidence | Required value |
 |---|---|
@@ -66,17 +67,48 @@ Scenarios covered in unit 2:
 - 100 g at 80 COP per gram and site price 20000 show `{ costCop: 8000, marginPercent: 60 }`.
 - Stocked bechamel (40 g butter at 10 COP, 2 batches) and price 2000 show `{ costCop: 800, marginPercent: 60 }`.
 
+Unit 2 size note: about 1360 lines under `contexts/inventory/application` and `contexts/inventory/adapters/memory` (about 780 implementation, about 560 tests), plus the package import map and the tsconfig `include`. That is above the 400-line review budget. The assigned unit was the whole memory-port use-case slice. `size:exception` was not granted.
+
+## Work unit 3 evidence
+
+Work unit 3 of 5: port contract (task 3.1 only). Branch `p2-01/port-contract`. PR base `p2-01/use-cases` (commit `58c92ef`).
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  8 passed (8)`. `Tests  20 passed (20)`. The run is after `pnpm exec biome check --write` on the four new contract files. |
+| Runtime harness command/scenario and exact result | N/A. The contract runs the real in-memory repositories. It does not mock Drizzle and does not open Postgres, SQLite, HTTP, or a socket. |
+| Typecheck | `pnpm exec tsc -b contexts/inventory --pretty false` — exit 0. |
+| Import boundaries | `pnpm exec dependency-cruiser --output-type err contexts/inventory` — exit 0. `no dependency violations found (26 modules, 63 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. |
+| Rollback boundary | The four new contract files under `contexts/inventory/application/ports/` and `contexts/inventory/adapters/memory/`, plus the phase-3 mark in this change's `tasks.md` and `apply-progress.md`. No adapter implementation file changed. |
+
+### RED then GREEN (unit 3)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.1 | `pnpm exec vitest run --project inventory` exit 1. Two suites failed to load: `Cannot find module '#application/ports/recipe-catalog-repository.contract.js'` and `Cannot find module '#application/ports/recipe-copy-repository.contract.js'`. `Test Files  2 failed \| 6 passed (8)`. `Tests  16 passed (16)`. The domain and use-case suites from units 1 and 2 still passed. | Same command after the two port contracts, Biome, and no adapter edit: exit 0. `Test Files  8 passed (8)`. `Tests  20 passed (20)`. |
+
+Scenarios covered in unit 3:
+
+- A published catalog with onion (150 g at 75% yield, reference cost 80) and modifier `extra cheese` (+30 g) is saved. Load returns that catalog at version 1. Explode without the modifier is `200 * QUANTITY_SCALE` of onion. Explode with the modifier adds `30 * QUANTITY_SCALE` of cheese. `listPublications` returns that one publication. Another brand loads as null and lists no publications.
+- Tenants A and B share a brand id and save different recipe ids. Each load and each publication list contains only that tenant's recipe. The other brand stays hidden.
+- Copy apply stores version 1, replaces it with version 4, and keeps version 4 when version 3 or an equal version 4 is applied. Another brand loads as null.
+- Tenants A and B each keep their own copy. Loading one tenant does not return the other tenant's publication.
+
+The in-memory catalog and copy repositories already implemented these rules. Task 3.1 did not change their source.
+
 ## Deviations from Design
 
 Unit 1 deviations above still stand.
 
 `referenceCostCop` is the cost of one purchase unit. Theoretical cost is `floor(explodedScaled * referenceCostCop / purchaseUnit.factor)`. A collapsed stocked line is costed from that sub-recipe's own exploded ingredients, then scaled by the collapsed batch quantity.
 
-`ApplyRecipeCopy` keeps the stored copy when the incoming version is older or equal. The design names the older case. An equal version is treated as a replay and does not replace the copy.
+`ApplyRecipeCopy` keeps the stored copy when the incoming version is older or equal. The design names the older case. An equal version is treated as a replay and does not replace the copy. The copy contract now locks that replay.
 
 `UpdateRecipeCatalog` commands are `upsertIngredient` and `upsertRecipe`. Execute publishes once. There is no modifier command and no stock command. Publication rows still carry `modifiers`, which stay empty unless the aggregate already has them.
 
 `savePublishedVersion` is an internal helper used by update and import so both paths write one catalog version and one publication in the same `save`. It is not a sixth use case and it is not exported.
+
+Unit 3 adds no further deviation. The catalog contract compares the public aggregate (identity, published version, explode, publication list). It does not require a new `RecipeCatalog` instance, matching the menu repository contract. Postgres reconstruction stays in task 4.1 and can reuse this contract.
 
 ## Issues Found
 
@@ -84,12 +116,15 @@ The in-memory catalog repository keeps the live aggregate. Import rejection vali
 
 `tools/skeleton/skeleton.test.ts` still omits `inventory`. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
 
-This work unit is about 1360 lines under `contexts/inventory/application` and `contexts/inventory/adapters/memory` (about 780 implementation, about 560 tests), plus the package import map and the tsconfig `include`. That is above the 400-line review budget. The assigned unit was the whole memory-port use-case slice. `size:exception` was not granted.
+Work unit 2 is about 1360 lines and stays above the 400-line review budget. `size:exception` was not granted for that slice.
+
+Work unit 3 is about 230 lines across four new files. It stays inside the 400-line budget. No adapter implementation changed.
 
 ## Remaining Tasks
 
-- [ ] 3.1 Memory contract tests: round-trip, hidden tenant, copy apply. Do not mock Drizzle.
-- [ ] Phase 4: Postgres and SQLite. No stock tables.
+- [ ] 4.1 PGlite contract, then the Postgres recipe catalog repository. `inventory_app`, forced RLS, no stock tables.
+- [ ] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy.
+- [ ] 4.3 Skeleton allowlist for `inventory` and this sqlite adapter. `shared/sync` stays absent.
 - [ ] Phase 5: Cloud and node HTTP. `inject` only.
 - [ ] Phase 6: Admin screens. Cost only when the payload includes it.
 
@@ -97,8 +132,8 @@ This work unit is about 1360 lines under `contexts/inventory/application` and `c
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: 2 of 5, memory-port use cases
-- Branch: `p2-01/use-cases`
-- PR base: `p2-01/recipe-catalog` (not `master`, not `phase-2/inventory`, not `feat/portal-customer-billing`)
-- Boundary: tasks 2.1–2.4 only. No Postgres, SQLite, HTTP, admin screens, stock commands, stock ports, or stock tables.
-- Estimated review budget impact: about 1360 lines. Above the 400-line budget. The change forecast stays High.
+- Current work unit: 3 of 5, port contract
+- Branch: `p2-01/port-contract`
+- PR base: `p2-01/use-cases` (not `master`, not `phase-2/inventory`, not `p2-01/recipe-catalog`, not `feat/portal-customer-billing`)
+- Boundary: task 3.1 only. Memory contract tests for both repositories. No Postgres, SQLite, HTTP, admin screens, stock commands, stock ports, or stock tables. Drizzle is not mocked.
+- Estimated review budget impact: about 230 lines. Inside the 400-line budget. The change forecast stays High because later units are larger.
