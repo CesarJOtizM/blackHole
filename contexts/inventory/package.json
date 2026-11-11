@@ -13,7 +13,8 @@
     "./application/ports/recipe-workbook": "./application/ports/recipe-workbook.js",
     "./adapters/memory/in-memory-recipe-catalog-repository": "./adapters/memory/in-memory-recipe-catalog-repository.js",
     "./adapters/memory/in-memory-recipe-copy-repository": "./adapters/memory/in-memory-recipe-copy-repository.js",
-    "./adapters/postgres/drizzle-recipe-catalog-repository": "./adapters/postgres/drizzle-recipe-catalog-repository.js"
+    "./adapters/postgres/drizzle-recipe-catalog-repository": "./adapters/postgres/drizzle-recipe-catalog-repository.js",
+    "./adapters/sqlite/drizzle-recipe-copy-repository": "./adapters/sqlite/drizzle-recipe-copy-repository.js"
   },
   "imports": {
     "#domain/*": "./domain/*",
@@ -25,7 +26,8 @@
     "#application/save-published-version/*": "./application/save-published-version/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
-    "#adapters/postgres/*": "./adapters/postgres/*"
+    "#adapters/postgres/*": "./adapters/postgres/*",
+    "#adapters/sqlite/*": "./adapters/sqlite/*"
   },
   "dependencies": {
     "@electric-sql/pglite": "catalog:",

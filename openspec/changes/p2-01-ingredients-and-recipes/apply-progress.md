@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Tasks 1.1 through 4.1. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Tasks 1.1 through 4.2. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Current branch `p2-01/postgres`. PR base `p2-01/port-contract`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/sqlite`. PR base `p2-01/postgres`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for tasks 1.1–3.1 was read and merged below. Those tasks stay complete. This batch adds task 4.1 only. SQLite, the skeleton allowlist, HTTP, and admin screens stay out.
+Previous apply-progress for tasks 1.1–4.1 was read and merged below. Those tasks stay complete. This batch adds task 4.2 only. The skeleton allowlist, HTTP, and admin screens stay out.
 
 ## Completed tasks
 
@@ -17,6 +17,7 @@ Previous apply-progress for tasks 1.1–3.1 was read and merged below. Those tas
 - [x] 2.4 Exported from `contexts/inventory/application/entry-port.ts`. No stock command.
 - [x] 3.1 Memory contract tests: round-trip, other tenant hidden, copy apply. Drizzle is not mocked. No Postgres, SQLite, HTTP, or admin screens.
 - [x] 4.1 PGlite contract, then the Postgres recipe catalog. `inventory_app`, forced RLS, no stock tables. Drizzle is not mocked.
+- [x] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy. An older or repeated version does not replace it. Drizzle is not mocked.
 
 ## Work unit 1 evidence
 
@@ -123,6 +124,33 @@ Scenarios covered in task 4.1:
 
 No stock table is created. `api-cloud` can import the postgres adapter through the package export. `local-node` is not wired to it. `tools/skeleton/skeleton.test.ts` was not edited.
 
+## Work unit: SQLite recipe copy (task 4.2)
+
+Task 4.2 only. Branch `p2-01/sqlite`. PR base `p2-01/postgres`. The skeleton allowlist, HTTP, and admin screens are not in this batch. The Postgres catalog repository was not edited.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  10 passed (10)`. `Tests  26 passed (26)`. The run is after `pnpm exec biome check --write` on `contexts/inventory/adapters/sqlite` and `contexts/inventory/package.json`, and after a second `pnpm exec tsc -b contexts/inventory --pretty false` — exit 0. |
+| RED command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/adapters/sqlite/drizzle-recipe-copy-repository.contract.test.ts` — exit 1. `FAIL contexts/inventory/adapters/sqlite/drizzle-recipe-copy-repository.contract.test.ts` — `Cannot find module '#adapters/sqlite/drizzle-recipe-copy-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. The package import map already resolved `#adapters/sqlite/*`. |
+| Runtime harness command/scenario and exact result | `node:sqlite` `DatabaseSync` executes `contexts/inventory/adapters/sqlite/0001_recipe_copy.sql` on an in-memory database. The shared `recipeCopyRepositoryContract` runs against `DrizzleRecipeCopyRepository`. A later case stores a full version 3 copy and does not apply version 4. Load still returns version 3. Node prints `ExperimentalWarning: SQLite is an experimental feature`. |
+| Typecheck | `pnpm exec tsc -b contexts/inventory --pretty false` — exit 0. |
+| Import boundaries | `pnpm exec dependency-cruiser --output-type err contexts/inventory` — exit 0. `no dependency violations found (43 modules, 93 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. |
+| Rollback boundary | `contexts/inventory/adapters/sqlite/`, the `#adapters/sqlite/*` import and the sqlite repository export in `contexts/inventory/package.json`, and the task 4.2 mark in this change's `tasks.md` and `apply-progress.md`. |
+
+### RED then GREEN (task 4.2)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.2 | `pnpm exec vitest run --project inventory contexts/inventory/adapters/sqlite/drizzle-recipe-copy-repository.contract.test.ts` exit 1. `Cannot find module '#adapters/sqlite/drizzle-recipe-copy-repository.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | `pnpm exec vitest run --project inventory` after the SQL copy schema, Drizzle schema, `node:sqlite` session, repository, and Biome: exit 0. `Test Files  10 passed (10)`. `Tests  26 passed (26)`. |
+
+Scenarios covered in task 4.2:
+
+- A stored copy at version 1 is replaced by version 4. Version 3 and a repeated version 4 do not replace it. Another brand loads as null.
+- Tenants A and B each keep their own copy for the same brand id. Loading one tenant does not return the other tenant's publication.
+- A node holds version 3, including onion (purchase factor `50000 * QUANTITY_SCALE`), variant `double`, an ingredient line, a stocked bechamel line, modifier `extra cheese`, and an empty modifier. Version 4 is not applied. Load still returns that version 3 copy.
+
+The copy tables are `recipe_copies`, `recipe_copy_ingredients`, `recipe_copy_units`, `recipe_copy_recipes`, `recipe_copy_lines`, `recipe_copy_modifiers`, and `recipe_copy_deltas`. They are not the cloud catalog tables. No stock table is created. `api-cloud` does not import this adapter. `local-node` is not wired to it. `tools/skeleton/skeleton.test.ts` was not edited.
+
 ## Deviations from Design
 
 Unit 1 deviations above still stand.
@@ -141,21 +169,24 @@ Task 4.1 keeps the eight design tables and does not add a JSON payload on `recip
 
 The domain has no restore method, and this batch does not change it. Load opens a catalog and replays each published version through `upsertIngredient`, `upsertRecipe`, `upsertModifier`, and `publish`. That matches catalogs the domain can produce, because those commands replace by id and do not delete an ingredient, recipe, or modifier. `contexts/inventory/tsconfig.json` now sets `types: ["node"]`, matching the orders PGlite contract. Unit 1 had left that unset.
 
+Task 4.2 stores one current publication per tenant and brand. It does not copy the eight cloud catalog tables. `drizzle-orm` 0.45.4 has no `drizzle-orm/node-sqlite` entry, so `contexts/inventory/adapters/sqlite/node-sqlite-database.ts` runs Drizzle's SQLite session on Node's `node:sqlite` `DatabaseSync`. `better-sqlite3` was not added. The SQL file and `schema.ts` follow the PGlite contract shape. The design named only the repository file.
+
 ## Issues Found
 
 The in-memory catalog repository keeps the live aggregate. Import rejection validates unknown rows before any upsert, so a rejected file does not dirty the stored draft. A domain exception thrown after a later upsert on that same instance would change the draft before `save`. The Postgres repository reloads a new aggregate from the stored versions.
-
-`tools/skeleton/skeleton.test.ts` still omits `inventory`. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
 
 Work unit 2 is about 1360 lines and stays above the 400-line review budget. `size:exception` was not granted for that slice.
 
 Work unit 3 is about 230 lines across four new files. It stays inside the 400-line budget. No adapter implementation changed.
 
-Task 4.1 is about 1100 lines: the SQL migration, Drizzle schema, repository, PGlite contract, package export, lockfile importer, and `types: ["node"]`. That is above the 400-line review budget. The assigned slice is the whole cloud catalog repository, so the migration and the repository stay together. `size:exception` was not granted. SQLite remains task 4.2.
+Task 4.1 is about 1100 lines: the SQL migration, Drizzle schema, repository, PGlite contract, package export, lockfile importer, and `types: ["node"]`. That is above the 400-line review budget. The assigned slice is the whole cloud catalog repository, so the migration and the repository stay together. `size:exception` was not granted.
+
+Task 4.2 is about 930 lines: the copy SQL, Drizzle schema, `node:sqlite` session, repository, contract, and the package import plus export. That is above the 400-line review budget. The assigned slice is the whole node copy repository, so the schema and the repository stay together. `size:exception` was not granted. Node 24 prints `ExperimentalWarning` for `node:sqlite`. The warning does not fail the inventory suite.
+
+`tools/skeleton/skeleton.test.ts` still omits `inventory` and this sqlite adapter. Task 4.3 owns that allowlist. This batch did not edit it and did not run the skeleton project.
 
 ## Remaining Tasks
 
-- [ ] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy.
 - [ ] 4.3 Skeleton allowlist for `inventory` and this sqlite adapter. `shared/sync` stays absent.
 - [ ] Phase 5: Cloud and node HTTP. `inject` only.
 - [ ] Phase 6: Admin screens. Cost only when the payload includes it.
@@ -164,8 +195,8 @@ Task 4.1 is about 1100 lines: the SQL migration, Drizzle schema, repository, PGl
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: task 4.1, Postgres recipe catalog
-- Branch: `p2-01/postgres`
-- PR base: `p2-01/port-contract` (not `master`, not `phase-2/inventory`, not `p2-01/use-cases`, not `feat/portal-customer-billing`)
-- Boundary: task 4.1 only. PGlite contract, `0001_recipe_catalog.sql`, Drizzle schema, and `DrizzleRecipeCatalogRepository`. No SQLite, skeleton allowlist, HTTP, admin screens, stock commands, stock ports, or stock tables. Drizzle is not mocked.
-- Estimated review budget impact: about 1100 lines. Above the 400-line budget. `size:exception` was not granted. The change forecast stays High.
+- Current work unit: task 4.2, SQLite recipe copy
+- Branch: `p2-01/sqlite`
+- PR base: `p2-01/postgres` (not `master`, not `phase-2/inventory`, not `p2-01/port-contract`, not `feat/portal-customer-billing`)
+- Boundary: task 4.2 only. SQLite contract, `0001_recipe_copy.sql`, Drizzle schema, `node:sqlite` session, and `DrizzleRecipeCopyRepository`. No skeleton allowlist, HTTP, admin screens, stock commands, stock ports, or stock tables. The Postgres catalog repository was not edited. Drizzle is not mocked.
+- Estimated review budget impact: about 930 lines. Above the 400-line budget. `size:exception` was not granted. The change forecast stays High.
