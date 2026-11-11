@@ -21,6 +21,7 @@ export class DrizzleProviderRateGate extends ProviderRateGate {
   override async acquire(
     taxId: string,
     at: Date,
+    ceiling = providerRequestsPerMinute,
   ): Promise<ProviderRateDecision> {
     const windowStartedAt = providerWindowStartedAt(at);
 
@@ -53,7 +54,7 @@ export class DrizzleProviderRateGate extends ProviderRateGate {
           and(
             eq(providerRateWindows.taxId, taxId),
             eq(providerRateWindows.windowStartedAt, windowStartedAt),
-            lt(providerRateWindows.requestCount, providerRequestsPerMinute),
+            lt(providerRateWindows.requestCount, ceiling),
           ),
         )
         .returning({ requestCount: providerRateWindows.requestCount });

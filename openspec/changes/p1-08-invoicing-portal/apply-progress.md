@@ -470,3 +470,39 @@ A second approval of the same row is rejected. The first success saves `status: 
 - Estimated review budget impact: this pair is 790 lines (`approve-reinvoice.test.ts` 535, `approve-reinvoice.ts` 94, `link-signer.ts` 11, `link-signer.contract.ts` 24, `portal-repository.ts` 20, `portal-repository.contract.ts` 31, `portal-request-limiter.ts` 8, `portal-request-limiter.contract.ts` 26, `entry-port.ts` 40 added, plus 1 `package.json` import). That is 390 lines over the 400-line review budget. The ports and the eight exports were kept. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 3.1
 
+
+## Pair 3.1–3.2
+
+This batch adds ceiling pair 3.1–3.2 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project platform contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts contexts/platform/adapters/postgres/drizzle-provider-rate-gate.contract.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. Memory file is the shared contract (5). Drizzle file is that contract plus the existing shared-window case (6). The run is after `pnpm exec biome check --write` on the four touched source files. That Biome run reported `Checked 4 files in 10ms. Fixed 4 files.` |
+| Runtime harness command/scenario and exact result | The drizzle contract is the runtime boundary. It opens PGlite, applies `0005_provider_rate.sql`, and runs `providerRateGateContract` plus the two-caller window. Same command as the focused test, exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. Not N/A. |
+| Rollback boundary | `contexts/platform/application/ports/provider-rate-gate.contract.ts`, `contexts/platform/application/ports/provider-rate-gate.ts`, `contexts/platform/adapters/memory/in-memory-provider-rate-gate.ts`, and `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.ts`. Reverting those restores `acquire(taxId, at)` and the fixed 80 comparison. Use-case pairs 1.1–2.16 stay in place. No migration was added. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.1 → 3.2 | `pnpm exec vitest run --project platform contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts` exit 1. Vitest ran the new case; it did not reject the third argument before the body. `FAIL \|platform\| contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts > given a caller that passes ceiling 60, when the 61st acquire runs, then it is refused with the seconds left in the minute`. `AssertionError: expected { allowed: true } to deeply equal { allowed: false, retryAfterSeconds: 50 }`. Expected `allowed: false` and `retryAfterSeconds: 50`; received `{ allowed: true }`. `Test Files  1 failed (1)`. `Tests  1 failed \| 4 passed (5)`. The four existing two-argument cases passed. | Same memory file plus `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.contract.test.ts` after `acquire(taxId, at, ceiling = providerRequestsPerMinute)` on the port, the memory gate, and the drizzle gate, and after Biome: exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. |
+
+### Deviations from Design
+
+TypeScript rejects a parameter default on an abstract method (`TS2371`). The port takes `ceiling?: number`. The memory gate and the drizzle gate default that argument to `providerRequestsPerMinute` (80). A caller that passes `60` stops at 60. A call that omits the third argument still stops at 80. The drizzle comparison uses the ceiling argument. No column and no migration. Two-argument callers in `issuance-gate.ts`, `worker.ts`, and `worker.test.ts` were not edited. `PortalLookupLimiter` and `look-up-portal-buyer.ts` were not edited. Twilio was not pulled in.
+
+### Issues Found
+
+None. A ceiling below 1 or above 80 is out of this pair and is passed through with no clamp.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.1 and 3.2 only. No Twilio, HTTP, UI, Factus, local-node, sqlite, sync, or portal lookup retune. Task 3.3 was not started.
+- Files in this batch: `contexts/platform/application/ports/provider-rate-gate.contract.ts`, `contexts/platform/application/ports/provider-rate-gate.ts`, `contexts/platform/adapters/memory/in-memory-provider-rate-gate.ts`, `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.ts`, `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 30 lines (27 additions + 3 deletions): contract +18, port +5/−1, memory +2/−1, drizzle +2/−1. That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.3
+

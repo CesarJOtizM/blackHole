@@ -12,12 +12,13 @@ export class InMemoryProviderRateGate extends ProviderRateGate {
   override async acquire(
     taxId: string,
     at: Date,
+    ceiling = providerRequestsPerMinute,
   ): Promise<ProviderRateDecision> {
     const windowStartedAt = providerWindowStartedAt(at);
     const windows = this.counts.get(taxId) ?? new Map<number, number>();
     const count = windows.get(windowStartedAt) ?? 0;
 
-    if (count >= providerRequestsPerMinute) {
+    if (count >= ceiling) {
       return {
         allowed: false,
         retryAfterSeconds: providerRetryAfterSeconds(at),
