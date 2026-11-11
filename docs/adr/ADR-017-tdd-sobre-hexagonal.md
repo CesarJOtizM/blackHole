@@ -23,7 +23,7 @@ La suite de contrato de un puerto vive en `application/ports/<port>.contract.ts`
 
 ## Consecuencias
 
-- El esqueleto de la Fase 0 incluye Vitest, dependency-cruiser, la suite de contrato y el primer caso de uso nacido de una prueba en rojo. Hoy existen el esqueleto (`contexts/platform`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`), la regla de dependency-cruiser con su fixture en `tools/cruiser` y las pruebas de `tools/skeleton`. **Siguen pendientes dentro de la entrega 0.2**: el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `memory`, `postgres` y `sqlite` que la corren.
+- El esqueleto de la Fase 0 incluye Vitest, dependency-cruiser, la suite de contrato y el primer caso de uso nacido de una prueba en rojo. La entrega 0.2 está cerrada: existen `contexts/platform`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`, la regla de dependency-cruiser con su fixture en `tools/cruiser`, las pruebas de `tools/skeleton`, el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `memory` y `postgres` que la corren. El adaptador `sqlite` queda en la fase híbrida.
 - Cada TRD de módulo lista los comportamientos a probar, con la plantilla de la sección 9, antes de describir tablas o rutas nuevas.
 - La integración continua rechaza un dominio que importa infraestructura, un puerto sin contrato y un contrato que pasa en un solo dialecto.
 - No se exige un porcentaje de líneas. Una regla sin prueba no se considera hecha.

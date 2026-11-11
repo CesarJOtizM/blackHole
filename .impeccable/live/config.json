@@ -1,0 +1,10 @@
+{
+  "files": [
+    "apps/admin-web/index.html",
+    "apps/venue-app/index.html",
+    "apps/customer-portal/index.html"
+  ],
+  "insertBefore": "</body>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

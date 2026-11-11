@@ -5,8 +5,9 @@ phase: 1
 modules: [M3]
 bounded_contexts: [invoicing, cash-register, contracts, sync]
 apps: [api-cloud, local-node, venue-app, admin-web]
-status: tasked
+status: archived
 artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: done, archive: done}
+verify_verdict: pass-with-warnings
 depends_on: [p0-02-skeleton-and-sync, p0-03-organization, p0-05-roles-and-permissions, p0-06-audit, p0-07-hybrid-resilience, p0-08-infrastructure-and-delivery, p0-09-monitoring-and-errors, p1-03-cash-register, p1-04-tax-engine]
 source_docs:
   - docs/roadmap.md

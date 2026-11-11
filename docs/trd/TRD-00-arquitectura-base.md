@@ -1052,7 +1052,7 @@ tools/                     # herramientas del repositorio, sin código de produc
 infra/                     # Terraform (TRD-01, sección 4)
 ```
 
-Hoy existen `contexts/platform`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`, `tools/cruiser` y `tools/skeleton`: el esqueleto de la entrega 0.2. Dentro de esa misma entrega faltan el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `memory`, `postgres` y `sqlite`.
+La entrega 0.2 está cerrada. Existen `contexts/platform`, `orders`, `cash-register`, `invoicing` y `attendance`, `shared/contracts`, `apps/api-cloud`, `apps/local-node`, `apps/venue-app`, `apps/admin-web`, `apps/customer-portal`, `tools/cruiser` y `tools/skeleton`, con casos de uso, suites de contrato y adaptadores `memory` y `postgres`. El adaptador `sqlite` y la sincronización quedan en la fase híbrida.
 
 Una carpeta de contexto entra al repositorio con el primer comportamiento de ese módulo, en el ciclo de la sección 16. Un catálogo o una configuración también tienen dominio, aunque sea delgado, y respetan las mismas capas.
 
@@ -1333,13 +1333,13 @@ Cada ADR pendiente cita su pregunta en el [registro](../preguntas-abiertas.md). 
 
 El MVP de esta fase es solo nube (D-37). Lo que necesita el nodo o un corte está en la fase híbrida, más abajo.
 
-1. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero, desde el puente.
-2. Esqueleto del monorepo con la forma de la sección 14 y el arnés de la sección 16, y la API de la nube. **Hecho**: `contexts/platform` (con `domain`, `application` y `adapters`), `shared/contracts`, `apps/api-cloud` y `apps/local-node` con su prueba de arranque, `tools/cruiser` (dependency-cruiser con su fixture) y `tools/skeleton`. **Falta, dentro de la entrega 0.2**: el primer caso de uso nacido de una prueba en rojo, la suite de contrato del primer puerto (`<port>.contract.ts`) y los adaptadores `memory` y `postgres`. El adaptador `sqlite` y la sincronización quedan en la fase híbrida.
-3. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash en la nube.
+1. **Spike de impresión**: ESC/POS en las impresoras del piloto, incluido el cajón monedero, desde el puente. El código está verificado. La prueba en las impresoras del piloto espera la visita a la sede.
+2. Esqueleto del monorepo con la forma de la sección 14 y el arnés de la sección 16, y la API de la nube. **Cerrada**: `contexts/platform` (con `domain`, `application` y `adapters`), `shared/contracts`, `apps/api-cloud` y `apps/local-node`, `tools/cruiser` y `tools/skeleton`, el primer caso de uso nacido de una prueba en rojo, la suite de contrato del primer puerto (`<port>.contract.ts`) y los adaptadores `memory` y `postgres`. El adaptador `sqlite` y la sincronización quedan en la fase híbrida.
+3. Organización, usuarios, roles, PIN, registro de dispositivos y auditoría con cadena de hash en la nube. **Hecho** en las entregas 0.3, 0.4, 0.5 y 0.6. La verificación de identidad y de roles quedó parcial.
 4. Prueba del modo nube: una sede opera de punta a punta sin nodo.
-5. **Factus**: las credenciales del sandbox compartido ya están (D-20) y no se guardan en el repositorio. Falta emitir un documento de prueba desde el adaptador.
+5. **Factus**: las credenciales del sandbox compartido ya están (D-20) y no se guardan en el repositorio. El adaptador de la entrega 1.5 emite en las pruebas. La aceptación en producción sigue en la salida a la sede (entrega 1.14).
 6. **Trámite con las plataformas** (PA-28): solicitar el acceso a las API de integración de Rappi y DiDi Food, y cotizar al menos un integrador. No es desarrollo, pero tarda y define la Fase 3.
-7. **Infraestructura, despliegue continuo, monitoreo y errores**: TRD-01, entregas 0.8 y 0.9 del [roadmap](../roadmap.md).
+7. **Infraestructura, despliegue continuo, monitoreo y errores**: TRD-01, entregas 0.8 y 0.9 del [roadmap](../roadmap.md). La 0.9 está cerrada. La 0.8 está aplicada y su verificación sigue en fallo parcial.
 
 Criterio de salida: el mismo de la Fase 0 en PRD-00.
 

@@ -5,8 +5,9 @@ phase: 0
 modules: [M0]
 bounded_contexts: [platform, contracts]
 apps: [api-cloud, local-node, venue-app, admin-web]
-status: applied
+status: archived
 artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: partial, archive: done}
+verify_verdict: partial
 depends_on: [p0-01-risk-spikes, p0-03-organization]
 source_docs:
   - docs/roadmap.md
