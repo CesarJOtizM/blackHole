@@ -506,3 +506,42 @@ None. A ceiling below 1 or above 80 is out of this pair and is passed through wi
 - Estimated review budget impact: this pair is 30 lines (27 additions + 3 deletions): contract +18, port +5/−1, memory +2/−1, drizzle +2/−1. That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 3.3
 
+## Pair 3.3–3.4
+
+This batch adds adapter pair 3.3–3.4 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Task 3.5 was not started.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. The run is after `pnpm exec biome check --write` on the two TypeScript files and `contexts/invoicing/package.json`. That Biome run reported `Checked 3 files in 14ms. Fixed 3 files.` |
+| Runtime harness command/scenario and exact result | Same command. `globalThis.fetch` is stubbed. SMS is asserted as `POST https://api.twilio.com/2010-04-01/Accounts/{accountSid}/Messages.json`. Email is asserted as `POST https://api.sendgrid.com/v3/mail/send`. No live Twilio or SendGrid call. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.ts`, and the `#adapters/twilio/*` import in `contexts/invoicing/package.json`. Reverting those leaves pairs 1.1–3.2 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.3 → 3.4 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` — `Missing "#adapters/twilio/twilio-one-time-code-sender.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `twilio-one-time-code-sender.ts`, `#adapters/twilio/*`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. |
+
+### Deviations from Design
+
+The design does not specify the message copy. The body is `{companyName} code {code}. It expires in {minutes} minutes.` The email subject is `{companyName} verification code` and does not contain the code. SMS is `POST /2010-04-01/Accounts/{AccountSid}/Messages.json` with Basic auth and form fields `To`, `From`, and `Body`. Email is `POST https://api.sendgrid.com/v3/mail/send` with `Authorization: Bearer` and a `text/plain` body. A missing secret, a blank secret, a non-OK response, or a rejected `fetch` throws `OneTimeCodeDeliveryFailed` with the fixed port message. The clear code is not written to the console and is not put in the error.
+
+The RED test lives at `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, the folder task 3.3 names. No file was added under `adapters/memory`. The test's secrets double is an in-memory `Secrets` subclass in that file. `InMemorySecrets` from `contexts/platform` is another context's adapter, which dependency-cruiser forbids. No secret file and no `FileSecrets`. `oneTimeCodeSenderContract` runs here. `delivered()` is filled by a test wrapper after `send` resolves. The adapter does not keep the clear code. The SMS and email tests assert the request shape.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.3 and 3.4 only. No HMAC, Postgres, Factus `downloadPdf`, local-node, sqlite, outbox, or sync. Task 3.5 was not started.
+- Files in this batch: `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.ts`, `contexts/invoicing/package.json` (`#adapters/twilio/*`), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 434 lines (`twilio-one-time-code-sender.test.ts` 315, `twilio-one-time-code-sender.ts` 116, `package.json` +2/−1). That is 34 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.5
+
