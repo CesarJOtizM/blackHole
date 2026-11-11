@@ -64,8 +64,8 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 - [x] 3.6 GREEN `HmacLinkSigner`, `#adapters/crypto/*`. Domain stays crypto-free.
 - [ ] 3.7 RED memory and PGlite: forced RLS. No SQLite. Unknown DANE fails. Seed the committed Factus municipalities JSON. No DIVIPOLA. Stop if that JSON is absent.
 - [ ] 3.8 GREEN `adapters/postgres/0016_invoicing_portal.sql` and repos: `remembered_buyers`, `consents`, `one_time_codes`, `portal_lookups`, `acquirer_cache`, `portal_submissions`, `reinvoice_requests`, `portal_settings`, `portal_rate_windows`, `dane_municipalities`. Default enabled false, window `same_day`.
-- [ ] 3.9 RED `adapters/factus/factus-invoicing-provider.test.ts`: `downloadPdf` GET. `lookupAcquirer` GET does not validate a bill.
-- [ ] 3.10 GREEN `downloadPdf` in `adapters/factus`.
+- [x] 3.9 RED `adapters/factus/factus-invoicing-provider.test.ts`: `downloadPdf` GET. `lookupAcquirer` GET does not validate a bill.
+- [x] 3.10 GREEN `downloadPdf` in `adapters/factus`.
 
 ## 4. Pre-bill
 

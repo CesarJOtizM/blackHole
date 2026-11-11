@@ -586,3 +586,38 @@ None.
 - Estimated review budget impact: this pair is 347 lines (`hmac-link-signer.test.ts` 158, `hmac-link-signer.ts` 186, `package.json` +2/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 3.7
 
+## Pair 3.9–3.10
+
+This batch adds adapter pair 3.9–3.10 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Tasks 3.7 and 3.8 were not started. The Factus municipalities JSON, SQL, and Postgres repos were not added.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  18 passed (18)`. The run is after `pnpm exec biome check --write` on the two Factus files. That Biome run reported `Checked 2 files in 20ms. Fixed 2 files.` |
+| Runtime harness command/scenario and exact result | Same command. `globalThis.fetch` is stubbed. `downloadPdf` is asserted as `GET {base}/v2/bills/{number}/download-pdf` and the returned bytes are the decoded `pdf_base_64_encoded` payload. `lookupAcquirer` stays `GET {base}/v2/dian/acquirer` and no recorded call hits `/v2/bills/validate`. No live Factus call. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` and `contexts/invoicing/adapters/factus/factus-invoicing-provider.ts`. Reverting those removes `downloadPdf` and the new assertions. `lookupAcquirer` returns to the same GET it already performed. Pairs 1.1–3.6 stay in place. Tasks 3.7 and 3.8 stay unchecked. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.9 → 3.10 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts`. `Test Files  1 failed (1)`. `Tests  3 failed \| 15 passed (18)`. The success case threw `InvoicePdfDownloadFailed: The provider could not download the invoice PDF.` from the port default at `invoicing-provider.ts:119` (`Promise.reject(new InvoicePdfDownloadFailed())`). The failure cases then asserted `expected undefined to match object { method: "GET", url: "https://recorded.example.test/v2/bills/SETP990000550/download-pdf" }` and received `undefined`, because the default does not call Factus. | Same command after `downloadPdf` on `FactusInvoicingProvider` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  18 passed (18)`. |
+
+### Deviations from Design
+
+`design.md` names `downloadPdf(number)` and does not name the HTTP path or the response field. The adapter GETs `/v2/bills/{number}/download-pdf` and returns `Uint8Array` decoded from Factus `data.pdf_base_64_encoded`. That is the published Factus v2 download (the same `/v2` bill family this adapter already calls) and the port's return type. `lookupAcquirer` was already `GET /v2/dian/acquirer`. Its method was not changed. The new assertion records two calls (token, then acquirer) and rejects any URL that contains `/v2/bills/validate`. No municipalities JSON, SQL, or Postgres repo was added. Task 3.7 stays unchecked.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.9 and 3.10 only. No municipalities JSON, SQL, Postgres, local-node, sqlite, outbox, or sync. Tasks 3.7, 3.8, and 4.1 were not started.
+- Files in this batch: `contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts`, `contexts/invoicing/adapters/factus/factus-invoicing-provider.ts`, `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 114 lines (`factus-invoicing-provider.test.ts` +78, `factus-invoicing-provider.ts` +35/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.7
+
