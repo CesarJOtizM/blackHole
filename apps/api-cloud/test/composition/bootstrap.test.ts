@@ -24,6 +24,11 @@ import {
   TipRuleStore,
   TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
+import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
+import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
+import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
+import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
+import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
@@ -145,6 +150,7 @@ import {
 import { authorizationDependencies } from "#src/composition/authorization-access.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { createApplication } from "#src/composition/create-application.js";
+import { ExcelRecipeWorkbook } from "#src/composition/excel-recipe-workbook.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import {
   MissingOriginalPaymentReader,
@@ -721,6 +727,24 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: DetectUnusualBehavior,
         useFactory: expect.any(Function),
         inject: [AuditRepository],
+      },
+      {
+        provide: RecipeCatalogRepository,
+        useValue: new InMemoryRecipeCatalogRepository(),
+      },
+      {
+        provide: RecipeWorkbook,
+        useValue: new ExcelRecipeWorkbook(),
+      },
+      {
+        provide: SitePrice,
+        useFactory: expect.any(Function),
+        inject: [MenuRepository, VenueDirectory, OrdersClock],
+      },
+      {
+        provide: RecipeVenueDirectory,
+        useFactory: expect.any(Function),
+        inject: [VenueDirectory],
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

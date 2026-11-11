@@ -36,6 +36,11 @@ import {
   TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
+import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
+import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
+import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
+import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
+import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
@@ -149,13 +154,16 @@ import {
 } from "#src/composition/attendance-memory.js";
 import { AttendanceTipParticipants } from "#src/composition/attendance-tip-participants.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
+import { ExcelRecipeWorkbook } from "#src/composition/excel-recipe-workbook.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { MenuSitePrice } from "#src/composition/menu-site-price.js";
 import {
   MissingOriginalPaymentReader,
   MissingPaidAccountReader,
 } from "#src/composition/missing-sale-readers.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import { OrdersRecipeVenueDirectory } from "#src/composition/recipe-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
 import {
   PendingSalePrinter,
@@ -201,6 +209,7 @@ import {
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
+import { RecipeCatalogController } from "#src/http/recipe-catalog.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
@@ -241,6 +250,8 @@ export interface CloudApplicationDependencies {
   factus?: FactusSimulator;
   audits?: AuditRepository;
   menus?: MenuRepository;
+  recipeCatalogs?: RecipeCatalogRepository;
+  recipeWorkbook?: RecipeWorkbook;
   digests?: AuditDigest;
   clockEntries?: ClockEntryRepository;
   corrections?: ClockEntryCorrectionRepository;
@@ -341,6 +352,7 @@ export class ApplicationModule implements NestModule {
         ReadControlReportController,
         DetectUnusualBehaviorController,
         UpdateMenuController,
+        RecipeCatalogController,
         ViewVenueMenuController,
         PlaceTableController,
         ConfigureStationRouteController,
@@ -1352,6 +1364,31 @@ export class ApplicationModule implements NestModule {
           useFactory: (audits: AuditRepository) =>
             new DetectUnusualBehavior(audits),
           inject: [AuditRepository],
+        },
+        {
+          provide: RecipeCatalogRepository,
+          useValue:
+            dependencies.recipeCatalogs ??
+            new InMemoryRecipeCatalogRepository(),
+        },
+        {
+          provide: RecipeWorkbook,
+          useValue: dependencies.recipeWorkbook ?? new ExcelRecipeWorkbook(),
+        },
+        {
+          provide: SitePrice,
+          useFactory: (
+            menus: MenuRepository,
+            venues: VenueDirectory,
+            clock: OrdersClock,
+          ) => new MenuSitePrice(menus, venues, clock),
+          inject: [MenuRepository, VenueDirectory, OrdersClock],
+        },
+        {
+          provide: RecipeVenueDirectory,
+          useFactory: (venues: VenueDirectory) =>
+            new OrdersRecipeVenueDirectory(venues),
+          inject: [VenueDirectory],
         },
       ],
     };

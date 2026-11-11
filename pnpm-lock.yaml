@@ -314,6 +314,9 @@ importers:
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts
+      '@blackhole/inventory':
+        specifier: workspace:*
+        version: link:../../contexts/inventory
       '@blackhole/invoicing':
         specifier: workspace:*
         version: link:../../contexts/invoicing
@@ -371,6 +374,9 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+      xlsx:
+        specifier: 0.18.5
+        version: 0.18.5
       zod:
         specifier: 'catalog:'
         version: 4.6.7

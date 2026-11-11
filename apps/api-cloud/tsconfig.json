@@ -13,6 +13,7 @@
   "references": [
     { "path": "../../contexts/attendance" },
     { "path": "../../contexts/cash-register" },
+    { "path": "../../contexts/inventory" },
     { "path": "../../contexts/invoicing" },
     { "path": "../../contexts/orders" },
     { "path": "../../contexts/platform" },

@@ -1,10 +1,10 @@
 # Apply progress: p2-01-ingredients-and-recipes
 
-Tasks 1.1 through 4.3. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
+Tasks 1.1 through 5.4. Mode: Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. `strict-tdd.md` was not loaded.
 
-Delivery: feature-branch-chain. Current branch `p2-01/skeleton`. PR base `p2-01/sqlite`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
+Delivery: feature-branch-chain. Current branch `p2-01/cloud-http`. PR base `p2-01/skeleton`. Not committed. Not pushed. Not retargeted to `master`, `phase-2/inventory`, or `feat/portal-customer-billing`. `size:exception` was not granted.
 
-Previous apply-progress for tasks 1.1–4.2 was read and merged below. Those tasks stay complete. This batch adds task 4.3 only. HTTP and admin screens stay out.
+Previous apply-progress for tasks 1.1–4.3 was read and merged below. Those tasks stay complete. This batch adds tasks 5.1, 5.2, 5.3, and 5.4 only. Local-node HTTP and admin screens stay out.
 
 ## Completed tasks
 
@@ -19,6 +19,10 @@ Previous apply-progress for tasks 1.1–4.2 was read and merged below. Those tas
 - [x] 4.1 PGlite contract, then the Postgres recipe catalog. `inventory_app`, forced RLS, no stock tables. Drizzle is not mocked.
 - [x] 4.2 SQLite contract, then the recipe copy repository. A missed publication keeps the last copy. An older or repeated version does not replace it. Drizzle is not mocked.
 - [x] 4.3 Skeleton allowlist: `inventory` is an allowed context. The only sqlite adapter is `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent. Postgres is not on the local-node source list.
+- [x] 5.1 Strict Zod command, import body, import report, cost, and publication payload in `shared/contracts/recipe-catalog.ts`, exported from `shared/contracts/index.ts`.
+- [x] 5.2 `apps/api-cloud/test/http/recipe-catalog.controller.test.ts` written first and observed failing. Fastify `inject` only. No `listen`.
+- [x] 5.3 `apps/api-cloud/src/http/recipe-catalog.controller.ts`. Catalog POST/GET, import POST, venue cost GET. `recipe.edit` and `inventory.view-cost`. Audit action `recipe.edit` records the version before and the version after.
+- [x] 5.4 api-cloud Excel `RecipeWorkbook`. Site price and catalog ids go through `ViewVenueMenu` on `@blackhole/orders/application/entry-port`. Module, composition, and `@blackhole/inventory` dependency are wired. `postgresRecipeCatalogs` builds the Postgres catalog store. The HTTP tests use the in-memory catalog adapter. Drizzle is not mocked. api-cloud does not import sqlite.
 
 ## Work unit 1 evidence
 
@@ -172,6 +176,39 @@ Task 4.3 only. Branch `p2-01/skeleton`. PR base `p2-01/sqlite`. HTTP and admin s
 
 `allowedContexts` now lists attendance, cash-register, inventory, invoicing, orders, and platform. A path segment named `sqlite` is ignored only inside `contexts/inventory/adapters/sqlite`. `cursor`, `outbox`, and `pairing` stay rejected, including inside that folder. `contexts/platform/adapters/sqlite` stays absent. `shared/sync` stays absent. The local-node source list is unchanged, so the Postgres adapter is not a node source.
 
+## Work unit: Cloud recipe HTTP (tasks 5.1–5.4)
+
+Tasks 5.1, 5.2, 5.3, and 5.4 only. Branch `p2-01/cloud-http`. PR base `p2-01/skeleton`. Local-node HTTP (5.5, 5.6) and admin screens (6.1) are not in this batch. Domain, use cases, Postgres repository, SQLite copy, and the skeleton allowlist were not edited.
+
+| Evidence | Required value |
+|---|---|
+| RED command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/recipe-catalog.controller.test.ts` — exit 1. `FAIL apps/api-cloud/test/http/recipe-catalog.controller.test.ts` — `Cannot find module '#src/http/recipe-catalog.controller.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. Contracts, the api-cloud inventory dependency, and the test file were already in place. |
+| Focused test command and exact result | Same command after the controller, Excel workbook, menu price adapter, module wiring, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. Routes mapped with `inject` and no `listen`: catalog POST, import POST, catalog GET, and venue cost GET. |
+| Inventory regression | `pnpm exec vitest run --project inventory` — exit 0. `Test Files  10 passed (10)`. `Tests  26 passed (26)`. Node prints `ExperimentalWarning: SQLite is an experimental feature`. |
+| Bootstrap | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/composition/bootstrap.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. Startup still has no persistence dialect. |
+| Typecheck | `pnpm exec tsc -b apps/api-cloud shared/contracts --pretty false` — exit 0. |
+| Import boundaries | `pnpm exec dependency-cruiser --output-type err apps/api-cloud shared/contracts` — exit 0. `no dependency violations found (262 modules, 1189 dependencies cruised)`. The TypeScript 7 transpiler warning is the known workspace warning. api-cloud does not import sqlite. |
+| Rollback boundary | `shared/contracts/recipe-catalog.ts` and its export, `apps/api-cloud` recipe HTTP, Excel workbook, menu price adapter, venue directory adapter, `postgresRecipeCatalogs`, the module and bootstrap provider list, the `@blackhole/inventory` and `xlsx` dependencies, and the task 5.1–5.4 marks in this change's `tasks.md` and `apply-progress.md`. |
+
+### RED then GREEN (tasks 5.1–5.4)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 5.2 → 5.3 | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/recipe-catalog.controller.test.ts` exit 1. `Cannot find module '#src/http/recipe-catalog.controller.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after the controller and adapters: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. |
+
+Scenarios covered in this batch:
+
+- An owner publishes onion and burger. The response is 200 with version 1 and author `user_owner`. The catalog id is `recipe_catalog_<brandId>`. GET returns that publication. The audit action is `recipe.edit` with `before.version` null and `after.version` 1.
+- A site administrator publishes. The response is 403 `{ error: "RecipeEditDenied" }`. Nothing is saved and no audit is written.
+- A waiter requests cost after the owner published the recipe and the menu price 20000. The response is 403 `{ error: "CostViewDenied" }`. The body has no `costCop`, `marginPercent`, `8000`, or `20000`.
+- The owner views that dish. The response is 200 `{ costCop: 8000, marginPercent: 60 }`.
+- Import of a workbook whose recipe line on row 17 names an unknown ingredient returns 409 `{ error: "RecipeImportRejected", rows: [{ row: 17, reason: "Unknown ingredient." }] }`. Nothing is saved.
+- An unknown field on the catalog command is 400. A purchase factor of 0 is 409 `{ error: "ZeroUnitFactor" }`.
+
+The Excel workbook reads sheets `ingredients` and `recipes`. Ingredient columns are `id`, `name`, `baseUnit`, `purchaseUnit`, `purchaseBaseQuantity`, `recipeUnit`, `recipeBaseQuantity`, and `referenceCostCop`. Recipe columns are `recipeId`, `recipeName`, `productId`, `variantId`, `kind`, `ingredientId`, `subRecipeId`, `stocked`, `netQuantity`, and `yieldPercent`. Blank rows keep their spreadsheet row number. The import body is `{ contents: base64 }`.
+
+`MenuSitePrice` calls `ViewVenueMenu` from `@blackhole/orders/application/entry-port` and matches the product or combo id. `postgresRecipeCatalogs` returns `DrizzleRecipeCatalogRepository`. The Nest default stays the in-memory catalog so startup has no dialect. HTTP tests pass that in-memory adapter. Drizzle is not mocked.
+
 ## Deviations from Design
 
 Unit 1 deviations above still stand.
@@ -206,17 +243,24 @@ Task 4.2 is about 930 lines: the copy SQL, Drizzle schema, `node:sqlite` session
 
 Task 4.3 now allows `inventory` and only `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent.
 
+This batch adds one deviation. The design names the Postgres repository as the catalog store. `postgresRecipeCatalogs` is that store, matching `postgresMenus`. The Nest module still defaults to the in-memory catalog because startup must stay dialect-free and `startApi` has no database client. Callers pass `recipeCatalogs` when a Postgres client exists. The HTTP tests pass the in-memory adapter and do not mock Drizzle.
+
+The design does not name Excel columns. The workbook adapter uses the two sheets and headers listed in the cloud HTTP work unit. The import HTTP body is strict JSON `{ contents: base64 }` so Zod can reject it with 400. The adapter still reads the decoded workbook bytes.
+
+A menu variant has no separate price. `MenuSitePrice` returns the product price when the variant id is present on that product, and null when the product lists variants and the id is not among them.
+
 ## Remaining Tasks
 
-- [ ] Phase 5: Cloud and node HTTP. `inject` only.
-- [ ] Phase 6: Admin screens. Cost only when the payload includes it.
+- [ ] 5.5 Failing local-node recipe copy HTTP test. POST 403 `RecipeRejected`. GET last copy. No Zod.
+- [ ] 5.6 Local-node recipe copy controller, sqlite wiring, skeleton source list. Node must not import postgres.
+- [ ] 6.1 Admin screens for ingredient, recipe, and import. Cost only when the payload includes it.
 
 ## Workload / PR Boundary
 
 - Mode: chained PR slice
 - Chain strategy: feature-branch-chain
-- Current work unit: task 4.3, skeleton allowlist
-- Branch: `p2-01/skeleton`
-- PR base: `p2-01/sqlite` (not `master`, not `phase-2/inventory`, not `p2-01/postgres`, not `feat/portal-customer-billing`)
-- Boundary: task 4.3 only. `tools/skeleton/skeleton.test.ts` allows the `inventory` context and only `contexts/inventory/adapters/sqlite`. `shared/sync`, cursor, and outbox stay absent. The local-node source list does not gain Postgres. No HTTP, admin screens, domain, use cases, Postgres repository, or SQLite repository edits.
-- Estimated review budget impact: about 40 lines in the skeleton test. Inside the 400-line budget. The change forecast stays High because later units remain. `size:exception` was not granted.
+- Current work unit: tasks 5.1–5.4, cloud recipe HTTP
+- Branch: `p2-01/cloud-http`
+- PR base: `p2-01/skeleton` (not `master`, not `phase-2/inventory`, not `p2-01/sqlite`, not `feat/portal-customer-billing`)
+- Boundary: tasks 5.1–5.4 only. Contracts, api-cloud catalog HTTP, Excel workbook, orders entry-port price lookup, module wiring, and `postgresRecipeCatalogs`. No local-node HTTP, admin screens, domain, use cases, Postgres repository, SQLite repository, or skeleton allowlist edits.
+- Estimated review budget impact: about 1650 lines (about 1570 new, about 85 modified). Above the 400-line budget. The assigned slice is the whole cloud HTTP unit, so the contract, controller, Excel adapter, and module stay together. `size:exception` was not granted. The change forecast stays High because local-node HTTP and admin screens remain.
