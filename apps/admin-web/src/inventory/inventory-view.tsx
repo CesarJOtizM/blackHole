@@ -141,7 +141,9 @@ export function SuppliesView({
   onTransfers: () => void;
   onScarcity: () => void;
 }) {
-  const [items, setItems] = useState(() => supplies.map((item) => [...item]));
+  const [items, setItems] = useState<string[][]>(() =>
+    supplies.map((item) => [...item]),
+  );
   const visible = items.filter((item) => {
     if (tab === "all") return true;
     if (tab === "low") return item[9] === "low";

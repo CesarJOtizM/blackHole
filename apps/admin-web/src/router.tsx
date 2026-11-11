@@ -56,11 +56,15 @@ const factorRoute = createRoute({
   ),
 });
 
-function venueSearch(search: Record<string, unknown>) {
-  if (search.venue === "usaquen" || search.venue === "chapinero") {
-    return { venue: search.venue };
+type VenueSearch = {
+  venue: "chapinero" | "usaquen";
+};
+
+function venueSearch(search: Record<string, unknown>): VenueSearch {
+  if (search.venue === "usaquen") {
+    return { venue: "usaquen" };
   }
-  return { venue: "chapinero" as const };
+  return { venue: "chapinero" };
 }
 
 function page<const TPath extends string>(
