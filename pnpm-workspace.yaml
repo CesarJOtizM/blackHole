@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   '@swc/core': true
+  '@parcel/watcher': true
   protobufjs: false
 
 catalog:

@@ -1,0 +1,89 @@
+.content {
+  padding: 4px 32px 48px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 28px;
+  align-items: start;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.block {
+  margin-top: 8px;
+}
+
+.blockTitle {
+  margin: 0 0 10px;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.photo {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  border: 1px dashed var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid var(--board);
+  border-radius: 12px;
+  background: var(--sheet);
+}
+
+.channel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.costLabel {
+  margin: 0;
+  color: var(--faded);
+  font-size: 14px;
+}
+
+.costValue {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .content {
+    padding-inline: 16px;
+  }
+
+  .grid,
+  .fields {
+    grid-template-columns: 1fr;
+  }
+}

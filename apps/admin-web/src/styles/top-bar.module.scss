@@ -1,0 +1,51 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  padding: 12px 32px;
+}
+
+.trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trailItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.link,
+.current {
+  color: var(--faded);
+  text-decoration: none;
+}
+
+.current {
+  color: var(--ink);
+}
+
+.venue {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--board);
+  border-radius: 999px;
+  background: var(--sheet);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
