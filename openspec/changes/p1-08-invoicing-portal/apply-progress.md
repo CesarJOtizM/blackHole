@@ -388,3 +388,41 @@ None.
 - Files in this batch: `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts`, `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.ts`, `contexts/invoicing/application/ports/invoicing-provider.ts` (`downloadPdf` default and `InvoicePdfDownloadFailed`), `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 335 lines (`get-portal-invoice.test.ts` 215, `get-portal-invoice.ts` 108, `invoicing-provider.ts` 11, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 2.13
+
+## Pair 2.13–2.14
+
+This batch adds use-case pair 2.13–2.14 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 3 files in 12ms. No fixes applied.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory store and a provider double. `RequestReinvoice` calls `isReinvoiceWindowOpen` and the injected store only. It does not open sockets or call Factus. The provider argument is accepted and not called. |
+| Rollback boundary | `contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts`, `contexts/invoicing/application/request-reinvoice/request-reinvoice.ts`, and the `#application/request-reinvoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.12 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/reinvoice-window.test.ts contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  15 passed (15)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.13 → 2.14 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/request-reinvoice/request-reinvoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/request-reinvoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — `Cannot find module '#application/request-reinvoice/request-reinvoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-reinvoice.ts` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The request calls `isReinvoiceWindowOpen` and does not reimplement the Bogota calendar. Outside the window, mode `off`, an unreadable instant, or an earlier instant returns `{ outcome: "rejected" }`, stores nothing, and does not call the provider. Inside the window, including the omitted mode (`same_day` default) and `same_month` across a Bogota date change, it stores one pending request (`companyId`, invoice number, `issuedAt`, `requestedAt` = command `at`) and returns `{ outcome: "recorded" }` without the provider. A second request for the same company and invoice number does not create a second record. Another company's invoice is not stored against this company. The consumer-final document is not changed and the invoice payload is not logged. The store lives in the use case file. No new port, no `link-signer.ts`, `portal-repository.ts`, or `portal-request-limiter.ts`, no `entry-port.ts` export, and no `IssueCreditNote` call. The provider stays an unused constructor argument because this slice never calls it; Biome rejects an unread private field. Approval, the credit note, and the second invoice remain task 2.15.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.13 and 2.14 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, Factus fetch, `ports/link-signer.ts`, `portal-repository.ts`, `portal-request-limiter.ts`, or `entry-port.ts` export. Task 2.15 was not started.
+- Files in this batch: `contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts`, `contexts/invoicing/application/request-reinvoice/request-reinvoice.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 387 lines (`request-reinvoice.test.ts` 295, `request-reinvoice.ts` 91, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 2.15
+
