@@ -18,6 +18,8 @@ Delivery: stacked RED/GREEN pairs. Pair 1.1–1.2 started the chain. Pair 1.3–
 - [x] 1.10 GREEN `domain/reinvoice-window.ts` and its export in `domain/index.ts`. No provider call. The domain does not call the network.
 - [x] 2.1 RED `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
 - [x] 2.2 GREEN `application/look-up-portal-buyer/look-up-portal-buyer.ts`. `#application/look-up-portal-buyer/*`. Not exported from `entry-port.ts`. `ProviderRateGate` unchanged.
+- [x] 2.3 RED `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
+- [x] 2.4 GREEN `application/request-remembered-code/request-remembered-code.ts`. `ports/one-time-code-sender.ts` and `.contract.ts`. Not exported from `entry-port.ts`.
 
 ## Work Unit Evidence
 
@@ -69,8 +71,11 @@ None.
 
 ## Remaining Tasks
 
-- [ ] 1.9 RED `domain/reinvoice-window.test.ts`
-- [ ] 1.10 onward
+- [x] 1.9 RED `domain/reinvoice-window.test.ts`
+- [x] 1.10 GREEN `domain/reinvoice-window.ts`
+- [x] 2.1–2.2 `look-up-portal-buyer`
+- [x] 2.3–2.4 `request-remembered-code`
+- [ ] 2.5 onward
 
 ## Workload / PR Boundary
 
@@ -192,3 +197,427 @@ None.
 - Files in this batch: `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts`, `contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
 - Estimated review budget impact: this pair is 474 lines (`look-up-portal-buyer.test.ts` 281, `look-up-portal-buyer.ts` 192, plus 1 `package.json` import). That is 74 lines over the 400-line review budget. `size:exception` was not granted.
 - Next unchecked task: 2.3
+
+## Pair 2.3–2.4
+
+This batch adds use-case pair 2.3–2.4 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `RequestRememberedCode` calls the injected store, the caller-supplied digest and digits, and `OneTimeCodeSender.send` only. It does not open sockets, call Twilio or SendGrid, sign HMAC, or touch Postgres. `oneTimeCodeSenderContract` is not executed in this slice; an adapter imports it in task 3.4. |
+| Rollback boundary | `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`, `contexts/invoicing/application/request-remembered-code/request-remembered-code.ts`, `contexts/invoicing/application/ports/one-time-code-sender.ts`, `contexts/invoicing/application/ports/one-time-code-sender.contract.ts`, and the `#application/request-remembered-code/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pair 2.1–2.2 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.3 → 2.4 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` exit 1. `FAIL contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — `Cannot find module '#application/ports/one-time-code-sender.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-remembered-code.ts`, `ports/one-time-code-sender.ts`, `ports/one-time-code-sender.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+The sender message matches the design: `channel`, `destination`, `code`, `companyName`, `expiresInMinutes`. `expiresInMinutes` is 10, from `ONE_TIME_CODE_TTL_MS`. An unconfigured sender throws `OneTimeCodeDeliveryFailed`; the use case does not catch it and does not store the record. The clear code is passed only to `send`. It is absent from the result, the stored record, and console logs. A remembered contact for another company, or no contact, returns `{ outcome: "hidden" }` and does not send. The result does not include billing data.
+
+`RememberedContactStore` lives in the use case file, as `PortalBuyerLookupStore` does. `portal-repository.ts` stays in task 2.16. Digest and digits are constructor arguments. `ports/code-digest.ts` stays in task 2.6. The use case is not exported from `entry-port.ts`. The contract suite is written and not run here.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.3 and 2.4 only. No HTTP, UI, SQL, Twilio adapter, crypto, `code-digest`, or `entry-port.ts` export.
+- Files in this batch: `contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts`, `contexts/invoicing/application/request-remembered-code/request-remembered-code.ts`, `contexts/invoicing/application/ports/one-time-code-sender.ts`, `contexts/invoicing/application/ports/one-time-code-sender.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 458 lines (`request-remembered-code.test.ts` 285, `request-remembered-code.ts` 115, `one-time-code-sender.ts` 26, `one-time-code-sender.contract.ts` 31, plus 1 `package.json` import). That is 58 lines over the 400-line review budget. `size:exception` was not granted.
+- Next unchecked task: 2.5
+
+## Pair 2.5–2.6
+
+This batch adds use-case pair 2.5–2.6 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `VerifyRememberedCode` calls the injected store and `CodeDigest.matches` only, then `verifyOneTimeCode`. It does not open sockets, call Twilio, Factus, or Postgres, and it does not sign HMAC. `codeDigestContract` is not executed in this slice; a crypto adapter imports it in tasks 3.5–3.6. |
+| Rollback boundary | `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts`, `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.ts`, `contexts/invoicing/application/ports/code-digest.ts`, `contexts/invoicing/application/ports/code-digest.contract.ts`, and the `#application/verify-remembered-code/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.4 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts contexts/invoicing/application/look-up-portal-buyer/look-up-portal-buyer.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  9 passed (9)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.5 → 2.6 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` exit 1. With no import pattern yet, the same command failed as `Missing "#application/verify-remembered-code/verify-remembered-code.js" specifier in "@blackhole/invoicing" package`. After adding only `#application/verify-remembered-code/*` and with no use case file yet: `FAIL contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts` — `Cannot find module '#application/verify-remembered-code/verify-remembered-code.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `verify-remembered-code.ts`, `ports/code-digest.ts`, `ports/code-digest.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+The sequence diagram labels the customer response "remembered data (masked)". This use case returns the stored billing fields for confirmation (`documentType`, `documentNumber`, `personType`, `name`, `email`, `municipalityCode`) and does not mask them. HTTP masking is not this slice.
+
+`RememberedCodeStore` lives in the use case file, as `RememberedContactStore` does. `portal-repository.ts` stays in task 2.16. The use case is not exported from `entry-port.ts`. `codeDigestContract` is written and not run here. `CodeDigest.matches` answers whether the clear code matches the stored digest. `verifyOneTimeCode` still applies expiry, attempts, spent, and lock. When `matches` is true the use case passes the stored digest through; when it is not, it passes a different string so the domain comparison stays in the domain. The use case does not hash. A blank code, a missing row, or another company's row returns `{ outcome: "hidden" }` and does not call `matches`. The fifth wrong check saves `attemptsRemaining` 0. A later check stays locked, does not call `matches`, and reveals nothing. A spent code saves the spent record and reveals nothing.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.5 and 2.6 only. No HTTP, UI, SQL, Twilio, crypto adapter, Postgres, or `entry-port.ts` export. Task 2.7 was not started.
+- Files in this batch: `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts`, `contexts/invoicing/application/verify-remembered-code/verify-remembered-code.ts`, `contexts/invoicing/application/ports/code-digest.ts`, `contexts/invoicing/application/ports/code-digest.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 371 lines (`verify-remembered-code.test.ts` 230, `verify-remembered-code.ts` 111, `code-digest.ts` 3, `code-digest.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 2.7
+
+## Pair 2.7–2.8
+
+This batch adds use-case pair 2.7–2.8 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | N/A, in-memory ports. `RecordBillingData` calls `recordBillingData`, the injected store, `MunicipalityCatalog.find`, and `BillingDataNotifier.billingDataReceived` only. It does not open sockets, call Factus, Twilio, or Postgres, and it does not seed municipalities. `municipalityCatalogContract` and `billingDataNotifierContract` are not executed in this slice; an adapter imports them in tasks 3.7–3.8 and 4.2. |
+| Rollback boundary | `contexts/invoicing/application/record-billing-data/record-billing-data.test.ts`, `contexts/invoicing/application/record-billing-data/record-billing-data.ts`, `contexts/invoicing/application/ports/municipality-catalog.ts`, `contexts/invoicing/application/ports/municipality-catalog.contract.ts`, `contexts/invoicing/application/ports/billing-data-notifier.ts`, `contexts/invoicing/application/ports/billing-data-notifier.contract.ts`, and the `#application/record-billing-data/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.6 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts contexts/invoicing/domain/billing-data.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.7 → 2.8 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` exit 1. With no import pattern yet: `Missing "#application/record-billing-data/record-billing-data.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/record-billing-data/*` and with no use case file yet: `FAIL contexts/invoicing/application/record-billing-data/record-billing-data.test.ts` — `Cannot find module '#application/record-billing-data/record-billing-data.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `record-billing-data.ts`, `ports/municipality-catalog.ts`, `ports/municipality-catalog.contract.ts`, `ports/billing-data-notifier.ts`, `ports/billing-data-notifier.contract.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+The sequence says validate DANE before store. This use case calls `MunicipalityCatalog.find` and passes a hit through to `recordBillingData`. A miss, including `99999`, still follows `recordBillingData`, so an unknown code is stored. Rejecting an unknown DANE code stays in tasks 3.7–3.8. A blank code stays `MissingMunicipalityCode` from the domain. `InvalidNitCheckDigit` is the only domain error mapped to `{ outcome: "field_error", field: "documentNumber" }`. Other domain throws propagate.
+
+`BillingDataStore` lives in the use case file, as `RememberedCodeStore` does. `portal-repository.ts` stays in task 2.16. The use case is not exported from `entry-port.ts`. `realtime-hub.ts` is not edited. The notifier stand-in is `billingDataReceived({ checkId })`. The contracts are written and not run here. No Factus municipalities JSON and no SQL. The use case does not log the billing payload.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.7 and 2.8 only. No HTTP, UI, SQL, Twilio, Postgres, local-node, sqlite, sync, Factus, or `entry-port.ts` export. Task 2.9 was not started.
+- Files in this batch: `contexts/invoicing/application/record-billing-data/record-billing-data.test.ts`, `contexts/invoicing/application/record-billing-data/record-billing-data.ts`, `contexts/invoicing/application/ports/municipality-catalog.ts`, `contexts/invoicing/application/ports/municipality-catalog.contract.ts`, `contexts/invoicing/application/ports/billing-data-notifier.ts`, `contexts/invoicing/application/ports/billing-data-notifier.contract.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 377 lines (`record-billing-data.test.ts` 213, `record-billing-data.ts` 105, `municipality-catalog.ts` 3, `municipality-catalog.contract.ts` 22, `billing-data-notifier.ts` 7, `billing-data-notifier.contract.ts` 26, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted.
+- Next unchecked task: 2.9
+
+## Pair 2.9–2.10
+
+This batch adds use-case pair 2.9–2.10 and stops there. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. The run is after `pnpm exec biome check --write` on the touched files. The final Biome run reported `Checked 3 files in 18ms. No fixes applied.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory store. `RequestDataDeletion` calls `verifyOneTimeCode`, `deleteBillingData`, the injected store, and `CodeDigest.matches` only. It does not open sockets, call Twilio, Factus, or Postgres. |
+| Rollback boundary | `contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts`, `contexts/invoicing/application/request-data-deletion/request-data-deletion.ts`, and the `#application/request-data-deletion/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.8 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/verify-remembered-code/verify-remembered-code.test.ts contexts/invoicing/domain/billing-data.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.9 → 2.10 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` exit 1. With no import pattern yet: `Missing "#application/request-data-deletion/request-data-deletion.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/request-data-deletion/*` and with no use case file yet: `FAIL contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts` — `Cannot find module '#application/request-data-deletion/request-data-deletion.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-data-deletion.ts` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The code is the one already stored for the registered row. `CodeDigest.matches` and `verifyOneTimeCode` decide it. A blank code, a missing row, or another company's row returns `{ outcome: "hidden" }` and does not save. A rejected, locked, expired, or spent code saves the updated one-time-code record and leaves `deletedAt` null with the same invoice numbers. An accepted code saves the record returned by `deleteBillingData({ record, at })`: `deletedAt` is the command `at`, the invoice numbers stay, and the spent code is stored on that same row. `findUsable` offers billing fields only while `deletedAt` is null, so a later lookup for that company and document returns nothing while the saved row still holds the snapshots. `DataDeletionStore` lives in the use case file. No new port. The use case is not exported from `entry-port.ts`. It does not log the code or the billing payload.
+
+### Issues Found
+
+None. The first executable draft expected `matches` to record the rejected code. `CodeDigest.matches` receives the stored digest, as in `VerifyRememberedCode`. That expectation was corrected before the passing run.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.9 and 2.10 only. No HTTP, UI, SQL, Twilio, Postgres, local-node, sqlite, sync, Factus, `entry-port.ts`, or `realtime-hub.ts`. Task 2.11 was not started.
+- Files in this batch: `contexts/invoicing/application/request-data-deletion/request-data-deletion.test.ts`, `contexts/invoicing/application/request-data-deletion/request-data-deletion.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 486 lines (`request-data-deletion.test.ts` 339, `request-data-deletion.ts` 146, plus 1 `package.json` import). That is 86 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is included in the pull request.
+- Next unchecked task: 2.11
+
+## Pair 2.11–2.12
+
+This batch adds use-case pair 2.11–2.12 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 4 files in 16ms. Fixed 3 files.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory provider double. `GetPortalInvoice` calls `revealPortalLink`, `isReinvoiceWindowOpen`, and the injected `downloadPdf` only. It does not open sockets, call Factus or mail, sign HMAC, or touch Postgres. |
+| Rollback boundary | `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts`, `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.ts`, the `downloadPdf` default and `InvoicePdfDownloadFailed` in `contexts/invoicing/application/ports/invoicing-provider.ts`, and the `#application/get-portal-invoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.10 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/portal-link.test.ts contexts/invoicing/domain/reinvoice-window.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  14 passed (14)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.11 → 2.12 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/get-portal-invoice/get-portal-invoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/get-portal-invoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — `Cannot find module '#application/get-portal-invoice/get-portal-invoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `get-portal-invoice.ts`, `downloadPdf(number)` on `ports/invoicing-provider.ts`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The public path stays `/f/<referenceCode>.<hmac>`. This slice does not compute HMAC: the command carries `referenceCode` and `suffixAccepted`. The already-loaded document (`pending`, or `accepted` with `number` and `issuedAt`) and optional `windowMode` are on the command because the use case does not open a repository. A hidden link, a missing suffix on an invoice link, a reference that does not match the document, a pending document, and a closed window (`same_day` next Bogota day, or `off`) do not call `downloadPdf`. A visible `pre_bill` returns `{ outcome: "empty" }` without account fields. The issued pre-bill is still time-valid under `revealPortalLink`; expiry is not reimplemented. `downloadPdf` is a concrete method that rejects with `InvoicePdfDownloadFailed`, same as `lookupAcquirer`. Factus and memory do not override it. No mail method exists and none is called. Provider failure returns `{ outcome: "empty" }` and does not reveal account fields. The use case is not exported from `entry-port.ts`. The hybrid outage scenario stays deferred under D-37 and is not a test of this slice.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.11 and 2.12 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, Factus fetch, `ports/link-signer.ts`, or `entry-port.ts` export. Task 2.13 was not started.
+- Files in this batch: `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts`, `contexts/invoicing/application/get-portal-invoice/get-portal-invoice.ts`, `contexts/invoicing/application/ports/invoicing-provider.ts` (`downloadPdf` default and `InvoicePdfDownloadFailed`), `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 335 lines (`get-portal-invoice.test.ts` 215, `get-portal-invoice.ts` 108, `invoicing-provider.ts` 11, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 2.13
+
+## Pair 2.13–2.14
+
+This batch adds use-case pair 2.13–2.14 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 3 files in 12ms. No fixes applied.` |
+| Runtime harness command/scenario and exact result | N/A, in-memory store and a provider double. `RequestReinvoice` calls `isReinvoiceWindowOpen` and the injected store only. It does not open sockets or call Factus. The provider argument is accepted and not called. |
+| Rollback boundary | `contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts`, `contexts/invoicing/application/request-reinvoice/request-reinvoice.ts`, and the `#application/request-reinvoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.12 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/domain/reinvoice-window.test.ts contexts/invoicing/application/get-portal-invoice/get-portal-invoice.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  15 passed (15)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.13 → 2.14 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/request-reinvoice/request-reinvoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/request-reinvoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — `Cannot find module '#application/request-reinvoice/request-reinvoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `request-reinvoice.ts` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+None — implementation matches design. The request calls `isReinvoiceWindowOpen` and does not reimplement the Bogota calendar. Outside the window, mode `off`, an unreadable instant, or an earlier instant returns `{ outcome: "rejected" }`, stores nothing, and does not call the provider. Inside the window, including the omitted mode (`same_day` default) and `same_month` across a Bogota date change, it stores one pending request (`companyId`, invoice number, `issuedAt`, `requestedAt` = command `at`) and returns `{ outcome: "recorded" }` without the provider. A second request for the same company and invoice number does not create a second record. Another company's invoice is not stored against this company. The consumer-final document is not changed and the invoice payload is not logged. The store lives in the use case file. No new port, no `link-signer.ts`, `portal-repository.ts`, or `portal-request-limiter.ts`, no `entry-port.ts` export, and no `IssueCreditNote` call. The provider stays an unused constructor argument because this slice never calls it; Biome rejects an unread private field. Approval, the credit note, and the second invoice remain task 2.15.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.13 and 2.14 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, Factus fetch, `ports/link-signer.ts`, `portal-repository.ts`, `portal-request-limiter.ts`, or `entry-port.ts` export. Task 2.15 was not started.
+- Files in this batch: `contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts`, `contexts/invoicing/application/request-reinvoice/request-reinvoice.ts`, `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 387 lines (`request-reinvoice.test.ts` 295, `request-reinvoice.ts` 91, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 2.15
+
+
+## Pair 2.15–2.16
+
+This batch adds use-case pair 2.15–2.16 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 10 files in 28ms. Fixed 9 files.` |
+| Runtime harness command/scenario and exact result | N/A. In-memory doubles only. `ApproveReinvoice` reads the stored request, delegates the credit note to `IssueCreditNote`, and then calls the injected `IssueDocument` once. It does not open sockets, and it does not call Factus, HTTP, Twilio, or Postgres. |
+| Rollback boundary | `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts`, `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.ts`, `contexts/invoicing/application/ports/link-signer.ts`, `contexts/invoicing/application/ports/link-signer.contract.ts`, `contexts/invoicing/application/ports/portal-repository.ts`, `contexts/invoicing/application/ports/portal-repository.contract.ts`, `contexts/invoicing/application/ports/portal-request-limiter.ts`, `contexts/invoicing/application/ports/portal-request-limiter.contract.ts`, the eight portal exports in `contexts/invoicing/application/entry-port.ts`, and the `#application/approve-reinvoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.14 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/issue-credit-note/issue-credit-note.test.ts contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  8 passed (8)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.15 → 2.16 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/approve-reinvoice/approve-reinvoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/approve-reinvoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` — `Cannot find module '#application/approve-reinvoice/approve-reinvoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after the use case, the three ports and contracts, the eight `entry-port.ts` exports, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+`ApproveReinvoice` delegates the credit note to `IssueCreditNote` and does not call `validateCreditNote` or send a second concept code. Factus already stamps `correction_concept_code` `"2"` inside that validation. The application test cannot import `adapters/factus` (dependency-cruiser). It asserts one `validateCreditNote` payload whose only keys are `referenceCode` and `originalReferenceCode`, then one new-invoice call. The literal `"2"` is not repeated on the use-case payload.
+
+`IssueDocument` needs a queued closure, tax rules, a matching sale base, and a document balance, so the test injects a subclass that records `execute` and does not call the provider. The two document operations are that credit note and that one `execute`. The document provider stays at zero calls.
+
+The approval rechecks `isReinvoiceWindowOpen` with the stored `issuedAt`, the approval `at`, and the company mode. A closed window, mode `off`, or an unreadable stored instant returns `{ outcome: "rejected" }` and calls neither `IssueCreditNote` nor the provider. The pending row stays pending and the consumer-final document keeps the same field values. Missing `sale.credit-note` still calls `IssueCreditNote` once; that call returns `{ outcome: "denied" }` before the provider, the note store, and the audit, and the new invoice is not issued. The single audit on the open path is the `sale.credit-note` audit written by `IssueCreditNote`. No second audit is written. Another company's invoice number is rejected. The invoice payload is not logged.
+
+`PortalRepository.find` is the stored request. After the credit note is issued and the new invoice is executed, `save` writes the same row with `status: approved`. A later approval finds that status and returns `{ outcome: "rejected" }` before `IssueCreditNote`. A denied or closed-window approval does not save, so the row stays pending. `LinkSigner` signs and verifies an `EvaluatedPortalLink` (`expiresAt`, the domain field) and does no HMAC. `PortalRequestLimiter.acquire` takes a token and an IP and has no window table. Neither is called by this approval: it is a staff permission check, not a public token or a signed link. The contract suites are not executed against a live adapter.
+
+### Issues Found
+
+A second approval of the same row is rejected. The first success saves `status: approved`, and a later approval does not call `IssueCreditNote` or `IssueDocument`.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.15 and 2.16 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, or Factus fetch. `adapters/factus` was not edited. Task 3.1 was not started.
+- Files in this batch: `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts`, `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.ts`, `contexts/invoicing/application/ports/link-signer.ts`, `contexts/invoicing/application/ports/link-signer.contract.ts`, `contexts/invoicing/application/ports/portal-repository.ts`, `contexts/invoicing/application/ports/portal-repository.contract.ts`, `contexts/invoicing/application/ports/portal-request-limiter.ts`, `contexts/invoicing/application/ports/portal-request-limiter.contract.ts`, `contexts/invoicing/application/entry-port.ts` (eight exports), `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 790 lines (`approve-reinvoice.test.ts` 535, `approve-reinvoice.ts` 94, `link-signer.ts` 11, `link-signer.contract.ts` 24, `portal-repository.ts` 20, `portal-repository.contract.ts` 31, `portal-request-limiter.ts` 8, `portal-request-limiter.contract.ts` 26, `entry-port.ts` 40 added, plus 1 `package.json` import). That is 390 lines over the 400-line review budget. The ports and the eight exports were kept. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.1
+
+
+## Pair 3.1–3.2
+
+This batch adds ceiling pair 3.1–3.2 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project platform contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts contexts/platform/adapters/postgres/drizzle-provider-rate-gate.contract.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. Memory file is the shared contract (5). Drizzle file is that contract plus the existing shared-window case (6). The run is after `pnpm exec biome check --write` on the four touched source files. That Biome run reported `Checked 4 files in 10ms. Fixed 4 files.` |
+| Runtime harness command/scenario and exact result | The drizzle contract is the runtime boundary. It opens PGlite, applies `0005_provider_rate.sql`, and runs `providerRateGateContract` plus the two-caller window. Same command as the focused test, exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. Not N/A. |
+| Rollback boundary | `contexts/platform/application/ports/provider-rate-gate.contract.ts`, `contexts/platform/application/ports/provider-rate-gate.ts`, `contexts/platform/adapters/memory/in-memory-provider-rate-gate.ts`, and `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.ts`. Reverting those restores `acquire(taxId, at)` and the fixed 80 comparison. Use-case pairs 1.1–2.16 stay in place. No migration was added. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.1 → 3.2 | `pnpm exec vitest run --project platform contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts` exit 1. Vitest ran the new case; it did not reject the third argument before the body. `FAIL \|platform\| contexts/platform/adapters/memory/in-memory-provider-rate-gate.contract.test.ts > given a caller that passes ceiling 60, when the 61st acquire runs, then it is refused with the seconds left in the minute`. `AssertionError: expected { allowed: true } to deeply equal { allowed: false, retryAfterSeconds: 50 }`. Expected `allowed: false` and `retryAfterSeconds: 50`; received `{ allowed: true }`. `Test Files  1 failed (1)`. `Tests  1 failed \| 4 passed (5)`. The four existing two-argument cases passed. | Same memory file plus `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.contract.test.ts` after `acquire(taxId, at, ceiling = providerRequestsPerMinute)` on the port, the memory gate, and the drizzle gate, and after Biome: exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`. |
+
+### Deviations from Design
+
+TypeScript rejects a parameter default on an abstract method (`TS2371`). The port takes `ceiling?: number`. The memory gate and the drizzle gate default that argument to `providerRequestsPerMinute` (80). A caller that passes `60` stops at 60. A call that omits the third argument still stops at 80. The drizzle comparison uses the ceiling argument. No column and no migration. Two-argument callers in `issuance-gate.ts`, `worker.ts`, and `worker.test.ts` were not edited. `PortalLookupLimiter` and `look-up-portal-buyer.ts` were not edited. Twilio was not pulled in.
+
+### Issues Found
+
+None. A ceiling below 1 or above 80 is out of this pair and is passed through with no clamp.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.1 and 3.2 only. No Twilio, HTTP, UI, Factus, local-node, sqlite, sync, or portal lookup retune. Task 3.3 was not started.
+- Files in this batch: `contexts/platform/application/ports/provider-rate-gate.contract.ts`, `contexts/platform/application/ports/provider-rate-gate.ts`, `contexts/platform/adapters/memory/in-memory-provider-rate-gate.ts`, `contexts/platform/adapters/postgres/drizzle-provider-rate-gate.ts`, `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 30 lines (27 additions + 3 deletions): contract +18, port +5/−1, memory +2/−1, drizzle +2/−1. That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.3
+
+## Pair 3.3–3.4
+
+This batch adds adapter pair 3.3–3.4 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Task 3.5 was not started.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. The run is after `pnpm exec biome check --write` on the two TypeScript files and `contexts/invoicing/package.json`. That Biome run reported `Checked 3 files in 14ms. Fixed 3 files.` |
+| Runtime harness command/scenario and exact result | Same command. `globalThis.fetch` is stubbed. SMS is asserted as `POST https://api.twilio.com/2010-04-01/Accounts/{accountSid}/Messages.json`. Email is asserted as `POST https://api.sendgrid.com/v3/mail/send`. No live Twilio or SendGrid call. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.ts`, and the `#adapters/twilio/*` import in `contexts/invoicing/package.json`. Reverting those leaves pairs 1.1–3.2 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/request-remembered-code/request-remembered-code.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.3 → 3.4 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts` — `Missing "#adapters/twilio/twilio-one-time-code-sender.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `twilio-one-time-code-sender.ts`, `#adapters/twilio/*`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`. |
+
+### Deviations from Design
+
+The design does not specify the message copy. The body is `{companyName} code {code}. It expires in {minutes} minutes.` The email subject is `{companyName} verification code` and does not contain the code. SMS is `POST /2010-04-01/Accounts/{AccountSid}/Messages.json` with Basic auth and form fields `To`, `From`, and `Body`. Email is `POST https://api.sendgrid.com/v3/mail/send` with `Authorization: Bearer` and a `text/plain` body. A missing secret, a blank secret, a non-OK response, or a rejected `fetch` throws `OneTimeCodeDeliveryFailed` with the fixed port message. The clear code is not written to the console and is not put in the error.
+
+The RED test lives at `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, the folder task 3.3 names. No file was added under `adapters/memory`. The test's secrets double is an in-memory `Secrets` subclass in that file. `InMemorySecrets` from `contexts/platform` is another context's adapter, which dependency-cruiser forbids. No secret file and no `FileSecrets`. `oneTimeCodeSenderContract` runs here. `delivered()` is filled by a test wrapper after `send` resolves. The adapter does not keep the clear code. The SMS and email tests assert the request shape.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.3 and 3.4 only. No HMAC, Postgres, Factus `downloadPdf`, local-node, sqlite, outbox, or sync. Task 3.5 was not started.
+- Files in this batch: `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts`, `contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.ts`, `contexts/invoicing/package.json` (`#adapters/twilio/*`), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 434 lines (`twilio-one-time-code-sender.test.ts` 315, `twilio-one-time-code-sender.ts` 116, `package.json` +2/−1). That is 34 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.5
+
+## Pair 3.5–3.6
+
+This batch adds adapter pair 3.5–3.6 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Task 3.7 was not started. The Twilio adapter was not edited.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. The run is after `pnpm exec biome check --write` on the two TypeScript files and `contexts/invoicing/package.json`. That Biome run reported `Checked 3 files in 10ms. Fixed 1 file.` |
+| Runtime harness command/scenario and exact result | Same command. HMAC-SHA256 runs through `node:crypto`. `portal.link-key` is read from an in-memory `Secrets` double. No secret file and no network. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts`, `contexts/invoicing/adapters/crypto/hmac-link-signer.ts`, and the `#adapters/crypto/*` import in `contexts/invoicing/package.json`. Reverting those leaves pairs 1.1–3.4 in place. Domain and Twilio stay as they were. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts contexts/invoicing/domain/portal-link.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.5 → 3.6 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` — `Missing "#adapters/crypto/hmac-link-signer.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `hmac-link-signer.ts`, `#adapters/crypto/*`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. |
+
+### Deviations from Design
+
+The signed token is `/f/<base64url(canonical JSON)>.<hmac>`. The left segment is the link `{purpose, tenantId, venueId, checkId, exp}`, with `exp` copied from `expiresAt`. It is not the Factus reference code. `LinkSigner.sign` receives only `EvaluatedPortalLink`, and `verify` has to return that link. `GetPortalInvoice` still treats the Factus reference as `suffixAccepted`. A matching suffix verifies. A flipped payload, a flipped hmac, an appended `.other`, or a bare hmac returns null. Expiry stays in `revealPortalLink`.
+
+`CodeDigest.matches` is synchronous, so `HmacCodeDigest.open` reads `portal.link-key` once and `matches` compares HMAC-SHA256 of the clear code, base64url, with `timingSafeEqual`. Same algorithm and the same secret as the link. No second hash. A missing or blank key throws `PortalLinkKeyUnavailable` from `sign` and `open`. `verify` returns null. The design does not name that error. An env value named `portal.link-key` is not read. No secret file.
+
+`linkSignerContract` and `codeDigestContract` both run in this slice. The domain was not edited and does not import `node:crypto`.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.5 and 3.6 only. No Postgres, Factus `downloadPdf`, local-node, sqlite, outbox, or sync. The Twilio adapter was not edited. Task 3.7 was not started.
+- Files in this batch: `contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts`, `contexts/invoicing/adapters/crypto/hmac-link-signer.ts`, `contexts/invoicing/package.json` (`#adapters/crypto/*`), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 347 lines (`hmac-link-signer.test.ts` 158, `hmac-link-signer.ts` 186, `package.json` +2/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.7
+
+## Pair 3.9–3.10
+
+This batch adds adapter pair 3.9–3.10 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Tasks 3.7 and 3.8 were not started. The Factus municipalities JSON, SQL, and Postgres repos were not added.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  18 passed (18)`. The run is after `pnpm exec biome check --write` on the two Factus files. That Biome run reported `Checked 2 files in 20ms. Fixed 2 files.` |
+| Runtime harness command/scenario and exact result | Same command. `globalThis.fetch` is stubbed. `downloadPdf` is asserted as `GET {base}/v2/bills/{number}/download-pdf` and the returned bytes are the decoded `pdf_base_64_encoded` payload. `lookupAcquirer` stays `GET {base}/v2/dian/acquirer` and no recorded call hits `/v2/bills/validate`. No live Factus call. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` and `contexts/invoicing/adapters/factus/factus-invoicing-provider.ts`. Reverting those removes `downloadPdf` and the new assertions. `lookupAcquirer` returns to the same GET it already performed. Pairs 1.1–3.6 stay in place. Tasks 3.7 and 3.8 stay unchecked. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.9 → 3.10 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts`. `Test Files  1 failed (1)`. `Tests  3 failed \| 15 passed (18)`. The success case threw `InvoicePdfDownloadFailed: The provider could not download the invoice PDF.` from the port default at `invoicing-provider.ts:119` (`Promise.reject(new InvoicePdfDownloadFailed())`). The failure cases then asserted `expected undefined to match object { method: "GET", url: "https://recorded.example.test/v2/bills/SETP990000550/download-pdf" }` and received `undefined`, because the default does not call Factus. | Same command after `downloadPdf` on `FactusInvoicingProvider` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  18 passed (18)`. |
+
+### Deviations from Design
+
+`design.md` names `downloadPdf(number)` and does not name the HTTP path or the response field. The adapter GETs `/v2/bills/{number}/download-pdf` and returns `Uint8Array` decoded from Factus `data.pdf_base_64_encoded`. That is the published Factus v2 download (the same `/v2` bill family this adapter already calls) and the port's return type. `lookupAcquirer` was already `GET /v2/dian/acquirer`. Its method was not changed. The new assertion records two calls (token, then acquirer) and rejects any URL that contains `/v2/bills/validate`. No municipalities JSON, SQL, or Postgres repo was added. Task 3.7 stays unchecked.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.9 and 3.10 only. No municipalities JSON, SQL, Postgres, local-node, sqlite, outbox, or sync. Tasks 3.7, 3.8, and 4.1 were not started.
+- Files in this batch: `contexts/invoicing/adapters/factus/factus-invoicing-provider.test.ts`, `contexts/invoicing/adapters/factus/factus-invoicing-provider.ts`, `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 114 lines (`factus-invoicing-provider.test.ts` +78, `factus-invoicing-provider.ts` +35/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.7
+

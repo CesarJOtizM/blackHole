@@ -81,6 +81,13 @@ export class AcquirerLookupFailed extends Error {
   }
 }
 
+export class InvoicePdfDownloadFailed extends Error {
+  constructor() {
+    super("The provider could not download the invoice PDF.");
+    this.name = "InvoicePdfDownloadFailed";
+  }
+}
+
 export interface CreditNoteValidation {
   referenceCode: string;
   originalReferenceCode: string;
@@ -106,6 +113,10 @@ export abstract class InvoicingProvider<TValidation = void> {
 
   lookupAcquirer(_query: AcquirerQuery): Promise<AcquirerLookup> {
     return Promise.reject(new AcquirerLookupFailed());
+  }
+
+  downloadPdf(_number: string): Promise<Uint8Array> {
+    return Promise.reject(new InvoicePdfDownloadFailed());
   }
 
   validateCreditNote(_note: CreditNoteValidation): Promise<void> {

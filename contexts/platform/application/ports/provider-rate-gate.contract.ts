@@ -36,6 +36,24 @@ export function providerRateGateContract(
     expect(refused).toEqual({ allowed: false, retryAfterSeconds: 50 });
   });
 
+  it("given a caller that passes ceiling 60, when the 61st acquire runs, then it is refused with the seconds left in the minute", async () => {
+    const gate = await createGate();
+    const ceiling = 60;
+
+    const allowed = [];
+    for (let index = 0; index < ceiling; index += 1) {
+      allowed.push(await gate.acquire(taxId, at, ceiling));
+    }
+    const refused = await gate.acquire(taxId, at, ceiling);
+
+    expect(allowed).toEqual(
+      Array.from({ length: ceiling }, () => ({
+        allowed: true,
+      })),
+    );
+    expect(refused).toEqual({ allowed: false, retryAfterSeconds: 50 });
+  });
+
   it("given 80 requests in one minute, when the next minute starts, then acquire is allowed", async () => {
     const gate = await createGate();
     const firstMinute = new Date("2026-10-22T12:00:00.000Z");

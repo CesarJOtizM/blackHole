@@ -6,7 +6,7 @@ modules: [M6]
 bounded_contexts: [reporting, contracts, sync]
 apps: [api-cloud, local-node, venue-app, admin-web]
 status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: pending, verify: pending, archive: pending}
 depends_on: [p0-02-skeleton-and-sync, p0-05-roles-and-permissions, p1-02-dining-room-and-kitchen, p1-03-cash-register, p1-05-electronic-invoicing, p1-08-invoicing-portal, p1-09-attendance, p1-10-tips]
 source_docs:
   - docs/roadmap.md

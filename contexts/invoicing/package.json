@@ -31,9 +31,18 @@
     "#application/document-balance/*": "./application/document-balance/*",
     "#application/issuance-gate/*": "./application/issuance-gate/*",
     "#application/look-up-portal-buyer/*": "./application/look-up-portal-buyer/*",
+    "#application/request-remembered-code/*": "./application/request-remembered-code/*",
+    "#application/verify-remembered-code/*": "./application/verify-remembered-code/*",
+    "#application/record-billing-data/*": "./application/record-billing-data/*",
+    "#application/request-data-deletion/*": "./application/request-data-deletion/*",
+    "#application/get-portal-invoice/*": "./application/get-portal-invoice/*",
+    "#application/request-reinvoice/*": "./application/request-reinvoice/*",
+    "#application/approve-reinvoice/*": "./application/approve-reinvoice/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
-    "#adapters/factus/*": "./adapters/factus/*"
+    "#adapters/factus/*": "./adapters/factus/*",
+    "#adapters/twilio/*": "./adapters/twilio/*",
+    "#adapters/crypto/*": "./adapters/crypto/*"
   }
 }

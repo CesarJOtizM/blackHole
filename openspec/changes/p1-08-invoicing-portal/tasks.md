@@ -39,33 +39,33 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 
 - [x] 2.1 RED `application/look-up-portal-buyer/look-up-portal-buyer.test.ts`: masks plus `lookupId`; full row stays server-side; `acquire(taxId, at, 60)`; 30-day cache; failure reveals nothing; no bag use (D-21); shapeless refusal; no cross-tenant.
 - [x] 2.2 GREEN that folder. `#application/look-up-portal-buyer/*`.
-- [ ] 2.3 RED `application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
-- [ ] 2.4 GREEN that folder. `ports/one-time-code-sender.ts` and `.contract.ts`.
-- [ ] 2.5 RED `application/verify-remembered-code/verify-remembered-code.test.ts`: valid code reveals; ID alone does not; fifth miss locks; spent code fails.
-- [ ] 2.6 GREEN that folder. `ports/code-digest.ts` and `.contract.ts`.
-- [ ] 2.7 RED `application/record-billing-data/record-billing-data.test.ts`: bad NIT is a field error; no consent writes nothing; consent stores date, policy, link; per company; `billing_data_received`.
-- [ ] 2.8 GREEN that folder. `municipality-catalog.ts`, `billing-data-notifier.ts`, and contracts.
-- [ ] 2.9 RED `application/request-data-deletion/request-data-deletion.test.ts`: code required; future use stops; snapshots kept.
-- [ ] 2.10 GREEN that folder.
-- [ ] 2.11 RED `application/get-portal-invoice/get-portal-invoice.test.ts`: in process, then `downloadPdf`. `/f/<referenceCode>.<hmac>`. Expired pre-bill empty. No Factus mail.
-- [ ] 2.12 GREEN that folder. `downloadPdf(number)` on `ports/invoicing-provider.ts`.
-- [ ] 2.13 RED `application/request-reinvoice/request-reinvoice.test.ts`: outside window or `off` calls no provider. Inside, record only.
-- [ ] 2.14 GREEN that folder.
-- [ ] 2.15 RED `application/approve-reinvoice/approve-reinvoice.test.ts`: `sale.credit-note` only. Audit, code 2, new invoice after accept, two documents. Recheck window; no provider if closed. Do not edit consumer-final.
-- [ ] 2.16 GREEN that folder via `IssueCreditNote`. Ports `link-signer.ts`, `portal-repository.ts`, `portal-request-limiter.ts` and contracts. Export eight from `entry-port.ts`. One `#application/<folder>/*` each.
+- [x] 2.3 RED `application/request-remembered-code/request-remembered-code.test.ts`: registered contact only. Sender gets channel, destination, code, companyName, expiresInMinutes. Unconfigured throws. Code not logged. Other company hidden.
+- [x] 2.4 GREEN that folder. `ports/one-time-code-sender.ts` and `.contract.ts`.
+- [x] 2.5 RED `application/verify-remembered-code/verify-remembered-code.test.ts`: valid code reveals; ID alone does not; fifth miss locks; spent code fails.
+- [x] 2.6 GREEN that folder. `ports/code-digest.ts` and `.contract.ts`.
+- [x] 2.7 RED `application/record-billing-data/record-billing-data.test.ts`: bad NIT is a field error; no consent writes nothing; consent stores date, policy, link; per company; `billing_data_received`.
+- [x] 2.8 GREEN that folder. `municipality-catalog.ts`, `billing-data-notifier.ts`, and contracts.
+- [x] 2.9 RED `application/request-data-deletion/request-data-deletion.test.ts`: code required; future use stops; snapshots kept.
+- [x] 2.10 GREEN that folder.
+- [x] 2.11 RED `application/get-portal-invoice/get-portal-invoice.test.ts`: in process, then `downloadPdf`. `/f/<referenceCode>.<hmac>`. Expired pre-bill empty. No Factus mail.
+- [x] 2.12 GREEN that folder. `downloadPdf(number)` on `ports/invoicing-provider.ts`.
+- [x] 2.13 RED `application/request-reinvoice/request-reinvoice.test.ts`: outside window or `off` calls no provider. Inside, record only.
+- [x] 2.14 GREEN that folder.
+- [x] 2.15 RED `application/approve-reinvoice/approve-reinvoice.test.ts`: `sale.credit-note` only. Audit, code 2, new invoice after accept, two documents. Recheck window; no provider if closed. Do not edit consumer-final.
+- [x] 2.16 GREEN that folder via `IssueCreditNote`. Ports `link-signer.ts`, `portal-repository.ts`, `portal-request-limiter.ts` and contracts. Export eight from `entry-port.ts`. One `#application/<folder>/*` each.
 
 ## 3. Ceiling and adapters
 
-- [ ] 3.1 RED `contexts/platform/application/ports/provider-rate-gate.contract.ts`: default stops at 80; ceiling 60 stops at 60.
-- [ ] 3.2 GREEN `acquire(taxId, at, ceiling = 80)` on port, memory, and drizzle gates.
-- [ ] 3.3 RED `contexts/invoicing/adapters/twilio`: stubbed `fetch`. SMS Twilio Messages. Email SendGrid v3. Secrets via `Secrets`: `twilio.account-sid`, `twilio.auth-token`, `twilio.sms-from`, `sendgrid.api-key`, `sendgrid.from-email`. `OneTimeCodeDeliveryFailed`. Not Verify, Bird, SES, SNS.
-- [ ] 3.4 GREEN `adapters/twilio`, `#adapters/twilio/*`. Tests: `adapters/memory`. No secret files.
-- [ ] 3.5 RED `adapters/crypto`: HMAC-SHA256, key `portal.link-key`. `/f/` suffix verifies. Digest matches.
-- [ ] 3.6 GREEN `HmacLinkSigner`, `#adapters/crypto/*`. Domain stays crypto-free.
+- [x] 3.1 RED `contexts/platform/application/ports/provider-rate-gate.contract.ts`: default stops at 80; ceiling 60 stops at 60.
+- [x] 3.2 GREEN `acquire(taxId, at, ceiling = 80)` on port, memory, and drizzle gates.
+- [x] 3.3 RED `contexts/invoicing/adapters/twilio`: stubbed `fetch`. SMS Twilio Messages. Email SendGrid v3. Secrets via `Secrets`: `twilio.account-sid`, `twilio.auth-token`, `twilio.sms-from`, `sendgrid.api-key`, `sendgrid.from-email`. `OneTimeCodeDeliveryFailed`. Not Verify, Bird, SES, SNS.
+- [x] 3.4 GREEN `adapters/twilio`, `#adapters/twilio/*`. Tests: `adapters/memory`. No secret files.
+- [x] 3.5 RED `adapters/crypto`: HMAC-SHA256, key `portal.link-key`. `/f/` suffix verifies. Digest matches.
+- [x] 3.6 GREEN `HmacLinkSigner`, `#adapters/crypto/*`. Domain stays crypto-free.
 - [ ] 3.7 RED memory and PGlite: forced RLS. No SQLite. Unknown DANE fails. Seed the committed Factus municipalities JSON. No DIVIPOLA. Stop if that JSON is absent.
 - [ ] 3.8 GREEN `adapters/postgres/0016_invoicing_portal.sql` and repos: `remembered_buyers`, `consents`, `one_time_codes`, `portal_lookups`, `acquirer_cache`, `portal_submissions`, `reinvoice_requests`, `portal_settings`, `portal_rate_windows`, `dane_municipalities`. Default enabled false, window `same_day`.
-- [ ] 3.9 RED `adapters/factus/factus-invoicing-provider.test.ts`: `downloadPdf` GET. `lookupAcquirer` GET does not validate a bill.
-- [ ] 3.10 GREEN `downloadPdf` in `adapters/factus`.
+- [x] 3.9 RED `adapters/factus/factus-invoicing-provider.test.ts`: `downloadPdf` GET. `lookupAcquirer` GET does not validate a bill.
+- [x] 3.10 GREEN `downloadPdf` in `adapters/factus`.
 
 ## 4. Pre-bill
 

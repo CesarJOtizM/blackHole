@@ -25,7 +25,7 @@ La forma de la prueba sigue en ADR-017: AAA en toda prueba de unidad, y Given / 
 
 ## Consecuencias
 
-- El esqueleto de la Fase 0 crea `contexts/platform` con `domain`, `application` y `adapters`. Esa carpeta ya existe, junto con `shared/contracts`, `apps/api-cloud`, `apps/local-node`, `tools/cruiser` y `tools/skeleton`. **Siguen pendientes dentro de la entrega 0.2**: el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `adapters/memory`, `adapters/postgres` y `adapters/sqlite`. Los demás contextos aparecen cuando empieza su módulo.
+- El esqueleto de la Fase 0 crea `contexts/platform` con `domain`, `application` y `adapters`. La entrega 0.2 está cerrada: esa carpeta existe, junto con `shared/contracts`, `apps/api-cloud`, `apps/local-node`, `tools/cruiser`, `tools/skeleton`, el primer caso de uso, la suite de contrato del primer puerto y los adaptadores `adapters/memory` y `adapters/postgres`. El adaptador `sqlite` queda en la fase híbrida. Ya entraron `orders`, `cash-register`, `invoicing` y `attendance`. Los demás contextos aparecen cuando empieza su módulo.
 - dependency-cruiser rechaza un contexto que importa el dominio, los casos de uso internos o los adaptadores de otro, y una app que importa el dialecto de base que no le corresponde. Los casos que deben fallar viven en `tools/cruiser/fixtures`.
 - Los TRD de módulo apuntan a `contexts/<context>/domain` y `contexts/<context>/application`.
 - `shared/` guarda el lenguaje publicado (`shared/contracts`: Zod y eventos), la sincronización (`shared/sync`), las plantillas y el driver ESC/POS (`shared/printing`) y los componentes visuales (`shared/ui`). No guarda reglas de salón, caja ni factura: cada contexto decide qué imprime y cuándo.
