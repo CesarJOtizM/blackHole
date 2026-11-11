@@ -22,6 +22,6 @@ export abstract class ProviderRateGate {
   abstract acquire(
     taxId: string,
     at: Date,
-    ceiling = providerRequestsPerMinute,
+    ceiling?: number,
   ): Promise<ProviderRateDecision>;
 }

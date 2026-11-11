@@ -491,7 +491,7 @@ This batch adds ceiling pair 3.1–3.2 and stops there. Not committed. `size:exc
 
 ### Deviations from Design
 
-None — implementation matches design. `providerRequestsPerMinute` stays 80 and is the default ceiling. A caller that passes `60` stops at 60. A call that omits the third argument still stops at 80. The drizzle comparison uses the ceiling argument. No column and no migration. Two-argument callers in `issuance-gate.ts`, `worker.ts`, and `worker.test.ts` were not edited. `PortalLookupLimiter` and `look-up-portal-buyer.ts` were not edited. Twilio was not pulled in.
+TypeScript rejects a parameter default on an abstract method (`TS2371`). The port takes `ceiling?: number`. The memory gate and the drizzle gate default that argument to `providerRequestsPerMinute` (80). A caller that passes `60` stops at 60. A call that omits the third argument still stops at 80. The drizzle comparison uses the ceiling argument. No column and no migration. Two-argument callers in `issuance-gate.ts`, `worker.ts`, and `worker.test.ts` were not edited. `PortalLookupLimiter` and `look-up-portal-buyer.ts` were not edited. Twilio was not pulled in.
 
 ### Issues Found
 
