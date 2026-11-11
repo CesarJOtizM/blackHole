@@ -12,5 +12,11 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
+    proxy: {
+      "/tenants": {
+        target: "http://127.0.0.1:4310",
+        changeOrigin: true,
+      },
+    },
   },
 });

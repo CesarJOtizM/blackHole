@@ -3,6 +3,7 @@
   "references": [
     { "path": "contexts/platform" },
     { "path": "contexts/orders" },
+    { "path": "contexts/inventory" },
     { "path": "contexts/attendance" },
     { "path": "contexts/cash-register" },
     { "path": "contexts/invoicing" },

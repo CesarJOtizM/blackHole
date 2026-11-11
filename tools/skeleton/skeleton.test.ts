@@ -39,9 +39,17 @@ const packageShells = [
 
 const deferredCopyNames = ["sqlite", "cursor", "outbox", "pairing"] as const;
 
+const allowedSqliteAdapter = path.join(
+  "contexts",
+  "inventory",
+  "adapters",
+  "sqlite",
+);
+
 const allowedContexts = [
   "attendance",
   "cash-register",
+  "inventory",
   "invoicing",
   "orders",
   "platform",
@@ -133,6 +141,7 @@ it("given this change tree, when sync, rejected app names, or a use case are sou
     /\b(?:class|function)\b/.test(readFileSync(filePath, "utf8")),
   );
 
+  expect(allowedContexts).toContain("inventory");
   expect(directories.sort()).toEqual([...allowedContexts]);
   for (const relativePath of absent) {
     expect(existsSync(path.join(root, relativePath)), relativePath).toBe(false);
@@ -309,10 +318,19 @@ it("given local-node, when its sources are listed, then the structure rejection 
     namesDeferredCopy(path.relative(root, filePath)),
   );
 
+  const sqlitePaths = sourcePaths
+    .map((filePath) => path.relative(root, filePath))
+    .filter((relativePath) =>
+      relativePath
+        .split(path.sep)
+        .some((segment) => segment.toLowerCase() === "sqlite"),
+    );
+
   expect(sources.sort()).toEqual(
     [
       path.join("composition", "application-module.ts"),
       path.join("composition", "create-application.ts"),
+      path.join("composition", "recipe-copies.ts"),
       path.join("http", "authorization.controller.ts"),
       path.join("http", "cash-register.controller.ts"),
       path.join("http", "dining-room.controller.ts"),
@@ -320,6 +338,7 @@ it("given local-node, when its sources are listed, then the structure rejection 
       path.join("http", "operate-devices.controller.ts"),
       path.join("http", "operate-identity.controller.ts"),
       path.join("http", "printing.controller.ts"),
+      path.join("http", "recipe-copy.controller.ts"),
       path.join("http", "sensitive-actions.controller.ts"),
       path.join("http", "tax.controller.ts"),
       path.join("http", "update-menu.controller.ts"),
@@ -327,6 +346,15 @@ it("given local-node, when its sources are listed, then the structure rejection 
     ].sort(),
   );
   expect(existsSync(path.join(root, "shared/sync"))).toBe(false);
+  expect(sqlitePaths.length).toBeGreaterThan(0);
+  expect(
+    sqlitePaths.every((relativePath) =>
+      isInside(
+        path.join(root, relativePath),
+        path.join(root, allowedSqliteAdapter),
+      ),
+    ),
+  ).toBe(true);
   expect(deferredCopies).toEqual([]);
 });
 
@@ -512,12 +540,19 @@ function namesUseCase(name: string): boolean {
 }
 
 function namesDeferredCopy(relativePath: string): boolean {
+  const insideAllowedSqliteAdapter = isInside(
+    path.join(root, relativePath),
+    path.join(root, allowedSqliteAdapter),
+  );
+
   return relativePath.split(path.sep).some((segment) => {
     const stem = segment.replace(/\.[^.]+$/, "").toLowerCase();
 
-    return deferredCopyNames.some(
-      (name) => segment.toLowerCase() === name || stem === name,
-    );
+    return deferredCopyNames.some((name) => {
+      const matches = segment.toLowerCase() === name || stem === name;
+
+      return matches && !(name === "sqlite" && insideAllowedSqliteAdapter);
+    });
   });
 }
 

@@ -19,6 +19,7 @@
     "identity.ts",
     "menu.ts",
     "printing.ts",
+    "recipe-catalog.ts",
     "sensitive-actions.ts",
     "tips.ts",
     "update-structure.ts"

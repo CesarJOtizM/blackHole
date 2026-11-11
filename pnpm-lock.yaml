@@ -314,6 +314,9 @@ importers:
       '@blackhole/contracts':
         specifier: workspace:*
         version: link:../../shared/contracts
+      '@blackhole/inventory':
+        specifier: workspace:*
+        version: link:../../contexts/inventory
       '@blackhole/invoicing':
         specifier: workspace:*
         version: link:../../contexts/invoicing
@@ -371,6 +374,9 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+      xlsx:
+        specifier: 0.18.5
+        version: 0.18.5
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -417,6 +423,9 @@ importers:
 
   apps/local-node:
     dependencies:
+      '@blackhole/inventory':
+        specifier: workspace:*
+        version: link:../../contexts/inventory
       '@nestjs/common':
         specifier: 12.1.3
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
@@ -432,6 +441,10 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
 
   apps/venue-app:
     dependencies:
@@ -500,6 +513,19 @@ importers:
       '@blackhole/platform':
         specifier: workspace:*
         version: link:../platform
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.10
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.4(@electric-sql/pglite@0.5.10)(@opentelemetry/api@1.10.0)(pg@8.23.1)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+
+  contexts/inventory:
+    dependencies:
       '@electric-sql/pglite':
         specifier: 'catalog:'
         version: 0.5.10
