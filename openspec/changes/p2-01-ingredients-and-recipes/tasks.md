@@ -55,8 +55,8 @@ Chain strategy: feature-branch-chain
 - [x] 5.2 Failing `apps/api-cloud/test/http/recipe-catalog.controller.test.ts` via `inject`: owner 200; admin 403 `RecipeEditDenied`; waiter 403 `CostViewDenied`, no amounts; import 409; Zod 400; domain 409.
 - [x] 5.3 `apps/api-cloud/src/http/recipe-catalog.controller.ts`: catalog POST/GET, import POST, venue cost GET. Check `recipe.edit` and `inventory.view-cost`, then audit both versions.
 - [x] 5.4 api-cloud owns Excel `RecipeWorkbook` and calls `@blackhole/orders/application/entry-port` for price and catalog. Wire module, composition, dependency.
-- [ ] 5.5 Failing `apps/local-node/test/http/recipe-copy.controller.test.ts`: POST 403 `RecipeRejected`; GET last copy. No Zod.
-- [ ] 5.6 `apps/local-node/src/http/recipe-copy.controller.ts`, sqlite wiring, skeleton source list. Node must not import postgres.
+- [x] 5.5 Failing `apps/local-node/test/http/recipe-copy.controller.test.ts`: POST 403 `RecipeRejected`; GET last copy. No Zod.
+- [x] 5.6 `apps/local-node/src/http/recipe-copy.controller.ts`, sqlite wiring, skeleton source list. Node must not import postgres.
 
 ## Phase 6: Admin web
 

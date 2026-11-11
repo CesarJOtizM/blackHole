@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
+import { fileURLToPath } from "node:url";
 import { type AnyColumn, and, asc, eq } from "drizzle-orm";
 import { createNodeSqliteDatabase } from "#adapters/sqlite/node-sqlite-database.js";
 import {
@@ -40,6 +42,25 @@ type LineRow = typeof recipeCopyLines.$inferSelect;
 type ModifierRow = typeof recipeCopyModifiers.$inferSelect;
 type DeltaRow = typeof recipeCopyDeltas.$inferSelect;
 type RecipeLineView = RecipeView["lines"][number];
+
+const migrationSql = readFileSync(
+  fileURLToPath(new URL("./0001_recipe_copy.sql", import.meta.url)),
+  "utf8",
+);
+
+export function prepareRecipeCopyDatabase(client: DatabaseSync): void {
+  const existing = client
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'recipe_copies'",
+    )
+    .get();
+
+  if (existing !== undefined) {
+    return;
+  }
+
+  client.exec(migrationSql);
+}
 
 interface CopyRows {
   ingredients: IngredientRow[];

@@ -68,7 +68,9 @@ const COST_DENIED = "CostViewDenied";
 
 export const routePermissions = {
   "POST recipe-catalog": "recipe.edit",
+  "POST brands/:brandId/recipe-catalog": "recipe.edit",
   "POST recipe-catalog/import": "recipe.edit",
+  "POST brands/:brandId/recipe-catalog/import": "recipe.edit",
   "GET recipe-catalog": "recipe.edit",
   "GET recipe-cost": "inventory.view-cost",
 } as const;
