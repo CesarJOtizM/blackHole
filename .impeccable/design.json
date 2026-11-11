@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T20:45:00.000Z",
+  "title": "Design System: blackHole",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "ink",
+        "canonical": "#141210",
+        "tonalRamp": ["oklch(15.0% 0.002 67.5)", "oklch(26.4% 0.005 67.5)", "oklch(37.9% 0.005 67.5)", "oklch(49.3% 0.005 67.5)", "oklch(60.7% 0.005 67.5)", "oklch(72.1% 0.005 67.5)", "oklch(83.6% 0.003 67.5)", "oklch(95.0% 0.002 67.5)"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "paper",
+        "canonical": "#F2ECE1",
+        "tonalRamp": ["oklch(15.0% 0.006 82.8)", "oklch(26.4% 0.016 82.8)", "oklch(37.9% 0.016 82.8)", "oklch(49.3% 0.016 82.8)", "oklch(60.7% 0.016 82.8)", "oklch(72.1% 0.016 82.8)", "oklch(83.6% 0.009 82.8)", "oklch(95.0% 0.006 82.8)"]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "sheet",
+        "canonical": "#FBF8F1",
+        "tonalRamp": ["oklch(15.0% 0.003 87.5)", "oklch(26.4% 0.010 87.5)", "oklch(37.9% 0.010 87.5)", "oklch(49.3% 0.010 87.5)", "oklch(60.7% 0.010 87.5)", "oklch(72.1% 0.010 87.5)", "oklch(83.6% 0.005 87.5)", "oklch(95.0% 0.003 87.5)"]
+      },
+      "faded": {
+        "role": "neutral",
+        "displayName": "faded",
+        "canonical": "#5E574C",
+        "tonalRamp": ["oklch(15.0% 0.007 79.2)", "oklch(26.4% 0.020 79.2)", "oklch(37.9% 0.020 79.2)", "oklch(49.3% 0.020 79.2)", "oklch(60.7% 0.020 79.2)", "oklch(72.1% 0.020 79.2)", "oklch(83.6% 0.011 79.2)", "oklch(95.0% 0.007 79.2)"]
+      },
+      "stamp": {
+        "role": "secondary",
+        "displayName": "stamp",
+        "canonical": "#C21F2B",
+        "tonalRamp": ["oklch(15.0% 0.068 24.3)", "oklch(26.4% 0.195 24.3)", "oklch(37.9% 0.195 24.3)", "oklch(49.3% 0.195 24.3)", "oklch(60.7% 0.195 24.3)", "oklch(72.1% 0.195 24.3)", "oklch(83.6% 0.108 24.3)", "oklch(95.0% 0.068 24.3)"]
+      },
+      "go": {
+        "role": "tertiary",
+        "displayName": "go",
+        "canonical": "#1E6B3A",
+        "tonalRamp": ["oklch(15.0% 0.038 151.5)", "oklch(26.4% 0.108 151.5)", "oklch(37.9% 0.108 151.5)", "oklch(49.3% 0.108 151.5)", "oklch(60.7% 0.108 151.5)", "oklch(72.1% 0.108 151.5)", "oklch(83.6% 0.059 151.5)", "oklch(95.0% 0.038 151.5)"]
+      },
+      "hold": {
+        "role": "tertiary",
+        "displayName": "hold",
+        "canonical": "#9A4A06",
+        "tonalRamp": ["oklch(15.0% 0.044 51.7)", "oklch(26.4% 0.127 51.7)", "oklch(37.9% 0.127 51.7)", "oklch(49.3% 0.127 51.7)", "oklch(60.7% 0.127 51.7)", "oklch(72.1% 0.127 51.7)", "oklch(83.6% 0.070 51.7)", "oklch(95.0% 0.044 51.7)"]
+      },
+      "carbon": {
+        "role": "neutral",
+        "displayName": "carbon",
+        "canonical": "#1B1916",
+        "tonalRamp": ["oklch(15.0% 0.002 78.2)", "oklch(26.4% 0.007 78.2)", "oklch(37.9% 0.007 78.2)", "oklch(49.3% 0.007 78.2)", "oklch(60.7% 0.007 78.2)", "oklch(72.1% 0.007 78.2)", "oklch(83.6% 0.004 78.2)", "oklch(95.0% 0.002 78.2)"]
+      },
+      "board": {
+        "role": "neutral",
+        "displayName": "board",
+        "canonical": "#E4DBCB",
+        "tonalRamp": ["oklch(15.0% 0.008 82.1)", "oklch(26.4% 0.024 82.1)", "oklch(37.9% 0.024 82.1)", "oklch(49.3% 0.024 82.1)", "oklch(60.7% 0.024 82.1)", "oklch(72.1% 0.024 82.1)", "oklch(83.6% 0.013 82.1)", "oklch(95.0% 0.008 82.1)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Título del tablero, una vez, en mono." },
+      "headline": { "displayName": "Headline", "purpose": "Título de la pantalla." },
+      "title": { "displayName": "Title", "purpose": "Nombre de una fila o de una tarjeta." },
+      "body": { "displayName": "Body", "purpose": "Resumen y detalle." },
+      "label": { "displayName": "Label", "purpose": "Código, estado, ruta y botón." }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      { "name": "phone", "value": "390px" },
+      { "name": "register", "value": "1194px" },
+      { "name": "admin", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal. Fondo ink, etiqueta en mono.",
+      "html": "<button class=\"ds-btn-primary\">USAR LOS DEL PORTAL</button>",
+      "css": ".ds-btn-primary { background: #141210; color: #FBF8F1; height: 48px; padding: 0 16px; border: none; border-radius: 4px; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; letter-spacing: 0; } .ds-btn-primary:hover { background: #1B1916; } .ds-btn-primary:focus-visible { outline: 2px solid #141210; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción secundaria. Hoja con borde de 1 px.",
+      "html": "<button class=\"ds-btn-secondary\">USAR LOS DE LA CAJA</button>",
+      "css": ".ds-btn-secondary { background: #FBF8F1; color: #141210; height: 48px; padding: 0 16px; border: 1px solid #E4DBCB; border-radius: 4px; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-btn-secondary:hover { background: #E4DBCB; } .ds-btn-secondary:focus-visible { outline: 2px solid #141210; outline-offset: 2px; }"
+    },
+    {
+      "name": "Selected Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Filtro elegido.",
+      "html": "<button class=\"ds-chip-selected\">ABIERTA</button>",
+      "css": ".ds-chip-selected { background: #141210; color: #FBF8F1; height: 40px; padding: 0 14px; border: none; border-radius: 4px; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-chip-selected:hover { background: #1B1916; } .ds-chip-selected:focus-visible { outline: 2px solid #141210; outline-offset: 2px; }"
+    },
+    {
+      "name": "Idle Chip",
+      "kind": "chip",
+      "refersTo": "chip-idle",
+      "description": "Filtro en reposo.",
+      "html": "<button class=\"ds-chip-idle\">VISTA</button>",
+      "css": ".ds-chip-idle { background: #FBF8F1; color: #141210; height: 40px; padding: 0 14px; border: 1px solid #E4DBCB; border-radius: 4px; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-chip-idle:hover { background: #E4DBCB; } .ds-chip-idle:focus-visible { outline: 2px solid #141210; outline-offset: 2px; }"
+    },
+    {
+      "name": "Choice Card",
+      "kind": "card",
+      "refersTo": "choice-card",
+      "description": "Una de dos opciones. La elegida lleva borde de 2 px.",
+      "html": "<article class=\"ds-choice\"><p class=\"ds-choice-kicker\">PORTAL · LO CONFIRMÓ EL CLIENTE</p><p class=\"ds-choice-row\"><span>Nombre</span><strong>Juan Pérez</strong></p></article>",
+      "css": ".ds-choice { background: #FBF8F1; color: #141210; border: 2px solid #141210; border-radius: 4px; padding: 18px; max-width: 360px; } .ds-choice-kicker { margin: 0 0 10px; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-choice-row { display: flex; justify-content: space-between; gap: 16px; margin: 0; font-family: \"Atkinson Hyperlegible Next\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; } .ds-choice-row strong { font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 15px; }"
+    },
+    {
+      "name": "Active Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Fila activa de la barra lateral.",
+      "html": "<a class=\"ds-nav-active\" href=\"#inventario\">INVENTARIO</a>",
+      "css": ".ds-nav-active { display: flex; align-items: center; height: 36px; padding: 0 12px; background: #F2ECE1; color: #141210; border-radius: 4px; text-decoration: none; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 12px; font-weight: 700; } .ds-nav-active:hover { background: #FBF8F1; } .ds-nav-active:focus-visible { outline: 2px solid #F2ECE1; outline-offset: 2px; }"
+    },
+    {
+      "name": "Nav Rail",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Barra lateral en ink, con la fila activa en paper.",
+      "html": "<nav class=\"ds-rail\"><p class=\"ds-rail-name\">BLACKHOLE</p><p class=\"ds-rail-section\">CATÁLOGO</p><a class=\"ds-rail-link\" href=\"#carta\">CARTA</a><a class=\"ds-rail-link ds-rail-current\" href=\"#inventario\">INVENTARIO</a></nav>",
+      "css": ".ds-rail { width: 232px; background: #141210; padding: 22px 14px; } .ds-rail-name { margin: 0 0 16px; color: #FBF8F1; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 18px; font-weight: 700; } .ds-rail-section { margin: 16px 0 8px; color: #8E867A; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 10px; font-weight: 700; } .ds-rail-link { display: flex; align-items: center; height: 36px; padding: 0 12px; color: #E9E1D3; text-decoration: none; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 12px; font-weight: 700; border-radius: 4px; } .ds-rail-link:hover { color: #FBF8F1; } .ds-rail-current { background: #F2ECE1; color: #141210; } .ds-rail-link:focus-visible { outline: 2px solid #F2ECE1; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ticket",
+      "kind": "custom",
+      "refersTo": "choice-card",
+      "description": "Comprobante. Cifras en mono y corte con guiones.",
+      "html": "<article class=\"ds-ticket\"><p class=\"ds-ticket-kind\">COMPROBANTE</p><p class=\"ds-ticket-note\">No es factura electrónica</p><p class=\"ds-ticket-rule\">- - - - - - - - - - - - - - - - - - - -</p><p class=\"ds-ticket-row\"><span>Base</span><strong>33.000</strong></p><p class=\"ds-ticket-row\"><span>Impoconsumo 8%</span><strong>2.640</strong></p><p class=\"ds-ticket-row ds-ticket-total\"><span>TOTAL</span><strong>$39.204</strong></p></article>",
+      "css": ".ds-ticket { background: #FBF8F1; color: #141210; border-radius: 4px; padding: 20px; max-width: 520px; } .ds-ticket-kind { margin: 0; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-ticket-note { margin: 4px 0 0; color: #5E574C; font-family: \"Atkinson Hyperlegible Next\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; } .ds-ticket-rule { margin: 8px 0; color: #5E574C; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 12px; overflow: hidden; white-space: nowrap; } .ds-ticket-row { display: flex; justify-content: space-between; margin: 4px 0; font-family: \"Atkinson Hyperlegible Next\", ui-sans-serif, system-ui, sans-serif; font-size: 15px; color: #5E574C; } .ds-ticket-row strong { color: #141210; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-weight: 700; } .ds-ticket-total { color: #141210; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-weight: 700; }"
+    },
+    {
+      "name": "State Marks",
+      "kind": "custom",
+      "refersTo": "chip-idle",
+      "description": "El estado se lee. El color solo lo acompaña.",
+      "html": "<p class=\"ds-states\"><span class=\"ds-state-stamp\">FALTA</span><span class=\"ds-state-hold\">ABIERTA</span><span class=\"ds-state-go\">RESUELTA</span></p>",
+      "css": ".ds-states { display: flex; gap: 16px; margin: 0; font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 13px; font-weight: 700; } .ds-state-stamp { color: #C21F2B; } .ds-state-hold { color: #9A4A06; } .ds-state-go { color: #1E6B3A; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El parte del salón",
+    "overview": "Un parte se lee de un vistazo: quién, qué estado y qué cifra. El sistema es de turno. La densidad es la de una cuenta abierta. El papel, la hoja y el tablero se distinguen por tono. Lo que se puede pulsar lleva un borde de 1 px. No hay sombra.\n\nLa voz es de auditoría. Cada estado se escribe. El color acompaña a la palabra y no la reemplaza. Los números usan mono y el separador de miles es un punto. Dentro de un ticket, las líneas se separan con guiones.\n\nQueda fuera un panel SaaS genérico, con gradientes, sombras y tarjetas iguales. También queda fuera el tema Servicio del código: su naranja de acción, el azul de mesa ocupada y Bricolage Grotesque no son este sistema.",
+    "keyCharacteristics": [
+      "Estados con palabra, no solo con color",
+      "Mono para códigos, cifras y sellos",
+      "Papel, hoja y tablero como únicas capas",
+      "Borde de 1 px en lo que se pulsa",
+      "Sello rojo solo para faltante, anulación y agotado"
+    ],
+    "rules": [
+      {
+        "name": "The Stamp Rule",
+        "body": "stamp no pinta un botón de entrega, un paso, un trámite ni un filtro. Si el caso no es faltante, anulación o agotado, el control es ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Word Rule",
+        "body": "Un estado no se entiende solo por el color. La pantalla dice ATRASADA, FALTA, AGOTADO o RESUELTA.",
+        "section": "colors"
+      },
+      {
+        "name": "The Audit Type Rule",
+        "body": "Una cifra, un código y un estado van en mono. Una explicación va en sans. El separador de miles es un punto.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Line Rule",
+        "body": "Si hace falta separar, es un borde de 1 px. No es una sombra, ni un gradiente, ni una tarjeta flotando.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do escribir el estado junto al color: FALTA, AGOTADO, ATRASADA, RESUELTA.",
+      "Do usar stamp solo para faltante, anulación y agotado.",
+      "Do mantener el contraste de WCAG 2.2 AA: 4,5:1 en texto normal y 3:1 en texto grande y en bordes de controles.",
+      "Do usar el punto como separador de miles y mono en las cifras.",
+      "Do imprimir, cuando no hay internet, un comprobante de venta que diga que no es factura electrónica."
+    ],
+    "donts": [
+      "Don't usar el tema Servicio (`shared/ui/src/theme.css`) para una pantalla nueva de este sistema. Su acción naranja, su azul de mesa y Bricolage Grotesque son otro tema.",
+      "Don't añadir sombra, gradiente o tarjeta flotante para separar superficies.",
+      "Don't pintar con stamp un botón normal, un paso o una espera.",
+      "Don't dejar que el color sea la única señal de un estado.",
+      "Don't numerar una venta sin internet como factura de contingencia."
+    ]
+  }
+}

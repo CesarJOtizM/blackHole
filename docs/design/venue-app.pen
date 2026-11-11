@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -2387,7 +2387,7 @@
                               "type": "frame",
                               "id": "qU1Ba",
                               "name": "Filtro Salón",
-                              "height": 40,
+                              "height": 48,
                               "fill": "$ink",
                               "cornerRadius": 4,
                               "stroke": "$ink",
@@ -2406,7 +2406,7 @@
                                   "fill": "$sheet",
                                   "content": "SALÓN",
                                   "fontFamily": "$mono",
-                                  "fontSize": 12,
+                                  "fontSize": 14,
                                   "fontWeight": "700",
                                   "letterSpacing": 1
                                 }
@@ -2416,7 +2416,7 @@
                               "type": "frame",
                               "id": "r47Oo",
                               "name": "Filtro Terraza",
-                              "height": 40,
+                              "height": 48,
                               "fill": "$sheet",
                               "cornerRadius": 4,
                               "stroke": "$ink",
@@ -2435,7 +2435,7 @@
                                   "fill": "$ink",
                                   "content": "TERRAZA",
                                   "fontFamily": "$mono",
-                                  "fontSize": 12,
+                                  "fontSize": 14,
                                   "fontWeight": "700",
                                   "letterSpacing": 1
                                 }
@@ -2445,7 +2445,7 @@
                               "type": "frame",
                               "id": "AJXkC",
                               "name": "Filtro Barra",
-                              "height": 40,
+                              "height": 48,
                               "fill": "$sheet",
                               "cornerRadius": 4,
                               "stroke": "$ink",
@@ -2464,7 +2464,7 @@
                                   "fill": "$ink",
                                   "content": "BARRA",
                                   "fontFamily": "$mono",
-                                  "fontSize": 12,
+                                  "fontSize": 14,
                                   "fontWeight": "700",
                                   "letterSpacing": 1
                                 }
@@ -2527,7 +2527,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -2538,7 +2538,7 @@
                                           "fill": "$sheet",
                                           "content": "4 · 32 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -2585,7 +2585,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -2633,7 +2633,7 @@
                                           "fill": "$sheet",
                                           "content": "CUENTA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -2644,7 +2644,7 @@
                                           "fill": "$sheet",
                                           "content": "$184.000",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -2700,7 +2700,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -2711,7 +2711,7 @@
                                           "fill": "$sheet",
                                           "content": "2 · 12 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -2758,7 +2758,7 @@
                                           "fill": "$sheet",
                                           "content": "LISTO",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -2769,7 +2769,7 @@
                                           "fill": "$sheet",
                                           "content": "2 platos",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -2816,7 +2816,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -2873,7 +2873,7 @@
                                           "fill": "$ink",
                                           "content": "LIMPIAR",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -2921,7 +2921,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -2932,7 +2932,7 @@
                                           "fill": "$sheet",
                                           "content": "6 · 48 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -2979,7 +2979,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -3036,7 +3036,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -3047,7 +3047,7 @@
                                           "fill": "$sheet",
                                           "content": "3 · 05 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -3094,7 +3094,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -3105,7 +3105,7 @@
                                           "fill": "$sheet",
                                           "content": "2 · 55 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -3152,7 +3152,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -3179,7 +3179,7 @@
                               "fill": "$faded",
                               "content": "MIS MESAS: 01 04 05 08",
                               "fontFamily": "$mono",
-                              "fontSize": 11,
+                              "fontSize": 14,
                               "fontWeight": "700",
                               "letterSpacing": 1
                             }
@@ -8767,7 +8767,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -8815,7 +8815,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -8863,7 +8863,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -8920,7 +8920,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -8968,7 +8968,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -9016,7 +9016,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -9915,7 +9915,7 @@
                               "id": "D4D4Db",
                               "name": "Atrasadas",
                               "fill": "#FF6B6B",
-                              "content": "2 ATRASADAS",
+                              "content": "1 ATRASADA",
                               "fontFamily": "$mono",
                               "fontSize": 13,
                               "fontWeight": "700",
@@ -10046,7 +10046,7 @@
                                           "id": "a2ASB9",
                                           "name": "Tiempo",
                                           "fill": "$sheet",
-                                          "content": "18:40",
+                                          "content": "18 MIN",
                                           "fontFamily": "$mono",
                                           "fontSize": 22,
                                           "fontWeight": "700"
@@ -10058,7 +10058,7 @@
                                       "id": "yOJqc",
                                       "name": "Detalle",
                                       "fill": "#E9E1D3",
-                                      "content": "LUIS · 6 PERS · TIEMPO 2",
+                                      "content": "ATRASADA · 6 PERS · TIEMPO 2",
                                       "fontFamily": "$mono",
                                       "fontSize": 11,
                                       "fontWeight": "700",
@@ -10284,7 +10284,7 @@
                                           "id": "GbIeF",
                                           "name": "Tiempo",
                                           "fill": "$sheet",
-                                          "content": "09:12",
+                                          "content": "9 MIN",
                                           "fontFamily": "$mono",
                                           "fontSize": 22,
                                           "fontWeight": "700"
@@ -10495,7 +10495,7 @@
                                           "id": "VDFTy",
                                           "name": "Tiempo",
                                           "fill": "$sheet",
-                                          "content": "06:05",
+                                          "content": "6 MIN",
                                           "fontFamily": "$mono",
                                           "fontSize": 22,
                                           "fontWeight": "700"
@@ -10672,7 +10672,7 @@
                                           "id": "i1h5wa",
                                           "name": "Tiempo",
                                           "fill": "$sheet",
-                                          "content": "02:30",
+                                          "content": "2 MIN",
                                           "fontFamily": "$mono",
                                           "fontSize": 22,
                                           "fontWeight": "700"
@@ -11024,7 +11024,7 @@
                               "id": "ISgA6",
                               "name": "Atrasadas",
                               "fill": "#FF6B6B",
-                              "content": "2 ATRASADAS",
+                              "content": "1 ATRASADA",
                               "fontFamily": "$mono",
                               "fontSize": 13,
                               "fontWeight": "700",
@@ -11119,7 +11119,7 @@
                                   "id": "PO9g7",
                                   "name": "Mesa",
                                   "fill": "$sheet",
-                                  "content": "MESA 08 · T2",
+                                  "content": "MESA 08 · ATRASADA",
                                   "fontFamily": "$mono",
                                   "fontSize": 26,
                                   "fontWeight": "700"
@@ -11129,7 +11129,7 @@
                                   "id": "zKVuQ",
                                   "name": "Tiempo",
                                   "fill": "$sheet",
-                                  "content": "18:40",
+                                  "content": "18 MIN",
                                   "fontFamily": "$mono",
                                   "fontSize": 26,
                                   "fontWeight": "700"
@@ -11876,7 +11876,7 @@
                               "id": "IfjWw",
                               "name": "Atrasadas",
                               "fill": "#FF6B6B",
-                              "content": "2 ATRASADAS",
+                              "content": "1 ATRASADA",
                               "fontFamily": "$mono",
                               "fontSize": 13,
                               "fontWeight": "700",
@@ -15789,7 +15789,7 @@
                                       "id": "ldWYn",
                                       "name": "Clave",
                                       "fill": "$ink",
-                                      "content": "Efectivo · en curso",
+                                      "content": "Efectivo",
                                       "fontFamily": "$sans",
                                       "fontSize": 15,
                                       "fontWeight": "500"
@@ -15798,7 +15798,7 @@
                                       "type": "text",
                                       "id": "UzRTD",
                                       "name": "Valor",
-                                      "fill": "$stamp",
+                                      "fill": "$ink",
                                       "content": "$19.204",
                                       "fontFamily": "$mono",
                                       "fontSize": 16,
@@ -15830,8 +15830,11 @@
                                 {
                                   "type": "frame",
                                   "id": "f1HjV",
+                                  "x": 16,
+                                  "y": 128,
                                   "name": "Falta",
-                                  "width": "fill_container",
+                                  "enabled": false,
+                                  "width": "fill_container(528)",
                                   "justifyContent": "space_between",
                                   "alignItems": "center",
                                   "children": [
@@ -17190,7 +17193,7 @@
                                       "id": "woD8w",
                                       "name": "Valor",
                                       "fill": "$ink",
-                                      "content": "36.000",
+                                      "content": "33.000",
                                       "fontFamily": "$mono",
                                       "fontSize": 16,
                                       "fontWeight": "700"
@@ -17220,7 +17223,7 @@
                                       "id": "m2hFL",
                                       "name": "Valor",
                                       "fill": "$ink",
-                                      "content": "35.640",
+                                      "content": "2.640",
                                       "fontFamily": "$mono",
                                       "fontSize": 16,
                                       "fontWeight": "700"
@@ -28609,7 +28612,7 @@
                                       "fill": "$ink",
                                       "content": "LIBRE",
                                       "fontFamily": "$mono",
-                                      "fontSize": 10,
+                                      "fontSize": 14,
                                       "fontWeight": "700",
                                       "letterSpacing": 1.5
                                     },
@@ -28620,7 +28623,7 @@
                                       "fill": "$ink",
                                       "content": "4 puestos",
                                       "fontFamily": "$mono",
-                                      "fontSize": 11,
+                                      "fontSize": 14,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -28667,7 +28670,7 @@
                                       "fill": "$ink",
                                       "content": "LIBRE",
                                       "fontFamily": "$mono",
-                                      "fontSize": 10,
+                                      "fontSize": 14,
                                       "fontWeight": "700",
                                       "letterSpacing": 1.5
                                     },
@@ -28678,7 +28681,7 @@
                                       "fill": "$ink",
                                       "content": "4 puestos",
                                       "fontFamily": "$mono",
-                                      "fontSize": 11,
+                                      "fontSize": 14,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -28725,7 +28728,7 @@
                                       "fill": "$ink",
                                       "content": "LIBRE",
                                       "fontFamily": "$mono",
-                                      "fontSize": 10,
+                                      "fontSize": 14,
                                       "fontWeight": "700",
                                       "letterSpacing": 1.5
                                     },
@@ -28736,7 +28739,7 @@
                                       "fill": "$ink",
                                       "content": "4 puestos",
                                       "fontFamily": "$mono",
-                                      "fontSize": 11,
+                                      "fontSize": 14,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -29187,7 +29190,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -29198,7 +29201,7 @@
                                           "fill": "$sheet",
                                           "content": "4 · 52 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -29245,7 +29248,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -29256,7 +29259,7 @@
                                           "fill": "$sheet",
                                           "content": "4 · 20 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -29303,7 +29306,7 @@
                                           "fill": "$sheet",
                                           "content": "CUENTA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -29314,7 +29317,7 @@
                                           "fill": "$sheet",
                                           "content": "$184.000",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -29370,7 +29373,7 @@
                                           "fill": "$sheet",
                                           "content": "OCUPADA",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         },
@@ -29381,7 +29384,7 @@
                                           "fill": "$sheet",
                                           "content": "2 · 32 min",
                                           "fontFamily": "$mono",
-                                          "fontSize": 11,
+                                          "fontSize": 14,
                                           "fontWeight": "500"
                                         }
                                       ]
@@ -29428,7 +29431,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -29476,7 +29479,7 @@
                                           "fill": "$ink",
                                           "content": "LIBRE",
                                           "fontFamily": "$mono",
-                                          "fontSize": 10,
+                                          "fontSize": 14,
                                           "fontWeight": "700",
                                           "letterSpacing": 1.5
                                         }
@@ -29602,7 +29605,7 @@
                                   "fill": "$ink",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "Factura de contingencia",
+                                  "content": "Comprobante, no factura",
                                   "fontFamily": "$sans",
                                   "fontSize": 15,
                                   "fontWeight": "500"
@@ -29867,7 +29870,7 @@
                       "id": "WKF5W",
                       "name": "Nombre",
                       "fill": "$ink",
-                      "content": "FACTURA DE CONTINGENCIA",
+                      "content": "COMPROBANTE DE VENTA",
                       "fontFamily": "$mono",
                       "fontSize": 13,
                       "fontWeight": "700",
@@ -29961,7 +29964,7 @@
                               "id": "P6wXhw",
                               "name": "Título",
                               "fill": "$sheet",
-                              "content": "SIN INTERNET · FACTURACIÓN EN CONTINGENCIA",
+                              "content": "SIN INTERNET · COMPROBANTE DE VENTA",
                               "fontFamily": "$mono",
                               "fontSize": 13,
                               "fontWeight": "700",
@@ -29974,7 +29977,7 @@
                               "fill": "#F6D5D7",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "Las facturas se numeran con el rango de contingencia y se envían a la DIAN al reconectar.",
+                              "content": "Sin internet no sale la factura. Se imprime un comprobante. La factura se emite sola al volver la conexión.",
                               "fontFamily": "$sans",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -30240,7 +30243,7 @@
                                   "id": "yvHJN",
                                   "name": "Etiqueta",
                                   "fill": "$sheet",
-                                  "content": "COBRAR Y EMITIR EN CONTINGENCIA",
+                                  "content": "COBRAR E IMPRIMIR COMPROBANTE",
                                   "fontFamily": "$mono",
                                   "fontSize": 15,
                                   "fontWeight": "700",
@@ -30287,7 +30290,7 @@
                                       "id": "dpo6P",
                                       "name": "Número",
                                       "fill": "$ink",
-                                      "content": "FACTURA DE CONTINGENCIA\nCONT 000231",
+                                      "content": "COMPROBANTE DE VENTA\nNo es factura electrónica",
                                       "lineHeight": 1.2,
                                       "fontFamily": "$mono",
                                       "fontSize": 16,
@@ -30312,7 +30315,7 @@
                                           "id": "xxVKJ",
                                           "name": "Texto",
                                           "fill": "$hold",
-                                          "content": "PENDIENTE DIAN",
+                                          "content": "PENDIENTE DE EMITIR",
                                           "fontFamily": "$mono",
                                           "fontSize": 12,
                                           "fontWeight": "700",
@@ -30542,7 +30545,7 @@
                                   "fill": "$faded",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "CUFE: se genera al transmitir. El cliente recibe la factura validada por correo cuando vuelva la conexión.",
+                                  "content": "No es factura electrónica ni documento equivalente. La factura se emitirá al volver la conexión y se consulta en el QR.",
                                   "lineHeight": 1.4,
                                   "fontFamily": "$sans",
                                   "fontSize": 14,
@@ -30954,7 +30957,7 @@
                                   "fill": "$ink",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "Factura CONT 000231 · mesa 03",
+                                  "content": "Comprobante mesa 03 · pendiente de emitir",
                                   "fontFamily": "$sans",
                                   "fontSize": 14,
                                   "fontWeight": "500"
@@ -31679,7 +31682,7 @@
                                   "fill": "$ink",
                                   "textGrowth": "fixed-width",
                                   "width": "fill_container",
-                                  "content": "CONT 000229: NIT del adquiriente no válido. Corrige los datos y vuelve a transmitir.",
+                                  "content": "Un envío quedó sin respuesta. Se verifica antes de reintentar, para no duplicar la factura.",
                                   "fontFamily": "$sans",
                                   "fontSize": 14,
                                   "fontWeight": "500"
@@ -31763,7 +31766,7 @@
                               "id": "hclii",
                               "name": "Etiqueta",
                               "fill": "$sheet",
-                              "content": "CORREGIR CONT 000229",
+                              "content": "VERIFICAR ENVÍO",
                               "fontFamily": "$mono",
                               "fontSize": 15,
                               "fontWeight": "700",
@@ -48970,6 +48973,2145 @@
                               "fontSize": 15,
                               "fontWeight": "700",
                               "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "v01cfm",
+      "x": 0,
+      "y": 25885,
+      "name": "M2 · M3 · Datos que no coinciden y bolsa en cero",
+      "width": 2544,
+      "fill": "$board",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 56,
+      "children": [
+        {
+          "type": "frame",
+          "id": "op4gx",
+          "name": "Cabecera",
+          "width": 1100,
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "U6XGGL",
+              "name": "Código",
+              "fill": "$stamp",
+              "content": "M2 · M3",
+              "fontFamily": "$mono",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "dBKQ8",
+              "name": "Título",
+              "fill": "$ink",
+              "content": "Antes de emitir",
+              "fontFamily": "$mono",
+              "fontSize": 40,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "eXEZn",
+              "name": "Resumen",
+              "fill": "$faded",
+              "textGrowth": "fixed-width",
+              "width": 1100,
+              "content": "Si el portal y la caja no traen los mismos datos, elige el cajero. Si el cupo de ese NIT está en cero, la venta sigue y la factura queda pendiente.",
+              "fontFamily": "$sans",
+              "fontSize": 17,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wvJsE",
+          "name": "Pantallas",
+          "gap": 44,
+          "children": [
+            {
+              "type": "frame",
+              "id": "H3V8ne",
+              "name": "ELIGE CUÁLES USAR",
+              "width": 1194,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "KjemO",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BTY91",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "01",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "sdoUl",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "ELIGE CUÁLES USAR",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "i0F2us",
+                  "name": "ELIGE CUÁLES USAR",
+                  "clip": true,
+                  "width": 1194,
+                  "height": 834,
+                  "fill": "$paper",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MnoeK",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        24
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n3CHFp",
+                          "name": "Hora",
+                          "fill": "$faded",
+                          "content": "12:41",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "R3WUJ",
+                          "name": "Sede",
+                          "fill": "$ink",
+                          "content": "CAJA 1 · MARTA RUIZ",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "e1YCSc",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        24,
+                        32,
+                        32,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yc0Gp",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "content": "Dos datos para la misma cuenta",
+                          "fontFamily": "$mono",
+                          "fontSize": 32,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "uz8YQ",
+                          "name": "Detalle",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": 1100,
+                          "content": "Mesa 02 · parte 2 · a cobrar $39.204. El portal y la caja no coinciden. Se cobra con uno solo.",
+                          "fontFamily": "$sans",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fuiGG",
+                          "name": "Opciones",
+                          "width": "fill_container",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "GLNWT",
+                              "name": "PORTAL · LO CONFIRMÓ EL CLIENTE",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 10,
+                              "padding": 18,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "dZlQd",
+                                  "name": "Origen",
+                                  "fill": "$ink",
+                                  "content": "PORTAL · LO CONFIRMÓ EL CLIENTE",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "NeF8z",
+                                  "name": "Documento",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "iYjE9",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Documento",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "qnfsL",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "C.C. 1.023.456.789",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "sFZez",
+                                  "name": "Nombre",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "T83qL",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Nombre",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "WtIFx",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "Juan Pérez",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "ynSXF",
+                                  "name": "Correo",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "nuRiZ",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Correo",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "A6JUUg",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "juan.perez@correo.com",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "PreZ2",
+                              "name": "CAJA · ESCRITO AQUÍ",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$board",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "layout": "vertical",
+                              "gap": 10,
+                              "padding": 18,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "a27Uur",
+                                  "name": "Origen",
+                                  "fill": "$ink",
+                                  "content": "CAJA · ESCRITO AQUÍ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "p3QwZ",
+                                  "name": "Documento",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "DOGbX",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Documento",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "H4cz8",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "NIT 901.234.567-8",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "VBbss",
+                                  "name": "Razón social",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "ddbpw",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Razón social",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "hoWgs",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "Andes Consultores SAS",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "c1GrQI",
+                                  "name": "Correo",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "mXLis",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Correo",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "EsAot",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "facturas@andes.co",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "egZfK",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "justifyContent": "end",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Sm8Cc",
+                              "name": "Usar portal",
+                              "height": 48,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lhmTr",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "USAR LOS DEL PORTAL",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "NBaT3",
+                              "name": "Usar caja",
+                              "height": 48,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$board",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "drKGQ",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "USAR LOS DE LA CAJA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fI7bs",
+              "name": "CUPOS EN CERO",
+              "width": 1194,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MUoFk",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SBywz",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "02",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "F00y6e",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "CUPOS EN CERO",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sdvQl",
+                  "name": "CUPOS EN CERO",
+                  "clip": true,
+                  "width": 1194,
+                  "height": 834,
+                  "fill": "$paper",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mcRgP",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        24
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nGeUV",
+                          "name": "Hora",
+                          "fill": "$faded",
+                          "content": "12:41",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "tcM22",
+                          "name": "Sede",
+                          "fill": "$ink",
+                          "content": "CAJA 1 · MARTA RUIZ",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "C1Lab",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        24,
+                        32,
+                        32,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GKErY",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "content": "La venta sigue. La factura espera.",
+                          "fontFamily": "$mono",
+                          "fontSize": 32,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PYEaH",
+                          "name": "Aviso",
+                          "width": "fill_container",
+                          "fill": "#E4CBB6",
+                          "cornerRadius": 4,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": [
+                            14,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nk4DY",
+                              "name": "Estado",
+                              "fill": "#6B442E",
+                              "content": "PENDIENTE DE EMITIR · SIN SALDO",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "uvbHx",
+                              "name": "Motivo",
+                              "fill": "#6B442E",
+                              "textGrowth": "fixed-width",
+                              "width": 1080,
+                              "content": "El cupo de 901.112.334-5 está en cero. Se imprime el comprobante, que no es factura. Al recargar ese NIT, se emite sola.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y093md",
+                          "name": "Comprobante",
+                          "clip": true,
+                          "width": 520,
+                          "fill": "$sheet",
+                          "cornerRadius": 4,
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 20,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tjWNh",
+                              "name": "Tipo",
+                              "fill": "$ink",
+                              "content": "COMPROBANTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "a7MrYA",
+                              "name": "Aviso",
+                              "fill": "$faded",
+                              "content": "No es factura electrónica",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fmR1Z",
+                              "name": "Guiones",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 480,
+                              "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Tp210",
+                              "name": "Base",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "e1Y0w",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Base",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "JtDVp",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "33.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "eIAA2",
+                              "name": "Impoconsumo 8%",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "vLLYa",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Impoconsumo 8%",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "guQwm",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "2.640",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "wnEon",
+                              "name": "Propina (no es ingreso)",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "QmQxW",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Propina (no es ingreso)",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "npnwT",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "3.564",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nEyrT",
+                              "name": "Total",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "o25NC",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "TOTAL",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rNIyO",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$39.204",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "G8AhPg",
+                          "name": "Imprimir",
+                          "height": 48,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "a6Fd8",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "IMPRIMIR COMPROBANTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "IlaRh",
+      "x": 0,
+      "y": 27078,
+      "name": "M1 · M2 · Reenvío, entrega, QR y cierre parcial",
+      "fill": "$board",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 56,
+      "children": [
+        {
+          "type": "frame",
+          "id": "YsWrD",
+          "name": "Cabecera",
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "pxyyD",
+              "name": "Código",
+              "fill": "$stamp",
+              "content": "M1 · M2",
+              "fontFamily": "$mono",
+              "fontSize": 13,
+              "fontWeight": "700",
+              "letterSpacing": 2
+            },
+            {
+              "type": "text",
+              "id": "A4KqE",
+              "name": "Título",
+              "fill": "$ink",
+              "content": "Reenvío, entrega, QR y cierre parcial",
+              "fontFamily": "$mono",
+              "fontSize": 40,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "aAcw4",
+              "name": "Resumen",
+              "fill": "$faded",
+              "content": "Reenviar lo que no salió en cocina, marcar el plato en la mesa, aceptar el pedido QR antes de que entre, y contar la caja sin cerrar el turno.",
+              "fontFamily": "$sans",
+              "fontSize": 17,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KeVKJ",
+          "name": "Pantallas",
+          "gap": 44,
+          "children": [
+            {
+              "type": "frame",
+              "id": "D8TFM",
+              "name": "Paso 1",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "G7kt4O",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hkmsY",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "01",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LFjKX",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "REENVIAR A COCINA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "awhds",
+                  "name": "Reenviar a cocina",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "j5hBO1",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "erHoV",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "16:42",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ibE3N",
+                          "name": "Sede",
+                          "fill": "$faded",
+                          "content": "MESA 04 · LUIS",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OO0Hx",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "foa7g",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b1Gkt",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "TIEMPO 2 · PARRILLA NO IMPRIMIÓ",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Joi7Z",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Reenviar a cocina",
+                              "fontFamily": "$mono",
+                              "fontSize": 30,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fXsCA",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Solo vuelve a cocina lo que aún no está en preparación. Queda auditado y no duplica el plato.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "u0zdo",
+                          "name": "Churrasco 300 g",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kU9qV",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Churrasco 300 g",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "WcAaM",
+                              "name": "Meta",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "SIN EMPEZAR · PARRILLA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fpIkp",
+                          "name": "Limonada",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "zHOGW",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Limonada",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Zq2HT",
+                              "name": "Meta",
+                              "fill": "$hold",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "EN PREPARACIÓN · BARRA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DoKhw",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rXuAg",
+                          "name": "Botón REENVIAR CHURRASCO",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "jXFQZ",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "refresh-cw",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "t80dX",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "REENVIAR CHURRASCO",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "y5jJN7",
+              "name": "Paso 2",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "o3FF9h",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "W2eRY",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "02",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Gjlw5",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "ENTREGADO EN LA MESA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rxZnr",
+                  "name": "Entregado en la mesa",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "TlIAK",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mZJTC",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "16:46",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "l1q52",
+                          "name": "Sede",
+                          "fill": "$faded",
+                          "content": "MESA 04 · LUIS",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qTmB4",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VUlHR",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "GJ4zo",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "LISTO HACE 4 MIN",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Gbv3F",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Ya está en la mesa",
+                              "fontFamily": "$mono",
+                              "fontSize": 30,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "bCCzw",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Cocina marcó listo. Al dejarlo en la mesa se cierra el tiempo de entrega.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "uZ70B",
+                          "name": "Churrasco 300 g",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PUXD6",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Churrasco 300 g",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Mnl78",
+                              "name": "Meta",
+                              "fill": "$go",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "LISTO · PARRILLA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UYwrR",
+                          "name": "Ensalada",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "j6OOf3",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Ensalada",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YWYBR",
+                              "name": "Meta",
+                              "fill": "$go",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "LISTO · FRÍOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "crfuU",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A8Xdm",
+                          "name": "Botón MARCAR ENTREGADO",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "C0O91f",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "check",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "D9hKiY",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "MARCAR ENTREGADO",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "x3o3Q",
+              "name": "Paso 3",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QESU1",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "P5yPSq",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "03",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "C6xKhg",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "ACEPTAR PEDIDO QR",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PAqRj",
+                  "name": "Aceptar pedido QR",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DWDj2",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Jo65Y",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "16:50",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Zouq1",
+                          "name": "Sede",
+                          "fill": "$faded",
+                          "content": "CAJA 1 · MARTA",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mAGIE",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "u8Sc8",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sJ2Qy",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "QR MESA 12 · ESPERA ACEPTACIÓN",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZMNVa",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Antes de cocina",
+                              "fontFamily": "$mono",
+                              "fontSize": 30,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Folep",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Esta sede no manda el pedido QR directo. Aceptarlo lo envía a su estación. Rechazarlo pide motivo y queda auditado.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n9TRm",
+                          "name": "Bife de chorizo",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ni1js",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Bife de chorizo",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "p3X7Aq",
+                              "name": "Meta",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "TÉRMINO MEDIO · $52.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ecmLD",
+                          "name": "Limonada",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NCGRB",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Limonada",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "H8kLNV",
+                              "name": "Meta",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "SIN AZÚCAR · $8.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IZSTd",
+                          "name": "Canal QR mesa",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bXmzb",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Canal QR mesa",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "QjsdE",
+                              "name": "Meta",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "2 ÍTEMS · $60.000 · EL CLIENTE NO LO ANULA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ihago",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SMePM",
+                          "name": "Botón RECHAZAR CON MOTIVO",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$sheet",
+                          "cornerRadius": 4,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "H00SCF",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "x",
+                              "library": "lucide",
+                              "fill": "$ink"
+                            },
+                            {
+                              "type": "text",
+                              "id": "V40pt",
+                              "name": "Etiqueta",
+                              "fill": "$ink",
+                              "content": "RECHAZAR CON MOTIVO",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CzNCG",
+                          "name": "Botón ACEPTAR Y ENVIAR",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "jkw8k",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "check",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "z20TgY",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "ACEPTAR Y ENVIAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nVM0V",
+              "name": "Paso 4",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vIrgp",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Hb3Mv",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "04",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "r7xhtB",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "CIERRE PARCIAL",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "F7SsK9",
+                  "name": "Cierre parcial",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "jacUf",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IgyHQ",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "16:48",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I8jm8",
+                          "name": "Sede",
+                          "fill": "$faded",
+                          "content": "CAJA 1 · MARTA",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tkRcp",
+                      "name": "Banda",
+                      "width": "fill_container",
+                      "height": 36,
+                      "fill": "$hold",
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        20
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "FfQbK",
+                          "name": "Icono",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "door-open",
+                          "library": "lucide",
+                          "fill": "$sheet"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Vp8xR",
+                          "name": "CAJÓN ABIERTO SIN VENTA",
+                          "fill": "$sheet",
+                          "content": "CAJÓN ABIERTO SIN VENTA",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gvtUa",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VJa7N",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "pKAmK",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "TURNO ABIERTO · NO ES EL CIERRE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lc2be",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "El turno sigue",
+                              "fontFamily": "$mono",
+                              "fontSize": 30,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZYgR4",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "El cajero contó sin ver el esperado. Este conteo no cierra el turno. Si hay diferencia, pide motivo. Solo el cierre final queda inmutable.",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Qcdam",
+                          "name": "Efectivo contado",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "TMNi2",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Efectivo contado",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "qey6S",
+                              "name": "Meta",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "$486.000 · A CIEGAS",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "agav7",
+                          "name": "Esperado del sistema",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AX3P7",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Esperado del sistema",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "C4UJi",
+                              "name": "Meta",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "$486.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FDy3P",
+                          "name": "Diferencia",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Q22qv",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Diferencia",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "dOcmw",
+                              "name": "Meta",
+                              "fill": "$go",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "$0 · CUADRA · EL TURNO SIGUE",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "k2h6TD",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "C0DIn",
+                          "name": "Botón VOLVER A COBRAR",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "y5XrPT",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "undo-2",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "zBO8e",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "VOLVER A COBRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "normal"
                             }
                           ]
                         }

@@ -7,6 +7,7 @@ bounded_contexts: [platform, contracts]
 apps: [api-cloud, local-node, venue-app, admin-web]
 status: archived
 artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: partial, archive: done}
+verify_verdict: partial
 depends_on: [p0-04-identity-and-devices]
 source_docs:
   - docs/roadmap.md

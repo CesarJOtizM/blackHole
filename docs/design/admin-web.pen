@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -14972,7 +14972,8 @@
                                           "fill": "$ink",
                                           "content": "Entradas",
                                           "fontFamily": "$sans",
-                                          "fontSize": 14
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -15045,7 +15046,8 @@
                                           "fill": "$ink",
                                           "content": "Parrilla mixta",
                                           "fontFamily": "$sans",
-                                          "fontSize": 14
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -15081,7 +15083,8 @@
                                           "fill": "$ink",
                                           "content": "Acompañantes",
                                           "fontFamily": "$sans",
-                                          "fontSize": 14
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -15117,7 +15120,8 @@
                                           "fill": "$ink",
                                           "content": "Postres",
                                           "fontFamily": "$sans",
-                                          "fontSize": 14
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -15153,7 +15157,8 @@
                                           "fill": "$ink",
                                           "content": "Bebidas",
                                           "fontFamily": "$sans",
-                                          "fontSize": 14
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -39545,6 +39550,1060 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "s4RlbQ",
+              "name": "Paso 7",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "OvJ5L",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FSNbH",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "07",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QN6vZ",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "INGENIERÍA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hxpIS",
+                  "name": "Ventas",
+                  "clip": true,
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "cornerRadius": 10,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "children": [
+                    {
+                      "id": "P6Gjc",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "PPISQ": {
+                          "fill": "$paper"
+                        },
+                        "k5oLDX": {
+                          "fill": "$ink"
+                        },
+                        "aQ89j": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tZeTT",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "f8VFa",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "stroke": "#CFC6B6",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZhOzg",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "OPERACIÓN · REPORTES · INGENIERÍA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.5
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ZZs7T",
+                              "name": "Sede",
+                              "height": 36,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "gap": 8,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "h3cfGs",
+                                  "name": "Icono",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "map-pin",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "XLLX1",
+                                  "name": "Texto",
+                                  "fill": "$ink",
+                                  "content": "TODAS LAS SEDES",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "O6laZI",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "R7yBF",
+                              "name": "Título de página",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "end",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "iiBqV",
+                                  "name": "Encabezado",
+                                  "width": 820,
+                                  "layout": "vertical",
+                                  "gap": 4,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "jjoQv",
+                                      "name": "Antetítulo",
+                                      "fill": "$faded",
+                                      "content": "OCTUBRE 2026 · POPULARIDAD Y MARGEN",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 2
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ezNjc",
+                                      "name": "Título",
+                                      "fill": "$ink",
+                                      "textGrowth": "fixed-width",
+                                      "width": "fill_container",
+                                      "content": "Ingeniería de menú",
+                                      "lineHeight": 1.05,
+                                      "fontFamily": "$mono",
+                                      "fontSize": 34,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "yOt7Z",
+                                  "name": "Acciones",
+                                  "gap": 10,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "UhO77",
+                                      "name": "Botón Oct 2026",
+                                      "height": 44,
+                                      "fill": "$sheet",
+                                      "cornerRadius": 4,
+                                      "stroke": "$ink",
+                                      "strokeWidth": 2,
+                                      "strokeAlignment": "inner",
+                                      "gap": 10,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon",
+                                          "id": "dwHQe",
+                                          "name": "Icono",
+                                          "width": 18,
+                                          "height": 18,
+                                          "icon": "calendar",
+                                          "library": "lucide",
+                                          "fill": "$ink"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "owguq",
+                                          "name": "Etiqueta",
+                                          "fill": "$ink",
+                                          "content": "OCT 2026",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700",
+                                          "letterSpacing": 1.2
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "hKUM8",
+                                      "name": "Botón Exportar",
+                                      "height": 44,
+                                      "fill": "$ink",
+                                      "cornerRadius": 4,
+                                      "gap": 10,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon",
+                                          "id": "Jsoam",
+                                          "name": "Icono",
+                                          "width": 18,
+                                          "height": 18,
+                                          "icon": "download",
+                                          "library": "lucide",
+                                          "fill": "$sheet"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "gCDpx",
+                                          "name": "Etiqueta",
+                                          "fill": "$sheet",
+                                          "content": "EXPORTAR",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700",
+                                          "letterSpacing": 1.2
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "a1QyT",
+                              "name": "Indicadores",
+                              "width": "fill_container",
+                              "gap": 14,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "f26fR",
+                                  "name": "Venta neta",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 4,
+                                  "padding": 16,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "mHQzZ",
+                                      "name": "Etiqueta",
+                                      "fill": "$faded",
+                                      "content": "ESTRELLAS",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 1.5
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Bmz5I",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "6",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 30,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "cB52M",
+                                      "name": "Variación",
+                                      "fill": "$go",
+                                      "content": "se piden y dejan margen",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "srmV0",
+                                  "name": "Cuentas",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 4,
+                                  "padding": 16,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "iNGlj",
+                                      "name": "Etiqueta",
+                                      "fill": "$faded",
+                                      "content": "CABALLOS",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 1.5
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "R6ZbUo",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "4",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 30,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Fvhyl",
+                                      "name": "Variación",
+                                      "fill": "$go",
+                                      "content": "se piden y dejan poco",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "FKd2Y",
+                                  "name": "Ticket promedio",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 4,
+                                  "padding": 16,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "R4M6o",
+                                      "name": "Etiqueta",
+                                      "fill": "$faded",
+                                      "content": "PUZZLES",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 1.5
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "qyV7q",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "3",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 30,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "P1IgrM",
+                                      "name": "Variación",
+                                      "fill": "$go",
+                                      "content": "dejan margen y no se piden",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "q88fSd",
+                                  "name": "Domicilios",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 4,
+                                  "padding": 16,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "rbahx",
+                                      "name": "Etiqueta",
+                                      "fill": "$faded",
+                                      "content": "PERROS",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 1.5
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "R3oz7",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "2",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 30,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "izFxt",
+                                      "name": "Variación",
+                                      "fill": "$faded",
+                                      "content": "candidatos a salir",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "v1lss",
+                              "name": "Fila",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "gap": 20,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "adiHo",
+                                  "name": "Venta por día de la semana",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "gap": 12,
+                                  "padding": 20,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "lY4GV",
+                                      "name": "Etiqueta",
+                                      "fill": "$faded",
+                                      "content": "PERCENTIL DE POPULARIDAD",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700",
+                                      "letterSpacing": 1.5
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "u1Vqk7",
+                                      "name": "Barras",
+                                      "width": "fill_container",
+                                      "height": 300,
+                                      "gap": 10,
+                                      "alignItems": "end",
+                                      "children": [
+                                        {
+                                          "type": "frame",
+                                          "id": "OWAO4",
+                                          "name": "LUN",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "dPTt5",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 107.96946564885496,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "FXFD0",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "CHU",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "ReWNj",
+                                          "name": "MAR",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "v4NG6",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 126.65648854961832,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "hFTRv",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "BIF",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "zXZMC",
+                                          "name": "MIÉ",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "NZDRc",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 137.0381679389313,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "DaI4d",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "BAN",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "Y7QMZF",
+                                          "name": "JUE",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "pqis4",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 166.10687022900763,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "hLwW6",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "EMP",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "CK55n",
+                                          "name": "VIE",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "JZBZh",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 245.00763358778627,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "Zcotm",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "LIM",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "cHB3C",
+                                          "name": "SÁB",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "wrnHT",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 272,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "j2Ycb",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "HAM",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "wivmf",
+                                          "name": "DOM",
+                                          "width": "fill_container",
+                                          "height": "fill_container",
+                                          "layout": "vertical",
+                                          "gap": 6,
+                                          "justifyContent": "end",
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "frame",
+                                              "id": "wDOen",
+                                              "name": "Barra",
+                                              "width": "fill_container",
+                                              "height": 195.17557251908397,
+                                              "fill": "$ink",
+                                              "cornerRadius": 2
+                                            },
+                                            {
+                                              "type": "text",
+                                              "id": "lU3gf",
+                                              "name": "Rótulo",
+                                              "fill": "$faded",
+                                              "content": "PIC",
+                                              "fontFamily": "$mono",
+                                              "fontSize": 10,
+                                              "fontWeight": "700"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Qsyid",
+                                  "name": "Tabla",
+                                  "width": 380,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 2,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "layout": "vertical",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Khpq3",
+                                      "name": "Encabezado",
+                                      "width": "fill_container",
+                                      "height": 40,
+                                      "fill": "$ink",
+                                      "gap": 16,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "KKWpp",
+                                          "name": "Sede",
+                                          "fill": "$sheet",
+                                          "textGrowth": "fixed-width",
+                                          "width": 150,
+                                          "content": "PLATO",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 11,
+                                          "fontWeight": "700",
+                                          "letterSpacing": 1.2
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "mzliW",
+                                          "name": "Venta",
+                                          "fill": "$sheet",
+                                          "textGrowth": "fixed-width",
+                                          "width": 100,
+                                          "content": "MARGEN",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 11,
+                                          "fontWeight": "700",
+                                          "letterSpacing": 1.2
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "O4sHc5",
+                                          "name": "vs sep",
+                                          "fill": "$sheet",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "PERCENTIL",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 11,
+                                          "fontWeight": "700",
+                                          "letterSpacing": 1.2
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "gb043",
+                                      "name": "Fila 1",
+                                      "width": "fill_container",
+                                      "height": 56,
+                                      "fill": "#F7F2E8",
+                                      "gap": 16,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "x9RHrm",
+                                          "name": "Sede",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 150,
+                                          "content": "Churrasco 300 g",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "AE390",
+                                          "name": "Venta",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 100,
+                                          "content": "62%",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "ByRdB",
+                                          "name": "vs sep",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "P92 · estrella",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "TcpjO",
+                                      "name": "Fila 2",
+                                      "width": "fill_container",
+                                      "height": 56,
+                                      "fill": "$sheet",
+                                      "gap": 16,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "KIRwt",
+                                          "name": "Sede",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 150,
+                                          "content": "Bandeja paisa",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "dndZA",
+                                          "name": "Venta",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 100,
+                                          "content": "28%",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "OJyVo",
+                                          "name": "vs sep",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "P88 · caballo",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "j6qTaG",
+                                      "name": "Fila 3",
+                                      "width": "fill_container",
+                                      "height": 56,
+                                      "fill": "#F7F2E8",
+                                      "gap": 16,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "rm8pA",
+                                          "name": "Sede",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 150,
+                                          "content": "Entraña",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "c8DZU",
+                                          "name": "Venta",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 100,
+                                          "content": "71%",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "w0CTE",
+                                          "name": "vs sep",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "P24 · puzzle",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "zDRYa",
+                                      "name": "Fila 4",
+                                      "width": "fill_container",
+                                      "height": 56,
+                                      "fill": "$sheet",
+                                      "gap": 16,
+                                      "padding": [
+                                        0,
+                                        16
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "p2E6c5",
+                                          "name": "Sede",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 150,
+                                          "content": "Limonada natural",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "ZNmEa",
+                                          "name": "Venta",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": 100,
+                                          "content": "18%",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "sZukw",
+                                          "name": "vs sep",
+                                          "fill": "$ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "P15 · perro",
+                                          "textAlign": "right",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -50794,7 +51853,8 @@
                                           "fill": "$ink",
                                           "content": "14:02:11  ENVÍO COMANDA #8812  OK",
                                           "fontFamily": "$mono",
-                                          "fontSize": 12
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -50823,7 +51883,8 @@
                                           "fill": "$ink",
                                           "content": "14:06:02  COLA LOCAL: 2 DOCUMENTOS",
                                           "fontFamily": "$mono",
-                                          "fontSize": 12
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
                                         }
                                       ]
                                     }
@@ -59244,6 +60305,2165 @@
                                   "fontFamily": "$sans",
                                   "fontSize": 14,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "r7Ayvm",
+      "x": 0,
+      "y": 21603,
+      "name": "M7 · ALTA · Requisitos de Factus",
+      "width": 3036,
+      "fill": "$board",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 56,
+      "children": [
+        {
+          "type": "frame",
+          "id": "m8veT1",
+          "name": "Cabecera",
+          "width": 1100,
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "GEa6u",
+              "name": "Código",
+              "fill": "$stamp",
+              "content": "M7 · ALTA",
+              "fontFamily": "$mono",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "vxhqM",
+              "name": "Título",
+              "fill": "$ink",
+              "content": "Requisitos de Factus",
+              "fontFamily": "$mono",
+              "fontSize": 40,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "X2sGAD",
+              "name": "Resumen",
+              "fill": "$faded",
+              "textGrowth": "fixed-width",
+              "width": 1100,
+              "content": "Cada NIT espera cámara, RUT, cédula, rango DIAN y certificado. La activación tarda de 1 a 3 días hábiles. La sede opera; todavía no emite.",
+              "fontFamily": "$sans",
+              "fontSize": 17,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "RITOd",
+          "name": "Pantallas",
+          "gap": 44,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Zyoir",
+              "name": "DOCUMENTOS DEL NIT",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "z1NzD",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XTUan",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "01",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kyK0y",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "DOCUMENTOS DEL NIT",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jOXhC",
+                  "name": "DOCUMENTOS DEL NIT",
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "children": [
+                    {
+                      "id": "j0hrJ",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "QNnjb": {
+                          "fill": "$paper"
+                        },
+                        "YS7HB": {
+                          "fill": "$ink"
+                        },
+                        "hvHXO": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CJLVp",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ImGkS",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dIiTx",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "EMPRESA / ALTA / FACTUS",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "twV4C",
+                              "name": "NIT",
+                              "height": 36,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "eSFIt",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "901.112.334-5",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rn4up",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L8gfDH",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "content": "Faltan 2 documentos",
+                              "fontFamily": "$mono",
+                              "fontSize": 34,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lDZQl",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 900,
+                              "content": "La Parrilla SAS · Chapinero. Factus activa este NIT en 1 a 3 días hábiles. Hasta entonces no emite factura electrónica. La operación local sigue.",
+                              "fontFamily": "$sans",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ckM0J",
+                              "name": "Documentos",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "WqqHQ",
+                                  "name": "Cámara de Comercio",
+                                  "width": "fill_container",
+                                  "height": 64,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "xctlp",
+                                      "name": "Nombre",
+                                      "fill": "$ink",
+                                      "content": "Cámara de Comercio",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "aRNST",
+                                      "name": "Estado",
+                                      "gap": 16,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "YS9cO",
+                                          "name": "Detalle",
+                                          "fill": "$faded",
+                                          "content": "Vigente",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "rvK7P",
+                                          "name": "Marca",
+                                          "fill": "$go",
+                                          "content": "RECIBIDO",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "JHtdB",
+                                  "name": "RUT",
+                                  "width": "fill_container",
+                                  "height": 64,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "A2nEb",
+                                      "name": "Nombre",
+                                      "fill": "$ink",
+                                      "content": "RUT",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "n6WtCx",
+                                      "name": "Estado",
+                                      "gap": 16,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "bVgTV",
+                                          "name": "Detalle",
+                                          "fill": "$faded",
+                                          "content": "Actualizado",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "gd57Z",
+                                          "name": "Marca",
+                                          "fill": "$go",
+                                          "content": "RECIBIDO",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "AO5ev",
+                                  "name": "Cédula del representante",
+                                  "width": "fill_container",
+                                  "height": 64,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Q97BJQ",
+                                      "name": "Nombre",
+                                      "fill": "$ink",
+                                      "content": "Cédula del representante",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "GH64M",
+                                      "name": "Estado",
+                                      "gap": 16,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "UwVgS",
+                                          "name": "Detalle",
+                                          "fill": "$faded",
+                                          "content": "No ha llegado",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "jv5sn",
+                                          "name": "Marca",
+                                          "fill": "$stamp",
+                                          "content": "FALTA",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "utpot",
+                                  "name": "Rango de numeración DIAN",
+                                  "width": "fill_container",
+                                  "height": 64,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "XHTsq",
+                                      "name": "Nombre",
+                                      "fill": "$ink",
+                                      "content": "Rango de numeración DIAN",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "qAFVm",
+                                      "name": "Estado",
+                                      "gap": 16,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "bqBe5",
+                                          "name": "Detalle",
+                                          "fill": "$faded",
+                                          "content": "Prefijo, desde, hasta y vencimiento",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "MQSka",
+                                          "name": "Marca",
+                                          "fill": "$go",
+                                          "content": "RECIBIDO",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "NyxtB",
+                                  "name": "Certificado digital",
+                                  "width": "fill_container",
+                                  "height": 64,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Xr3lY",
+                                      "name": "Nombre",
+                                      "fill": "$ink",
+                                      "content": "Certificado digital",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "GVk2q",
+                                      "name": "Estado",
+                                      "gap": 16,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "WmW2k",
+                                          "name": "Detalle",
+                                          "fill": "$faded",
+                                          "content": "No ha llegado",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "DEFpU",
+                                          "name": "Marca",
+                                          "fill": "$stamp",
+                                          "content": "FALTA",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Q4Djp",
+                              "name": "Acciones",
+                              "width": "fill_container",
+                              "gap": 12,
+                              "justifyContent": "end",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "sSkZM",
+                                  "name": "Seguir sin emitir",
+                                  "height": 48,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    16
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "lcBOw",
+                                      "name": "Etiqueta",
+                                      "fill": "$ink",
+                                      "content": "SEGUIR SIN EMITIR",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "eqw41",
+                                  "name": "Pedir documentos",
+                                  "height": 48,
+                                  "fill": "$ink",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    16
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "nqg8P",
+                                      "name": "Etiqueta",
+                                      "fill": "$sheet",
+                                      "content": "PEDIR LOS QUE FALTAN",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ph2PC",
+              "name": "DOS NIT",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Z4JSJD",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hIDbr",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "02",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "x07Kj",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "DOS NIT",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J77AlL",
+                  "name": "Dos NIT",
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "children": [
+                    {
+                      "id": "vU0aI",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "QNnjb": {
+                          "fill": "$paper"
+                        },
+                        "YS7HB": {
+                          "fill": "$ink"
+                        },
+                        "hvHXO": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tssoQ",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "RK0sF",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QsQ0R",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "EMPRESA / ALTA / FACTUS",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "D37jCW",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Ly1q7",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "content": "Uno factura y el otro espera",
+                              "fontFamily": "$mono",
+                              "fontSize": 34,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "QJhsz",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 900,
+                              "content": "La activación es por NIT. El que ya está activo emite. El que sigue en trámite opera, y sus facturas esperan.",
+                              "fontFamily": "$sans",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "d4fzQX",
+                              "name": "NITs",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 16,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "x9TZb",
+                                  "name": "La Parrilla SAS",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "layout": "vertical",
+                                  "gap": 8,
+                                  "padding": 20,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Bfcrc",
+                                      "name": "Encabezado",
+                                      "width": "fill_container",
+                                      "justifyContent": "space_between",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "OTqVi",
+                                          "name": "Nombre",
+                                          "fill": "$ink",
+                                          "content": "La Parrilla SAS",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 18,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "MiRVj",
+                                          "name": "Estado",
+                                          "fill": "$hold",
+                                          "content": "EN TRÁMITE",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "O0upF",
+                                      "name": "Meta",
+                                      "fill": "$faded",
+                                      "content": "901.112.334-5 · Chapinero",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "gcchS",
+                                      "name": "Nota",
+                                      "fill": "$ink",
+                                      "textGrowth": "fixed-width",
+                                      "width": 1000,
+                                      "content": "Faltan la cédula del representante y el certificado. Esta sede no emite hasta que Factus active el NIT.",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Cg7ny",
+                                  "name": "Segundo contribuyente",
+                                  "width": "fill_container",
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "layout": "vertical",
+                                  "gap": 8,
+                                  "padding": 20,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "BybEg",
+                                      "name": "Encabezado",
+                                      "width": "fill_container",
+                                      "justifyContent": "space_between",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "VCCM0",
+                                          "name": "Nombre",
+                                          "fill": "$ink",
+                                          "content": "Parrilla Norte SAS",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 18,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "h0iF6D",
+                                          "name": "Estado",
+                                          "fill": "$go",
+                                          "content": "ACTIVO",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "G59swl",
+                                      "name": "Meta",
+                                      "fill": "$faded",
+                                      "content": "901.556.778-1",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Lo8pV",
+                                      "name": "Nota",
+                                      "fill": "$ink",
+                                      "textGrowth": "fixed-width",
+                                      "width": 1000,
+                                      "content": "Factus ya aceptó una factura de prueba. Este NIT emite.",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "tJ9HG",
+      "x": 0,
+      "y": 22902,
+      "name": "M4 · ESCASEZ · Alertas de escasez",
+      "width": 4520,
+      "fill": "$board",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 56,
+      "children": [
+        {
+          "type": "frame",
+          "id": "KKQm0",
+          "name": "Cabecera",
+          "width": 1200,
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "jsgVQ",
+              "name": "Código",
+              "fill": "$stamp",
+              "content": "M4 · ESCASEZ",
+              "fontFamily": "$mono",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "WVP0M",
+              "name": "Título",
+              "fill": "$ink",
+              "content": "Alertas de escasez",
+              "fontFamily": "$mono",
+              "fontSize": 40,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "cLY92",
+              "name": "Resumen",
+              "fill": "$faded",
+              "textGrowth": "fixed-width",
+              "width": 1200,
+              "content": "Nace abierta, alguien la ve y se cierra sola cuando el stock supera el punto de reposición. Si el bajo es el punto, se pide a la bodega. Si el bajo es la bodega, se compra.",
+              "fontFamily": "$sans",
+              "fontSize": 17,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "XG8tA",
+          "name": "Pantallas",
+          "gap": 44,
+          "children": [
+            {
+              "type": "frame",
+              "id": "HdxSo",
+              "name": "BANDEJA",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "u7TpU6",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "R9FnMN",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "01",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "g16a6W",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "BANDEJA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SOFUH",
+                  "name": "BANDEJA",
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "children": [
+                    {
+                      "id": "W5jdJ",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "TVAbL": {
+                          "fill": "$paper"
+                        },
+                        "AESK8": {
+                          "fill": "$ink"
+                        },
+                        "cFnio": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jbDaI",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "AkNOi",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "DP7Ph",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "CATÁLOGO / INVENTARIO / ESCASEZ",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "w6jZt0",
+                              "name": "Sede",
+                              "height": 36,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "bYxgY",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "CHAPINERO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "GuFhO",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "OzLFG",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "content": "Tres alertas de hoy",
+                              "fontFamily": "$mono",
+                              "fontSize": 34,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "LRykp",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 1040,
+                              "content": "También aparecen en la caja y en la cocina. Si nadie atiende una abierta, escala al administrador de sede.",
+                              "fontFamily": "$sans",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ZcvvJ",
+                              "name": "Filtros",
+                              "gap": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "MqR3O",
+                                  "name": "ABIERTA",
+                                  "height": 40,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    14
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "jTLKf",
+                                      "name": "Etiqueta",
+                                      "fill": "$ink",
+                                      "content": "ABIERTA",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "g7Fnls",
+                                  "name": "VISTA",
+                                  "height": 40,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    14
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "iJXt1",
+                                      "name": "Etiqueta",
+                                      "fill": "$ink",
+                                      "content": "VISTA",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "sZW54",
+                                  "name": "RESUELTA",
+                                  "height": 40,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    14
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "HB0lq",
+                                      "name": "Etiqueta",
+                                      "fill": "$ink",
+                                      "content": "RESUELTA",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "H4qUt",
+                              "name": "Alertas",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ZjB6c",
+                                  "name": "Papa criolla",
+                                  "width": "fill_container",
+                                  "height": 72,
+                                  "fill": "#E4CBB6",
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "QXrsz",
+                                      "name": "Texto",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "U7H1Ev",
+                                          "name": "Insumo",
+                                          "fill": "$ink",
+                                          "content": "Papa criolla",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 16,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "h0IFi",
+                                          "name": "Motivo",
+                                          "fill": "$faded",
+                                          "content": "Punto de reposición · cobertura del servicio",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "JUhDK",
+                                      "name": "Estado",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "alignItems": "end",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "lNUE3",
+                                          "name": "Marca",
+                                          "fill": "#6B442E",
+                                          "content": "ABIERTA",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "yqE3G",
+                                          "name": "Quién",
+                                          "fill": "$faded",
+                                          "content": "Nadie la ha visto",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "fCjm2",
+                                  "name": "Entraña",
+                                  "width": "fill_container",
+                                  "height": 72,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "ezYrP",
+                                      "name": "Texto",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "GWMUn",
+                                          "name": "Insumo",
+                                          "fill": "$ink",
+                                          "content": "Entraña",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 16,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "c9pa0d",
+                                          "name": "Motivo",
+                                          "fill": "$faded",
+                                          "content": "Mínimo · el bajo es el punto",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "ZeleH",
+                                      "name": "Estado",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "alignItems": "end",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "n2U7H",
+                                          "name": "Marca",
+                                          "fill": "$stamp",
+                                          "content": "VISTA",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "yCdvd",
+                                          "name": "Quién",
+                                          "fill": "$faded",
+                                          "content": "Jefe de cocina · 14:05",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "jV1uQ",
+                                  "name": "Churrasco (pieza)",
+                                  "width": "fill_container",
+                                  "height": 72,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "b05Me",
+                                      "name": "Texto",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "ZlhYR",
+                                          "name": "Insumo",
+                                          "fill": "$ink",
+                                          "content": "Churrasco (pieza)",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 16,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "ZnCH1",
+                                          "name": "Motivo",
+                                          "fill": "$faded",
+                                          "content": "Volvió sobre el punto de reposición",
+                                          "fontFamily": "$sans",
+                                          "fontSize": 14,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "x393M",
+                                      "name": "Estado",
+                                      "layout": "vertical",
+                                      "gap": 2,
+                                      "alignItems": "end",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "I2Vm2",
+                                          "name": "Marca",
+                                          "fill": "$go",
+                                          "content": "RESUELTA",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 13,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "CiCHs",
+                                          "name": "Quién",
+                                          "fill": "$faded",
+                                          "content": "Se cerró sola · 13:20",
+                                          "fontFamily": "$mono",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ax0oH",
+              "name": "PEDIR A LA BODEGA",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "H82WPm",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "w9Pej",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "02",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QoTdM",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "PEDIR A LA BODEGA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "i1xYEv",
+                  "name": "PEDIR A LA BODEGA",
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "children": [
+                    {
+                      "id": "heFQ3",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "TVAbL": {
+                          "fill": "$paper"
+                        },
+                        "AESK8": {
+                          "fill": "$ink"
+                        },
+                        "cFnio": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cPkhT",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "E5Ra8",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wTUQR",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "CATÁLOGO / INVENTARIO / ESCASEZ",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "z6IFLe",
+                              "name": "Sede",
+                              "height": 36,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cBORt",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "CHAPINERO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "m3NcJR",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "I6EtM",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "content": "Entraña bajo el mínimo",
+                              "fontFamily": "$mono",
+                              "fontSize": 34,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cPAoZ",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 1040,
+                              "content": "El bajo es el punto, no la bodega. La carta la muestra en pocas unidades. Vista por el jefe de cocina a las 14:05.",
+                              "fontFamily": "$sans",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "opr9g",
+                              "name": "Niveles",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "GwjGx",
+                                  "name": "Saldo en el punto",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "rvlmV",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Saldo en el punto",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "oCS8w",
+                                      "name": "Valor",
+                                      "fill": "$stamp",
+                                      "content": "1,2 kg",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Z86Zv",
+                                  "name": "Mínimo",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "q8Yd8",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Mínimo",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "LGnQ3",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "4 kg",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "x8qRpj",
+                                  "name": "Punto de reposición",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "wBOPW",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Punto de reposición",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "P1jeug",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "8 kg",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "O7S4cy",
+                                  "name": "Bodega general",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "X5eMQW",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Bodega general",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "BtpEI",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "12,5 kg · sincronizada 13:40",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QjX2n",
+                              "name": "Acciones",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "GPh9V",
+                                  "name": "Escala",
+                                  "fill": "$faded",
+                                  "textGrowth": "fixed-width",
+                                  "width": 560,
+                                  "content": "Si nadie la atiende, escala al administrador de sede.",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "BLhwS",
+                                  "name": "Solicitar",
+                                  "height": 48,
+                                  "fill": "$ink",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    16
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "q6hkZ",
+                                      "name": "Etiqueta",
+                                      "fill": "$sheet",
+                                      "content": "SOLICITAR 8 KG A LA BODEGA",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ak1rz",
+              "name": "COMPRAR",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "biH2O",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vPbpp",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "03",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "schB2",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "COMPRAR",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M5Ifbl",
+                  "name": "COMPRAR",
+                  "width": 1440,
+                  "height": 900,
+                  "fill": "$paper",
+                  "children": [
+                    {
+                      "id": "gLIOs",
+                      "type": "ref",
+                      "ref": "jNJG7",
+                      "name": "Barra lateral",
+                      "height": "fill_container",
+                      "descendants": {
+                        "TVAbL": {
+                          "fill": "$paper"
+                        },
+                        "AESK8": {
+                          "fill": "$ink"
+                        },
+                        "cFnio": {
+                          "fill": "$ink"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uqb9n",
+                      "name": "Principal",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "EawnI",
+                          "name": "Barra superior",
+                          "width": "fill_container",
+                          "height": 60,
+                          "padding": [
+                            0,
+                            32
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "oGXeh",
+                              "name": "Ruta",
+                              "fill": "$faded",
+                              "content": "CATÁLOGO / INVENTARIO / ESCASEZ",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "G86kb",
+                              "name": "Sede",
+                              "height": 36,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "r5ohUj",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "CHAPINERO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PbcZg",
+                          "name": "Contenido",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 20,
+                          "padding": [
+                            28,
+                            32,
+                            32,
+                            32
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kq0oe",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "content": "Papa criolla, el bajo es la bodega",
+                              "fontFamily": "$mono",
+                              "fontSize": 34,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "f4Vai5",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": 1040,
+                              "content": "El punto de Chapinero aún cubre el servicio. La bodega general no. No se pide un traslado: se compra. El costo se anota al recibir.",
+                              "fontFamily": "$sans",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GQOpl",
+                              "name": "Niveles",
+                              "width": "fill_container",
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Fup8u",
+                                  "name": "Saldo de la bodega",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "fill": "#E4CBB6",
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "BDMpz",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Saldo de la bodega",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "sNorn",
+                                      "name": "Valor",
+                                      "fill": "#6B442E",
+                                      "content": "2,0 kg",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "SwaAX",
+                                  "name": "Punto de reposición",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "p4xXV",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Punto de reposición",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "iOTNI",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "10 kg",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "sqHbd",
+                                  "name": "Saldo en Chapinero",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "E0XwbI",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Saldo en Chapinero",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "R6BAu",
+                                      "name": "Valor",
+                                      "fill": "$go",
+                                      "content": "Cubre el servicio de hoy",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "lCp8b",
+                                  "name": "Estado",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "fill": "#E4CBB6",
+                                  "stroke": "$board",
+                                  "strokeWidth": 1,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    18
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "AFGPr",
+                                      "name": "Clave",
+                                      "fill": "$faded",
+                                      "content": "Estado",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 15,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "QyhrN",
+                                      "name": "Valor",
+                                      "fill": "#6B442E",
+                                      "content": "ABIERTA · nadie la ha visto",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 15,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vIIp4",
+                              "name": "Acciones",
+                              "width": "fill_container",
+                              "justifyContent": "end",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "CJiLr",
+                                  "name": "Orden",
+                                  "height": 48,
+                                  "fill": "$ink",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    0,
+                                    16
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "mYyQi",
+                                      "name": "Etiqueta",
+                                      "fill": "$sheet",
+                                      "content": "CREAR ORDEN DE COMPRA",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
                                 }
                               ]
                             }
