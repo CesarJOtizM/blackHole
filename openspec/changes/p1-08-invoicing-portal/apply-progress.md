@@ -426,3 +426,47 @@ None.
 - Estimated review budget impact: this pair is 387 lines (`request-reinvoice.test.ts` 295, `request-reinvoice.ts` 91, plus 1 `package.json` import). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 2.15
 
+
+## Pair 2.15–2.16
+
+This batch adds use-case pair 2.15–2.16 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the touched files. That Biome run reported `Checked 10 files in 28ms. Fixed 9 files.` |
+| Runtime harness command/scenario and exact result | N/A. In-memory doubles only. `ApproveReinvoice` reads the stored request, delegates the credit note to `IssueCreditNote`, and then calls the injected `IssueDocument` once. It does not open sockets, and it does not call Factus, HTTP, Twilio, or Postgres. |
+| Rollback boundary | `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts`, `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.ts`, `contexts/invoicing/application/ports/link-signer.ts`, `contexts/invoicing/application/ports/link-signer.contract.ts`, `contexts/invoicing/application/ports/portal-repository.ts`, `contexts/invoicing/application/ports/portal-repository.contract.ts`, `contexts/invoicing/application/ports/portal-request-limiter.ts`, `contexts/invoicing/application/ports/portal-request-limiter.contract.ts`, the eight portal exports in `contexts/invoicing/application/entry-port.ts`, and the `#application/approve-reinvoice/*` import in `contexts/invoicing/package.json`. Reverting those leaves domain pairs 1.1–1.10 and use-case pairs 2.1–2.14 in place. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/application/issue-credit-note/issue-credit-note.test.ts contexts/invoicing/application/request-reinvoice/request-reinvoice.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  8 passed (8)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 2.15 → 2.16 | `pnpm exec vitest run --project invoicing contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` exit 1. With no import pattern yet: `Missing "#application/approve-reinvoice/approve-reinvoice.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. After adding only `#application/approve-reinvoice/*` and with no use case file yet: `FAIL contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts` — `Cannot find module '#application/approve-reinvoice/approve-reinvoice.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after the use case, the three ports and contracts, the eight `entry-port.ts` exports, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+`ApproveReinvoice` delegates the credit note to `IssueCreditNote` and does not call `validateCreditNote` or send a second concept code. Factus already stamps `correction_concept_code` `"2"` inside that validation. The application test cannot import `adapters/factus` (dependency-cruiser). It asserts one `validateCreditNote` payload whose only keys are `referenceCode` and `originalReferenceCode`, then one new-invoice call. The literal `"2"` is not repeated on the use-case payload.
+
+`IssueDocument` needs a queued closure, tax rules, a matching sale base, and a document balance, so the test injects a subclass that records `execute` and does not call the provider. The two document operations are that credit note and that one `execute`. The document provider stays at zero calls.
+
+The approval rechecks `isReinvoiceWindowOpen` with the stored `issuedAt`, the approval `at`, and the company mode. A closed window, mode `off`, or an unreadable stored instant returns `{ outcome: "rejected" }` and calls neither `IssueCreditNote` nor the provider. The pending row stays pending and the consumer-final document keeps the same field values. Missing `sale.credit-note` still calls `IssueCreditNote` once; that call returns `{ outcome: "denied" }` before the provider, the note store, and the audit, and the new invoice is not issued. The single audit on the open path is the `sale.credit-note` audit written by `IssueCreditNote`. No second audit is written. Another company's invoice number is rejected. The invoice payload is not logged.
+
+`PortalRepository.find` is the stored request. After the credit note is issued and the new invoice is executed, `save` writes the same row with `status: approved`. A later approval finds that status and returns `{ outcome: "rejected" }` before `IssueCreditNote`. A denied or closed-window approval does not save, so the row stays pending. `LinkSigner` signs and verifies an `EvaluatedPortalLink` (`expiresAt`, the domain field) and does no HMAC. `PortalRequestLimiter.acquire` takes a token and an IP and has no window table. Neither is called by this approval: it is a staff permission check, not a public token or a signed link. The contract suites are not executed against a live adapter.
+
+### Issues Found
+
+A second approval of the same row is rejected. The first success saves `status: approved`, and a later approval does not call `IssueCreditNote` or `IssueDocument`.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 2.15 and 2.16 only. No HTTP, UI, Twilio, Postgres, local-node, sqlite, sync, or Factus fetch. `adapters/factus` was not edited. Task 3.1 was not started.
+- Files in this batch: `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.test.ts`, `contexts/invoicing/application/approve-reinvoice/approve-reinvoice.ts`, `contexts/invoicing/application/ports/link-signer.ts`, `contexts/invoicing/application/ports/link-signer.contract.ts`, `contexts/invoicing/application/ports/portal-repository.ts`, `contexts/invoicing/application/ports/portal-repository.contract.ts`, `contexts/invoicing/application/ports/portal-request-limiter.ts`, `contexts/invoicing/application/ports/portal-request-limiter.contract.ts`, `contexts/invoicing/application/entry-port.ts` (eight exports), `contexts/invoicing/package.json` (one import), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 790 lines (`approve-reinvoice.test.ts` 535, `approve-reinvoice.ts` 94, `link-signer.ts` 11, `link-signer.contract.ts` 24, `portal-repository.ts` 20, `portal-repository.contract.ts` 31, `portal-request-limiter.ts` 8, `portal-request-limiter.contract.ts` 26, `entry-port.ts` 40 added, plus 1 `package.json` import). That is 390 lines over the 400-line review budget. The ports and the eight exports were kept. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.1
+
