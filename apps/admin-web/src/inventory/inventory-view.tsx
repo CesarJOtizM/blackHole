@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   type Cell,
   RecordPage,
@@ -126,6 +127,7 @@ export function SuppliesView({
   onPurchase,
   onConsolidated,
   onTransfers,
+  onScarcity,
 }: {
   tab: SupplyTab;
   status?: string;
@@ -137,8 +139,10 @@ export function SuppliesView({
   onPurchase: () => void;
   onConsolidated: () => void;
   onTransfers: () => void;
+  onScarcity: () => void;
 }) {
-  const visible = supplies.filter((item) => {
+  const [items, setItems] = useState(() => supplies.map((item) => [...item]));
+  const visible = items.filter((item) => {
     if (tab === "all") return true;
     if (tab === "low") return item[9] === "low";
     return item[8] === tab;
@@ -159,7 +163,28 @@ export function SuppliesView({
       title="Insumos"
       actions={[
         { label: "Importar Excel", tone: "ghost", onPress: onImport },
-        { label: "Nuevo insumo", tone: "solid", onPress: onCreate },
+        {
+          label: "Nuevo insumo",
+          tone: "solid",
+          onPress: () => {
+            setItems((current) => [
+              [
+                "Insumo nuevo",
+                "KG",
+                "0",
+                "1",
+                "1",
+                "$0",
+                "Sin proveedor",
+                "Pedir",
+                "meat",
+                "low",
+              ],
+              ...current,
+            ]);
+            onCreate();
+          },
+        },
       ]}
       tabs={supplyTabs(tab, onTab)}
       columns={[
@@ -191,6 +216,9 @@ export function SuppliesView({
       </button>
       <button type="button" className={ui.textButton} onClick={onTransfers}>
         Traslados
+      </button>
+      <button type="button" className={ui.textButton} onClick={onScarcity}>
+        Alertas de escasez
       </button>
     </RecordPage>
   );

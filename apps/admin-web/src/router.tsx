@@ -218,6 +218,21 @@ const routeTree = rootRoute.addChildren([
     "TransferDetailScreen",
   ),
   page(
+    "inventory/scarcity",
+    () => import("#src/scarcity/scarcity-screen.js"),
+    "ScarcityScreen",
+  ),
+  page(
+    "inventory/scarcity/warehouse",
+    () => import("#src/scarcity/scarcity-screen.js"),
+    "WarehouseRequestScreen",
+  ),
+  page(
+    "inventory/scarcity/purchase",
+    () => import("#src/scarcity/scarcity-screen.js"),
+    "PurchaseRequestScreen",
+  ),
+  page(
     "deliveries",
     () => import("#src/channels/channels-screen.js"),
     "ChannelsScreen",
@@ -333,6 +348,16 @@ const routeTree = rootRoute.addChildren([
     "plan/suspended",
     () => import("#src/platform/platform-screen.js"),
     "SuspendedScreen",
+  ),
+  page(
+    "plan/factus",
+    () => import("#src/factus/factus-screen.js"),
+    "FactusDocumentsScreen",
+  ),
+  page(
+    "plan/factus/contributors",
+    () => import("#src/factus/factus-screen.js"),
+    "ContributorsScreen",
   ),
   page(
     "support/companies",

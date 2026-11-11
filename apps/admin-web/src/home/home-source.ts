@@ -29,7 +29,7 @@ export const attention = [
     id: "stock",
     title: "Camarón bajo mínimo en 2 sedes",
     detail: "Sugerido: OC a Mariscos del Pacífico",
-    to: "/inventory",
+    to: "/inventory/scarcity",
   },
   {
     id: "bag",

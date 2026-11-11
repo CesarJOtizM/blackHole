@@ -39,6 +39,9 @@ export function SuppliesScreen() {
       onTransfers={() => {
         void navigate({ to: "/inventory/transfers" });
       }}
+      onScarcity={() => {
+        void navigate({ to: "/inventory/scarcity" });
+      }}
     />
   );
 }

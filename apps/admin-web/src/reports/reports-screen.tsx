@@ -1,6 +1,10 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  readControlReportFromCloud,
+  readUnusualBehaviorFromCloud,
+} from "#src/api/admin-api.js";
+import {
   isReportSection,
   type ReportSection,
 } from "#src/reports/reports-model.js";
@@ -34,7 +38,19 @@ export function ReportsScreen() {
       onSection={(next) => {
         void navigate({ to: reportPaths[next] });
       }}
-      onExport={() => setStatus("El reporte queda exportado en esta sesión.")}
+      onExport={() => {
+        const sample = "El reporte queda exportado en esta sesión.";
+        const request =
+          section === "control"
+            ? readControlReportFromCloud()
+            : section === "leakage"
+              ? readUnusualBehaviorFromCloud()
+              : Promise.resolve(sample);
+
+        void request
+          .then((message) => setStatus(message))
+          .catch(() => setStatus(sample));
+      }}
     />
   );
 }
