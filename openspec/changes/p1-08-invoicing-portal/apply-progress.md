@@ -545,3 +545,44 @@ None.
 - Estimated review budget impact: this pair is 434 lines (`twilio-one-time-code-sender.test.ts` 315, `twilio-one-time-code-sender.ts` 116, `package.json` +2/−1). That is 34 lines over the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 3.5
 
+## Pair 3.5–3.6
+
+This batch adds adapter pair 3.5–3.6 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Task 3.7 was not started. The Twilio adapter was not edited.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. The run is after `pnpm exec biome check --write` on the two TypeScript files and `contexts/invoicing/package.json`. That Biome run reported `Checked 3 files in 10ms. Fixed 1 file.` |
+| Runtime harness command/scenario and exact result | Same command. HMAC-SHA256 runs through `node:crypto`. `portal.link-key` is read from an in-memory `Secrets` double. No secret file and no network. Not N/A. |
+| Rollback boundary | `contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts`, `contexts/invoicing/adapters/crypto/hmac-link-signer.ts`, and the `#adapters/crypto/*` import in `contexts/invoicing/package.json`. Reverting those leaves pairs 1.1–3.4 in place. Domain and Twilio stay as they were. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/twilio/twilio-one-time-code-sender.test.ts contexts/invoicing/domain/portal-link.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  11 passed (11)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 3.5 → 3.6 | `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` exit 1. `FAIL \|invoicing\| contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` — `Missing "#adapters/crypto/hmac-link-signer.js" specifier in "@blackhole/invoicing" package`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `hmac-link-signer.ts`, `#adapters/crypto/*`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. |
+
+### Deviations from Design
+
+The signed token is `/f/<base64url(canonical JSON)>.<hmac>`. The left segment is the link `{purpose, tenantId, venueId, checkId, exp}`, with `exp` copied from `expiresAt`. It is not the Factus reference code. `LinkSigner.sign` receives only `EvaluatedPortalLink`, and `verify` has to return that link. `GetPortalInvoice` still treats the Factus reference as `suffixAccepted`. A matching suffix verifies. A flipped payload, a flipped hmac, an appended `.other`, or a bare hmac returns null. Expiry stays in `revealPortalLink`.
+
+`CodeDigest.matches` is synchronous, so `HmacCodeDigest.open` reads `portal.link-key` once and `matches` compares HMAC-SHA256 of the clear code, base64url, with `timingSafeEqual`. Same algorithm and the same secret as the link. No second hash. A missing or blank key throws `PortalLinkKeyUnavailable` from `sign` and `open`. `verify` returns null. The design does not name that error. An env value named `portal.link-key` is not read. No secret file.
+
+`linkSignerContract` and `codeDigestContract` both run in this slice. The domain was not edited and does not import `node:crypto`.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 3.5 and 3.6 only. No Postgres, Factus `downloadPdf`, local-node, sqlite, outbox, or sync. The Twilio adapter was not edited. Task 3.7 was not started.
+- Files in this batch: `contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts`, `contexts/invoicing/adapters/crypto/hmac-link-signer.ts`, `contexts/invoicing/package.json` (`#adapters/crypto/*`), `openspec/changes/p1-08-invoicing-portal/tasks.md`, `openspec/changes/p1-08-invoicing-portal/apply-progress.md`
+- Estimated review budget impact: this pair is 347 lines (`hmac-link-signer.test.ts` 158, `hmac-link-signer.ts` 186, `package.json` +2/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.7
+
