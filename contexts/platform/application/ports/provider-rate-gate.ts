@@ -19,5 +19,9 @@ export function providerRetryAfterSeconds(at: Date): number {
 }
 
 export abstract class ProviderRateGate {
-  abstract acquire(taxId: string, at: Date): Promise<ProviderRateDecision>;
+  abstract acquire(
+    taxId: string,
+    at: Date,
+    ceiling = providerRequestsPerMinute,
+  ): Promise<ProviderRateDecision>;
 }
