@@ -14,6 +14,7 @@ export interface DiningTable {
   label: string;
   seats: number;
   state: TableState;
+  channel?: "waiter" | "qr_table";
   lines: OrderLine[];
 }
 
@@ -24,6 +25,7 @@ export interface KitchenTicket {
   minutes: number;
   lines: string[];
   ready: boolean;
+  channel?: "waiter" | "qr_table";
 }
 
 interface ServiceSession {
@@ -81,6 +83,7 @@ const initialTables: DiningTable[] = [
     label: "05",
     seats: 6,
     state: "occupied",
+    channel: "qr_table",
     lines: [
       { id: "05-a", name: "Costilla BBQ", priceCop: 42000, sent: true },
       { id: "05-b", name: "Empanada de carne", priceCop: 8000, sent: false },
@@ -105,6 +108,7 @@ const initialTickets: KitchenTicket[] = [
     minutes: 6,
     lines: ["Costilla BBQ"],
     ready: false,
+    channel: "qr_table",
   },
 ];
 

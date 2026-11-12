@@ -283,6 +283,7 @@ export class Check {
   private readonly dinerCount: number | null;
   private firstSentAtValue: string | undefined;
   private releasedAtValue: string | undefined;
+  private chargedAtValue: string | undefined;
   private tableStateValue: TableState = "occupied";
   private preBillRequestValue: PreBillRequest | undefined;
   private waiterIdValue: string | null = null;
@@ -316,6 +317,18 @@ export class Check {
     }
 
     this.releasedAtValue = input.releasedAt;
+  }
+
+  get chargedAt(): string | undefined {
+    return this.chargedAtValue;
+  }
+
+  stampCharged(input: { chargedAt: string }): void {
+    if (this.chargedAtValue !== undefined) {
+      return;
+    }
+
+    this.chargedAtValue = input.chargedAt;
   }
 
   get firstSentAt(): string | undefined {

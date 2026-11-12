@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 
 import { MarkAccountPaid } from "#application/mark-account-paid/mark-account-paid.js";
+import { Clock } from "#application/ports/clock.js";
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
 import { Check } from "#domain/check.js";
 import { DiningTable, TableAlreadyOccupied } from "#domain/dining-table.js";
@@ -42,6 +43,29 @@ class MemoryDiningRoom extends DiningRoomRepository {
     for (const check of checks) {
       await this.saveCheck(check);
     }
+  }
+
+  override async loadOpenCheckByTable(
+    tenantId: string,
+    venueId: string,
+    tableId: string,
+  ): Promise<Check | null> {
+    return (
+      [...this.checks.values()].find(
+        (check) =>
+          check.tenantId === tenantId &&
+          check.venueId === venueId &&
+          check.tableId === tableId &&
+          (check.tableState === "occupied" ||
+            check.tableState === "check_requested"),
+      ) ?? null
+    );
+  }
+}
+
+class FixedClock extends Clock {
+  override now(): number {
+    return Date.parse("2026-10-29T19:00:00.000Z");
   }
 }
 
@@ -90,7 +114,7 @@ const checkSnapshot = (check: Check) => ({
 
 it("given an occupied table, when the account is marked paid, then the table is to_clean", async () => {
   const repository = new MemoryDiningRoom();
-  const markAccountPaid = new MarkAccountPaid(repository);
+  const markAccountPaid = new MarkAccountPaid(repository, new FixedClock());
   await seedTable(repository, (table) => {
     table.open({ diners: 4 });
   });
@@ -111,13 +135,14 @@ it("given an occupied table, when the account is marked paid, then the table is 
   expect(paid.state).toBe("to_clean");
   expect(paid.diners).toBe(4);
   expect(save).toHaveBeenCalledTimes(1);
-  expect(saveCheck).not.toHaveBeenCalled();
+  expect(saveCheck).toHaveBeenCalledTimes(1);
   expect(saveChecks).not.toHaveBeenCalled();
   const stored = await repository.load(TENANT_ID, VENUE_ID, TABLE_ID);
   expect(stored?.state).toBe("to_clean");
   expect(stored?.zone).toBe("Terrace");
   const storedCheck = await repository.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
   expect(checkSnapshot(storedCheck as Check)).toEqual(before);
+  expect(storedCheck?.chargedAt).toBe("2026-10-29T19:00:00.000Z");
 });
 
 it("given a check-requested table, when the account is marked paid, then the table is to_clean", async () => {

@@ -144,6 +144,7 @@ export const checks = pgTable(
     waiterId: text("waiter_id"),
     diners: integer("diners"),
     releasedAt: text("released_at"),
+    chargedAt: text("charged_at"),
     firstSentAt: text("first_sent_at"),
     tableState: text("table_state").notNull(),
     preBillRequestedAt: text("pre_bill_requested_at"),

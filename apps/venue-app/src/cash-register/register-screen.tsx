@@ -12,7 +12,15 @@ function cop(value: number): string {
   }).format(value);
 }
 
-export function RegisterScreen() {
+export function RegisterScreen({
+  stalePayments = [],
+  qrCop = null,
+  expectedCashCop = null,
+}: {
+  stalePayments?: readonly { reference: string }[];
+  qrCop?: number | null;
+  expectedCashCop?: number | null;
+} = {}) {
   const service = useService();
   const check = service.tables.find((table) => table.state === "check");
   const due = check ? tableTotal(check) : 0;
@@ -20,9 +28,18 @@ export function RegisterScreen() {
   const [card, setCard] = useState("48000");
   const [counts, setCounts] = useState<Record<number, string>>({});
   const [paid, setPaid] = useState(false);
-  const [pendingQr, setPendingQr] = useState([
-    { id: "intent_1", tableLabel: "06", summary: "Sopa · sitio $22.000" },
-  ]);
+  const [dismissedQr, setDismissedQr] = useState<readonly string[]>([]);
+  const pendingQr = service.tables.flatMap((table) =>
+    table.channel === "qr_table"
+      ? table.lines
+          .filter((line) => !line.sent && !dismissedQr.includes(line.id))
+          .map((line) => ({
+            id: line.id,
+            tableLabel: table.label,
+            summary: line.name,
+          }))
+      : [],
+  );
   const [billingChoice, setBillingChoice] = useState<
     "portal" | "register" | null
   >(null);
@@ -55,10 +72,16 @@ export function RegisterScreen() {
         </h2>
         <p className="font-mono text-numeral">{cop(due)}</p>
         {check ? <p role="status">Datos recibidos</p> : null}
-        <p role="status">
-          Pago QR pendiente
-          <span className="block">qrpay_stale</span>
-        </p>
+        {stalePayments.length === 0 ? (
+          <p className="text-ink-muted">Sin pagos QR en espera.</p>
+        ) : (
+          stalePayments.map((payment) => (
+            <p key={payment.reference} role="status">
+              Pago QR pendiente
+              <span className="block">{payment.reference}</span>
+            </p>
+          ))
+        )}
         {check ? (
           <div className="flex gap-2">
             <Button
@@ -134,8 +157,10 @@ export function RegisterScreen() {
                 <Button
                   variant="secondary"
                   onClick={() =>
-                    setPendingQr((current) =>
-                      current.filter((item) => item.id !== order.id),
+                    setDismissedQr((current) =>
+                      current.includes(order.id)
+                        ? current
+                        : [...current, order.id],
                     )
                   }
                 >
@@ -143,8 +168,10 @@ export function RegisterScreen() {
                 </Button>
                 <Button
                   onClick={() =>
-                    setPendingQr((current) =>
-                      current.filter((item) => item.id !== order.id),
+                    setDismissedQr((current) =>
+                      current.includes(order.id)
+                        ? current
+                        : [...current, order.id],
                     )
                   }
                 >
@@ -184,8 +211,10 @@ export function RegisterScreen() {
           />
         ))}
         <p className="font-mono">Contado {cop(counted)}</p>
-        <p>QR {cop(120_000)}</p>
-        <p>Efectivo esperado {cop(200_000)}</p>
+        {qrCop === null ? null : <p>QR {cop(qrCop)}</p>}
+        {expectedCashCop === null ? null : (
+          <p>Efectivo esperado {cop(expectedCashCop)}</p>
+        )}
       </article>
       {service.notice ? (
         <p role="status" className="text-ink-muted">

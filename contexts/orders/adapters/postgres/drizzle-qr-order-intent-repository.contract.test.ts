@@ -19,6 +19,7 @@ const migrations = [
   "0003_check_waiter.sql",
   "0004_qr_table_ordering.sql",
   "0005_report_stamps.sql",
+  "0006_charge_stamp.sql",
 ] as const;
 
 const clients: PGlite[] = [];

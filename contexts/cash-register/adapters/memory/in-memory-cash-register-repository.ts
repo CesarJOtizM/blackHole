@@ -52,4 +52,17 @@ export class InMemoryCashRegisterRepository extends CashRegisterRepository {
 
     this.shifts.set(key, cloneShift(shift));
   }
+
+  async listOpen(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly CashShift[]> {
+    const prefix = `${tenantId}\u0000${venueId}\u0000`;
+
+    return [...this.shifts.entries()]
+      .filter(
+        ([key, shift]) => key.startsWith(prefix) && shift.state === "open",
+      )
+      .map(([, shift]) => cloneShift(shift));
+  }
 }

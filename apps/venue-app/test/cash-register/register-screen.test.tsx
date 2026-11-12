@@ -41,7 +41,11 @@ it("given billing data received, when the cashier chooses the portal data, then 
 it("given a stale qr payment, when the cashier counts cash, then the pending payment is visible and qr stays apart from cash", () => {
   render(
     <ServiceProvider>
-      <RegisterScreen />
+      <RegisterScreen
+        stalePayments={[{ reference: "qrpay_stale" }]}
+        qrCop={120_000}
+        expectedCashCop={200_000}
+      />
     </ServiceProvider>,
   );
 

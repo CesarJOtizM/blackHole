@@ -11,7 +11,8 @@
     "./adapters/postgres/ledger-cash-fact-reader": "./adapters/postgres/ledger-cash-fact-reader.js",
     "./adapters/manual-terminal/manual-card-terminal": "./adapters/manual-terminal/manual-card-terminal.js",
     "./adapters/postgres/drizzle-cash-register-repository": "./adapters/postgres/drizzle-cash-register-repository.js",
-    "./adapters/postgres/drizzle-qr-payment-repository": "./adapters/postgres/drizzle-qr-payment-repository.js"
+    "./adapters/postgres/drizzle-qr-payment-repository": "./adapters/postgres/drizzle-qr-payment-repository.js",
+    "./adapters/bold/bold-payment-gateway": "./adapters/bold/bold-payment-gateway.js"
   },
   "dependencies": {
     "@blackhole/platform": "workspace:*",

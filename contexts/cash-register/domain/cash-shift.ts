@@ -55,12 +55,14 @@ interface OpenShift {
   id: string;
   cashierId: string;
   openingFloatCop: number;
+  openedAt?: string;
 }
 
 interface OpenedShift {
   id: string;
   cashierId: string;
   openingFloatCop: number;
+  openedAt: string | null;
   state: ShiftState;
 }
 
@@ -256,6 +258,10 @@ export class CashShift {
     return this.openedShift?.openingFloatCop;
   }
 
+  get openedAt(): string | null {
+    return this.openedShift?.openedAt ?? null;
+  }
+
   get state(): ShiftState | undefined {
     return this.openedShift?.state;
   }
@@ -295,6 +301,7 @@ export class CashShift {
       id: input.id,
       cashierId: input.cashierId,
       openingFloatCop: input.openingFloatCop,
+      openedAt: input.openedAt ?? null,
       state: SHIFT_STATE.OPEN,
     };
   }

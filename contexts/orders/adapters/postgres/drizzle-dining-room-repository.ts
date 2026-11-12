@@ -1,5 +1,5 @@
 import type { PGlite } from "@electric-sql/pglite";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import {
   checks,
@@ -62,6 +62,7 @@ interface StoredCheck {
   waiterId: string | null;
   diners: number | null;
   releasedAt: string | null;
+  chargedAt: string | null;
   firstSentAt: string | null;
   tableState: string;
   preBillRequestedAt: string | null;
@@ -142,6 +143,38 @@ export class DrizzleDiningRoomRepository extends DiningRoomRepository {
 
       if (row === undefined || rows.length !== 1 || row.tenantId !== tenantId) {
         throw new Error("Stored check does not match the tenant.");
+      }
+
+      const storedOrders = await readOrders(tx, tenantId, row.venueId, row.id);
+
+      return restoreCheck(row, storedOrders.get(row.id) ?? []);
+    });
+  }
+
+  override async loadOpenCheckByTable(
+    tenantId: string,
+    venueId: string,
+    tableId: string,
+  ): Promise<Check | null> {
+    return this.inTenant(tenantId, async (tx) => {
+      const rows = await tx
+        .select()
+        .from(checks)
+        .where(
+          and(
+            eq(checks.venueId, venueId),
+            eq(checks.tableId, tableId),
+            or(
+              eq(checks.tableState, "occupied"),
+              eq(checks.tableState, "check_requested"),
+            ),
+          ),
+        )
+        .orderBy(asc(checks.id));
+      const row = rows.find((candidate) => candidate.tenantId === tenantId);
+
+      if (row === undefined) {
+        return null;
       }
 
       const storedOrders = await readOrders(tx, tenantId, row.venueId, row.id);
@@ -251,6 +284,7 @@ function snapshotCheck(check: Check): StoredCheck {
     waiterId: check.waiterId,
     diners: check.diners,
     releasedAt: check.releasedAt ?? null,
+    chargedAt: check.chargedAt ?? null,
     firstSentAt: check.firstSentAt ?? null,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequest?.requestedAt ?? null,
@@ -314,6 +348,7 @@ async function replaceCheck(
     waiterId: check.waiterId,
     diners: check.diners,
     releasedAt: check.releasedAt,
+    chargedAt: check.chargedAt,
     firstSentAt: check.firstSentAt,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequestedAt,
@@ -439,6 +474,10 @@ function restoreCheck(
 
   if (row.releasedAt !== null) {
     check.stampReleased({ releasedAt: row.releasedAt });
+  }
+
+  if (row.chargedAt !== null) {
+    check.stampCharged({ chargedAt: row.chargedAt });
   }
 
   if (row.waiterId !== null) {
