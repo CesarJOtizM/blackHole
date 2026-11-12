@@ -36,6 +36,10 @@ const stampMigration = readFileSync(
   fileURLToPath(new URL("./0005_report_stamps.sql", import.meta.url)),
   "utf8",
 );
+const chargeMigration = readFileSync(
+  fileURLToPath(new URL("./0006_charge_stamp.sql", import.meta.url)),
+  "utf8",
+);
 
 const clients: PGlite[] = [];
 
@@ -49,6 +53,7 @@ const applyMigrations = async (client: PGlite): Promise<void> => {
   await client.exec(waiterMigration);
   await client.exec(qrMigration);
   await client.exec(stampMigration);
+  await client.exec(chargeMigration);
 };
 
 diningRoomRepositoryContract(async () => {

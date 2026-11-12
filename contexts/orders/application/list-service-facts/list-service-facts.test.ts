@@ -19,6 +19,7 @@ const READY_AT = "2026-10-28T12:40:00.000Z";
 const DELIVERED_AT = "2026-10-28T12:55:00.000Z";
 const REQUESTED_AT = "2026-10-28T13:00:00.000Z";
 const RELEASED_AT = "2026-10-28T13:10:00.000Z";
+const CHARGED_AT = "2026-10-28T13:20:00.000Z";
 const OUTSIDE_AT = "2026-10-27T12:00:00.000Z";
 const STATION_ID = "station_grill";
 
@@ -99,6 +100,7 @@ const seated = (): Check => {
   });
   check.requestCheck({ requestedAt: REQUESTED_AT });
   check.stampReleased({ releasedAt: RELEASED_AT });
+  check.stampCharged({ chargedAt: CHARGED_AT });
 
   return check;
 };
@@ -176,6 +178,7 @@ it("given seated and voided lines, when service facts are listed, then channel, 
       waiterId: "user_waiter",
       stationId: null,
       openedAt: OPENED_AT,
+      chargedAt: CHARGED_AT,
       releasedAt: RELEASED_AT,
       requestedAt: REQUESTED_AT,
       sentAt: null,
@@ -194,6 +197,7 @@ it("given seated and voided lines, when service facts are listed, then channel, 
       waiterId: "user_waiter",
       stationId: STATION_ID,
       openedAt: OPENED_AT,
+      chargedAt: CHARGED_AT,
       releasedAt: RELEASED_AT,
       requestedAt: REQUESTED_AT,
       sentAt: SENT_AT,
@@ -212,6 +216,7 @@ it("given seated and voided lines, when service facts are listed, then channel, 
       waiterId: null,
       stationId: null,
       openedAt: OPENED_AT,
+      chargedAt: null,
       releasedAt: null,
       requestedAt: null,
       sentAt: null,

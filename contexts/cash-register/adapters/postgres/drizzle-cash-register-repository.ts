@@ -111,6 +111,26 @@ export class DrizzleCashRegisterRepository extends CashRegisterRepository {
     });
   }
 
+  async listOpen(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly CashShift[]> {
+    return this.inTenant(tenantId, async (tx) => {
+      const rows = await tx
+        .select()
+        .from(cashShifts)
+        .where(
+          and(eq(cashShifts.venueId, venueId), eq(cashShifts.status, "open")),
+        );
+
+      if (rows.some((row) => row.tenantId !== tenantId)) {
+        throw new Error("Stored cash shift does not match the tenant.");
+      }
+
+      return rows.map((row) => toShift(row, []));
+    });
+  }
+
   override async save(
     tenantId: string,
     venueId: string,

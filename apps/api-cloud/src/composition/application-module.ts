@@ -24,6 +24,7 @@ import {
   OriginalPaymentReader,
   PaidAccountReader,
   type Payment,
+  PaymentGateway,
   PrintTipSettlement,
   type QueuedSaleReceipt,
   type RecordedPaymentTip,
@@ -192,19 +193,19 @@ import {
 } from "#src/composition/postgres-qr-table.js";
 import {
   applyQrPaymentFor,
-  ClosedQrGateway,
   ClosedQrTableAccess,
   confirmQrPaymentFor,
   MemoryQrPayments,
+  qrGatewayFor,
   startQrPaymentFor,
 } from "#src/composition/qr-table-payment.js";
 import { OrdersRecipeVenueDirectory } from "#src/composition/recipe-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
 import {
-  AbsentOpenShift,
   createReportingFacts,
   PermissionReportAccess,
   ReportingFacts,
+  VenueOpenShift,
 } from "#src/composition/reporting-facts.js";
 import {
   PendingSalePrinter,
@@ -380,7 +381,6 @@ export class ApplicationModule implements NestModule {
     const registers =
       dependencies.registers ?? new InMemoryCashRegisterRepository();
     const qrPayments = new MemoryQrPayments();
-    const qrGateway = new ClosedQrGateway();
     const charges = dependencies.charges ?? new MemoryChargeLedger();
     const counts = dependencies.counts ?? new MemoryCashCounts();
     const countStore = counts as unknown as ConstructorParameters<
@@ -1547,44 +1547,44 @@ export class ApplicationModule implements NestModule {
           inject: [AuthorizationRepository, AuthorizationClock],
         },
         {
-          provide: AbsentOpenShift,
-          useFactory: () => new AbsentOpenShift(),
+          provide: VenueOpenShift,
+          useFactory: () => new VenueOpenShift(registers),
         },
         {
           provide: ReadSalesReport,
           useFactory: (
             access: PermissionReportAccess,
-            shifts: AbsentOpenShift,
+            shifts: VenueOpenShift,
             facts: ReportingFacts,
           ) => new ReadSalesReport(access, shifts, facts),
-          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+          inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
         },
         {
           provide: ReadTimeReport,
           useFactory: (
             access: PermissionReportAccess,
-            shifts: AbsentOpenShift,
+            shifts: VenueOpenShift,
             facts: ReportingFacts,
           ) => new ReadTimeReport(access, shifts, facts),
-          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+          inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
         },
         {
           provide: ReadCashReport,
           useFactory: (
             access: PermissionReportAccess,
-            shifts: AbsentOpenShift,
+            shifts: VenueOpenShift,
             facts: ReportingFacts,
           ) => new ReadCashReport(access, shifts, facts),
-          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+          inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
         },
         {
           provide: ReadStaffReport,
           useFactory: (
             access: PermissionReportAccess,
-            shifts: AbsentOpenShift,
+            shifts: VenueOpenShift,
             facts: ReportingFacts,
           ) => new ReadStaffReport(access, shifts, facts),
-          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+          inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
         },
         {
           provide: DetectUnusualBehavior,
@@ -1622,14 +1622,24 @@ export class ApplicationModule implements NestModule {
           useClass: ClosedQrTableAccess,
         },
         {
+          provide: PaymentGateway,
+          useFactory: (secrets: Secrets) => qrGatewayFor(secrets),
+          inject: [Secrets],
+        },
+        {
           provide: StartQrPayment,
-          useFactory: (accounts: OrdersAccount, clock: Clock) =>
-            startQrPaymentFor(accounts, clock, qrPayments, qrGateway),
-          inject: [OrdersAccount, Clock],
+          useFactory: (
+            accounts: OrdersAccount,
+            clock: Clock,
+            gateway: PaymentGateway,
+          ) => startQrPaymentFor(accounts, clock, qrPayments, gateway),
+          inject: [OrdersAccount, Clock, PaymentGateway],
         },
         {
           provide: ConfirmQrPayment,
-          useFactory: () => confirmQrPaymentFor(qrPayments, qrGateway),
+          useFactory: (gateway: PaymentGateway) =>
+            confirmQrPaymentFor(qrPayments, gateway),
+          inject: [PaymentGateway],
         },
         {
           provide: ApplyQrPayment,

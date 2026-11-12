@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { router } from "#src/router.js";
 import {
   presentTableOrderMenu,
@@ -46,6 +46,26 @@ it("given a table token, when /m/:token is shown, then the customer can send the
   expect(screen.getByRole("button", { name: "Enviar pedido" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: /pagar/i })).toBeNull();
   expect(screen.queryByRole("button", { name: /pay/i })).toBeNull();
+});
+
+it("given a dish in the cart, when the customer sends the order, then the portal posts the intent", () => {
+  const fetchMock = vi.fn(() =>
+    Promise.resolve(new Response(null, { status: 202 })),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  render(<TableOrderScreen token="table-qr-nonce-0001" />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Sumar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Enviar pedido" }));
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/m/table-qr-nonce-0001/orders",
+    expect.objectContaining({
+      method: "POST",
+      body: expect.stringContaining("menu_product_soup"),
+    }),
+  );
+  vi.unstubAllGlobals();
 });
 
 it("given items that have not been sent, when the customer removes one, then the cart updates and nothing reaches the account", () => {

@@ -61,6 +61,25 @@ export function TableOrderScreen({
     });
   }
 
+  function sendOrder() {
+    const intentId = `intent_${crypto.randomUUID()}`;
+
+    void fetch(`/m/${token}/orders`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intentId,
+        lines: cart.map((productId) => ({
+          productId,
+          variantIds: [],
+          modifierIds: [],
+        })),
+      }),
+    });
+    setCart([]);
+    setSent(true);
+  }
+
   return (
     <main className="mx-auto grid min-h-svh max-w-lg gap-6 px-4 py-8">
       <header className="grid gap-1">
@@ -117,10 +136,7 @@ export function TableOrderScreen({
       ) : null}
       <Button
         disabled={cart.length === 0 || sent || acceptance === "rejected"}
-        onClick={() => {
-          setCart([]);
-          setSent(true);
-        }}
+        onClick={sendOrder}
       >
         Enviar pedido
       </Button>

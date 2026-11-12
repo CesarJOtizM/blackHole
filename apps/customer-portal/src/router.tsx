@@ -7,7 +7,7 @@ import { BillingDataScreen } from "#src/billing-data-screen.js";
 import { HomeScreen } from "#src/home-screen.js";
 import { InvoiceLinkScreen } from "#src/invoice-link-screen.js";
 import { TableOrderScreen } from "#src/table-order/table-order-screen.js";
-import { TablePaymentScreen } from "#src/table-payment/table-payment-screen.js";
+import { TablePaymentRoute } from "#src/table-payment/table-payment-screen.js";
 
 const rootRoute = createRootRoute();
 
@@ -24,14 +24,7 @@ const billingDataRoute = createRoute({
     const { token } = billingDataRoute.useParams();
     return (
       <>
-        <TablePaymentScreen
-          token={token}
-          balanceCop={85_000}
-          parts={[
-            { partId: "part_1", balanceCop: 45_000, paid: true },
-            { partId: "part_2", balanceCop: 40_000, paid: false },
-          ]}
-        />
+        <TablePaymentRoute token={token} />
         <BillingDataScreen token={token} />
       </>
     );

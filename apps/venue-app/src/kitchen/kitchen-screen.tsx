@@ -28,7 +28,7 @@ export function KitchenScreen() {
               <div className="flex items-baseline justify-between">
                 <h2 className="font-display text-title">
                   Mesa {ticket.tableLabel}
-                  {ticket.id === "k-05" ? (
+                  {ticket.channel === "qr_table" ? (
                     <span className="block font-mono text-xs uppercase">
                       QR table
                     </span>

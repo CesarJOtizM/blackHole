@@ -18,6 +18,7 @@ export interface ServiceLineFact {
   waiterId: string | null;
   stationId: string | null;
   openedAt: string | null;
+  chargedAt: string | null;
   releasedAt: string | null;
   requestedAt: string | null;
   sentAt: string | null;
@@ -47,6 +48,7 @@ const touchesPeriod = (
 ): boolean =>
   [
     check.openedAt,
+    check.chargedAt,
     check.releasedAt,
     check.preBillRequest?.requestedAt,
     line.sentAt,
@@ -74,6 +76,7 @@ const factsFor = (check: Check, from: string, to: string): ServiceLineFact[] =>
           waiterId: check.waiterId,
           stationId: line.stationId ?? null,
           openedAt: check.openedAt,
+          chargedAt: check.chargedAt ?? null,
           releasedAt: check.releasedAt ?? null,
           requestedAt: check.preBillRequest?.requestedAt ?? null,
           sentAt: line.sentAt ?? null,

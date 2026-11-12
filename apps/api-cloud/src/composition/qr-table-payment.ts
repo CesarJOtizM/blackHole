@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { BoldPaymentGateway } from "@blackhole/cash-register/adapters/bold/bold-payment-gateway";
 import type { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
 import {
   ApplyQrPayment,
@@ -16,6 +17,7 @@ import {
 } from "@blackhole/cash-register/application/entry-port";
 import type { QrPayment } from "@blackhole/cash-register/domain";
 import type { Clock } from "@blackhole/platform/application/ports/clock";
+import type { Secrets } from "@blackhole/platform/application/ports/secrets";
 import type { OrdersAccount } from "#src/composition/orders-account.js";
 import {
   QrTableAccess,
@@ -100,6 +102,31 @@ export class ClosedQrGateway extends PaymentGateway {
     return [];
   }
 }
+
+const BOLD_WEBHOOK_SECRET = "bold.webhook-secret";
+const BOLD_CHECKOUT_ORIGIN = "https://checkout.bold.co";
+
+export const qrGatewayFor = async (
+  secrets: Secrets,
+): Promise<PaymentGateway> => {
+  try {
+    const secret = (await secrets.read(BOLD_WEBHOOK_SECRET)).trim();
+
+    if (secret.length === 0) {
+      return new ClosedQrGateway();
+    }
+
+    return new BoldPaymentGateway({
+      secret,
+      checkoutOrigin: BOLD_CHECKOUT_ORIGIN,
+      reports: {
+        fetchReport: () => Promise.resolve([]),
+      },
+    });
+  } catch {
+    return new ClosedQrGateway();
+  }
+};
 
 class DisabledQrPayments extends QrPaymentAvailability {
   override async enabled(): Promise<boolean> {

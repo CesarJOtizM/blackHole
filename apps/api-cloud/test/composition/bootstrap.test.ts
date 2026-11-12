@@ -17,6 +17,7 @@ import {
   OpenShift,
   OriginalPaymentReader,
   PaidAccountReader,
+  PaymentGateway,
   PrintTipSettlement,
   ReopenPaidAccount,
   SettleTips,
@@ -178,9 +179,9 @@ import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import { ClosedQrTableAccess } from "#src/composition/qr-table-payment.js";
 import {
-  AbsentOpenShift,
   PermissionReportAccess,
   ReportingFacts,
+  VenueOpenShift,
 } from "#src/composition/reporting-facts.js";
 import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
 import { NumberingRangeStore } from "#src/http/invoicing.controller.js";
@@ -806,28 +807,28 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         inject: [AuthorizationRepository, AuthorizationClock],
       },
       {
-        provide: AbsentOpenShift,
+        provide: VenueOpenShift,
         useFactory: expect.any(Function),
       },
       {
         provide: ReadSalesReport,
         useFactory: expect.any(Function),
-        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
       },
       {
         provide: ReadTimeReport,
         useFactory: expect.any(Function),
-        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
       },
       {
         provide: ReadCashReport,
         useFactory: expect.any(Function),
-        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
       },
       {
         provide: ReadStaffReport,
         useFactory: expect.any(Function),
-        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
       },
       {
         provide: DetectUnusualBehavior,
@@ -857,13 +858,19 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         useClass: ClosedQrTableAccess,
       },
       {
+        provide: PaymentGateway,
+        useFactory: expect.any(Function),
+        inject: [Secrets],
+      },
+      {
         provide: StartQrPayment,
         useFactory: expect.any(Function),
-        inject: [OrdersAccount, Clock],
+        inject: [OrdersAccount, Clock, PaymentGateway],
       },
       {
         provide: ConfirmQrPayment,
         useFactory: expect.any(Function),
+        inject: [PaymentGateway],
       },
       {
         provide: ApplyQrPayment,

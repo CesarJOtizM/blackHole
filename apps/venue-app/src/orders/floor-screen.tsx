@@ -79,7 +79,7 @@ export function FloorScreen() {
           >
             <span className="font-display text-title">{table.label}</span>
             <span className="text-sm">{stateLabel[table.state]}</span>
-            {table.id === "05" ? (
+            {table.channel === "qr_table" ? (
               <span className="text-sm">QR table</span>
             ) : null}
           </button>
@@ -90,7 +90,7 @@ export function FloorScreen() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-title">Mesa {selected.label}</h2>
             <div className="flex gap-2">
-              {selected.id === "05" ? (
+              {selected.channel === "qr_table" ? (
                 <StatusChip tone="occupied">QR table</StatusChip>
               ) : null}
               <StatusChip tone={stateTone[selected.state]}>

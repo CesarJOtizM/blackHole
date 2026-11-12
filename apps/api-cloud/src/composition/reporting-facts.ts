@@ -27,6 +27,7 @@ import type {
   TenderFact,
 } from "@blackhole/reporting/application/ports/operation-facts";
 import type {
+  CashShiftWindow,
   OpenShiftBounds,
   ReportAccess,
   ReportAccessQuery,
@@ -84,7 +85,7 @@ const serviceLine = (
     readyAt: line.readyAt,
     deliveredAt: line.deliveredAt,
     requestedAt: line.requestedAt,
-    chargedAt: null,
+    chargedAt: line.chargedAt,
     releasedAt: line.releasedAt,
   };
 };
@@ -215,8 +216,41 @@ export class PermissionReportAccess implements ReportAccess {
   }
 }
 
-export class AbsentOpenShift implements OpenShiftBounds {
-  findOpen(): Promise<null> {
-    return Promise.resolve(null);
+interface OpenCashRegisters {
+  listOpen(
+    tenantId: string,
+    venueId: string,
+  ): Promise<
+    readonly {
+      readonly id: string | undefined;
+      readonly state: string | undefined;
+      readonly openedAt: string | null;
+    }[]
+  >;
+}
+
+const UNKNOWN_OPENED_AT = "1970-01-01T00:00:00.000Z";
+
+export class VenueOpenShift implements OpenShiftBounds {
+  constructor(private readonly registers: OpenCashRegisters) {}
+
+  async findOpen(
+    tenantId: string,
+    venueId: string,
+  ): Promise<CashShiftWindow | null> {
+    const shifts = await this.registers.listOpen(tenantId, venueId);
+    const open = shifts.find(
+      (shift) => shift.state === "open" && shift.id !== undefined,
+    );
+
+    if (open?.id === undefined) {
+      return null;
+    }
+
+    return {
+      shiftId: open.id,
+      openedAt: open.openedAt ?? UNKNOWN_OPENED_AT,
+      closedAt: null,
+    };
   }
 }
