@@ -1,10 +1,12 @@
-import { type Cell, RecordPage } from "#src/shell/record-page.js";
+import { RecordPage } from "#src/shell/record-page.js";
+import record from "#src/styles/record.module.scss";
 import ui from "#src/styles/ui.module.scss";
 
 const slots = [
-  ["Almuerzo", "12:00–15:30", "45 min", "14 mesas", "Activa"],
-  ["Comida", "18:30–22:30", "90 min", "14 mesas", "Activa"],
-  ["Domingo", "12:00–16:00", "75 min", "10 mesas", "Activa"],
+  ["12:00 – 15:30", "Lun – dom", "8 de 14", "40", "90 min"],
+  ["18:00 – 20:00", "Mar – sáb", "10 de 14", "48", "120 min"],
+  ["20:00 – 22:30", "Vie – sáb", "6 de 14", "30", "120 min"],
+  ["Cumpleaños 10+", "Sáb", "2 salones", "30", "180 min"],
 ] as const;
 
 const accounts = [
@@ -14,39 +16,84 @@ const accounts = [
 ] as const;
 
 const policy = [
-  ["Más de 48 h", "100%", "Se devuelve el anticipo"],
-  ["Entre 24 y 48 h", "50%", "Se retiene la mitad"],
-  ["Menos de 24 h", "0%", "No se devuelve"],
+  [
+    "Más de 48 h",
+    "100%",
+    "Transferencia con comprobante",
+    "Quien tiene el permiso",
+  ],
+  [
+    "Entre 24 y 48 h",
+    "50%",
+    "Transferencia con comprobante",
+    "Administrador de sede",
+  ],
+  ["Menos de 24 h", "0% (se retiene)", "No aplica", "—"],
 ] as const;
 
+export interface VenuePolicy {
+  depositFrom: string;
+  depositAmount: string;
+  appliedToAccount: string;
+  freeCancel: string;
+  noShow: string;
+  releaseTable: string;
+}
+
 export function SlotsView({
+  status,
+  policy,
+  onSave,
   onAccounts,
   onPolicy,
 }: {
+  status?: string;
+  policy: VenuePolicy;
+  onSave: () => void;
   onAccounts: () => void;
   onPolicy: () => void;
 }) {
-  const rows: Cell[][] = slots.map((row) => [
-    row[0],
-    row[1],
-    row[2],
-    row[3],
-    { chip: row[4], tone: "go" },
-  ]);
+  const rules = [
+    ["Anticipo desde", policy.depositFrom],
+    ["Valor del anticipo", policy.depositAmount],
+    ["Se abona a la cuenta", policy.appliedToAccount],
+    ["Cancelar sin costo", policy.freeCancel],
+    ["No llega", policy.noShow],
+    ["Se libera la mesa", policy.releaseTable],
+    ["Confirmar automáticamente", "Sin anticipo y con cupo"],
+    ["Recordatorio por WhatsApp", "24 h y 2 h antes"],
+  ] as const;
+
   return (
     <RecordPage
-      eyebrow="Reservas · Chapinero"
-      title="Franjas"
-      columns={["Franja", "Horario", "Duración", "Cupo", "Estado"]}
-      rows={rows}
-      caption="Franjas de reserva"
-      note="La reserva conserva la política de cancelación con la que se creó."
+      eyebrow="Lo que se ofrece en la página pública"
+      title="Capacidad y franjas"
+      actions={[{ label: "Guardar", tone: "solid", onPress: onSave }]}
+      columns={[
+        "Franja",
+        "Días",
+        "Mesas en línea",
+        "Personas máx.",
+        "Duración",
+      ]}
+      rows={slots.map((row) => [...row])}
+      caption="Capacidad y franjas"
+      status={status}
     >
+      <section className={record.policy} aria-label="Políticas">
+        <h2 className={record.policyTitle}>Políticas</h2>
+        {rules.map(([label, value]) => (
+          <p key={label} className={record.policyItem}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </p>
+        ))}
+      </section>
       <button type="button" className={ui.textButton} onClick={onAccounts}>
         Cuentas de anticipo
       </button>
       <button type="button" className={ui.textButton} onClick={onPolicy}>
-        Política de cancelación
+        Editar políticas
       </button>
     </RecordPage>
   );
@@ -88,13 +135,13 @@ export function CancellationView({
 }) {
   return (
     <RecordPage
-      eyebrow="Reservas · política vigente"
-      title="Cancelación"
-      actions={[{ label: "Guardar", tone: "solid", onPress: onSave }]}
-      columns={["Antelación", "Devolución", "Efecto"]}
+      eyebrow="Sede Chapinero"
+      title="Tramos de cancelación"
+      actions={[{ label: "Guardar política", tone: "solid", onPress: onSave }]}
+      columns={["Anticipación", "Devolución", "Forma", "Aprueba"]}
       rows={policy.map((row) => [...row])}
-      caption="Política de cancelación"
-      note="Una reserva ya creada no cambia de política si esta tabla se edita después."
+      caption="Tramos de cancelación"
+      note="Pasados 15 minutos sin llegada, el cobro se retiene. La devolución por transferencia exige autorización y queda auditada con el motivo y el valor."
       status={status}
     />
   );

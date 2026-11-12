@@ -1,0 +1,164 @@
+.grid {
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--sheet);
+}
+
+.row,
+.head {
+  display: grid;
+  grid-template-columns: 220px repeat(7, minmax(72px, 1fr));
+  align-items: stretch;
+}
+
+.head {
+  height: 44px;
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.row {
+  min-height: 64px;
+  border-top: 1px solid var(--carbon-soft);
+}
+
+.personHead,
+.dayHead {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.personHead {
+  padding: 0 16px;
+}
+
+.dayHead {
+  justify-content: center;
+}
+
+.dayGap {
+  color: #f2a0a6;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 16px;
+}
+
+.name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.role {
+  margin: 0;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shift,
+.off {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.shift:hover,
+.off:hover,
+.shift:focus-visible,
+.off:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.shift {
+  background: var(--board);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.off {
+  background: transparent;
+  color: #b3aa9c;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--sheet);
+}
+
+.summaryLabel,
+.summaryDetail {
+  margin: 0;
+  color: var(--faded);
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summaryValue {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.summaryDetail {
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    overflow-x: auto;
+  }
+
+  .row,
+  .head {
+    min-width: 760px;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+}

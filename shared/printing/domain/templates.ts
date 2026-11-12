@@ -20,12 +20,16 @@ export interface KitchenTicketLine {
   note?: string;
 }
 
+const QR_TABLE = "qr_table";
+const QR_TABLE_LABEL = "QR table";
+
 export interface KitchenTicketTemplateInput {
   paper: PaperWidth;
   station: string;
   table: string;
   lines: readonly KitchenTicketLine[];
   kickDrawer: boolean;
+  channel?: string;
 }
 
 export interface PreBillLine {
@@ -138,6 +142,7 @@ export const renderKitchenTicket = (
     input.station,
     "Table",
     input.table,
+    ...(input.channel === QR_TABLE ? [QR_TABLE_LABEL] : []),
     ...input.lines.flatMap((line) => [
       `${line.quantity} ${line.name}`,
       ...(line.note ? [line.note] : []),

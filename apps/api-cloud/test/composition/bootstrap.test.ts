@@ -6,11 +6,13 @@ import { ClockEntryRepository } from "@blackhole/attendance/application/ports/cl
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import {
   AdjustTipSettlement,
+  ApplyQrPayment,
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
   CloseShift,
   ConfigureTipRule,
+  ConfirmQrPayment,
   OpenDrawer,
   OpenShift,
   OriginalPaymentReader,
@@ -18,6 +20,7 @@ import {
   PrintTipSettlement,
   ReopenPaidAccount,
   SettleTips,
+  StartQrPayment,
   SubmitCount,
   TipParticipantSource,
   TipPool,
@@ -33,6 +36,7 @@ import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/m
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
   AdoptFiscalTemplate,
+  ApproveReinvoice,
   AttachBuyer,
   CalculateTaxes,
   CreditNoteAudit,
@@ -40,7 +44,9 @@ import {
   DocumentBalanceStore,
   InvoicingProvider,
   IssueCreditNote,
+  LookUpPortalBuyer,
   PublishTaxRule,
+  RequestReinvoice,
   SetDocumentBalance,
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
@@ -48,8 +54,10 @@ import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-ru
 import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
+import { InMemoryQrOrderIntentRepository } from "@blackhole/orders/adapters/memory/in-memory-qr-order-intent-repository";
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import { InMemoryTableQrRepository } from "@blackhole/orders/adapters/memory/in-memory-table-qr-repository";
 import {
   ApplyCourtesy,
   ApplyDiscount,
@@ -61,6 +69,7 @@ import {
   OpenShiftReader,
   OpenTable,
   PlaceTable,
+  PreBillLink,
   RealtimeHub,
   ReassignCheck,
   ReleaseTable,
@@ -75,8 +84,10 @@ import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock"
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { Printer } from "@blackhole/orders/application/ports/printer";
+import { QrOrderIntentRepository } from "@blackhole/orders/application/ports/qr-order-intent-repository";
 import { StationDirectory } from "@blackhole/orders/application/ports/station-directory";
 import { StationRouteRepository } from "@blackhole/orders/application/ports/station-route-repository";
+import { TableQrRepository } from "@blackhole/orders/application/ports/table-qr-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
 import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import {
@@ -128,6 +139,12 @@ import {
   PrinterRepository,
   PrintJobRepository,
 } from "@blackhole/printing/application/entry-port";
+import {
+  ReadCashReport,
+  ReadSalesReport,
+  ReadStaffReport,
+  ReadTimeReport,
+} from "@blackhole/reporting/application/entry-port";
 import { expect, it } from "vitest";
 import {
   ApplicationModule,
@@ -135,6 +152,7 @@ import {
   MemoryCreditNotes,
   MemoryDocumentBalances,
   MemoryNumberingRanges,
+  MemoryReinvoiceRequests,
   MemoryTipDispatchJobs,
   MemoryTipDispatchPrinters,
   MemoryTipPool,
@@ -158,12 +176,19 @@ import {
 } from "#src/composition/missing-sale-readers.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import { ClosedQrTableAccess } from "#src/composition/qr-table-payment.js";
+import {
+  AbsentOpenShift,
+  PermissionReportAccess,
+  ReportingFacts,
+} from "#src/composition/reporting-facts.js";
 import { PendingSalePrinter } from "#src/composition/sale-receipt.js";
 import { NumberingRangeStore } from "#src/http/invoicing.controller.js";
 import {
   MemoryReprintAudit,
   ReprintCap,
 } from "#src/http/printing.controller.js";
+import { QrTableAccess } from "#src/http/qr-payment.controller.js";
 import { StructurePrinters } from "#src/http/update-structure.controller.js";
 
 it("given api-cloud, when it is created and closed, then no port is listening", async () => {
@@ -300,6 +325,14 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         useValue: new InMemoryMenuRepository(),
       },
       {
+        provide: TableQrRepository,
+        useValue: new InMemoryTableQrRepository(),
+      },
+      {
+        provide: QrOrderIntentRepository,
+        useValue: new InMemoryQrOrderIntentRepository(),
+      },
+      {
         provide: DiningRoomRepository,
         useValue: new InMemoryDiningRoomRepository(),
       },
@@ -395,9 +428,20 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         inject: [DiningRoomRepository],
       },
       {
+        provide: PreBillLink,
+        useFactory: expect.any(Function),
+        inject: [Secrets],
+      },
+      {
         provide: RequestCheck,
         useFactory: expect.any(Function),
-        inject: [DiningRoomRepository, OrdersClock, Printer, RealtimeHub],
+        inject: [
+          DiningRoomRepository,
+          OrdersClock,
+          Printer,
+          RealtimeHub,
+          PreBillLink,
+        ],
       },
       {
         provide: ReassignCheck,
@@ -666,6 +710,24 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         useValue: expect.any(InvoicingProvider),
       },
       {
+        provide: "OneTimeCodeSender",
+        useValue: expect.any(Object),
+      },
+      {
+        provide: LookUpPortalBuyer,
+        useFactory: expect.any(Function),
+        inject: [InvoicingProvider],
+      },
+      {
+        provide: MemoryReinvoiceRequests,
+        useValue: new MemoryReinvoiceRequests(),
+      },
+      {
+        provide: RequestReinvoice,
+        useFactory: expect.any(Function),
+        inject: [InvoicingProvider],
+      },
+      {
         provide: AttachBuyer,
         useFactory: expect.any(Function),
         inject: [InvoicingProvider],
@@ -691,6 +753,11 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: IssueCreditNote,
         useFactory: expect.any(Function),
         inject: [InvoicingProvider, CreditNoteRepository, CreditNoteAudit],
+      },
+      {
+        provide: ApproveReinvoice,
+        useFactory: expect.any(Function),
+        inject: [IssueCreditNote],
       },
       {
         provide: NumberingRangeStore,
@@ -724,6 +791,45 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         inject: [AuditRepository, EvaluatePermission],
       },
       {
+        provide: ReportingFacts,
+        useFactory: expect.any(Function),
+        inject: [
+          DiningRoomRepository,
+          ClockEntryRepository,
+          ClockEntryCorrectionRepository,
+          AttendancePolicyRepository,
+        ],
+      },
+      {
+        provide: PermissionReportAccess,
+        useFactory: expect.any(Function),
+        inject: [AuthorizationRepository, AuthorizationClock],
+      },
+      {
+        provide: AbsentOpenShift,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: ReadSalesReport,
+        useFactory: expect.any(Function),
+        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+      },
+      {
+        provide: ReadTimeReport,
+        useFactory: expect.any(Function),
+        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+      },
+      {
+        provide: ReadCashReport,
+        useFactory: expect.any(Function),
+        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+      },
+      {
+        provide: ReadStaffReport,
+        useFactory: expect.any(Function),
+        inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+      },
+      {
         provide: DetectUnusualBehavior,
         useFactory: expect.any(Function),
         inject: [AuditRepository],
@@ -745,6 +851,24 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: RecipeVenueDirectory,
         useFactory: expect.any(Function),
         inject: [VenueDirectory],
+      },
+      {
+        provide: QrTableAccess,
+        useClass: ClosedQrTableAccess,
+      },
+      {
+        provide: StartQrPayment,
+        useFactory: expect.any(Function),
+        inject: [OrdersAccount, Clock],
+      },
+      {
+        provide: ConfirmQrPayment,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: ApplyQrPayment,
+        useFactory: expect.any(Function),
+        inject: [OrdersAccount],
       },
     ]);
     expect(repository).toBe(dependencies.venueOperations);

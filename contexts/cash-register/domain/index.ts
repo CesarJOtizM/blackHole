@@ -73,6 +73,19 @@ export {
   MissingTip,
   Payment,
 } from "#domain/payment.js";
+export type {
+  ConfirmQrCharge,
+  QrInstrument,
+  QrInvoiceMethod,
+  QrPaymentStatus,
+  StartQrCharge,
+} from "#domain/qr-payment.js";
+export {
+  InvalidQrReference,
+  QrPayment,
+  QrPaymentConfirmed,
+  QrPaymentNotConfirmed,
+} from "#domain/qr-payment.js";
 export type { TipPeriodKind } from "#domain/tip-period.js";
 export {
   InvalidTipInstant,

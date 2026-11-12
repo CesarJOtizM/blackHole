@@ -17,9 +17,13 @@
     "dining-room.ts",
     "e-invoicing.ts",
     "identity.ts",
+    "invoicing-portal.ts",
     "menu.ts",
     "printing.ts",
+    "qr-table-ordering.ts",
+    "qr-table-payment.ts",
     "recipe-catalog.ts",
+    "reporting.ts",
     "sensitive-actions.ts",
     "tips.ts",
     "update-structure.ts"

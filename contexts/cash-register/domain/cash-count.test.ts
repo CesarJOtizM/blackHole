@@ -57,6 +57,24 @@ const snapshotOf = (count: CashCount) => ({
   terminalDifferences: count.terminalDifferences,
 });
 
+it("given expected cash of 300000 and qr of 120000 against its report, when the count is submitted, then expectedCashCop stays 300000", () => {
+  const count = countForCashier();
+
+  count.submit({
+    denominations: [{ denomination: 100_000, quantity: 3 }],
+    expectedCashCop: 300_000,
+    terminals: [],
+    qrCop: 120_000,
+    qrReportCop: 120_000,
+  });
+
+  expect(count.expectedCashCop).toBe(300_000);
+  expect(count.countedCashCop).toBe(300_000);
+  expect(count.differenceCop).toBe(0);
+  expect(count.qrCop).toBe(120_000);
+  expect(count.qrReportCop).toBe(120_000);
+});
+
 it("given the cashier has not submitted the count, when the shift is viewed, then no expected yet", () => {
   const count = countForCashier();
 

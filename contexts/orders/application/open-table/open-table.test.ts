@@ -68,6 +68,22 @@ const seedFreeTable = async (
   return table;
 };
 
+it("given a free table, when opened for 4, then the check keeps the diner count", async () => {
+  const repository = new MemoryDiningRoom();
+  const openTable = new OpenTable(repository, new FixedClock());
+  await seedFreeTable(repository);
+
+  const opened = await openTable.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    checkId: CHECK_ID,
+    diners: 4,
+  });
+
+  expect(opened.check.diners).toBe(4);
+});
+
 it("given a free table, when opened for 4, then it is occupied with an empty check", async () => {
   const repository = new MemoryDiningRoom();
   const openTable = new OpenTable(repository, new FixedClock());

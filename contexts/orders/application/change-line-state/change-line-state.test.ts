@@ -7,6 +7,10 @@ import {
   type RealtimeNotice,
 } from "#application/ports/realtime-hub.js";
 import {
+  type StationRoute,
+  StationRouteRepository,
+} from "#application/ports/station-route-repository.js";
+import {
   Check,
   type LineState,
   LineTransitionRejected,
@@ -86,6 +90,23 @@ class MemoryDiningRoom extends DiningRoomRepository {
   }
 }
 
+class MemoryRoutes extends StationRouteRepository {
+  constructor(private readonly rows: readonly StationRoute[]) {
+    super();
+  }
+
+  override async load(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly StationRoute[]> {
+    return this.rows.filter(
+      (route) => route.tenantId === tenantId && route.venueId === venueId,
+    );
+  }
+
+  override async save(_route: StationRoute): Promise<void> {}
+}
+
 class MemoryHub extends RealtimeHub {
   readonly published: RealtimeNotice[] = [];
 
@@ -138,7 +159,11 @@ const openReadyCheck = (): Check => {
   return check;
 };
 
-const harness = async (check: Check, clock: Clock) => {
+const harness = async (
+  check: Check,
+  clock: Clock,
+  routes?: StationRouteRepository,
+) => {
   const dining = new MemoryDiningRoom();
   const hub = new MemoryHub();
 
@@ -147,9 +172,36 @@ const harness = async (check: Check, clock: Clock) => {
   return {
     dining,
     hub,
-    change: new ChangeLineState(dining, clock, hub),
+    change: new ChangeLineState(dining, clock, hub, routes),
   };
 };
+
+const grillRoute: StationRoute = {
+  tenantId: TENANT_ID,
+  venueId: VENUE_ID,
+  stationId: "station_grill",
+  stationName: "Grill",
+  productId: "menu_product_soup",
+  output: "screen",
+  redThresholdMinutes: 8,
+};
+
+it("given a sent line routed to the grill, when it moves into preparation, then the line snapshots that station", async () => {
+  const { dining, change } = await harness(
+    openSentCheck(),
+    new FixedClock(Date.parse(PREPARED_AT)),
+    new MemoryRoutes([grillRoute]),
+  );
+
+  await change.execute(command("in_preparation"));
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  expect(stored?.orders[0]?.lines[0]).toMatchObject({
+    state: "in_preparation",
+    inPreparationAt: PREPARED_AT,
+    stationId: "station_grill",
+  });
+});
 
 it("given a sent line, when it is advanced to ready, then both stamps are stored and the waiter notice carries the table id", async () => {
   const { dining, hub, change } = await harness(

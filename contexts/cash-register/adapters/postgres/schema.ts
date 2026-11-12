@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   integer,
   jsonb,
@@ -16,6 +17,7 @@ import type {
   PaymentTender,
   PaymentTip,
 } from "#domain/payment.js";
+import type { QrInstrument, QrPaymentStatus } from "#domain/qr-payment.js";
 import type { TipPeriodKind } from "#domain/tip-period.js";
 import type { TipPercentage, TipRuleMode } from "#domain/tip-rule.js";
 import type {
@@ -172,12 +174,27 @@ export const saleClosures = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.tenantId, table.id] }),
-    unique("sale_closures_one_check").on(
-      table.tenantId,
-      table.venueId,
-      table.checkId,
-    ),
+    unique("sale_closures_one_payment").on(table.tenantId, table.paymentId),
   ],
+);
+
+export const qrPayments = pgTable(
+  "qr_payments",
+  {
+    tenantId: text("tenant_id").notNull(),
+    reference: text("reference").notNull(),
+    venueId: text("venue_id").notNull(),
+    checkId: text("check_id").notNull(),
+    partId: text("part_id"),
+    balanceCop: integer("balance_cop").notNull(),
+    tipCop: integer("tip_cop").notNull(),
+    amountCop: integer("amount_cop").notNull(),
+    instrument: text("instrument").$type<QrInstrument>(),
+    status: text("status").$type<QrPaymentStatus>().notNull(),
+    startedAt: bigint("started_at", { mode: "number" }).notNull(),
+    voided: boolean("voided").notNull().default(false),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.reference] })],
 );
 
 interface StoredTipMethod {

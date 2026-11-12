@@ -21,6 +21,7 @@ export interface KitchenTicketJob extends PrintCommand {
   station: string;
   table: string;
   lines: readonly KitchenTicketLine[];
+  channel?: "qr_table";
 }
 
 export interface PreBillJob extends PrintCommand {

@@ -33,6 +33,7 @@ const TENDER_METHOD = {
   VOUCHER: "voucher",
   CUSTOMER_CREDIT: "customer_credit",
   CORPORATE_CREDIT: "corporate_credit",
+  QR: "qr",
 } as const;
 
 export type TenderMethod = (typeof TENDER_METHOD)[keyof typeof TENDER_METHOD];
@@ -203,6 +204,7 @@ function assertTenderMethod(method: string): asserts method is TenderMethod {
     case TENDER_METHOD.VOUCHER:
     case TENDER_METHOD.CUSTOMER_CREDIT:
     case TENDER_METHOD.CORPORATE_CREDIT:
+    case TENDER_METHOD.QR:
       return;
     default:
       throw new InvalidTenderMethod();

@@ -51,30 +51,79 @@ export function PlanView({
   );
 }
 
+const setupSteps = [
+  { label: "Empresa y NIT", mark: "✓", state: "done" },
+  { label: "Sedes y marcas", mark: "✓", state: "done" },
+  { label: "Facturación electrónica", mark: "3", state: "current" },
+  { label: "Carta", mark: "4", state: "later" },
+  { label: "Personas y PIN", mark: "5", state: "later" },
+  { label: "Dispositivos", mark: "6", state: "later" },
+] as const;
+
+const resolution = [
+  ["NIT", "901.234.567-8"],
+  ["Prefijo", "FECH"],
+  ["Resolución", "18764000001234"],
+  ["Desde", "1"],
+  ["Hasta", "50.000"],
+  ["Vence", "12 feb 2027"],
+] as const;
+
 export function SetupView({
   status,
+  onBack,
+  onLater,
   onContinue,
 }: {
   status?: string;
+  onBack: () => void;
+  onLater: () => void;
   onContinue: () => void;
 }) {
   return (
     <RecordPage
-      eyebrow="Paso 3 de 6"
-      title="Facturación"
-      actions={[{ label: "Continuar", tone: "solid", onPress: onContinue }]}
-      columns={["Dato", "Valor"]}
-      rows={[
-        ["Razón social", "La Parrilla SAS"],
-        ["NIT", "901.112.334-5"],
-        ["Régimen", "Común"],
-        ["Responsable de INC", "Sí"],
-        ["Proveedor", "Factus"],
+      eyebrow="Paso 3 de 6 · te faltan 12 minutos"
+      title="Configura tu restaurante"
+      actions={[
+        { label: "Atrás", tone: "ghost", onPress: onBack },
+        { label: "Hacerlo después", tone: "ghost", onPress: onLater },
+        { label: "Siguiente: carta", tone: "solid", onPress: onContinue },
       ]}
-      caption="Datos de facturación"
-      note="Faltan resoluciones, certificado y la primera sede. El alta no emite documentos todavía."
+      aside={
+        <ol className={record.steps}>
+          {setupSteps.map((step) => (
+            <li
+              key={step.label}
+              className={
+                step.state === "current"
+                  ? record.stepCurrent
+                  : step.state === "done"
+                    ? record.step
+                    : record.stepLater
+              }
+              aria-current={step.state === "current" ? "step" : undefined}
+            >
+              <span className={record.stepMark}>{step.mark}</span>
+              {step.label}
+            </li>
+          ))}
+        </ol>
+      }
+      note="Factura de prueba aceptada por la DIAN · CUFE 8f3a…c21"
       status={status}
-    />
+    >
+      <p className={record.lead}>Paso 3 · facturación electrónica</p>
+      <p className={record.leadText}>Conecta tu facturación con la DIAN</p>
+      <p className={record.leadText}>
+        Necesitas la resolución de numeración y haber habilitado a Blackhole
+        como proveedor tecnológico en el portal de la DIAN.
+      </p>
+      {resolution.map(([label, value]) => (
+        <p key={label} className={record.fact}>
+          <span>{label}</span> {value}
+        </p>
+      ))}
+    </RecordPage>
   );
 }
 
@@ -91,20 +140,27 @@ export function SupportView({
 }) {
   return (
     <RecordPage
-      eyebrow="Soporte Blackhole"
-      title="Acceso #4821"
-      actions={[{ label: "Conceder 2 horas", tone: "solid", onPress: onGrant }]}
-      metrics={[
-        { label: "Caso", value: "#4821", detail: "Impresora de cocina" },
-        {
-          label: "Quién entra",
-          value: "Mesa de soporte",
-          detail: "Solo lectura de caja",
-        },
-        { label: "Sede", value: "Chapinero", detail: "La Parrilla SAS" },
-        { label: "Vence", value: "2 horas", detail: "Queda en auditoría" },
+      eyebrow="Nadie de Blackhole entra a tus datos sin tu permiso"
+      title="Acceso de soporte"
+      actions={[{ label: "Conceder acceso", tone: "solid", onPress: onGrant }]}
+      columns={["Caso", "Agente", "Vence", "Estado"]}
+      rows={[
+        ["#4821", "Daniel (soporte)", "18:20", { chip: "Activo", tone: "go" }],
+        [
+          "#4790",
+          "Laura (soporte)",
+          "31 oct",
+          { chip: "Vencido", tone: "hold" },
+        ],
+        [
+          "#4712",
+          "Daniel (soporte)",
+          "22 oct",
+          { chip: "Revocado", tone: "stamp" },
+        ],
       ]}
-      note="El acceso no cambia precios, no anula cuentas y no ve la contraseña."
+      caption="Accesos de soporte"
+      note="El caso #4821 es la caja de Usaquén que no imprime. Alcance solo Usaquén, 4 horas, solo lectura. Los nombres, teléfonos y documentos quedan ocultos, y cada acción avisa por correo."
       status={status}
     >
       <button type="button" className={ui.textButton} onClick={onCompanies}>
@@ -135,30 +191,108 @@ export function CompaniesView() {
   );
 }
 
+const printerLog = [
+  "14:02:11  Envío comanda #8812  OK",
+  "14:05:40  Envío factura FEUS-12901  ERR_PAPER_END",
+  "14:05:41  Reintento 1/3  ERR_PAPER_END",
+  "14:06:02  Cola local: 2 documentos",
+] as const;
+
+export interface CaseMessage {
+  who: string;
+  text: string;
+}
+
 export function CaseView({
   status,
-  onNote,
+  messages,
+  reply,
+  onReply,
+  onSend,
+  onClose,
 }: {
   status?: string;
-  onNote: () => void;
+  messages: readonly CaseMessage[];
+  reply: string;
+  onReply: (value: string) => void;
+  onSend: () => void;
+  onClose: () => void;
 }) {
   return (
     <RecordPage
-      eyebrow="Caso #4821 · Chapinero"
-      title="Impresora EPSON"
-      actions={[{ label: "Dejar nota", tone: "solid", onPress: onNote }]}
-      columns={["Dato", "Valor"]}
-      rows={[
-        ["Equipo", "EPSON TM-T20"],
-        ["Estación", "Parrilla"],
-        ["Error", "ERR_PAPER_END"],
-        ["Último ticket", "13:44"],
-        ["Puente", "Conectado"],
+      eyebrow="La Parrilla SAS · Usaquén · acceso concedido hasta 18:20"
+      title="Caso #4821"
+      actions={[{ label: "Cerrar caso", tone: "solid", onPress: onClose }]}
+      columns={[
+        "Dispositivo",
+        "Versión",
+        "Última señal",
+        "Impresora",
+        "Estado",
       ]}
-      caption="Caso de la impresora"
-      note="El error dice que no hay papel. La comanda sigue en la pantalla de cocina."
+      rows={[
+        [
+          "Tablet caja 1",
+          "4.12.0",
+          "Hace 4 s",
+          "EPSON TM-T20",
+          { chip: "Error papel", tone: "stamp" },
+        ],
+        [
+          "Tablet cocina",
+          "4.12.0",
+          "Hace 2 s",
+          "STAR TSP143",
+          { chip: "OK", tone: "go" },
+        ],
+        [
+          "Celular Luis",
+          "4.11.2",
+          "Hace 9 s",
+          "—",
+          { chip: "Actualizar", tone: "hold" },
+        ],
+      ]}
+      caption="Dispositivos de la sede"
+      note="Estás viendo datos del cliente en solo lectura. Cada acción queda en su auditoría y le llega por correo."
       status={status}
-    />
+    >
+      <h2 className={record.logTitle}>Registro de la impresora</h2>
+      <ul className={record.log}>
+        {printerLog.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      <h2 className={record.logTitle}>Conversación</h2>
+      <ul className={record.thread}>
+        {messages.map((message) => (
+          <li key={`${message.who}-${message.text}`}>
+            <p className={record.who}>{message.who}</p>
+            <p>{message.text}</p>
+          </li>
+        ))}
+      </ul>
+      <form
+        className={record.reply}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSend();
+        }}
+      >
+        <label className={ui.field}>
+          <span className={ui.fieldLabel}>Responder</span>
+          <input
+            className={ui.input}
+            value={reply}
+            placeholder="Escribe un mensaje…"
+            onChange={(event) => onReply(event.target.value)}
+          />
+        </label>
+        <button type="submit" className={ui.button}>
+          Responder
+        </button>
+      </form>
+    </RecordPage>
   );
 }
 

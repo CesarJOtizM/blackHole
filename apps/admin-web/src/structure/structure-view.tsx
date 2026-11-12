@@ -19,24 +19,43 @@ export function CompanyView({
   section,
   status,
   onSection,
-  onCreate,
+  onCreateTaxpayer,
+  onCreateBrand,
   onDevices,
   onHybrid,
 }: {
   section: StructureSection;
   status?: string;
   onSection: (section: StructureSection) => void;
-  onCreate: () => void;
+  onCreateTaxpayer: () => void;
+  onCreateBrand: () => void;
   onDevices: () => void;
   onHybrid: () => void;
 }) {
+  const actions =
+    section === "brands"
+      ? [
+          {
+            label: "Nueva marca",
+            tone: "solid" as const,
+            onPress: onCreateBrand,
+          },
+        ]
+      : section === "taxpayers"
+        ? [
+            {
+              label: "Nuevo contribuyente",
+              tone: "solid" as const,
+              onPress: onCreateTaxpayer,
+            },
+          ]
+        : [];
+
   return (
     <RecordPage
       eyebrow="Empresa · estructura"
       title="Estructura de la empresa"
-      actions={[
-        { label: "Nuevo contribuyente", tone: "solid", onPress: onCreate },
-      ]}
+      actions={actions}
       tabs={sectionTabs(section, onSection)}
       columns={section === "brands" ? undefined : columnsFor(section)}
       rows={section === "brands" ? [] : rowsFor(section)}

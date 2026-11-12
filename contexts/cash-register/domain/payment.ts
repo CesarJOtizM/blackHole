@@ -10,6 +10,7 @@ const PAYMENT_METHOD = {
   VOUCHER: "voucher",
   CUSTOMER_CREDIT: "customer_credit",
   CORPORATE_CREDIT: "corporate_credit",
+  QR: "qr",
 } as const;
 
 export type PaymentMethod =
@@ -160,6 +161,7 @@ function recordedTender(tender: PaymentTender): PaymentTender {
     case PAYMENT_METHOD.VOUCHER:
     case PAYMENT_METHOD.CUSTOMER_CREDIT:
     case PAYMENT_METHOD.CORPORATE_CREDIT:
+    case PAYMENT_METHOD.QR:
       return {
         method: tender.method,
         amountCop: tender.amountCop,
@@ -195,6 +197,7 @@ function recordedTip(tip: PaymentTip | undefined): PaymentTip {
     case PAYMENT_METHOD.VOUCHER:
     case PAYMENT_METHOD.CUSTOMER_CREDIT:
     case PAYMENT_METHOD.CORPORATE_CREDIT:
+    case PAYMENT_METHOD.QR:
       return {
         method: tip.method,
         amountCop: tip.amountCop,

@@ -8,6 +8,7 @@ import type {
   ModifierGroup,
 } from "#src/catalog/source/types.js";
 import { ProductStatusChip } from "#src/catalog/status-chip.js";
+import { ImportMenu } from "#src/shell/import-menu.js";
 import styles from "#src/styles/catalog/menu.module.scss";
 import ui from "#src/styles/ui.module.scss";
 
@@ -71,14 +72,12 @@ export function MenuView({
         </div>
         {section === "products" ? (
           <div className={ui.actions}>
-            <button
-              type="button"
-              className={ui.buttonGhost}
-              disabled={importPending}
-              onClick={onImport}
-            >
-              Importar Excel
-            </button>
+            <ImportMenu
+              pending={importPending}
+              templateName="carta.csv"
+              templateBody="nombre,precio,impuesto\n"
+              onFile={() => onImport()}
+            />
             <button
               type="button"
               className={ui.button}

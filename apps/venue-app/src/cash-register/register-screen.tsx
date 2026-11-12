@@ -20,6 +20,12 @@ export function RegisterScreen() {
   const [card, setCard] = useState("48000");
   const [counts, setCounts] = useState<Record<number, string>>({});
   const [paid, setPaid] = useState(false);
+  const [pendingQr, setPendingQr] = useState([
+    { id: "intent_1", tableLabel: "06", summary: "Sopa · sitio $22.000" },
+  ]);
+  const [billingChoice, setBillingChoice] = useState<
+    "portal" | "register" | null
+  >(null);
   const counted = denominations.reduce(
     (sum, value) => sum + value * Number(counts[value] || 0),
     0,
@@ -48,6 +54,27 @@ export function RegisterScreen() {
           {check ? `Cobro mesa ${check.label}` : "Sin precuentas"}
         </h2>
         <p className="font-mono text-numeral">{cop(due)}</p>
+        {check ? <p role="status">Datos recibidos</p> : null}
+        <p role="status">
+          Pago QR pendiente
+          <span className="block">qrpay_stale</span>
+        </p>
+        {check ? (
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setBillingChoice("portal")}
+            >
+              Usar datos del portal
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setBillingChoice("register")}
+            >
+              Usar datos de la caja
+            </Button>
+          </div>
+        ) : null}
         <Field
           label="Efectivo"
           inputMode="numeric"
@@ -65,7 +92,13 @@ export function RegisterScreen() {
           {tendered === due ? ". El cobro cuadra." : "."}
         </p>
         <Button
-          disabled={!service.shiftOpen || paid || due === 0 || tendered !== due}
+          disabled={
+            !service.shiftOpen ||
+            paid ||
+            due === 0 ||
+            tendered !== due ||
+            (check !== undefined && billingChoice === null)
+          }
           onClick={() => {
             setPaid(true);
             if (check) service.markClean(check.id);
@@ -79,6 +112,48 @@ export function RegisterScreen() {
             cajón abre con el efectivo.
           </p>
         ) : null}
+      </article>
+      <article className="grid gap-3">
+        <h2 className="text-title">Pedidos QR</h2>
+        {pendingQr.length === 0 ? (
+          <p className="text-ink-muted">Sin pedidos por aceptar.</p>
+        ) : (
+          pendingQr.map((order) => (
+            <div
+              key={order.id}
+              className="flex items-center justify-between gap-3"
+            >
+              <p>
+                Mesa {order.tableLabel}
+                <span className="block text-sm">QR table</span>
+                <span className="block text-sm text-ink-muted">
+                  {order.summary}
+                </span>
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    setPendingQr((current) =>
+                      current.filter((item) => item.id !== order.id),
+                    )
+                  }
+                >
+                  Rechazar
+                </Button>
+                <Button
+                  onClick={() =>
+                    setPendingQr((current) =>
+                      current.filter((item) => item.id !== order.id),
+                    )
+                  }
+                >
+                  Aceptar
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
       </article>
       <article className="grid gap-3">
         <h2 className="text-title">Propinas del turno</h2>
@@ -109,6 +184,8 @@ export function RegisterScreen() {
           />
         ))}
         <p className="font-mono">Contado {cop(counted)}</p>
+        <p>QR {cop(120_000)}</p>
+        <p>Efectivo esperado {cop(200_000)}</p>
       </article>
       {service.notice ? (
         <p role="status" className="text-ink-muted">

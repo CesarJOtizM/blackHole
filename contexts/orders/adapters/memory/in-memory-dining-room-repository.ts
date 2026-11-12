@@ -94,4 +94,21 @@ export class InMemoryDiningRoomRepository extends DiningRoomRepository {
       )
       .map((check) => cloneEntity(check));
   }
+
+  override async loadOpenCheckByTable(
+    tenantId: string,
+    venueId: string,
+    tableId: string,
+  ): Promise<Check | null> {
+    const open = [...this.checks.values()].find(
+      (check) =>
+        check.tenantId === tenantId &&
+        check.venueId === venueId &&
+        check.tableId === tableId &&
+        (check.tableState === "occupied" ||
+          check.tableState === "check_requested"),
+    );
+
+    return open === undefined ? null : cloneEntity(open);
+  }
 }

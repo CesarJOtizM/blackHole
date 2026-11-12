@@ -8,41 +8,48 @@ import {
   TransferDetailView,
   TransfersView,
 } from "#src/inventory/inventory-view.js";
+import { NoticeToast } from "#src/shell/notice-toast.js";
 
 export function SuppliesScreen() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<
     "all" | "low" | "meat" | "dairy" | "drinks" | "packaging"
   >("all");
-  const [status, setStatus] = useState("");
+  const [notice, setNotice] = useState("");
   return (
-    <SuppliesView
-      tab={tab}
-      status={status}
-      onTab={setTab}
-      onImport={() => setStatus("La importación de insumos espera el archivo.")}
-      onCreate={() => setStatus("El insumo nuevo queda en borrador.")}
-      onOrder={() =>
-        setStatus(
-          "Se crearon las órdenes sugeridas por $2.184.000 en esta sesión.",
-        )
-      }
-      onRecipe={() => {
-        void navigate({ to: "/inventory/recipes/churrasco" });
-      }}
-      onPurchase={() => {
-        void navigate({ to: "/inventory/orders/oc-0418" });
-      }}
-      onConsolidated={() => {
-        void navigate({ to: "/inventory/consolidated" });
-      }}
-      onTransfers={() => {
-        void navigate({ to: "/inventory/transfers" });
-      }}
-      onScarcity={() => {
-        void navigate({ to: "/inventory/scarcity" });
-      }}
-    />
+    <>
+      <SuppliesView
+        tab={tab}
+        onTab={setTab}
+        onImportFile={(file) =>
+          setNotice(`El archivo ${file.name} queda listo en esta sesión.`)
+        }
+        onCreate={(name) =>
+          setNotice(`${name} queda en el catálogo de esta sesión.`)
+        }
+        onOrder={() =>
+          setNotice(
+            "Se crearon las órdenes sugeridas por $2.184.000 en esta sesión.",
+          )
+        }
+        onRecipe={() => {
+          void navigate({ to: "/inventory/recipes/churrasco" });
+        }}
+        onPurchase={() => {
+          void navigate({ to: "/inventory/orders/oc-0418" });
+        }}
+        onConsolidated={() => {
+          void navigate({ to: "/inventory/consolidated" });
+        }}
+        onTransfers={() => {
+          void navigate({ to: "/inventory/transfers" });
+        }}
+        onScarcity={() => {
+          void navigate({ to: "/inventory/scarcity" });
+        }}
+      />
+      <NoticeToast message={notice} onClose={() => setNotice("")} />
+    </>
   );
 }
 

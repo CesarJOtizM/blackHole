@@ -110,7 +110,15 @@ interface RoutedTicket {
   productName: string;
   note?: string;
   screen: boolean;
+  channel?: "qr_table";
 }
+
+const qrChannel = (channel: string | undefined): { channel?: "qr_table" } =>
+  channel === "qr_table" ? { channel: "qr_table" } : {};
+
+const orderChannel = (check: Check, lineId: string): string | undefined =>
+  check.orders.find((order) => order.lines.some((line) => line.id === lineId))
+    ?.channel;
 
 const ALERTING_STATUS = new Set<PrintJobStatus>(["waiting", "failed"]);
 
@@ -201,6 +209,7 @@ export class TakeOrder {
           productName: line.name,
           screen: destination.screen,
           ...(line.note === undefined ? {} : { note: line.note }),
+          ...qrChannel(line.channel),
         });
       }
     }
@@ -289,6 +298,7 @@ export class TakeOrder {
             productName: line.name,
             screen: destination.screen,
             ...(line.note === undefined ? {} : { note: line.note }),
+            ...qrChannel(orderChannel(check, line.id)),
           },
         ]
       : [];
@@ -390,6 +400,7 @@ export class TakeOrder {
           productName: line.name,
           screen: destination.screen,
           ...(line.note === undefined ? {} : { note: line.note }),
+          ...qrChannel(orderChannel(check, line.id)),
         });
       }
     }
@@ -460,6 +471,7 @@ export class TakeOrder {
       tableId: check.tableId,
       productName: ticket.productName,
       ...(ticket.note === undefined ? {} : { note: ticket.note }),
+      ...(ticket.channel === undefined ? {} : { channel: ticket.channel }),
     });
     const queued = await this.printer.enqueue({
       document: "kitchen_ticket",
@@ -475,6 +487,7 @@ export class TakeOrder {
         },
       ],
       kickDrawer: false,
+      ...(ticket.channel === undefined ? {} : { channel: ticket.channel }),
     });
 
     if (!ALERTING_STATUS.has(queued.status)) {

@@ -30,4 +30,12 @@ export abstract class DiningRoomRepository {
   listChecks(_tenantId: string, _venueId: string): Promise<readonly Check[]> {
     return Promise.reject(new Error("listChecks is not implemented."));
   }
+
+  loadOpenCheckByTable(
+    _tenantId: string,
+    _venueId: string,
+    _tableId: string,
+  ): Promise<Check | null> {
+    return Promise.resolve(null);
+  }
 }

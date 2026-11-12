@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { ScriptedPaymentGateway } from "#adapters/memory/scripted-payment-gateway.js";
 import { CashCountStore } from "#application/ports/cash-count-store.js";
 import { CashRegisterRepository } from "#application/ports/cash-register-repository.js";
 import {
@@ -349,4 +350,44 @@ it("given a count saved for one tenant, when another tenant reads that register,
   expect(
     (await counts.find(TENANT_ID, VENUE_ID, REGISTER_ID))?.expectedCashCop,
   ).toBe(EXPECTED_CASH_COP);
+});
+
+it("given a shift with 300000 cash and 120000 qr, when the cashier submits the blind count, then expected cash stays 300000 and qr is shown against the report", async () => {
+  const registers = new MemoryCashRegister();
+  const counts = new MemoryCashCounts();
+  const lookup = new MemoryRegisterLookup(knownRegisters);
+  const gateway = new ScriptedPaymentGateway();
+  gateway.reportRows = [{ reference: "qrpay_front", amountCop: 120_000 }];
+  const shift = CashShift.forRegister(REGISTER_ID);
+  shift.open({
+    id: SHIFT_ID,
+    cashierId: CASHIER_ID,
+    openingFloatCop: 300_000,
+  });
+  shift.recordPayment({
+    id: "payment_qr_front",
+    originalPaymentId: "payment_qr_front",
+    method: "qr",
+    amountCop: 120_000,
+  });
+  await registers.save(TENANT_ID, VENUE_ID, shift);
+  const submitCount = new SubmitCount(lookup, registers, counts, gateway);
+
+  const submitted = await submitCount.execute({
+    ...submitInput,
+    denominations: [{ denomination: 50_000, quantity: 6 }],
+  });
+
+  expect(submitted.expectedCashCop).toBe(300_000);
+  expect(submitted.differenceCop).toBe(0);
+  expect(submitted.qrCop).toBe(120_000);
+  expect(submitted.qrReportCop).toBe(120_000);
+  expect(await submitCount.read(scope)).toEqual({
+    state: "counting",
+    expectedCashCop: 300_000,
+    countedCashCop: 300_000,
+    differenceCop: 0,
+    qrCop: 120_000,
+    qrReportCop: 120_000,
+  });
 });

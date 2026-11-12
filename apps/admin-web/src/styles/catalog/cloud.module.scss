@@ -75,6 +75,35 @@
   font-size: 14px;
 }
 
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 280px;
+  padding: 32px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper);
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropTitle {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.dropMeta {
+  color: var(--faded);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .file {
   display: flex;
   flex-direction: column;

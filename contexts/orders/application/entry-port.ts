@@ -2,6 +2,14 @@ export type { ApplyCourtesyInput } from "#application/apply-courtesy/apply-court
 export { ApplyCourtesy } from "#application/apply-courtesy/apply-courtesy.js";
 export type { ApplyDiscountInput } from "#application/apply-discount/apply-discount.js";
 export { ApplyDiscount } from "#application/apply-discount/apply-discount.js";
+export type {
+  AppliedQrOrder,
+  ApplyQrOrderInput,
+} from "#application/apply-qr-order/apply-qr-order.js";
+export {
+  ApplyQrOrder,
+  QrIntentMissing,
+} from "#application/apply-qr-order/apply-qr-order.js";
 export type { ChangeLineStateInput } from "#application/change-line-state/change-line-state.js";
 export { ChangeLineState } from "#application/change-line-state/change-line-state.js";
 export type { ChangePriceInput } from "#application/change-price/change-price.js";
@@ -19,6 +27,27 @@ export type {
   GetCheckInput,
 } from "#application/get-check/get-check.js";
 export { GetCheck } from "#application/get-check/get-check.js";
+export type {
+  IssuedTableQr,
+  IssueTableQrInput,
+} from "#application/issue-table-qr/issue-table-qr.js";
+export {
+  IssueTableQr,
+  TableQrReprintRefused,
+} from "#application/issue-table-qr/issue-table-qr.js";
+export type {
+  ListServiceFactsCommand,
+  ServiceLineFact,
+} from "#application/list-service-facts/list-service-facts.js";
+export { ListServiceFacts } from "#application/list-service-facts/list-service-facts.js";
+export type {
+  ListStaleQrIntentsInput,
+  StaleQrIntent,
+} from "#application/list-stale-qr-intents/list-stale-qr-intents.js";
+export {
+  ListStaleQrIntents,
+  STALE_AFTER_SECONDS,
+} from "#application/list-stale-qr-intents/list-stale-qr-intents.js";
 export type { MarkAccountPaidInput } from "#application/mark-account-paid/mark-account-paid.js";
 export { MarkAccountPaid } from "#application/mark-account-paid/mark-account-paid.js";
 export type {
@@ -30,10 +59,17 @@ export type { PlaceTableInput } from "#application/place-table/place-table.js";
 export { PlaceTable } from "#application/place-table/place-table.js";
 export type { OpenShiftQuery } from "#application/ports/open-shift-reader.js";
 export { OpenShiftReader } from "#application/ports/open-shift-reader.js";
+export type { PreBillLinkInput } from "#application/ports/pre-bill-link.js";
+export { PreBillLink } from "#application/ports/pre-bill-link.js";
 export type { RealtimeNotice } from "#application/ports/realtime-hub.js";
 export { RealtimeHub } from "#application/ports/realtime-hub.js";
 export type { ReassignCheckInput } from "#application/reassign-check/reassign-check.js";
 export { ReassignCheck } from "#application/reassign-check/reassign-check.js";
+export type { RecordQrOrderIntentInput } from "#application/record-qr-order-intent/record-qr-order-intent.js";
+export {
+  QrProductUnavailable,
+  RecordQrOrderIntent,
+} from "#application/record-qr-order-intent/record-qr-order-intent.js";
 export type { ReleaseTableInput } from "#application/release-table/release-table.js";
 export {
   MarkTableReady,
@@ -41,6 +77,21 @@ export {
 } from "#application/release-table/release-table.js";
 export type { RequestCheckInput } from "#application/request-check/request-check.js";
 export { RequestCheck } from "#application/request-check/request-check.js";
+export type {
+  ResolvedTableQr,
+  ResolveTableQrInput,
+} from "#application/resolve-table-qr/resolve-table-qr.js";
+export {
+  ResolveTableQr,
+  TableQrDisabled,
+  TableQrRetired,
+  TableQrUnknown,
+} from "#application/resolve-table-qr/resolve-table-qr.js";
+export type { ReviewQrOrderIntentInput } from "#application/review-qr-order-intent/review-qr-order-intent.js";
+export {
+  QrReviewRefused,
+  ReviewQrOrderIntent,
+} from "#application/review-qr-order-intent/review-qr-order-intent.js";
 export type {
   FireCourseInput,
   HoldOrderLineInput,

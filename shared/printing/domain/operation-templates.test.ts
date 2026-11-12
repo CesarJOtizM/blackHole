@@ -89,7 +89,23 @@ it("given a kitchen ticket on 80 mm and 58 mm, when it is rendered, then the sta
       "1 Water",
     ]);
     expect(rendered.text).not.toContain("undefined");
+    expect(rendered.text).not.toContain("QR table");
   }
+});
+
+it("given a QR table kitchen ticket, when it is rendered, then the text says QR table", () => {
+  const rendered = renderKitchenTicket({
+    paper: "80",
+    station: STATION,
+    table: TABLE,
+    channel: "qr_table",
+    lines: [{ quantity: "1", name: ITEM }],
+    kickDrawer: false,
+  });
+
+  expect(compact(rendered.text)).toContain("QR table");
+  expect(compact(rendered.text)).toContain(ITEM);
+  expect(rendered.pulse).toBeNull();
 });
 
 it("given a pre-bill on 80 mm and 58 mm, when it is rendered, then the lines, total, and QR stay inside the columns and there is no pulse", () => {

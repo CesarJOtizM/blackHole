@@ -119,6 +119,7 @@ const PAYMENT_METHODS = [
   "voucher",
   "customer_credit",
   "corporate_credit",
+  "qr",
 ] as const;
 
 const oneOf = <T extends string>(

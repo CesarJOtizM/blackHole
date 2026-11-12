@@ -621,3 +621,238 @@ None.
 - Estimated review budget impact: this pair is 114 lines (`factus-invoicing-provider.test.ts` +78, `factus-invoicing-provider.ts` +35/−1). That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
 - Next unchecked task: 3.7
 
+## Pair 4.1–4.2
+
+This batch adds pre-bill pair 4.1–4.2 and stops there. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Tasks 3.7 and 3.8 stay unchecked: the committed Factus municipalities JSON is absent, and task 3.7 says to stop rather than seed DIVIPOLA.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project orders contexts/orders/application/request-check/request-check.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. The run is after `pnpm exec biome check --write` on the touched files. |
+| Runtime harness command/scenario and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/composition/cloud-pre-bill-link.test.ts apps/api-cloud/test/composition/bootstrap.test.ts apps/api-cloud/test/http/orders-realtime.controller.test.ts apps/api-cloud/test/http/request-check.controller.test.ts` — exit 0. `Test Files  4 passed (4)`. `Tests  11 passed (11)`. HMAC-SHA256 runs through `node:crypto` with an in-memory secret. No live Factus or Postgres. The realtime case publishes `billing_data_received` and the SSE stream returns that kind. |
+| Rollback boundary | `contexts/orders/application/ports/pre-bill-link.ts`, `contexts/orders/application/request-check/request-check.ts`, `contexts/orders/application/request-check/request-check.test.ts`, the `PreBillLink` export in `contexts/orders/application/entry-port.ts`, `BillingDataReceived` in `contexts/orders/application/ports/realtime-hub.ts`, `billing_data_received` in `shared/contracts/dining-room.ts`, `apps/api-cloud/src/http/orders-realtime.controller.ts`, `apps/api-cloud/src/composition/cloud-pre-bill-link.ts`, `apps/api-cloud/src/composition/application-module.ts`, `apps/api-cloud/test/composition/bootstrap.test.ts`, `apps/api-cloud/test/composition/cloud-pre-bill-link.test.ts`, `apps/api-cloud/test/http/orders-realtime.controller.test.ts`, the `/d/` accept in `contexts/invoicing/adapters/crypto/hmac-link-signer.ts` and its test, and the crypto export in `contexts/invoicing/package.json`. Reverting those leaves pairs 1.1–3.6 and 3.9–3.10 in place. Tasks 3.7 and 3.8 stay unchecked. |
+
+Sibling re-run after GREEN: `pnpm exec vitest run --project invoicing contexts/invoicing/adapters/crypto/hmac-link-signer.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. `pnpm architecture` — exit 0. `no dependency violations found (913 modules, 2952 dependencies cruised)`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.1 → 4.2 | `pnpm exec vitest run --project orders contexts/orders/application/request-check/request-check.test.ts` exit 1. `FAIL contexts/orders/application/request-check/request-check.test.ts` — `Cannot find module '#application/ports/pre-bill-link.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after `pre-bill-link.ts`, the `RequestCheck` port argument, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. |
+
+### Deviations from Design
+
+`HmacLinkSigner.sign` still returns `/f/<payload>.<hmac>`. `CloudPreBillLink` copies that payload under `/d/` when `portalPreBillEnabled` is true. `verify` accepts both prefixes. The default in api-cloud is enabled false, so a pre-bill qr stays empty until that flag is set. Orders does not import invoicing. The realtime contract for `billing_data_received` lives in `shared/contracts/dining-room.ts` because that file already owns `ordersRealtimeEvent`. The pre-bill HTTP body was not given a link. No municipalities JSON and no `0016` SQL.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 4.1 and 4.2 only. Tasks 3.7 and 3.8 were not started. Task 5.1 was not started.
+- Files in this batch: the rollback boundary above, plus `openspec/changes/p1-08-invoicing-portal/tasks.md` and `openspec/changes/p1-08-invoicing-portal/apply-progress.md`.
+- Estimated review budget impact: tracked diff is 207 additions and 11 deletions. Untracked files add `pre-bill-link.ts` (10), `cloud-pre-bill-link.ts` (40), and `cloud-pre-bill-link.test.ts` (40). About 297 additions. That stays under the 400-line review budget. The change forecast stays High. `size:exception` was not granted. This batch is not committed.
+- Next unchecked task: 3.7, blocked on the missing Factus municipalities JSON. The next implementable task is 5.1.
+
+## Pair 5.1–5.2
+
+This batch adds HTTP pair 5.1–5.2 and continues into the assigned reinvoice and UI tasks. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Tasks 3.7 and 3.8 stay unchecked.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud portal.controller.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. The run is after `pnpm exec biome check --write` on the portal contract, its export, the controller, the test, and `application-module.ts`. That Biome run reported `Checked 5 files in 28ms. Fixed 4 files.` |
+| Runtime harness command/scenario and exact result | Same command. Nest boots through `createApplication` and `inject` with no listening socket. HMAC-SHA256 uses `portal.link-key` from in-memory secrets. No live Factus. Not N/A. |
+| Rollback boundary | `shared/contracts/invoicing-portal.ts`, the invoicing-portal export in `shared/contracts/index.ts`, `apps/api-cloud/src/http/portal.controller.ts`, `apps/api-cloud/test/http/portal.controller.test.ts`, and the portal registration in `apps/api-cloud/src/composition/application-module.ts`. Reverting those removes the public buyer lookup and the unconfigured-sender boot throw. Pairs 1.1–4.2 stay in place. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 5.1 → 5.2 | `pnpm exec vitest run --project api-cloud portal.controller.test.ts` exit 1. `FAIL \|api-cloud\| test/http/portal.controller.test.ts`. `Error: ENOENT: no such file or directory, open 'C:\Users\csar-\Proyectos\blackHole\shared\contracts\invoicing-portal.ts'`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after the contract, controller, composition, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. |
+
+### Deviations from Design
+
+The signed pre-bill token is longer than Fastify's default parameter length, so `POST /portal/buyers` carries the token in a strict body instead of a path parameter. The customer route stays `/d/:token`. Unknown, expired, limited, and provider failure all return HTTP 404 with `{}`. A found lookup returns masks only. `OneTimeCodeSender` throws at boot only when composition is asked for `"unconfigured"`. The default sender does not throw, so existing `createApplication` callers still boot. The token is not placed on the pre-bill HTTP payload. `dining-room.ts` was not edited.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 5.1 and 5.2. Tasks 3.7 and 3.8 were not started.
+- Next unchecked task in this assignment: 5.3.
+
+## Pair 5.3–5.4
+
+This batch adds HTTP pair 5.3–5.4. Not committed. `size:exception` was not granted. `strict-tdd.md` was not loaded. Mode stays Standard (`strict_tdd: false`) with ADR-017 RED then GREEN. Tasks 3.7 and 3.8 stay unchecked. `dining-room.ts` was not edited: the pre-bill HTTP payload did not gain a link.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud portal.controller reinvoice.controller` — exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. The run is after `pnpm exec biome check --write` on the reinvoice controller, its test, and `application-module.ts`. That Biome run reported `Checked 3 files in 35ms. Fixed 3 files.` |
+| Runtime harness command/scenario and exact result | Same command. Nest `inject` does not listen. The cashier session is 403 and the request store stays empty. A closed window and `off` return `rejected` with no provider call. Not N/A. |
+| Rollback boundary | `apps/api-cloud/src/http/reinvoice.controller.ts`, `apps/api-cloud/test/http/reinvoice.controller.test.ts`, and the `RequestReinvoice` registration in `apps/api-cloud/src/composition/application-module.ts`. Reverting those removes the staff reinvoice route. Pair 5.1–5.2 stays in place. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 5.3 → 5.4 | `pnpm exec vitest run --project api-cloud reinvoice.controller.test.ts` exit 1. `FAIL \|api-cloud\| test/http/reinvoice.controller.test.ts` — `Cannot find module '#src/http/reinvoice.controller.js'`. `Test Files  1 failed (1)`. `Tests  no tests`. | `pnpm exec vitest run --project api-cloud portal.controller reinvoice.controller` after the controller, composition, and Biome: exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`. |
+
+### Deviations from Design
+
+Approval stays on the existing credit-note route. This controller records the request only. `RequestReinvoice` receives the provider and does not call it. Outside `same_day`, and when the window is `off`, the response is `rejected` and the counting provider records no call. A cashier without `sale.credit-note` gets 403 `{ error: "SaleCreditNoteDenied" }` and the store stays empty. No pre-bill link was added to the dining-room payload.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 5.3 and 5.4. Tasks 3.7 and 3.8 were not started.
+- Next unchecked task in this assignment: 6.1.
+
+## Pair 6.1–6.2
+
+Customer portal `/d/:token` and `/f/:link`. No `/m`. Not committed. `strict-tdd.md` was not loaded. Tasks 3.7 and 3.8 stay unchecked. Root `vitest.config.ts` was not edited.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --config apps/customer-portal/vitest.config.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. After `pnpm exec biome check --write` on the UI files (`Checked 17 files in 27ms. Fixed 16 files.`). |
+| Runtime harness command/scenario and exact result | jsdom. The form clears the one-time code on submit and `Storage.setItem` is not called. `/f/:link` shows `In process`, then a PDF link. Not N/A. |
+| Rollback boundary | `apps/customer-portal/src/billing-data-screen.tsx`, `invoice-link-screen.tsx`, `router.tsx`, `apps/customer-portal/test/portal-screens.test.tsx`, `test/setup.ts`, `vitest.config.ts`, and the testing devDependencies in `apps/customer-portal/package.json`. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 6.1 → 6.2 | The screen and the test landed in the same edit, so there is no captured missing-module failure for this pair. | Same config command after Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+`customer-portal` is not a project in the forbidden root `vitest.config.ts`. `pnpm exec vitest run --project customer-portal --project venue-app --project admin-web` exits 0 and the verbose reporter lists only `|admin-web|` files: `Test Files  8 passed (8)`, `Tests  25 passed (25)`. The customer evidence is the app config above. The one-time code stays in the typed field and is cleared on submit.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Current batch boundary: tasks 6.1 and 6.2. Tasks 3.7 and 3.8 were not started.
+- Next unchecked task in this assignment: 6.3.
+
+## Pair 6.3–6.4
+
+Venue register shows data received and keeps charge off until the cashier chooses. UI only. Not committed. `contexts/cash-register` was not edited.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --config apps/venue-app/vitest.config.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`. After the same Biome run (`Checked 17 files in 27ms. Fixed 16 files.`). |
+| Runtime harness command/scenario and exact result | jsdom. With a check on the table, the screen shows `Datos recibidos` and `Cobrar e imprimir factura` stays disabled until `Usar datos del portal`. Not N/A. |
+| Rollback boundary | `apps/venue-app/src/cash-register/register-screen.tsx`, `apps/venue-app/test/cash-register/register-screen.test.tsx`, `apps/venue-app/test/setup.ts`, `apps/venue-app/vitest.config.ts`, and the testing devDependencies in `apps/venue-app/package.json`. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 6.3 → 6.4 | First run of `pnpm exec vitest run --config apps/venue-app/vitest.config.ts`: `Test Files  1 failed (1)`, `Tests  1 failed \| 1 passed (2)`. `getByRole("status", { name: "Datos recibidos" })` failed because the accessible name of `role=status` is empty. | After `getByText("Datos recibidos")` and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`. |
+
+### Deviations from Design
+
+`venue-app` is not a project in the forbidden root `vitest.config.ts`. The passing command is the app config. Charge stays a UI gate. No cash-register domain change.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Current batch boundary: tasks 6.3 and 6.4. Tasks 3.7 and 3.8 were not started.
+- Next unchecked task in this assignment: 6.5.
+
+## Pair 6.5–6.6
+
+Admin reinvoice window `same_day`, `same_month`, or `off`. Approval only with `sale.credit-note`. The reports route was not replaced. Not committed.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project admin-web test/fiscal/reinvoice-window.test.tsx` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. After the same Biome run (`Checked 17 files in 27ms. Fixed 16 files.`). The tasks.md command `pnpm exec vitest run --project customer-portal --project venue-app --project admin-web` also exits 0 with only admin-web files: `Test Files  8 passed (8)`. `Tests  25 passed (25)`. |
+| Runtime harness command/scenario and exact result | jsdom. Radios expose `same_day`, `same_month`, and `off`. Without `sale.credit-note` the approve button stays disabled and the click does not call `onApprove`. With that permission, one click calls `onApprove` once. Not N/A. |
+| Rollback boundary | `apps/admin-web/src/fiscal/reinvoice-view.tsx`, `reinvoice-screen.tsx`, the `/fiscal/reinvoice` route in `apps/admin-web/src/router.tsx`, the nav child in `apps/admin-web/src/shell/navigation.ts`, and `apps/admin-web/test/fiscal/reinvoice-window.test.tsx`. |
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 6.5 → 6.6 | `pnpm exec vitest run --project admin-web test/fiscal/reinvoice-window.test.tsx` exit 1. `Failed to resolve import "#src/fiscal/reinvoice-view.js"`. `Test Files  1 failed (1)`. `Tests  no tests`. | Same command after the view, screen, route, nav, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+Approval on this screen is UI only. The HTTP request route from pair 5.3–5.4 records a pending request and does not approve a credit note. `reports/sales` is unchanged. `dining-room.ts` was not edited.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Chain strategy: stacked RED/GREEN pairs. Each pair is one PR based on the previous.
+- Current batch boundary: tasks 6.1 through 6.6. Tasks 3.7 and 3.8 stay unchecked because the Factus municipalities JSON is absent. No DIVIPOLA download and no invented catalog.
+- Assigned tasks 5.1–5.4 and 6.1–6.6 are done. This batch is not committed. `size:exception` was not granted.
+- Next unchecked task: 3.7, blocked on the missing Factus municipalities JSON.
+
+## Follow-up: staff approval
+
+The admin button was local React state and the staff controller only ran `RequestReinvoice`. This follow-up adds the approval route. Tasks 5.1–6.6 were not redone. Tasks 3.7 and 3.8 stay unchecked. Not committed. `strict-tdd.md` was not loaded. `dining-room.ts`, orders, reporting, cash-register, customer-portal, venue register, and SQL were not edited.
+
+### Work Unit Evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud test/http/reinvoice.controller.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. `pnpm exec vitest run --project admin-web test/fiscal/reinvoice-window.test.tsx` — exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. Both runs are after `pnpm exec biome check --write` on the seven touched files: `Checked 7 files in 35ms. Fixed 1 file.` |
+| Runtime harness command/scenario and exact result | Nest `inject` does not listen. A cashier `POST /tenants/:tenantId/venues/:venueId/reinvoices/approve` is 403 `{ error: "SaleCreditNoteDenied" }`, `IssueCreditNote.execute` is not called, and the provider call list stays empty. A manager inside `same_day` gets 200 `{ outcome: "approved" }` and `ApproveReinvoice.execute` runs once; the provider records one `validateCreditNote`. The next Bogota day and `off` return 200 `{ outcome: "rejected" }` with no provider call. jsdom: the admin button posts that route and the test reads the request. Not N/A. |
+| Rollback boundary | `POST reinvoices/approve` in `apps/api-cloud/src/http/reinvoice.controller.ts`, the `ApproveReinvoice` factory in `apps/api-cloud/src/composition/application-module.ts`, `approveReinvoiceCommand` and `reinvoiceApprovalResult` in `shared/contracts/invoicing-portal.ts` plus their export in `shared/contracts/index.ts`, the approval tests, and the fetch in `apps/admin-web/src/fiscal/reinvoice-screen.tsx`. Reverting those removes staff approval. The request route from pair 5.3–5.4 stays. |
+
+### RED then GREEN
+
+| Step | RED (command and result) | GREEN |
+|---|---|---|
+| HTTP approval | `pnpm exec vitest run --project api-cloud test/http/reinvoice.controller.test.ts` exit 1. `Test Files  1 failed (1)`. `Tests  3 failed \| 3 passed (6)`. The new permission was `undefined`, `application.get(ApproveReinvoice)` stopped the process, and the closed window returned 404. | Same command after the route, registration, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. |
+| Admin button | `pnpm exec vitest run --project admin-web test/fiscal/reinvoice-window.test.tsx` exit 1. `Tests  1 failed \| 2 passed (3)`. The status text appeared and `fetch` was called 0 times. | Same command after the screen posts the route, and after Biome: exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`. |
+
+### Deviations from Design
+
+The approval body is `approveReinvoiceCommand` (`.strict()`, no `z.any()`). `permissions` are not accepted from the client; after `sale.credit-note` is allowed, the route passes that permission into `ApproveReinvoice`. `tenantId` and `siteId` on the credit note come from the path. The same in-memory request rows back both the request and the approval. `IssueDocument` is registered with a zero queued closure and an empty document store so a replacement with `documentBalance: 0` does not call `validate`. Inside the window the credit note still calls `validateCreditNote` once. Outside the window that call does not happen. The admin window stays `same_day`, `same_month`, or `off`, and the button stays disabled without `sale.credit-note`. The screen posts `POST /tenants/pilot/venues/chapinero/reinvoices/approve`.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: chained PR slice
+- Current batch boundary: staff approval follow-up only. Tasks 3.7 and 3.8 were not started.
+- Next unchecked task: 3.7, blocked on the missing Factus municipalities JSON.
+
+

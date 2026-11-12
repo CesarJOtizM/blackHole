@@ -508,3 +508,33 @@ it("given the waiter is denied the before-kitchen void, when she voids a sent li
   expect(grants.calls).toEqual([]);
   expect(steps).toEqual(["count", "evaluate"]);
 });
+
+it("given a sent QR table line, when the waiter voids it within the cap, then it uses the before-kitchen void", async () => {
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+  });
+  check.addLine({
+    orderId: ORDER_ID,
+    lineId: LINE_ID,
+    productId: "menu_product_soup",
+    name: "Soup",
+    course: 1,
+    price: 12_000,
+    channel: "qr_table",
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  const { dining, permissions, voidLine } = await harness(check, withinCap);
+
+  expect(check.orders[0]?.channel).toBe("qr_table");
+  await voidLine.execute(command());
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  expect(lineState(stored, LINE_ID)).toBeNull();
+  expect(permissions.inputs[0]?.permission).toBe(
+    PERMISSION.SALE_VOID_BEFORE_KITCHEN,
+  );
+});

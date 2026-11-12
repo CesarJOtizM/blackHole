@@ -2,6 +2,10 @@ import { expect, it, vi } from "vitest";
 
 import { Clock } from "#application/ports/clock.js";
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
+import {
+  PreBillLink,
+  type PreBillLinkInput,
+} from "#application/ports/pre-bill-link.js";
 import { Printer } from "#application/ports/printer.js";
 import {
   RealtimeHub,
@@ -51,6 +55,22 @@ class MemoryHub extends RealtimeHub {
     this.published.push(notice);
   }
 }
+
+class MemoryPreBillLink extends PreBillLink {
+  readonly signed: PreBillLinkInput[] = [];
+
+  constructor(private readonly qr: string) {
+    super();
+  }
+
+  override async sign(input: PreBillLinkInput): Promise<string> {
+    this.signed.push(input);
+
+    return this.qr;
+  }
+}
+
+const disabledLink = (): MemoryPreBillLink => new MemoryPreBillLink("");
 
 class MemoryDiningRoom extends DiningRoomRepository {
   private readonly tables = new Map<string, DiningTable>();
@@ -115,6 +135,7 @@ const placeTable = (state: TableState): DiningTable => {
 const seat = async (input: {
   table: TableState;
   check: "occupied" | "check_requested";
+  link?: PreBillLink;
 }) => {
   const dining = new MemoryDiningRoom();
   const table = placeTable(input.table);
@@ -134,12 +155,20 @@ const seat = async (input: {
   await dining.saveCheck(check);
   const printer = new MemoryPrinter();
   const hub = new MemoryHub();
+  const link = input.link ?? disabledLink();
 
   return {
     dining,
     printer,
     hub,
-    requestCheck: new RequestCheck(dining, new FixedClock(), printer, hub),
+    link,
+    requestCheck: new RequestCheck(
+      dining,
+      new FixedClock(),
+      printer,
+      hub,
+      link,
+    ),
   };
 };
 
@@ -263,14 +292,82 @@ const billableCheck = async () => {
   await dining.saveCheck(check);
   const printer = new MemoryPrinter();
   const hub = new MemoryHub();
+  const link = disabledLink();
 
   return {
     dining,
     printer,
     hub,
-    requestCheck: new RequestCheck(dining, new FixedClock(), printer, hub),
+    link,
+    requestCheck: new RequestCheck(
+      dining,
+      new FixedClock(),
+      printer,
+      hub,
+      link,
+    ),
   };
 };
+
+it("given the portal is enabled, when the bill is requested, then the pre-bill qr is a signed /d/ link", async () => {
+  const link = new MemoryPreBillLink("/d/check_5.signed");
+  const { printer, requestCheck } = await seat({
+    table: "occupied",
+    check: "occupied",
+    link,
+  });
+
+  await requestCheck.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+  });
+
+  expect(printer.jobs).toEqual([
+    expect.objectContaining({
+      document: "pre_bill",
+      qr: "/d/check_5.signed",
+      kickDrawer: false,
+    }),
+  ]);
+  expect(link.signed).toEqual([
+    {
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      checkId: CHECK_ID,
+      at: "2026-10-28T12:15:00.000Z",
+    },
+  ]);
+});
+
+it("given the portal is disabled, when the bill is requested, then the pre-bill qr stays empty", async () => {
+  const { printer, link, requestCheck } = await seat({
+    table: "occupied",
+    check: "occupied",
+  });
+
+  await requestCheck.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+  });
+
+  expect(printer.jobs).toEqual([
+    expect.objectContaining({
+      document: "pre_bill",
+      qr: "",
+    }),
+  ]);
+  expect(link).toBeInstanceOf(MemoryPreBillLink);
+  expect((link as MemoryPreBillLink).signed).toEqual([
+    {
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      checkId: CHECK_ID,
+      at: "2026-10-28T12:15:00.000Z",
+    },
+  ]);
+});
 
 it("given a sent soup and a held steak, when the bill is requested, then a pre-bill is enqueued with no kick and waiting publishes printer_failed", async () => {
   const { dining, printer, hub, requestCheck } = await billableCheck();

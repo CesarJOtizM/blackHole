@@ -7,12 +7,16 @@ const ITEM_KIND = {
 const DELETE = 127;
 const UNIT_SEPARATOR = 31;
 
+const QR_TABLE = "qr_table";
+const QR_TABLE_LABEL = "QR table";
+
 interface RenderTicket {
   stationName: string;
   tableId: string;
   productName: string;
   note?: string;
   kind?: string;
+  channel?: string;
 }
 
 function plain(value: string): string {
@@ -46,6 +50,7 @@ export class KitchenTicket {
     const lines = [
       plain(input.stationName),
       plain(input.tableId),
+      ...(input.channel === QR_TABLE ? [QR_TABLE_LABEL] : []),
       plain(input.productName),
     ];
     const note = input.note === undefined ? "" : plain(input.note);

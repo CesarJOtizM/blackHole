@@ -1,3 +1,4 @@
+import { BarChart } from "#src/reports/bar-chart.js";
 import {
   type ReportSection,
   reportSections,
@@ -44,6 +45,7 @@ export function ReportsView({
       columns={model.columns}
       rows={model.rows}
       caption={model.title}
+      chart={model.chart ? <BarChart chart={model.chart} /> : undefined}
       note={model.note}
       status={status}
     />

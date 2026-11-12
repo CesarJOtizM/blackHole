@@ -98,6 +98,11 @@ export class HasClockedInCashier {
 }
 
 export type {
+  ListStaffHoursCommand,
+  StaffHoursFact,
+} from "#application/list-staff-hours/list-staff-hours.js";
+export { ListStaffHours } from "#application/list-staff-hours/list-staff-hours.js";
+export type {
   ListTipParticipantsCommand,
   TipParticipant,
 } from "#application/list-tip-participants/list-tip-participants.js";

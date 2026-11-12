@@ -5,25 +5,61 @@ import {
   DocumentsView,
   TaxProfileView,
 } from "#src/fiscal/fiscal-view.js";
+import { FormDialog } from "#src/shell/form-dialog.js";
+import { NoticeToast } from "#src/shell/notice-toast.js";
 
 export function TaxProfileScreen() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState("");
+  const [open, setOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [prefix, setPrefix] = useState("SETT");
+  const [kind, setKind] = useState("Factura electrónica");
+  const [from, setFrom] = useState("1");
+  const [until, setUntil] = useState("5.000");
   return (
-    <TaxProfileView
-      status={status}
-      onCreate={() =>
-        setStatus(
-          "La resolución nueva queda en borrador hasta el número de la DIAN.",
-        )
-      }
-      onDocuments={() => {
-        void navigate({ to: "/fiscal/documents" });
-      }}
-      onBalance={() => {
-        void navigate({ to: "/fiscal/balance" });
-      }}
-    />
+    <>
+      <TaxProfileView
+        onCreate={() => {
+          setPrefix("SETT");
+          setKind("Factura electrónica");
+          setFrom("1");
+          setUntil("5.000");
+          setOpen(true);
+        }}
+        onDocuments={() => {
+          void navigate({ to: "/fiscal/documents" });
+        }}
+        onBalance={() => {
+          void navigate({ to: "/fiscal/balance" });
+        }}
+      />
+      <FormDialog
+        open={open}
+        eyebrow="Se abre desde el perfil"
+        title="Nueva resolución"
+        help="Factus numera con este rango. La sede no factura con él hasta que quede vigente."
+        submitLabel="Guardar resolución"
+        fields={[
+          {
+            label: "Prefijo",
+            value: prefix,
+            required: true,
+            onChange: setPrefix,
+          },
+          { label: "Tipo", value: kind, required: true, onChange: setKind },
+          { label: "Desde", value: from, required: true, onChange: setFrom },
+          { label: "Hasta", value: until, onChange: setUntil },
+        ]}
+        onClose={() => setOpen(false)}
+        onSubmit={() => {
+          setNotice(
+            "La resolución nueva queda en borrador hasta el número de la DIAN.",
+          );
+          setOpen(false);
+        }}
+      />
+      <NoticeToast message={notice} onClose={() => setNotice("")} />
+    </>
   );
 }
 

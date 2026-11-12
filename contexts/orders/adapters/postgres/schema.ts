@@ -142,6 +142,8 @@ export const checks = pgTable(
     tableId: text("table_id").notNull(),
     openedAt: text("opened_at").notNull(),
     waiterId: text("waiter_id"),
+    diners: integer("diners"),
+    releasedAt: text("released_at"),
     firstSentAt: text("first_sent_at"),
     tableState: text("table_state").notNull(),
     preBillRequestedAt: text("pre_bill_requested_at"),
@@ -187,6 +189,7 @@ export const orderLines = pgTable(
     inPreparationAt: text("in_preparation_at"),
     readyAt: text("ready_at"),
     deliveredAt: text("delivered_at"),
+    stationId: text("station_id"),
     position: integer("position").notNull(),
   },
   (table) => [
@@ -206,6 +209,64 @@ export const stationRoutes = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.tenantId, table.venueId, table.id] }),
+  ],
+);
+
+export const tableQrTokens = pgTable(
+  "table_qr_tokens",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    tableId: text("table_id").notNull(),
+    digest: text("digest").notNull(),
+    retired: boolean("retired").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.digest] }),
+    unique("table_qr_tokens_digest").on(table.digest),
+  ],
+);
+
+export const qrTableSettings = pgTable(
+  "qr_table_settings",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    acceptance: text("acceptance").notNull().default("direct"),
+    staleAfterSeconds: integer("stale_after_seconds").notNull().default(900),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.venueId] })],
+);
+
+export const qrOrderIntents = pgTable(
+  "qr_order_intents",
+  {
+    id: text("id").notNull(),
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    tableId: text("table_id").notNull(),
+    status: text("status").notNull(),
+    lines: jsonb("lines").notNull().$type<
+      {
+        productId: string;
+        name: string;
+        variantIds: readonly string[];
+        modifierIds: readonly string[];
+        note?: string;
+        unitPrice: number;
+      }[]
+    >(),
+    unavailableProductIds: jsonb("unavailable_product_ids")
+      .notNull()
+      .$type<string[]>(),
+    sentLineIds: jsonb("sent_line_ids").notNull().$type<string[]>(),
+    checkId: text("check_id"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.id] }),
+    unique("qr_order_intents_id").on(table.id),
   ],
 );
 

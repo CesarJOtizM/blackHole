@@ -12,6 +12,7 @@
   width: 232px;
   height: 100vh;
   padding: 22px 14px 16px;
+  overflow-y: auto;
   background: var(--carbon);
   color: var(--carbon-text);
 }
@@ -56,9 +57,12 @@
 
 .item,
 .itemActive {
-  display: block;
-  margin: 2px 0;
-  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  margin: 0;
+  padding: 0 10px;
   border-radius: 8px;
   color: var(--carbon-text);
   font-family: var(--mono);
@@ -68,9 +72,37 @@
   text-transform: uppercase;
 }
 
+.item svg,
+.itemActive svg {
+  flex: none;
+  color: var(--carbon-soft);
+}
+
 .itemActive {
   background: var(--sheet);
   color: var(--ink);
+}
+
+.itemActive svg {
+  color: var(--ink);
+}
+
+.subitem,
+.subitemActive {
+  display: block;
+  margin: 0;
+  padding: 3px 10px 3px 36px;
+  color: #a89f91;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.subitemActive {
+  color: var(--sheet);
 }
 
 .spacer {

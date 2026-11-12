@@ -14,6 +14,17 @@ export const reportSections = [
 
 export type ReportSection = (typeof reportSections)[number];
 
+export interface ReportChartBar {
+  label: string;
+  height: number;
+  tone?: "ink" | "stamp";
+}
+
+export interface ReportChart {
+  title: string;
+  bars: ReportChartBar[];
+}
+
 export interface ReportModel {
   eyebrow: string;
   title: string;
@@ -21,6 +32,7 @@ export interface ReportModel {
   columns: string[];
   rows: Cell[][];
   note?: string;
+  chart?: ReportChart;
 }
 
 const chip = (label: string, tone: "go" | "stamp" | "hold" | "ink"): Cell => ({
@@ -46,6 +58,18 @@ export const reports: Record<ReportSection, ReportModel> = {
       ["Salitre", "$87 M", "-3%"],
     ],
     note: "Venta por día: lun a dom, con el pico del sábado.",
+    chart: {
+      title: "Venta por día de la semana",
+      bars: [
+        { label: "Lun", height: 108 },
+        { label: "Mar", height: 127 },
+        { label: "Mié", height: 137 },
+        { label: "Jue", height: 166 },
+        { label: "Vie", height: 245, tone: "stamp" },
+        { label: "Sáb", height: 272, tone: "stamp" },
+        { label: "Dom", height: 195 },
+      ],
+    },
   },
   times: {
     eyebrow: "Desde que se envía a cocina hasta que se entrega",
@@ -67,6 +91,19 @@ export const reports: Record<ReportSection, ReportModel> = {
       ["Costilla BBQ", "20", "23"],
       ["Churrasco 400 g", "18", "17"],
     ],
+    chart: {
+      title: "Minutos promedio por hora",
+      bars: [
+        { label: "12", height: 173 },
+        { label: "13", height: 260, tone: "stamp" },
+        { label: "14", height: 235, tone: "stamp" },
+        { label: "15", height: 148 },
+        { label: "18", height: 161 },
+        { label: "19", height: 210 },
+        { label: "20", height: 272, tone: "stamp" },
+        { label: "21", height: 198 },
+      ],
+    },
   },
   "food-cost": {
     eyebrow: "Teórico según recetas vs real según conteo",
@@ -247,6 +284,18 @@ export const reports: Record<ReportSection, ReportModel> = {
       ["Entraña", "71%", "P24 · puzzle"],
       ["Limonada natural", "18%", "P15 · perro"],
     ],
+    chart: {
+      title: "Percentil de popularidad",
+      bars: [
+        { label: "Chu", height: 108 },
+        { label: "Bif", height: 127 },
+        { label: "Ban", height: 137 },
+        { label: "Emp", height: 166 },
+        { label: "Lim", height: 245 },
+        { label: "Ham", height: 272 },
+        { label: "Pic", height: 195 },
+      ],
+    },
   },
   reservations: {
     eyebrow: "Reportes / reservas",

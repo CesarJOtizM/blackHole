@@ -119,14 +119,18 @@ const readLink = (payload: string): EvaluatedPortalLink | null => {
   };
 };
 
+const LINK_PREFIXES = ["/f/", "/d/"] as const;
+
 const splitSuffix = (
   token: string,
 ): { payload: string; mac: string } | null => {
-  if (!token.startsWith("/f/")) {
+  const prefix = LINK_PREFIXES.find((item) => token.startsWith(item));
+
+  if (prefix === undefined) {
     return null;
   }
 
-  const rest = token.slice("/f/".length);
+  const rest = token.slice(prefix.length);
   const dot = rest.lastIndexOf(".");
 
   if (dot <= 0 || dot === rest.length - 1) {

@@ -18,7 +18,7 @@ type CheckRow = typeof checks.$inferSelect;
 type OrderRow = typeof orders.$inferSelect;
 type OrderLineRow = typeof orderLines.$inferSelect;
 type LineState = "held" | "sent" | "in_preparation" | "ready" | "delivered";
-type OrderChannel = "waiter" | "fixed_point";
+type OrderChannel = "waiter" | "fixed_point" | "qr_table";
 
 interface StoredTable {
   id: string;
@@ -44,6 +44,7 @@ interface PersistedLine {
   inPreparationAt?: string;
   readyAt?: string;
   deliveredAt?: string;
+  stationId?: string;
 }
 
 interface PersistedOrder {
@@ -59,6 +60,8 @@ interface StoredCheck {
   tableId: string;
   openedAt: string;
   waiterId: string | null;
+  diners: number | null;
+  releasedAt: string | null;
   firstSentAt: string | null;
   tableState: string;
   preBillRequestedAt: string | null;
@@ -246,6 +249,8 @@ function snapshotCheck(check: Check): StoredCheck {
     tableId: check.tableId,
     openedAt: check.openedAt,
     waiterId: check.waiterId,
+    diners: check.diners,
+    releasedAt: check.releasedAt ?? null,
     firstSentAt: check.firstSentAt ?? null,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequest?.requestedAt ?? null,
@@ -307,6 +312,8 @@ async function replaceCheck(
     tableId: check.tableId,
     openedAt: check.openedAt,
     waiterId: check.waiterId,
+    diners: check.diners,
+    releasedAt: check.releasedAt,
     firstSentAt: check.firstSentAt,
     tableState: check.tableState,
     preBillRequestedAt: check.preBillRequestedAt,
@@ -354,6 +361,7 @@ async function insertOrders(
       inPreparationAt: line.inPreparationAt ?? null,
       readyAt: line.readyAt ?? null,
       deliveredAt: line.deliveredAt ?? null,
+      stationId: line.stationId ?? null,
       position,
     })),
   );
@@ -426,7 +434,12 @@ function restoreCheck(
     venueId: row.venueId,
     tableId: row.tableId,
     openedAt: row.openedAt,
+    diners: row.diners,
   });
+
+  if (row.releasedAt !== null) {
+    check.stampReleased({ releasedAt: row.releasedAt });
+  }
 
   if (row.waiterId !== null) {
     check.assignWaiter(row.waiterId);
@@ -542,6 +555,7 @@ function advanceStoredLine(check: Check, line: PersistedLine): void {
     lineId: line.id,
     state: "in_preparation",
     at: inPreparationAt,
+    ...(line.stationId === undefined ? {} : { stationId: line.stationId }),
   });
 
   if (line.state === "in_preparation") {
@@ -604,6 +618,7 @@ function snapshotOrders(source: Check["orders"]): PersistedOrder[] {
       ...(line.deliveredAt === undefined
         ? {}
         : { deliveredAt: line.deliveredAt }),
+      ...(line.stationId === undefined ? {} : { stationId: line.stationId }),
     })),
   }));
 }
@@ -700,6 +715,7 @@ function lineFromRow(row: OrderLineRow): PersistedLine {
       : { inPreparationAt: row.inPreparationAt }),
     ...(row.readyAt === null ? {} : { readyAt: row.readyAt }),
     ...(row.deliveredAt === null ? {} : { deliveredAt: row.deliveredAt }),
+    ...(row.stationId === null ? {} : { stationId: row.stationId }),
   };
 }
 
@@ -733,7 +749,7 @@ function channelOf(value: string): OrderChannel {
 }
 
 function isChannel(value: unknown): value is OrderChannel {
-  return value === "waiter" || value === "fixed_point";
+  return value === "waiter" || value === "fixed_point" || value === "qr_table";
 }
 
 function isLineState(value: unknown): value is LineState {

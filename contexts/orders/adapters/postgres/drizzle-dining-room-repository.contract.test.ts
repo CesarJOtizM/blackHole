@@ -28,6 +28,14 @@ const waiterMigration = readFileSync(
   fileURLToPath(new URL("./0003_check_waiter.sql", import.meta.url)),
   "utf8",
 );
+const qrMigration = readFileSync(
+  fileURLToPath(new URL("./0004_qr_table_ordering.sql", import.meta.url)),
+  "utf8",
+);
+const stampMigration = readFileSync(
+  fileURLToPath(new URL("./0005_report_stamps.sql", import.meta.url)),
+  "utf8",
+);
 
 const clients: PGlite[] = [];
 
@@ -39,6 +47,8 @@ const applyMigrations = async (client: PGlite): Promise<void> => {
   await client.exec(menuMigration);
   await client.exec(diningMigration);
   await client.exec(waiterMigration);
+  await client.exec(qrMigration);
+  await client.exec(stampMigration);
 };
 
 diningRoomRepositoryContract(async () => {
@@ -418,4 +428,78 @@ it("given a transferred check, when it is saved and loaded, then the waiter stil
 
   expect(stored?.waiterId).toBe("user_waiter");
   expect(row.rows).toEqual([{ waiter_id: "user_waiter" }]);
+});
+
+const RELEASED_AT = "2026-10-28T14:00:00.000Z";
+
+it("given diners, a release stamp, and a station on a line, when the check is saved and loaded, then the nullable columns round-trip", async () => {
+  const client = await openClient();
+  const repository = new DrizzleDiningRoomRepository(client);
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+    diners: 4,
+  });
+
+  check.addLine({
+    orderId: "order_1",
+    lineId: "line_soup",
+    productId: "menu_soup",
+    name: "Jalapeño soup",
+    course: 1,
+    price: 12_000,
+    channel: "waiter",
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  check.advance({
+    lineId: "line_soup",
+    state: "in_preparation",
+    at: PREPARED_AT,
+    stationId: "station_grill",
+  });
+  check.stampReleased({ releasedAt: RELEASED_AT });
+  await repository.saveCheck(check);
+
+  const stored = await repository.loadCheck(TENANT_A, VENUE_ID, CHECK_ID);
+  const checkRow = await client.query<{
+    diners: number | null;
+    released_at: string | null;
+  }>("SELECT diners, released_at FROM checks");
+  const lineRow = await client.query<{ station_id: string | null }>(
+    "SELECT station_id FROM order_lines",
+  );
+
+  expect(stored?.diners).toBe(4);
+  expect(stored?.releasedAt).toBe(RELEASED_AT);
+  expect(stored?.orders[0]?.lines[0]?.stationId).toBe("station_grill");
+  expect(checkRow.rows).toEqual([{ diners: 4, released_at: RELEASED_AT }]);
+  expect(lineRow.rows).toEqual([{ station_id: "station_grill" }]);
+});
+
+it("given an untouched check, when it is saved and loaded, then diners, released_at, and station_id stay null", async () => {
+  const client = await openClient();
+  const repository = new DrizzleDiningRoomRepository(client);
+
+  await repository.saveCheck(servedCheck());
+
+  const stored = await repository.loadCheck(TENANT_A, VENUE_ID, CHECK_ID);
+  const checkRow = await client.query<{
+    diners: number | null;
+    released_at: string | null;
+  }>("SELECT diners, released_at FROM checks");
+  const lineRow = await client.query<{ id: string; station_id: string | null }>(
+    "SELECT id, station_id FROM order_lines ORDER BY id",
+  );
+
+  expect(stored?.diners).toBeNull();
+  expect(stored?.releasedAt).toBeUndefined();
+  expect(stored?.orders[0]?.lines[0]?.stationId).toBeUndefined();
+  expect(checkRow.rows).toEqual([{ diners: null, released_at: null }]);
+  expect(lineRow.rows).toEqual([
+    { id: "line_soup", station_id: null },
+    { id: "line_steak", station_id: null },
+  ]);
 });

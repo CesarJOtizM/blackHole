@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 
 import {
+  AccountAlreadyCharged,
   ChargeCheck,
   ChargeLedger,
   DrawerAudit,
@@ -109,6 +110,10 @@ class MemoryAccounts extends AccountGateway {
     _venueId: string,
     _checkId: string,
   ): Promise<void> {}
+
+  add(tenantId: string, check: AccountCheck): void {
+    this.checks.set(accountKey(tenantId, VENUE_ID, check.checkId), check);
+  }
 }
 
 class MemoryCardTerminal extends CardTerminal {
@@ -191,6 +196,22 @@ class MemoryChargeLedger extends ChargeLedger {
     commandId: string,
   ): Promise<RecordedCharge | null> {
     return this.charges.get(chargeKey(tenantId, venueId, commandId)) ?? null;
+  }
+
+  async findByCheck(
+    tenantId: string,
+    venueId: string,
+    checkId: string,
+  ): Promise<RecordedCharge | null> {
+    const prefix = `${tenantId}:${venueId}:`;
+
+    for (const [key, charge] of this.charges) {
+      if (key.startsWith(prefix) && charge.closure.checkId === checkId) {
+        return charge;
+      }
+    }
+
+    return null;
   }
 
   override async insert(
@@ -853,4 +874,73 @@ it("given the platform clock, when a check is charged and the command repeats, t
   expect(stored?.recordedAt).toBe("2026-11-04T18:21:00.000Z");
   expect(stored?.payment).not.toHaveProperty("taxCop");
   expect(calls).toBe(1);
+});
+
+const OTHER_CHECK_ID = "orders_check_2";
+
+it("given the cashier closed the account, when a second closure uses another payment id, then it is rejected and the first payment stays", async () => {
+  const { accounts, ledger, charge } = chargeFor(85_000);
+  const markPaid = vi.spyOn(accounts, "markPaid");
+
+  await charge.execute(cashInput);
+  const again = charge.execute({
+    ...cashInput,
+    commandId: "command_cash_2",
+    paymentId: "payment_cash_2",
+    closureId: "closure_cash_2",
+  });
+
+  await expect(again).rejects.toThrow(AccountAlreadyCharged);
+  expect(markPaid).toHaveBeenCalledTimes(1);
+  const stored = await ledger.findByCommand(
+    TENANT_ID,
+    VENUE_ID,
+    CASH_COMMAND_ID,
+  );
+  expect(stored?.payment.id).toBe(CASH_PAYMENT_ID);
+  expect(
+    await ledger.findByCommand(TENANT_ID, VENUE_ID, "command_cash_2"),
+  ).toBeNull();
+});
+
+it("given two accounts, when each is closed with its own payment id, then both payments are stored", async () => {
+  const { accounts, ledger, charge } = chargeFor(85_000);
+  accounts.add(TENANT_ID, {
+    checkId: OTHER_CHECK_ID,
+    tableId: TABLE_ID,
+    accountCop: 40_000,
+    lines: [
+      {
+        lineId: "orders_line_2",
+        productId: PRODUCT_ID,
+        priceCop: 40_000,
+        originTableId: TABLE_ID,
+        menuClass: MENU_CLASS,
+      },
+    ],
+  });
+
+  await charge.execute(cashInput);
+  await charge.execute({
+    ...cashInput,
+    checkId: OTHER_CHECK_ID,
+    commandId: "command_cash_2",
+    paymentId: "payment_cash_2",
+    closureId: "closure_cash_2",
+    tenders: [{ method: "cash", amountCop: 40_000 }],
+  });
+
+  const first = await ledger.findByCommand(
+    TENANT_ID,
+    VENUE_ID,
+    CASH_COMMAND_ID,
+  );
+  const second = await ledger.findByCommand(
+    TENANT_ID,
+    VENUE_ID,
+    "command_cash_2",
+  );
+  expect(first?.payment.id).toBe(CASH_PAYMENT_ID);
+  expect(second?.payment.id).toBe("payment_cash_2");
+  expect(first?.payment.id).not.toBe(second?.payment.id);
 });

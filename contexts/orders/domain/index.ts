@@ -4,6 +4,7 @@ export type { LineState, OrderChannel } from "#domain/check.js";
 export {
   Check,
   ComboNotSent,
+  channelLabel,
   EmptyOrder,
   InvalidCheckId,
   InvalidCheckPrice,
@@ -30,6 +31,18 @@ export {
   MissingTaxClassification,
   UnknownMenuReference,
 } from "#domain/menu.js";
+export type {
+  QrIntentCommand,
+  QrIntentLine,
+  QrIntentNone,
+  QrIntentStatus,
+} from "#domain/qr-order-intent.js";
+export {
+  InvalidQrIntentId,
+  QR_INTENT_NONE,
+  QrIntentForbidden,
+  QrOrderIntent,
+} from "#domain/qr-order-intent.js";
 export type { RoutedProduct, StationOutput } from "#domain/station-router.js";
 export {
   DuplicateStationProduct,
@@ -38,3 +51,7 @@ export {
   MissingStation,
   StationRouter,
 } from "#domain/station-router.js";
+export {
+  InvalidTableQrNonce,
+  TableQrToken,
+} from "#domain/table-qr-token.js";

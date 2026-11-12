@@ -37,6 +37,46 @@ it("given cash register C has no open shift, when cashier K declares a 200000 fl
   });
 });
 
+it("given an open shift with a 200000 float, when cash 300000 and qr 120000 are recorded, then expectedCashCop stays 200000", () => {
+  const shift = shiftOnFront();
+  shift.open({
+    id: SHIFT_ID,
+    cashierId: CASHIER_ID,
+    openingFloatCop: OPENING_FLOAT_COP,
+  });
+  const before = shift.expectedCashCop;
+
+  shift.recordPayment({
+    id: "payment_cash_1",
+    originalPaymentId: "payment_cash_1",
+    method: "cash",
+    amountCop: 300_000,
+  });
+  shift.recordPayment({
+    id: "payment_qr_1",
+    originalPaymentId: "payment_qr_1",
+    method: "qr",
+    amountCop: 120_000,
+  });
+
+  expect(before).toBe(OPENING_FLOAT_COP);
+  expect(shift.expectedCashCop).toBe(OPENING_FLOAT_COP);
+  expect(shift.payments).toEqual([
+    {
+      id: "payment_cash_1",
+      originalPaymentId: "payment_cash_1",
+      method: "cash",
+      amountCop: 300_000,
+    },
+    {
+      id: "payment_qr_1",
+      originalPaymentId: "payment_qr_1",
+      method: "qr",
+      amountCop: 120_000,
+    },
+  ]);
+});
+
 it("given C has an open shift, when another cashier opens a shift on C, then ShiftAlreadyOpen and the shift stays", () => {
   const shift = shiftOnFront();
   shift.open({
