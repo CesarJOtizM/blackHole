@@ -1,14 +1,26 @@
 import { expect, it, vi } from "vitest";
-
+import { InMemoryQrPaymentRepository } from "#adapters/memory/in-memory-qr-payment-repository.js";
+import { ScriptedPaymentGateway } from "#adapters/memory/scripted-payment-gateway.js";
+import type { QrIssueDocumentCommand } from "#application/apply-qr-payment/apply-qr-payment.js";
+import {
+  ApplyQrPayment,
+  QrInvoiceIssuer,
+} from "#application/apply-qr-payment/apply-qr-payment.js";
+import { ConfirmQrPayment } from "#application/confirm-qr-payment/confirm-qr-payment.js";
 import { OpenShift } from "#application/open-shift/open-shift.js";
+import type { AccountCheck } from "#application/ports/account-gateway.js";
+import { AccountGateway } from "#application/ports/account-gateway.js";
+import { AccountSplitStore } from "#application/ports/account-split-store.js";
 import { CashRegisterRepository } from "#application/ports/cash-register-repository.js";
+import { QrPaymentAvailability } from "#application/ports/qr-payment-availability.js";
 import {
   type KnownRegister,
   RegisterLookup,
   UnknownRegister,
 } from "#application/ports/register-lookup.js";
+import { StartQrPayment } from "#application/start-qr-payment/start-qr-payment.js";
 import {
-  type CashShift,
+  CashShift,
   InvalidShiftId,
   ShiftAlreadyOpen,
 } from "#domain/cash-shift.js";
@@ -179,4 +191,129 @@ it("given a shift saved for one tenant, when another tenant loads that register,
   const sameTenant = await repository.load(TENANT_ID, VENUE_ID, REGISTER_ID);
   expect(otherTenant).toBeNull();
   expect(sameTenant?.id).toBe(SHIFT_ID);
+});
+
+class QuietInvoices extends QrInvoiceIssuer {
+  override async execute(
+    _command: QrIssueDocumentCommand,
+  ): Promise<{ document: { status: string } }> {
+    return { document: { status: "accepted" } };
+  }
+}
+
+class PendingAccounts extends AccountGateway {
+  override async findCheck(): Promise<AccountCheck> {
+    return {
+      checkId: "orders_check_1",
+      tableId: "orders_table_2",
+      accountCop: 120_000,
+      lines: [],
+    };
+  }
+
+  override async markPaid(): Promise<void> {}
+}
+
+class EmptySplits extends AccountSplitStore {
+  override async find(): Promise<null> {
+    return null;
+  }
+
+  override async save(): Promise<void> {}
+}
+
+class EnabledQr extends QrPaymentAvailability {
+  override async enabled(): Promise<boolean> {
+    return true;
+  }
+}
+
+it("given a pending qr payment, when the next shift opens, then it is applied once and a closed shift stays unchanged", async () => {
+  const repository = new MemoryCashRegister();
+  const lookup = new MemoryRegisterLookup(knownRegisters);
+  const payments = new InMemoryQrPaymentRepository();
+  const gateway = new ScriptedPaymentGateway();
+  const start = new StartQrPayment(
+    new PendingAccounts(),
+    new EmptySplits(),
+    payments,
+    gateway,
+    new EnabledQr(),
+    () => "qrpay_pending",
+    { now: () => 1_700_000_000_000 },
+  );
+  const confirm = new ConfirmQrPayment(payments, gateway);
+  const apply = new ApplyQrPayment(
+    payments,
+    repository,
+    new QuietInvoices(),
+    new PendingAccounts(),
+  );
+  const started = await start.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    checkId: "orders_check_1",
+    tipCop: 0,
+    amountCop: 10_000,
+  });
+  gateway.verified = {
+    reference: started.payment.reference,
+    amountCop: 120_000,
+    instrument: "card",
+  };
+  await confirm.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    rawBody: "{}",
+    signature: "signed",
+  });
+  const pending = await apply.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    registerId: REGISTER_ID,
+    reference: started.payment.reference,
+  });
+  const closed = CashShift.forRegister("organization_register_bar");
+  closed.open({
+    id: "shift_bar_1",
+    cashierId: CASHIER_ID,
+    openingFloatCop: 50_000,
+  });
+  const closedBefore = {
+    payments: closed.payments.map((payment) => ({ ...payment })),
+    expectedCashCop: closed.expectedCashCop,
+  };
+  const openShift = new OpenShift(repository, lookup, apply);
+
+  const opened = await openShift.execute(openInput);
+
+  expect(pending.status).toBe("pending_application");
+  expect(closed.payments.map((payment) => ({ ...payment }))).toEqual(
+    closedBefore.payments,
+  );
+  expect(closed.expectedCashCop).toBe(closedBefore.expectedCashCop);
+  expect(opened.payments).toEqual([
+    {
+      id: "payment_qrpay_pending",
+      originalPaymentId: "payment_qrpay_pending",
+      method: "qr",
+      amountCop: 120_000,
+    },
+  ]);
+  expect(opened.expectedCashCop).toBe(OPENING_FLOAT_COP);
+  await expect(
+    openShift.execute({
+      ...openInput,
+      shiftId: OTHER_SHIFT_ID,
+      cashierId: OTHER_CASHIER_ID,
+    }),
+  ).rejects.toThrow(ShiftAlreadyOpen);
+  const stored = await repository.load(TENANT_ID, VENUE_ID, REGISTER_ID);
+  expect(stored?.payments).toHaveLength(1);
+  expect(
+    await payments.listByStatus(TENANT_ID, VENUE_ID, "applied"),
+  ).toHaveLength(1);
+  expect(
+    await payments.listByStatus(TENANT_ID, VENUE_ID, "pending_application"),
+  ).toEqual([]);
 });

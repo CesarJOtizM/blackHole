@@ -144,6 +144,20 @@ it("given an account of 100000, when the customer adds a 10000 tip by card, then
   expect(payment.tenders).toEqual([{ method: "cash", amountCop: 100_000 }]);
 });
 
+it("given an account of 85000 paid by qr, when the payment is recorded, then the sale stays 85000 and the qr tender creates no cash change", () => {
+  const payment = Payment.record({
+    id: "payment_qr_1",
+    accountCop: 85_000,
+    tenders: [{ method: "qr", amountCop: 85_000 }],
+    tip: { method: "qr", amountCop: 8_500 },
+  });
+
+  expect(payment.saleCop).toBe(85_000);
+  expect(payment.changeCop).toBe(0);
+  expect(payment.tenders).toEqual([{ method: "qr", amountCop: 85_000 }]);
+  expect(payment.tip).toEqual({ method: "qr", amountCop: 8_500 });
+});
+
 it("given the customer declines the tip, when payment is recorded, then a zero tip is stored", () => {
   const payment = Payment.record({
     id: "payment_declined_tip",

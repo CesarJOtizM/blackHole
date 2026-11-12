@@ -7,8 +7,11 @@
     "./domain": "./domain/index.js",
     "./application/entry-port": "./application/entry-port.js",
     "./adapters/memory/in-memory-cash-register-repository": "./adapters/memory/in-memory-cash-register-repository.js",
+    "./adapters/memory/ledger-cash-fact-reader": "./adapters/memory/ledger-cash-fact-reader.js",
+    "./adapters/postgres/ledger-cash-fact-reader": "./adapters/postgres/ledger-cash-fact-reader.js",
     "./adapters/manual-terminal/manual-card-terminal": "./adapters/manual-terminal/manual-card-terminal.js",
-    "./adapters/postgres/drizzle-cash-register-repository": "./adapters/postgres/drizzle-cash-register-repository.js"
+    "./adapters/postgres/drizzle-cash-register-repository": "./adapters/postgres/drizzle-cash-register-repository.js",
+    "./adapters/postgres/drizzle-qr-payment-repository": "./adapters/postgres/drizzle-qr-payment-repository.js"
   },
   "dependencies": {
     "@blackhole/platform": "workspace:*",
@@ -35,9 +38,16 @@
     "#application/configure-tip-rule/*": "./application/configure-tip-rule/*",
     "#application/print-tip-settlement/*": "./application/print-tip-settlement/*",
     "#application/settle-tips/*": "./application/settle-tips/*",
+    "#application/start-qr-payment/*": "./application/start-qr-payment/*",
+    "#application/confirm-qr-payment/*": "./application/confirm-qr-payment/*",
+    "#application/apply-qr-payment/*": "./application/apply-qr-payment/*",
+    "#application/reconcile-qr-payments/*": "./application/reconcile-qr-payments/*",
+    "#application/list-cash-facts/*": "./application/list-cash-facts/*",
+    "#application/list-stale-qr-payments/*": "./application/list-stale-qr-payments/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/manual-terminal/*": "./adapters/manual-terminal/*",
-    "#adapters/postgres/*": "./adapters/postgres/*"
+    "#adapters/postgres/*": "./adapters/postgres/*",
+    "#adapters/bold/*": "./adapters/bold/*"
   }
 }

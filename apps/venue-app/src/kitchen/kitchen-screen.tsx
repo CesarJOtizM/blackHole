@@ -28,6 +28,11 @@ export function KitchenScreen() {
               <div className="flex items-baseline justify-between">
                 <h2 className="font-display text-title">
                   Mesa {ticket.tableLabel}
+                  {ticket.id === "k-05" ? (
+                    <span className="block font-mono text-xs uppercase">
+                      QR table
+                    </span>
+                  ) : null}
                 </h2>
                 <p className={late ? "text-kitchen-late" : "text-kitchen-ok"}>
                   {ticket.minutes} min

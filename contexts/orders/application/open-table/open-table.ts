@@ -46,6 +46,7 @@ export class OpenTable {
       venueId: table.venueId,
       tableId: table.id,
       openedAt: new Date(this.clock.now()).toISOString(),
+      diners: input.diners,
     });
 
     table.open({ diners: input.diners });

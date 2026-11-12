@@ -43,9 +43,11 @@ export function RecordPage({
   rows = [],
   caption,
   empty,
+  chart,
   note,
   status,
   aside,
+  extraActions,
   children,
 }: {
   eyebrow: string;
@@ -57,9 +59,11 @@ export function RecordPage({
   rows?: Cell[][];
   caption?: string;
   empty?: string;
+  chart?: ReactNode;
   note?: string;
   status?: string;
   aside?: ReactNode;
+  extraActions?: ReactNode;
   children?: ReactNode;
 }) {
   const body = (
@@ -76,37 +80,40 @@ export function RecordPage({
         </div>
       ) : null}
       {columns ? (
-        <div className={ui.tableWrap}>
-          <table className={ui.table}>
-            {caption ? <caption className="srOnly">{caption}</caption> : null}
-            <thead>
-              <tr>
-                {columns.map((column) => (
-                  <th key={column}>{column}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr key={`${caption ?? "row"}-${index}`}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${index}-${cellIndex}`}>
-                      {typeof cell === "string" ? (
-                        cell
-                      ) : (
-                        <span className={chipClass[cell.tone]}>
-                          {cell.chip}
-                        </span>
-                      )}
-                    </td>
+        <div className={chart ? styles.chartRow : undefined}>
+          {chart}
+          <div className={ui.tableWrap}>
+            <table className={ui.table}>
+              {caption ? <caption className="srOnly">{caption}</caption> : null}
+              <thead>
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column}>{column}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 && empty ? (
-            <p className={ui.empty}>{empty}</p>
-          ) : null}
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={`${caption ?? "row"}-${index}`}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={`${index}-${cellIndex}`}>
+                        {typeof cell === "string" ? (
+                          cell
+                        ) : (
+                          <span className={chipClass[cell.tone]}>
+                            {cell.chip}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length === 0 && empty ? (
+              <p className={ui.empty}>{empty}</p>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {children}
@@ -126,8 +133,9 @@ export function RecordPage({
           <p className={ui.eyebrow}>{eyebrow}</p>
           <h1 className={ui.title}>{title}</h1>
         </div>
-        {actions.length > 0 ? (
+        {extraActions || actions.length > 0 ? (
           <div className={ui.actions}>
+            {extraActions}
             {actions.map((action) => (
               <button
                 key={action.label}

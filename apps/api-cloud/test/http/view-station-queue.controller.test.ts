@@ -136,6 +136,7 @@ it("given lines sent at 12:00 and 12:02 and a kitchen chief session, when GET /s
           name: "Soup",
           sentAt: at1200,
           state: "sent",
+          channel: "waiter",
           color: "green",
         },
         {
@@ -146,6 +147,7 @@ it("given lines sent at 12:00 and 12:02 and a kitchen chief session, when GET /s
           name: "Steak",
           sentAt: at1202,
           state: "sent",
+          channel: "waiter",
           color: "green",
         },
       ],

@@ -42,6 +42,16 @@ export {
   QueuedClosureNotFound,
 } from "#application/issue-document/issue-document.js";
 export type {
+  InvoiceFact,
+  IssuedInvoice,
+  ListInvoiceFactsCommand,
+} from "#application/list-invoice-facts/list-invoice-facts.js";
+export {
+  INVOICE_BUYER,
+  IssuedInvoiceReader,
+  ListInvoiceFacts,
+} from "#application/list-invoice-facts/list-invoice-facts.js";
+export type {
   LookUpPortalBuyerCommand,
   PortalBuyerLookupResult,
 } from "#application/look-up-portal-buyer/look-up-portal-buyer.js";
@@ -53,6 +63,7 @@ export type {
   AcquirerQuery,
   CreditNoteValidation,
   DocumentIssuance,
+  InvoiceValidation,
 } from "#application/ports/invoicing-provider.js";
 export {
   ACQUIRER_LOOKUP,

@@ -1,5 +1,9 @@
 import type { CashCountStore } from "#application/ports/cash-count-store.js";
 import type { CashRegisterRepository } from "#application/ports/cash-register-repository.js";
+import type {
+  GatewayReportRow,
+  PaymentGateway,
+} from "#application/ports/payment-gateway.js";
 import {
   type RegisterLookup,
   UnknownRegister,
@@ -11,6 +15,7 @@ import {
   type DenominationLine,
   type TerminalReport,
 } from "#domain/cash-count.js";
+import type { CashShift } from "#domain/cash-shift.js";
 
 export class RecountRejected extends Error {
   constructor() {
@@ -37,6 +42,8 @@ export interface CountReading {
   expectedCashCop: number | undefined;
   countedCashCop: number | undefined;
   differenceCop: number | undefined;
+  qrCop?: number;
+  qrReportCop?: number;
 }
 
 const knownRegister = async (
@@ -59,11 +66,38 @@ const hiddenReading = (): CountReading => ({
   differenceCop: undefined,
 });
 
+const readingOf = (count: CashCount): CountReading => {
+  const reading: CountReading = {
+    state: count.state,
+    expectedCashCop: count.expectedCashCop,
+    countedCashCop: count.countedCashCop,
+    differenceCop: count.differenceCop,
+  };
+
+  if (count.qrCop !== undefined) {
+    reading.qrCop = count.qrCop;
+    reading.qrReportCop = count.qrReportCop;
+  }
+
+  return reading;
+};
+
+const qrRecordedCop = (shift: CashShift): number =>
+  shift.payments.reduce(
+    (total, payment) =>
+      payment.method === "qr" ? total + payment.amountCop : total,
+    0,
+  );
+
+const qrReportedCop = (rows: readonly GatewayReportRow[]): number =>
+  rows.reduce((total, row) => total + row.amountCop, 0);
+
 export class SubmitCount {
   constructor(
     private readonly registerLookup: RegisterLookup,
     private readonly registers: CashRegisterRepository,
     private readonly counts: CashCountStore,
+    private readonly gateway: PaymentGateway | null = null,
   ) {}
 
   async read(input: ReadCountInput): Promise<CountReading> {
@@ -83,12 +117,7 @@ export class SubmitCount {
       return hiddenReading();
     }
 
-    return {
-      state: count.state,
-      expectedCashCop: count.expectedCashCop,
-      countedCashCop: count.countedCashCop,
-      differenceCop: count.differenceCop,
-    };
+    return readingOf(count);
   }
 
   async execute(input: SubmitCountInput): Promise<CashCount> {
@@ -126,7 +155,7 @@ export class SubmitCount {
       input.registerId,
     );
 
-    if (shift?.expectedCashCop === undefined) {
+    if (!shift || shift.expectedCashCop === undefined) {
       throw new OpenShiftRequired();
     }
 
@@ -137,10 +166,24 @@ export class SubmitCount {
         countedBy: input.countedBy,
       });
 
+    const qr =
+      this.gateway === null
+        ? {}
+        : {
+            qrCop: qrRecordedCop(shift),
+            qrReportCop: qrReportedCop(
+              await this.gateway.report({
+                tenantId: input.tenantId,
+                venueId: input.venueId,
+              }),
+            ),
+          };
+
     count.submit({
       denominations: input.denominations,
       expectedCashCop: shift.expectedCashCop,
       terminals: input.terminals,
+      ...qr,
     });
     await this.counts.save(
       input.tenantId,

@@ -116,6 +116,13 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
       at: readyAt,
     });
     await hub.publish({
+      kind: "billing_data_received",
+      tenantId,
+      venueId,
+      checkId,
+      tableId,
+    });
+    await hub.publish({
       kind: "ids",
       tenantId: "organization_other",
       venueId,
@@ -127,7 +134,7 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
     const { response, events } = await readSse(
       application,
       "session_kitchen",
-      3,
+      4,
     );
 
     expect(response.statusCode).toBe(200);
@@ -166,6 +173,16 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
           tableId,
           lineId,
           at: readyAt,
+        },
+      },
+      {
+        type: "billing_data_received",
+        data: {
+          kind: "billing_data_received",
+          tenantId,
+          venueId,
+          checkId,
+          tableId,
         },
       },
     ]);

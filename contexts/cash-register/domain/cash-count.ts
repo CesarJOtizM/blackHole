@@ -43,6 +43,8 @@ export interface SubmitCashCount {
   denominations: readonly DenominationLine[];
   expectedCashCop: number;
   terminals: readonly TerminalReport[];
+  qrCop?: number;
+  qrReportCop?: number;
 }
 
 export interface ApproveCashCount {
@@ -62,6 +64,8 @@ interface Submission {
   expectedCashCop: number;
   countedCashCop: number;
   terminals: TerminalDifference[];
+  qrCop?: number;
+  qrReportCop?: number;
 }
 
 export interface StartCashCount {
@@ -179,11 +183,23 @@ function readSubmission(input: SubmitCashCount): Submission {
     0,
   );
 
+  if (input.qrCop !== undefined) {
+    assertCop(input.qrCop);
+  }
+
+  if (input.qrReportCop !== undefined) {
+    assertCop(input.qrReportCop);
+  }
+
   return {
     denominations,
     expectedCashCop: input.expectedCashCop,
     countedCashCop,
     terminals,
+    ...(input.qrCop === undefined ? {} : { qrCop: input.qrCop }),
+    ...(input.qrReportCop === undefined
+      ? {}
+      : { qrReportCop: input.qrReportCop }),
   };
 }
 
@@ -221,6 +237,14 @@ export class CashCount {
 
   get countedCashCop(): number | undefined {
     return this.submission?.countedCashCop;
+  }
+
+  get qrCop(): number | undefined {
+    return this.submission?.qrCop;
+  }
+
+  get qrReportCop(): number | undefined {
+    return this.submission?.qrReportCop;
   }
 
   get differenceCop(): number | undefined {

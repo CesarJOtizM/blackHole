@@ -4,7 +4,7 @@ import type {
   StationRoute,
   StationRouteRepository,
 } from "#application/ports/station-route-repository.js";
-import type { Check, LineState } from "#domain/check.js";
+import type { Check, LineState, OrderChannel } from "#domain/check.js";
 
 const MINUTE_MS = 60_000;
 
@@ -24,6 +24,7 @@ export interface StationQueueLine {
   name: string;
   sentAt: string;
   state: LineState;
+  channel: OrderChannel;
   color: StationQueueColor;
 }
 
@@ -63,6 +64,7 @@ const onStation = (
 const queueLine = (
   check: Check,
   line: ListedLine,
+  channel: OrderChannel,
   routes: ReadonlyMap<string, StationRoute>,
   now: number,
 ): StationQueueLine | null => {
@@ -84,6 +86,7 @@ const queueLine = (
     name: line.name,
     sentAt: line.sentAt,
     state: line.state,
+    channel,
     color: colorFor(line.state, line.sentAt, route.redThresholdMinutes, now),
   };
 };
@@ -134,7 +137,7 @@ export class ViewStationQueue {
 
       for (const order of check.orders) {
         for (const line of order.lines) {
-          const queued = queueLine(check, line, routes, now);
+          const queued = queueLine(check, line, order.channel, routes, now);
 
           if (queued !== null) {
             lines.push(queued);

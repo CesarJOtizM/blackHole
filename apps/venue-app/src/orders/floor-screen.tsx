@@ -79,6 +79,9 @@ export function FloorScreen() {
           >
             <span className="font-display text-title">{table.label}</span>
             <span className="text-sm">{stateLabel[table.state]}</span>
+            {table.id === "05" ? (
+              <span className="text-sm">QR table</span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -86,9 +89,14 @@ export function FloorScreen() {
         <article className="grid gap-4 rounded-2xl border-2 border-border bg-surface-raised p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-title">Mesa {selected.label}</h2>
-            <StatusChip tone={stateTone[selected.state]}>
-              {stateLabel[selected.state]}
-            </StatusChip>
+            <div className="flex gap-2">
+              {selected.id === "05" ? (
+                <StatusChip tone="occupied">QR table</StatusChip>
+              ) : null}
+              <StatusChip tone={stateTone[selected.state]}>
+                {stateLabel[selected.state]}
+              </StatusChip>
+            </div>
           </div>
           <p className="font-mono text-numeral">{cop(tableTotal(selected))}</p>
           <ul className="grid gap-2">

@@ -6,9 +6,11 @@ import { ClockEntryRepository } from "@blackhole/attendance/application/ports/cl
 import { HoursWorkbook } from "@blackhole/attendance/application/ports/hours-workbook";
 import { ManualCardTerminal } from "@blackhole/cash-register/adapters/manual-terminal/manual-card-terminal";
 import { InMemoryCashRegisterRepository } from "@blackhole/cash-register/adapters/memory/in-memory-cash-register-repository";
+import { MemoryLedgerCashFacts } from "@blackhole/cash-register/adapters/memory/ledger-cash-fact-reader";
 import {
   type ActiveTipRule,
   AdjustTipSettlement,
+  ApplyQrPayment,
   ApproveVariance,
   ChangeTender,
   ChargeCheck,
@@ -16,6 +18,7 @@ import {
   type ClosedTipSettlement,
   CloseShift,
   ConfigureTipRule,
+  ConfirmQrPayment,
   OpenDrawer,
   OpenShift,
   OriginalPaymentReader,
@@ -28,6 +31,7 @@ import {
   type SaleReceiptJob,
   Printer as SaleReceiptPrinter,
   SettleTips,
+  StartQrPayment,
   SubmitCount,
   TipParticipantSource,
   TipPool,
@@ -45,6 +49,7 @@ import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/m
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
   AdoptFiscalTemplate,
+  ApproveReinvoice,
   AttachBuyer,
   CalculateTaxes,
   type CreditNote,
@@ -53,10 +58,16 @@ import {
   CreditNoteRepository,
   type DocumentBalanceKey,
   DocumentBalanceStore,
+  type DocumentIssuance,
   InvoicingProvider,
   IssueCreditNote,
+  IssueDocument,
+  LookUpPortalBuyer,
   type OpeningDocumentBalance,
   PublishTaxRule,
+  QueuedClosureReader,
+  RequestReinvoice,
+  SalesDocumentRepository,
   SetDocumentBalance,
 } from "@blackhole/invoicing/application/entry-port";
 import { FiscalProfileRepository } from "@blackhole/invoicing/application/ports/fiscal-profile-repository";
@@ -64,8 +75,10 @@ import { TaxRuleRepository } from "@blackhole/invoicing/application/ports/tax-ru
 import { InMemoryDiningRoomRepository } from "@blackhole/orders/adapters/memory/in-memory-dining-room-repository";
 import { InMemoryMenuRepository } from "@blackhole/orders/adapters/memory/in-memory-menu-repository";
 import { InMemoryPrinter } from "@blackhole/orders/adapters/memory/in-memory-printer";
+import { InMemoryQrOrderIntentRepository } from "@blackhole/orders/adapters/memory/in-memory-qr-order-intent-repository";
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
+import { InMemoryTableQrRepository } from "@blackhole/orders/adapters/memory/in-memory-table-qr-repository";
 import {
   ApplyCourtesy,
   ApplyDiscount,
@@ -78,6 +91,7 @@ import {
   OpenShiftReader,
   OpenTable,
   PlaceTable,
+  PreBillLink,
   RealtimeHub,
   ReassignCheck,
   ReleaseTable,
@@ -93,8 +107,10 @@ import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock"
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { Printer } from "@blackhole/orders/application/ports/printer";
+import { QrOrderIntentRepository } from "@blackhole/orders/application/ports/qr-order-intent-repository";
 import { StationDirectory } from "@blackhole/orders/application/ports/station-directory";
 import { StationRouteRepository } from "@blackhole/orders/application/ports/station-route-repository";
+import { TableQrRepository } from "@blackhole/orders/application/ports/table-qr-repository";
 import { VenueDirectory } from "@blackhole/orders/application/ports/venue-directory";
 import { Sha256AuditDigest } from "@blackhole/platform/adapters/crypto/sha256-audit-digest";
 import { InMemoryAuditRepository } from "@blackhole/platform/adapters/memory/in-memory-audit-repository";
@@ -143,6 +159,12 @@ import {
   PrintTransport,
 } from "@blackhole/printing/application/entry-port";
 import {
+  ReadCashReport,
+  ReadSalesReport,
+  ReadStaffReport,
+  ReadTimeReport,
+} from "@blackhole/reporting/application/entry-port";
+import {
   type DynamicModule,
   type MiddlewareConsumer,
   Module,
@@ -154,6 +176,7 @@ import {
 } from "#src/composition/attendance-memory.js";
 import { AttendanceTipParticipants } from "#src/composition/attendance-tip-participants.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
+import { CloudPreBillLink } from "#src/composition/cloud-pre-bill-link.js";
 import { ExcelRecipeWorkbook } from "#src/composition/excel-recipe-workbook.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
 import { MenuSitePrice } from "#src/composition/menu-site-price.js";
@@ -163,8 +186,26 @@ import {
 } from "#src/composition/missing-sale-readers.js";
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
+import {
+  postgresQrTable,
+  type QrTableDatabase,
+} from "#src/composition/postgres-qr-table.js";
+import {
+  applyQrPaymentFor,
+  ClosedQrGateway,
+  ClosedQrTableAccess,
+  confirmQrPaymentFor,
+  MemoryQrPayments,
+  startQrPaymentFor,
+} from "#src/composition/qr-table-payment.js";
 import { OrdersRecipeVenueDirectory } from "#src/composition/recipe-venue-directory.js";
 import { OrganizationRegisterDirectory } from "#src/composition/register-directory.js";
+import {
+  AbsentOpenShift,
+  createReportingFacts,
+  PermissionReportAccess,
+  ReportingFacts,
+} from "#src/composition/reporting-facts.js";
 import {
   PendingSalePrinter,
   RecordedDrawerAudit,
@@ -200,20 +241,29 @@ import {
   RealtimeSocketMiddleware,
 } from "#src/http/orders-realtime.controller.js";
 import { PlaceTableController } from "#src/http/place-table.controller.js";
+import { PortalController } from "#src/http/portal.controller.js";
 import { PrintTipSettlementController } from "#src/http/print-tip-settlement.controller.js";
 import {
   MemoryReprintAudit,
   PrintingController,
   ReprintCap,
 } from "#src/http/printing.controller.js";
+import {
+  QrPaymentController,
+  QrTableAccess,
+} from "#src/http/qr-payment.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
+import { ReadSiteReportController } from "#src/http/read-site-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { RecipeCatalogController } from "#src/http/recipe-catalog.controller.js";
+import { ReinvoiceController } from "#src/http/reinvoice.controller.js";
 import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
 import { SettleTipsController } from "#src/http/settle-tips.controller.js";
+import { TableQrController } from "#src/http/table-qr.controller.js";
+import { TableQrAdminController } from "#src/http/table-qr-admin.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
@@ -260,6 +310,9 @@ export interface CloudApplicationDependencies {
   taxRules?: TaxRuleRepository;
   fiscalProfiles?: FiscalProfileRepository;
   diningRooms?: DiningRoomRepository;
+  tableQr?: TableQrRepository;
+  qrIntents?: QrOrderIntentRepository;
+  ordersDatabase?: QrTableDatabase;
   shifts?: OpenShiftReader;
   registers?: InMemoryCashRegisterRepository;
   charges?: MemoryChargeLedger;
@@ -267,6 +320,11 @@ export interface CloudApplicationDependencies {
   stationRoutes?: StationRouteRepository;
   printer?: Printer;
   realtime?: RealtimeHub;
+  portalPreBillEnabled?: boolean;
+  oneTimeCodeSender?: "unconfigured";
+  portalBuyerStore?: MemoryPortalBuyerStore;
+  portalLookupLimited?: boolean;
+  reinvoiceRequests?: MemoryReinvoiceRequests;
   invoicingProvider?: InvoicingProvider;
   documentBalances?: MemoryDocumentBalances;
   creditNotes?: MemoryCreditNotes;
@@ -308,8 +366,21 @@ export class ApplicationModule implements NestModule {
   }
 
   static register(dependencies: CloudApplicationDependencies): DynamicModule {
+    const oneTimeCodeSender =
+      dependencies.oneTimeCodeSender === "unconfigured"
+        ? new UnconfiguredOneTimeCodeSender()
+        : new ConfiguredOneTimeCodeSender();
+    const portalBuyerStore =
+      dependencies.portalBuyerStore ?? new MemoryPortalBuyerStore();
+    const portalLookupLimiter = dependencies.portalLookupLimited
+      ? new RefusingPortalLookupLimiter()
+      : new AllowingPortalLookupLimiter();
+    const reinvoiceRequests =
+      dependencies.reinvoiceRequests ?? new MemoryReinvoiceRequests();
     const registers =
       dependencies.registers ?? new InMemoryCashRegisterRepository();
+    const qrPayments = new MemoryQrPayments();
+    const qrGateway = new ClosedQrGateway();
     const charges = dependencies.charges ?? new MemoryChargeLedger();
     const counts = dependencies.counts ?? new MemoryCashCounts();
     const countStore = counts as unknown as ConstructorParameters<
@@ -338,6 +409,9 @@ export class ApplicationModule implements NestModule {
       dependencies.reprintAudits ?? new MemoryReprintAudit();
     const structurePrinters =
       dependencies.structurePrinters ?? new StructurePrinters();
+    const qrTable = dependencies.ordersDatabase
+      ? postgresQrTable(dependencies.ordersDatabase)
+      : null;
 
     return {
       module: ApplicationModule,
@@ -350,6 +424,7 @@ export class ApplicationModule implements NestModule {
         AuthorizationController,
         ReadAuditController,
         ReadControlReportController,
+        ReadSiteReportController,
         DetectUnusualBehaviorController,
         UpdateMenuController,
         RecipeCatalogController,
@@ -381,10 +456,15 @@ export class ApplicationModule implements NestModule {
         TaxQuoteController,
         TaxConfigurationController,
         InvoicingController,
+        PortalController,
+        ReinvoiceController,
+        TableQrController,
+        TableQrAdminController,
         AttendanceController,
         CashShiftController,
         ChargeCheckController,
         CashCountController,
+        QrPaymentController,
         HealthController,
       ],
       providers: [
@@ -473,6 +553,20 @@ export class ApplicationModule implements NestModule {
         {
           provide: MenuRepository,
           useValue: dependencies.menus ?? new InMemoryMenuRepository(),
+        },
+        {
+          provide: TableQrRepository,
+          useValue:
+            dependencies.tableQr ??
+            qrTable?.tokens ??
+            new InMemoryTableQrRepository(),
+        },
+        {
+          provide: QrOrderIntentRepository,
+          useValue:
+            dependencies.qrIntents ??
+            qrTable?.intents ??
+            new InMemoryQrOrderIntentRepository(),
         },
         {
           provide: DiningRoomRepository,
@@ -621,14 +715,30 @@ export class ApplicationModule implements NestModule {
           inject: [DiningRoomRepository],
         },
         {
+          provide: PreBillLink,
+          useFactory: (secrets: Secrets) =>
+            new CloudPreBillLink(
+              secrets,
+              dependencies.portalPreBillEnabled ?? false,
+            ),
+          inject: [Secrets],
+        },
+        {
           provide: RequestCheck,
           useFactory: (
             diningRoom: DiningRoomRepository,
             clock: OrdersClock,
             printer: Printer,
             hub: RealtimeHub,
-          ) => new RequestCheck(diningRoom, clock, printer, hub),
-          inject: [DiningRoomRepository, OrdersClock, Printer, RealtimeHub],
+            preBillLink: PreBillLink,
+          ) => new RequestCheck(diningRoom, clock, printer, hub, preBillLink),
+          inject: [
+            DiningRoomRepository,
+            OrdersClock,
+            Printer,
+            RealtimeHub,
+            PreBillLink,
+          ],
         },
         {
           provide: ReassignCheck,
@@ -1302,6 +1412,29 @@ export class ApplicationModule implements NestModule {
           inject: [FiscalProfileRepository],
         },
         { provide: InvoicingProvider, useValue: invoicingProvider },
+        { provide: "OneTimeCodeSender", useValue: oneTimeCodeSender },
+        {
+          provide: LookUpPortalBuyer,
+          useFactory: (provider: InvoicingProvider) =>
+            new LookUpPortalBuyer(
+              portalBuyerStore,
+              portalLookupLimiter,
+              provider,
+            ),
+          inject: [InvoicingProvider],
+        },
+        { provide: MemoryReinvoiceRequests, useValue: reinvoiceRequests },
+        {
+          provide: RequestReinvoice,
+          useFactory: (provider: InvoicingProvider) =>
+            new RequestReinvoice(
+              reinvoiceRequests as unknown as ConstructorParameters<
+                typeof RequestReinvoice
+              >[0],
+              provider,
+            ),
+          inject: [InvoicingProvider],
+        },
         {
           provide: AttachBuyer,
           useFactory: (provider: InvoicingProvider) =>
@@ -1325,6 +1458,20 @@ export class ApplicationModule implements NestModule {
             audits: CreditNoteAudit,
           ) => new IssueCreditNote(provider, notes, audits),
           inject: [InvoicingProvider, CreditNoteRepository, CreditNoteAudit],
+        },
+        {
+          provide: ApproveReinvoice,
+          useFactory: (notes: IssueCreditNote) =>
+            new ApproveReinvoice(
+              reinvoiceRequests,
+              notes,
+              new IssueDocument(
+                new HoldingQueuedClosures(),
+                new MemorySalesDocuments(),
+                invoicingProvider as unknown as InvoicingProvider<DocumentIssuance>,
+              ),
+            ),
+          inject: [IssueCreditNote],
         },
         { provide: NumberingRangeStore, useValue: numberingRanges },
         { provide: ReprintCap, useValue: reprintCap },
@@ -1360,6 +1507,86 @@ export class ApplicationModule implements NestModule {
           inject: [AuditRepository, EvaluatePermission],
         },
         {
+          provide: ReportingFacts,
+          useFactory: (
+            diningRoom: DiningRoomRepository,
+            entries: ClockEntryRepository,
+            corrections: ClockEntryCorrectionRepository,
+            policies: AttendancePolicyRepository,
+          ) =>
+            createReportingFacts(
+              diningRoom,
+              entries,
+              corrections,
+              policies,
+              new MemoryLedgerCashFacts({
+                listCharges: (tenantId, venueId) =>
+                  charges.list(tenantId, venueId),
+                listSettlements: async (tenantId, venueId) =>
+                  (await tipSettlements.list(tenantId, venueId)).map((row) => ({
+                    id: row.id,
+                    poolCop: row.poolCop,
+                  })),
+                listCounts: (tenantId, venueId) =>
+                  counts.list(tenantId, venueId),
+              }),
+            ),
+          inject: [
+            DiningRoomRepository,
+            ClockEntryRepository,
+            ClockEntryCorrectionRepository,
+            AttendancePolicyRepository,
+          ],
+        },
+        {
+          provide: PermissionReportAccess,
+          useFactory: (
+            authorizations: AuthorizationRepository,
+            authorizationClock: AuthorizationClock,
+          ) => new PermissionReportAccess(authorizations, authorizationClock),
+          inject: [AuthorizationRepository, AuthorizationClock],
+        },
+        {
+          provide: AbsentOpenShift,
+          useFactory: () => new AbsentOpenShift(),
+        },
+        {
+          provide: ReadSalesReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            shifts: AbsentOpenShift,
+            facts: ReportingFacts,
+          ) => new ReadSalesReport(access, shifts, facts),
+          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        },
+        {
+          provide: ReadTimeReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            shifts: AbsentOpenShift,
+            facts: ReportingFacts,
+          ) => new ReadTimeReport(access, shifts, facts),
+          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        },
+        {
+          provide: ReadCashReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            shifts: AbsentOpenShift,
+            facts: ReportingFacts,
+          ) => new ReadCashReport(access, shifts, facts),
+          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        },
+        {
+          provide: ReadStaffReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            shifts: AbsentOpenShift,
+            facts: ReportingFacts,
+          ) => new ReadStaffReport(access, shifts, facts),
+          inject: [PermissionReportAccess, AbsentOpenShift, ReportingFacts],
+        },
+        {
           provide: DetectUnusualBehavior,
           useFactory: (audits: AuditRepository) =>
             new DetectUnusualBehavior(audits),
@@ -1389,6 +1616,26 @@ export class ApplicationModule implements NestModule {
           useFactory: (venues: VenueDirectory) =>
             new OrdersRecipeVenueDirectory(venues),
           inject: [VenueDirectory],
+        },
+        {
+          provide: QrTableAccess,
+          useClass: ClosedQrTableAccess,
+        },
+        {
+          provide: StartQrPayment,
+          useFactory: (accounts: OrdersAccount, clock: Clock) =>
+            startQrPaymentFor(accounts, clock, qrPayments, qrGateway),
+          inject: [OrdersAccount, Clock],
+        },
+        {
+          provide: ConfirmQrPayment,
+          useFactory: () => confirmQrPaymentFor(qrPayments, qrGateway),
+        },
+        {
+          provide: ApplyQrPayment,
+          useFactory: (accounts: OrdersAccount) =>
+            applyQrPaymentFor(qrPayments, registers, accounts),
+          inject: [OrdersAccount],
         },
       ],
     };
@@ -1450,6 +1697,32 @@ export class MemoryChargeLedger {
     this.insertions += 1;
     this.charges.set(chargeKey(tenantId, venueId, charge.commandId), charge);
   }
+
+  async list(tenantId: string, venueId: string) {
+    const prefix = `${tenantId}\u0000${venueId}\u0000`;
+
+    return [...this.charges.entries()].flatMap(([key, charge]) => {
+      if (!key.startsWith(prefix)) {
+        return [];
+      }
+
+      return [
+        {
+          checkId: charge.closure.checkId,
+          registerId: charge.closure.registerId,
+          tenders: charge.closure.tenders.map((tender) => ({
+            method: tender.method,
+            amountCop: tender.amountCop,
+          })),
+          tip: {
+            method: charge.closure.tip.method,
+            amountCop: charge.closure.tip.amountCop,
+          },
+          recordedAt: charge.recordedAt,
+        },
+      ];
+    });
+  }
 }
 
 const countKey = (
@@ -1479,6 +1752,37 @@ export class MemoryCashCounts {
   ): Promise<void> {
     this.saves += 1;
     this.counts.set(countKey(tenantId, venueId, registerId), count);
+  }
+
+  async list(tenantId: string, venueId: string) {
+    const prefix = `${tenantId}\u0000${venueId}\u0000`;
+
+    return [...this.counts.entries()].flatMap(([key, count]) => {
+      if (!key.startsWith(prefix)) {
+        return [];
+      }
+
+      const reading = count as {
+        expectedCashCop?: unknown;
+        countedCashCop?: unknown;
+      };
+      const expectedCop =
+        typeof reading.expectedCashCop === "number"
+          ? reading.expectedCashCop
+          : null;
+      const countedCop =
+        typeof reading.countedCashCop === "number"
+          ? reading.countedCashCop
+          : null;
+
+      return [
+        {
+          registerId: key.slice(prefix.length),
+          expectedCop,
+          countedCop,
+        },
+      ];
+    });
   }
 }
 
@@ -1702,6 +2006,145 @@ export class MemoryTipDispatchPrinters extends DispatchPrinterRepository {
 
 class MemoryTipPrintTransport extends PrintTransport {
   override send(_delivery: PrintDelivery): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+class ConfiguredOneTimeCodeSender {
+  send(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+class UnconfiguredOneTimeCodeSender {
+  constructor() {
+    throw new Error("OneTimeCodeSender is not configured.");
+  }
+
+  send(): Promise<void> {
+    return Promise.reject(new Error("OneTimeCodeSender is not configured."));
+  }
+}
+
+class AllowingPortalLookupLimiter {
+  acquire(_taxId: string, _at: string, _ceiling: number): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+class RefusingPortalLookupLimiter {
+  acquire(_taxId: string, _at: string, _ceiling: number): Promise<void> {
+    return Promise.reject(new Error("limited"));
+  }
+}
+
+export class MemoryPortalBuyerStore {
+  readonly lookups: Array<{
+    lookupId: string;
+    companyId: string;
+    documentType: string;
+    documentNumber: string;
+    name: string;
+    email: string;
+  }> = [];
+
+  readCache(): Promise<null> {
+    return Promise.resolve(null);
+  }
+
+  saveCache(_row: {
+    companyId: string;
+    documentType: string;
+    documentNumber: string;
+    name: string;
+    email: string;
+    cachedAt: string;
+  }): Promise<void> {
+    return Promise.resolve();
+  }
+
+  saveLookup(row: {
+    lookupId: string;
+    companyId: string;
+    documentType: string;
+    documentNumber: string;
+    name: string;
+    email: string;
+  }): Promise<void> {
+    this.lookups.push({ ...row });
+    return Promise.resolve();
+  }
+}
+
+export class MemoryReinvoiceRequests {
+  readonly rows: Array<{
+    companyId: string;
+    invoiceNumber: string;
+    issuedAt: string;
+    requestedAt: string;
+    status: "pending" | "approved";
+  }> = [];
+
+  find(
+    companyId: string,
+    invoiceNumber: string,
+  ): Promise<{
+    companyId: string;
+    invoiceNumber: string;
+    issuedAt: string;
+    requestedAt: string;
+    status: "pending" | "approved";
+  } | null> {
+    return Promise.resolve(
+      this.rows.find(
+        (row) =>
+          row.companyId === companyId && row.invoiceNumber === invoiceNumber,
+      ) ?? null,
+    );
+  }
+
+  save(row: {
+    companyId: string;
+    invoiceNumber: string;
+    issuedAt: string;
+    requestedAt: string;
+    status: "pending" | "approved";
+  }): Promise<void> {
+    const index = this.rows.findIndex(
+      (stored) =>
+        stored.companyId === row.companyId &&
+        stored.invoiceNumber === row.invoiceNumber,
+    );
+
+    if (index === -1) {
+      this.rows.push({ ...row });
+    } else {
+      this.rows[index] = { ...row };
+    }
+
+    return Promise.resolve();
+  }
+}
+
+class HoldingQueuedClosures extends QueuedClosureReader {
+  override read(closureId: string) {
+    return Promise.resolve({
+      id: closureId,
+      status: "queued" as const,
+      saleCop: 0,
+      tipCop: 0,
+      lines: [],
+      payments: [],
+    });
+  }
+}
+
+class MemorySalesDocuments extends SalesDocumentRepository {
+  override findByClosureId() {
+    return Promise.resolve(null);
+  }
+
+  override insert() {
     return Promise.resolve();
   }
 }

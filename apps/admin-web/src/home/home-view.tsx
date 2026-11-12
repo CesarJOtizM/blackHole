@@ -11,11 +11,9 @@ const tone = {
 export function HomeView({
   onOpen,
   onExport,
-  status,
 }: {
   onOpen: (path: (typeof attention)[number]["to"]) => void;
   onExport: () => void;
-  status?: string;
 }) {
   const rows: Cell[][] = liveVenues.map((venue) => [
     venue[0],
@@ -35,7 +33,6 @@ export function HomeView({
       columns={["Sede", "Modo", "Ventas", "Mesas", "P90", "Estado"]}
       rows={rows}
       caption="Sedes en vivo"
-      status={status}
     >
       <section className={record.attention} aria-label="Requiere tu atención">
         <h2 className={record.cardTitle}>Requiere tu atención</h2>

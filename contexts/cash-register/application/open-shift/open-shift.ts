@@ -14,6 +14,14 @@ export interface OpenShiftInput {
   openingFloatCop: number;
 }
 
+export interface PendingQrPaymentDrain {
+  applyPending(input: {
+    tenantId: string;
+    venueId: string;
+    registerId: string;
+  }): Promise<void>;
+}
+
 const knownRegister = async (
   lookup: RegisterLookup,
   tenantId: string,
@@ -31,6 +39,7 @@ export class OpenShift {
   constructor(
     private readonly registers: CashRegisterRepository,
     private readonly registerLookup: RegisterLookup,
+    private readonly pendingQrPayments: PendingQrPaymentDrain | null = null,
   ) {}
 
   async execute(input: OpenShiftInput): Promise<CashShift> {
@@ -53,6 +62,14 @@ export class OpenShift {
       openingFloatCop: input.openingFloatCop,
     });
     await this.registers.save(input.tenantId, input.venueId, shift);
+
+    if (this.pendingQrPayments) {
+      await this.pendingQrPayments.applyPending({
+        tenantId: input.tenantId,
+        venueId: input.venueId,
+        registerId: input.registerId,
+      });
+    }
 
     return shift;
   }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ImportMenu } from "#src/shell/import-menu.js";
 import {
   type Cell,
   RecordPage,
@@ -79,14 +80,12 @@ const permissions = [
 ] as const;
 
 export function PeopleView({
-  status,
   onInvite,
-  onImport,
+  onImportFile,
   onOpenRole,
 }: {
-  status?: string;
   onInvite: () => void;
-  onImport: () => void;
+  onImportFile: (file: File) => void;
   onOpenRole: () => void;
 }) {
   const [tab, setTab] = useState<PeopleTab>("all");
@@ -111,10 +110,14 @@ export function PeopleView({
     <RecordPage
       eyebrow="38 personas · 4 sedes"
       title="Usuarios"
-      actions={[
-        { label: "Importar Excel", tone: "ghost", onPress: onImport },
-        { label: "Invitar persona", tone: "solid", onPress: onInvite },
-      ]}
+      extraActions={
+        <ImportMenu
+          templateName="personas.csv"
+          templateBody="nombre,correo,rol,sedes\n"
+          onFile={onImportFile}
+        />
+      }
+      actions={[{ label: "Invitar persona", tone: "solid", onPress: onInvite }]}
       tabs={peopleTabs(tab, setTab)}
       columns={[
         "Persona",
@@ -126,7 +129,6 @@ export function PeopleView({
       ]}
       rows={rows}
       caption="Usuarios"
-      status={status}
     >
       <button type="button" className={ui.textButton} onClick={onOpenRole}>
         Ver rol Cajero senior
@@ -138,9 +140,11 @@ export function PeopleView({
 export function RoleView({
   status,
   onSave,
+  onEditScope,
 }: {
   status?: string;
   onSave: () => void;
+  onEditScope: () => void;
 }) {
   return (
     <RecordPage
@@ -173,7 +177,11 @@ export function RoleView({
           ))}
         </>
       }
-    />
+    >
+      <button type="button" className={ui.textButton} onClick={onEditScope}>
+        Editar alcance
+      </button>
+    </RecordPage>
   );
 }
 

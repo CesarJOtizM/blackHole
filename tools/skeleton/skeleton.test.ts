@@ -53,6 +53,7 @@ const allowedContexts = [
   "invoicing",
   "orders",
   "platform",
+  "reporting",
 ] as const;
 
 const skippedDirectories = new Set([

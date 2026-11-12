@@ -306,6 +306,11 @@ const routeTree = rootRoute.addChildren([
     () => import("#src/fiscal/fiscal-screen.js"),
     "BalanceScreen",
   ),
+  page(
+    "fiscal/reinvoice",
+    () => import("#src/fiscal/reinvoice-screen.js"),
+    "ReinvoiceWindowScreen",
+  ),
   page("people", () => import("#src/people/people-screen.js"), "PeopleScreen"),
   page(
     "people/roles/cajero-senior",

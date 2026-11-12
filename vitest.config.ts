@@ -57,6 +57,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "reporting",
+          include: ["contexts/reporting/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "printing",
           include: ["shared/printing/**/*.test.ts"],
         },

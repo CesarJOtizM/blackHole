@@ -1,5 +1,6 @@
+import type { ReportFamily } from "@blackhole/contracts";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   readControlReportFromCloud,
   readUnusualBehaviorFromCloud,
@@ -8,7 +9,16 @@ import {
   isReportSection,
   type ReportSection,
 } from "#src/reports/reports-model.js";
+import {
+  bogotaToday,
+  isSiteFamily,
+  type ReportSnapshot,
+  readSiteReport,
+  type SiteReportReader,
+} from "#src/reports/reports-source.js";
 import { ReportsView } from "#src/reports/reports-view.js";
+
+const clock = () => Date.now();
 
 const reportPaths = {
   sales: "/reports/sales",
@@ -22,14 +32,113 @@ const reportPaths = {
   control: "/reports/control",
 } as const satisfies Record<ReportSection, string>;
 
+const isEmpty = (snapshot: ReportSnapshot): boolean => {
+  if (snapshot.family === "sales") {
+    return (
+      snapshot.report.grossCop === null &&
+      snapshot.report.netCop === null &&
+      snapshot.report.ticketCount === null
+    );
+  }
+  return snapshot.report.empty;
+};
+
+const salesFigure = (snapshot: ReportSnapshot): string | null => {
+  if (snapshot.family !== "sales" || snapshot.report.grossCop === null) {
+    return null;
+  }
+  return String(snapshot.report.grossCop);
+};
+
+export function SiteReportPanel({
+  family,
+  now,
+  readReport,
+}: {
+  family: ReportFamily;
+  now: () => number;
+  readReport: SiteReportReader;
+}) {
+  const [draftFrom, setDraftFrom] = useState(() => bogotaToday(now()).from);
+  const [draftTo, setDraftTo] = useState(() => bogotaToday(now()).to);
+  const [period, setPeriod] = useState(() => bogotaToday(now()));
+  const [scope, setScope] = useState<"today" | "history">("today");
+  const [phase, setPhase] = useState<
+    | { kind: "loading" }
+    | { kind: "failed" }
+    | { kind: "ready"; snapshot: ReportSnapshot }
+  >({ kind: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    void readReport({ family, from: period.from, to: period.to })
+      .then((snapshot) => {
+        if (active) {
+          setPhase({ kind: "ready", snapshot });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPhase({ kind: "failed" });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [family, period.from, period.to, readReport]);
+
+  const snapshot = phase.kind === "ready" ? phase.snapshot : null;
+  const empty = snapshot !== null && isEmpty(snapshot);
+  const figure = snapshot !== null && !empty ? salesFigure(snapshot) : null;
+
+  return (
+    <section>
+      <p>{scope === "today" ? "Hoy en Bogotá" : "Historial"}</p>
+      {phase.kind === "failed" ? <p>No se pudo leer</p> : null}
+      {empty ? <p>Sin datos</p> : null}
+      {figure !== null ? <p>{figure}</p> : null}
+      <label>
+        Desde
+        <input
+          value={draftFrom}
+          onChange={(event) => setDraftFrom(event.target.value)}
+        />
+      </label>
+      <label>
+        Hasta
+        <input
+          value={draftTo}
+          onChange={(event) => setDraftTo(event.target.value)}
+        />
+      </label>
+      <button
+        type="button"
+        onClick={() => {
+          setScope("history");
+          setPeriod({ from: draftFrom, to: draftTo });
+        }}
+      >
+        Ver historial
+      </button>
+    </section>
+  );
+}
+
 export function ReportsScreen() {
   const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const raw = pathname.replace("/reports/", "");
-  const section: ReportSection = isReportSection(raw) ? raw : "sales";
   const [status, setStatus] = useState("");
+
+  if (isSiteFamily(raw)) {
+    return (
+      <SiteReportPanel family={raw} now={clock} readReport={readSiteReport} />
+    );
+  }
+
+  const section: ReportSection = isReportSection(raw) ? raw : "sales";
 
   return (
     <ReportsView

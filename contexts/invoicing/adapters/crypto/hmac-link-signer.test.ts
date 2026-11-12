@@ -123,6 +123,14 @@ it("given portal.link-key, when an invoice link is signed, then the /f/ suffix i
   }
 });
 
+it("given a matching /d/ suffix, when the pre-bill prefix replaces /f/, then verify returns the same link", async () => {
+  const signer = new HmacLinkSigner(configured());
+  const suffix = suffixOf(LINK_KEY, invoiceLink());
+  const preBill = `/d/${suffix.slice("/f/".length)}`;
+
+  expect(await signer.verify(preBill)).toEqual(invoiceLink());
+});
+
 it("given a matching /f/ suffix, when the payload or the hmac is changed, then verify returns null", async () => {
   const signer = new HmacLinkSigner(configured());
   const suffix = suffixOf(LINK_KEY, invoiceLink());

@@ -150,6 +150,22 @@ export {
   identityRequest,
 } from "#contracts/identity.js";
 export {
+  type ApproveReinvoiceCommand,
+  approveReinvoiceCommand,
+  type PortalBuyerFound,
+  type PortalBuyerLookupCommand,
+  portalBuyerFound,
+  portalBuyerLookupCommand,
+  type ReinvoiceApprovalResult,
+  type ReinvoiceRequestResult,
+  type ReinvoiceWindowMode,
+  type RequestReinvoiceCommand,
+  reinvoiceApprovalResult,
+  reinvoiceRequestResult,
+  reinvoiceWindowMode,
+  requestReinvoiceCommand,
+} from "#contracts/invoicing-portal.js";
+export {
   type MenuCommand,
   type MenuUpdated,
   menuCommand,
@@ -166,6 +182,18 @@ export {
   reprintDocumentCommand,
 } from "#contracts/printing.js";
 export {
+  type QrOrderStatus,
+  qrOrderStatus,
+  type SubmitQrOrderCommand,
+  submitQrOrderCommand,
+  type TableQrMenu,
+  tableQrMenu,
+} from "#contracts/qr-table-ordering.js";
+export {
+  type StartQrPaymentCommand,
+  startQrPaymentCommand,
+} from "#contracts/qr-table-payment.js";
+export {
   type RecipeCatalog,
   type RecipeCatalogCommand,
   type RecipeCost,
@@ -179,6 +207,22 @@ export {
   recipeImportReport,
   recipePublication,
 } from "#contracts/recipe-catalog.js";
+export {
+  type CashReportResult,
+  cashReportResult,
+  type ReportFamily,
+  type ReportPeriodQuery,
+  reportFamily,
+  reportPeriodQuery,
+  type SalesReportResult,
+  type SiteReportResponse,
+  type StaffReportResult,
+  salesReportResult,
+  siteReportResponse,
+  staffReportResult,
+  type TimeReportResult,
+  timeReportResult,
+} from "#contracts/reporting.js";
 export {
   type SensitiveActionEnvelope,
   sensitiveActionEnvelope,

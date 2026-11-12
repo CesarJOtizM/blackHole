@@ -28,6 +28,18 @@ it("given a ticket for Steak at Grill, when it is rendered, then it is UTF-8 tex
   expect(controls).toEqual([]);
 });
 
+it("given a QR table ticket, when it is rendered, then the text says QR table", () => {
+  const ticket = KitchenTicket.render({
+    stationName: "Grill",
+    tableId: "table_5",
+    productName: "Steak",
+    channel: "qr_table",
+  });
+
+  expect(ticket.text).toContain("QR table");
+  expect(ticket.text).toContain("Steak");
+});
+
 it("given a combo, when a ticket is rendered, then ComboNotSent", () => {
   const render = () => {
     KitchenTicket.render({

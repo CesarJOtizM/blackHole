@@ -133,6 +133,16 @@ const idsOnly = (notice: RealtimeNotice): unknown => {
     };
   }
 
+  if (notice.kind === "billing_data_received") {
+    return {
+      kind: notice.kind,
+      tenantId: notice.tenantId,
+      venueId: notice.venueId,
+      checkId: notice.checkId,
+      tableId: notice.tableId,
+    };
+  }
+
   return {
     kind: notice.kind,
     tenantId: notice.tenantId,

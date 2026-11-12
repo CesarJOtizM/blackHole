@@ -5,29 +5,75 @@ import {
   MappingView,
   ReconciliationView,
 } from "#src/channels/channels-view.js";
+import { FormDialog } from "#src/shell/form-dialog.js";
+import { NoticeToast } from "#src/shell/notice-toast.js";
 
 export function ChannelsScreen() {
   const navigate = useNavigate();
   const [autoAccept, setAutoAccept] = useState(true);
   const [pauseKitchen, setPauseKitchen] = useState(true);
-  const [status, setStatus] = useState("");
+  const [open, setOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [channel, setChannel] = useState("Rappi");
+  const [commission, setCommission] = useState("18%");
+  const [priceRule, setPriceRule] = useState("Mismo precio de salón");
+  const [venue, setVenue] = useState("Todas");
   return (
-    <ChannelsView
-      autoAccept={autoAccept}
-      pauseKitchen={pauseKitchen}
-      status={status}
-      onAutoAccept={setAutoAccept}
-      onPauseKitchen={setPauseKitchen}
-      onConnect={() =>
-        setStatus("El canal nuevo queda en pausa hasta publicar la carta.")
-      }
-      onOpenMapping={() => {
-        void navigate({ to: "/deliveries/mapping" });
-      }}
-      onOpenReconciliation={() => {
-        void navigate({ to: "/deliveries/reconciliation" });
-      }}
-    />
+    <>
+      <ChannelsView
+        autoAccept={autoAccept}
+        pauseKitchen={pauseKitchen}
+        onAutoAccept={setAutoAccept}
+        onPauseKitchen={setPauseKitchen}
+        onConnect={() => {
+          setChannel("Rappi");
+          setCommission("18%");
+          setPriceRule("Mismo precio de salón");
+          setVenue("Todas");
+          setOpen(true);
+        }}
+        onOpenMapping={() => {
+          void navigate({ to: "/deliveries/mapping" });
+        }}
+        onOpenReconciliation={() => {
+          void navigate({ to: "/deliveries/reconciliation" });
+        }}
+      />
+      <FormDialog
+        open={open}
+        eyebrow="Se abre desde canales"
+        title="Conectar canal"
+        help="El menú y los precios de esta marca se publican en el canal. La sede no lo ve hasta que el canal responde."
+        submitLabel="Conectar canal"
+        fields={[
+          {
+            label: "Canal",
+            value: channel,
+            required: true,
+            onChange: setChannel,
+          },
+          {
+            label: "Comisión",
+            value: commission,
+            required: true,
+            onChange: setCommission,
+          },
+          {
+            label: "Regla de precio",
+            value: priceRule,
+            required: true,
+            onChange: setPriceRule,
+          },
+          { label: "Sede", value: venue, onChange: setVenue },
+        ]}
+        onClose={() => setOpen(false)}
+        onSubmit={() => {
+          setNotice("El canal nuevo queda en pausa hasta publicar la carta.");
+          setOpen(false);
+        }}
+      />
+      <NoticeToast message={notice} onClose={() => setNotice("")} />
+    </>
   );
 }
 

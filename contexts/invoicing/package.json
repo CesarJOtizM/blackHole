@@ -10,7 +10,8 @@
     "./application/ports/tax-rule-repository": "./application/ports/tax-rule-repository.js",
     "./adapters/memory/in-memory-fiscal-profile-repository": "./adapters/memory/in-memory-fiscal-profile-repository.js",
     "./adapters/memory/in-memory-tax-rule-repository": "./adapters/memory/in-memory-tax-rule-repository.js",
-    "./adapters/factus/factus-invoicing-provider": "./adapters/factus/factus-invoicing-provider.js"
+    "./adapters/factus/factus-invoicing-provider": "./adapters/factus/factus-invoicing-provider.js",
+    "./adapters/crypto/hmac-link-signer": "./adapters/crypto/hmac-link-signer.js"
   },
   "dependencies": {
     "@blackhole/platform": "workspace:*",
@@ -30,6 +31,7 @@
     "#application/issue-credit-note/*": "./application/issue-credit-note/*",
     "#application/document-balance/*": "./application/document-balance/*",
     "#application/issuance-gate/*": "./application/issuance-gate/*",
+    "#application/list-invoice-facts/*": "./application/list-invoice-facts/*",
     "#application/look-up-portal-buyer/*": "./application/look-up-portal-buyer/*",
     "#application/request-remembered-code/*": "./application/request-remembered-code/*",
     "#application/verify-remembered-code/*": "./application/verify-remembered-code/*",

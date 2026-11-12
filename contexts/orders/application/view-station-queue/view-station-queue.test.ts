@@ -431,3 +431,43 @@ it("given another tenant, when the station queue is read, then that tenant stays
   expect(loadRoutes).toHaveBeenCalledWith(TENANT_ID, VENUE_ID);
   expect(queue.lines.map((line) => line.lineId)).toEqual(["line_soup"]);
 });
+
+it("given a sent QR table order, when the station queue is read, then the line exposes qr_table", async () => {
+  const { dining, routes, view } = queueFor(
+    new FixedClock(Date.parse(AT_1202)),
+  );
+  const check = openCheck({
+    tenantId: TENANT_ID,
+    checkId: "check_qr",
+    tableId: "table_9",
+  });
+  check.addLine({
+    orderId: "order_qr",
+    lineId: "line_qr",
+    productId: SOUP_ID,
+    name: "Soup",
+    course: 1,
+    price: 22_000,
+    channel: "qr_table",
+  });
+  check.send({ course: 1, sentAt: AT_1200 });
+  await dining.saveCheck(check);
+  await routes.save(
+    routeFor({
+      stationId: GRILL_ID,
+      stationName: "Grill",
+      productId: SOUP_ID,
+      redThresholdMinutes: 15,
+    }),
+  );
+
+  const queue = await view.execute({
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    stationId: GRILL_ID,
+  });
+
+  expect(queue.lines).toEqual([
+    expect.objectContaining({ lineId: "line_qr", channel: "qr_table" }),
+  ]);
+});

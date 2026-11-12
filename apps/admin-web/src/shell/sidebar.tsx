@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { NavIcon } from "#src/shell/nav-icon.js";
 import { navigation } from "#src/shell/navigation.js";
 import styles from "#src/styles/shell.module.scss";
 
@@ -19,14 +20,31 @@ export function Sidebar({ pathname }: { pathname: string }) {
           {section.items.map((item) => {
             const active = item.match(pathname);
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={active ? styles.itemActive : styles.item}
-                aria-current={active ? "page" : undefined}
-              >
-                {item.label}
-              </Link>
+              <div key={item.to}>
+                <Link
+                  to={item.to}
+                  className={active ? styles.itemActive : styles.item}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.icon ? <NavIcon name={item.icon} /> : null}
+                  {item.label}
+                </Link>
+                {item.children?.map((child) => {
+                  const childActive = child.match(pathname);
+                  return (
+                    <Link
+                      key={child.to}
+                      to={child.to}
+                      className={
+                        childActive ? styles.subitemActive : styles.subitem
+                      }
+                      aria-current={childActive ? "page" : undefined}
+                    >
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>

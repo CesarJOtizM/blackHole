@@ -206,6 +206,8 @@ export const cashCountView = z
     countedCashCop: cop.optional(),
     differenceCop: z.number().int().optional(),
     printed: z.literal(false).optional(),
+    qrCop: cop.optional(),
+    qrReportCop: cop.optional(),
   })
   .strict();
 

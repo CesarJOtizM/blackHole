@@ -128,7 +128,7 @@ export const requestedCheck = z
 
 export type RequestedCheck = z.infer<typeof requestedCheck>;
 
-export const orderChannel = z.enum(["waiter", "fixed_point"]);
+export const orderChannel = z.enum(["waiter", "fixed_point", "qr_table"]);
 
 export const lineState = z.enum([
   "held",
@@ -313,6 +313,7 @@ export const stationQueue = z
           name: z.string().min(1),
           sentAt: z.string().min(1),
           state: lineState,
+          channel: orderChannel,
           color: stationQueueColor,
         })
         .strict(),
@@ -392,6 +393,12 @@ export const ordersRealtimeEvent = z.discriminatedUnion("kind", [
       ...realtimeIds,
       lineId: z.string().min(1),
       at: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.enum(["billing_data_received"]),
+      ...realtimeIds,
     })
     .strict(),
 ]);

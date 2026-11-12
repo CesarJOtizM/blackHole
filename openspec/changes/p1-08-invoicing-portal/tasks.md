@@ -69,21 +69,21 @@ Cloud only (D-37). No local-node, SQLite, outbox, shared/sync, or DEFERRED outag
 
 ## 4. Pre-bill
 
-- [ ] 4.1 RED `contexts/orders/application/request-check/request-check.test.ts`: enabled signs `/d/` into `qr`. Disabled leaves `qr` empty.
-- [ ] 4.2 GREEN `ports/pre-bill-link.ts`. Add `billing_data_received` on `realtime-hub.ts`. Wire in api-cloud. No invoicing interior import.
+- [x] 4.1 RED `contexts/orders/application/request-check/request-check.test.ts`: enabled signs `/d/` into `qr`. Disabled leaves `qr` empty.
+- [x] 4.2 GREEN `ports/pre-bill-link.ts`. Add `billing_data_received` on `realtime-hub.ts`. Wire in api-cloud. No invoicing interior import.
 
 ## 5. HTTP
 
-- [ ] 5.1 RED `apps/api-cloud/test/http/portal.controller.test.ts`: no session. One shapeless refusal. Masks. `.strict()`. No `z.any()`.
-- [ ] 5.2 GREEN `shared/contracts/invoicing-portal.ts`, `index.ts`, `portal.controller.ts`, composition. Unconfigured sender throws at boot.
-- [ ] 5.3 RED `apps/api-cloud/test/http/reinvoice.controller.test.ts`: missing `sale.credit-note` is 403 and stores nothing. Outside window does not call Factus.
-- [ ] 5.4 GREEN `reinvoice.controller.ts`. Touch `dining-room.ts` only if the pre-bill payload gains a link.
+- [x] 5.1 RED `apps/api-cloud/test/http/portal.controller.test.ts`: no session. One shapeless refusal. Masks. `.strict()`. No `z.any()`.
+- [x] 5.2 GREEN `shared/contracts/invoicing-portal.ts`, `index.ts`, `portal.controller.ts`, composition. Unconfigured sender throws at boot.
+- [x] 5.3 RED `apps/api-cloud/test/http/reinvoice.controller.test.ts`: missing `sale.credit-note` is 403 and stores nothing. Outside window does not call Factus.
+- [x] 5.4 GREEN `reinvoice.controller.ts`. Touch `dining-room.ts` only if the pre-bill payload gains a link.
 
 ## 6. UI
 
-- [ ] 6.1 RED: vitest project `customer-portal` (jsdom). `/d/:token` form. `/f/:link` in process, then PDF.
-- [ ] 6.2 GREEN `apps/customer-portal/src/`. Screen does not send the code.
-- [ ] 6.3 RED: vitest project `venue-app`. Data received. Charge stays off until the cashier chooses. UI only.
-- [ ] 6.4 GREEN `apps/venue-app/src/cash-register/register-screen.tsx`.
-- [ ] 6.5 RED: vitest project `admin-web`. Window `same_day`, `same_month`, or `off`. Approval only with `sale.credit-note`.
-- [ ] 6.6 GREEN `apps/admin-web/src/` window and approvals.
+- [x] 6.1 RED: vitest project `customer-portal` (jsdom). `/d/:token` form. `/f/:link` in process, then PDF.
+- [x] 6.2 GREEN `apps/customer-portal/src/`. Screen does not send the code.
+- [x] 6.3 RED: vitest project `venue-app`. Data received. Charge stays off until the cashier chooses. UI only.
+- [x] 6.4 GREEN `apps/venue-app/src/cash-register/register-screen.tsx`.
+- [x] 6.5 RED: vitest project `admin-web`. Window `same_day`, `same_month`, or `off`. Approval only with `sale.credit-note`.
+- [x] 6.6 GREEN `apps/admin-web/src/` window and approvals.

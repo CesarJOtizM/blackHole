@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FormDialog } from "#src/shell/form-dialog.js";
+import { ImportMenu } from "#src/shell/import-menu.js";
 import {
   type Cell,
   RecordPage,
@@ -118,9 +120,8 @@ function supplyTone(label: string): "stamp" | "hold" {
 
 export function SuppliesView({
   tab,
-  status,
   onTab,
-  onImport,
+  onImportFile,
   onCreate,
   onOrder,
   onRecipe,
@@ -130,10 +131,9 @@ export function SuppliesView({
   onScarcity,
 }: {
   tab: SupplyTab;
-  status?: string;
   onTab: (tab: SupplyTab) => void;
-  onImport: () => void;
-  onCreate: () => void;
+  onImportFile: (file: File) => void;
+  onCreate: (name: string) => void;
   onOrder: () => void;
   onRecipe: () => void;
   onPurchase: () => void;
@@ -144,6 +144,11 @@ export function SuppliesView({
   const [items, setItems] = useState<string[][]>(() =>
     supplies.map((item) => [...item]),
   );
+  const [supplyOpen, setSupplyOpen] = useState(false);
+  const [supplyName, setSupplyName] = useState("Entraña");
+  const [supplyUnit, setSupplyUnit] = useState("kg");
+  const [supplyMinimum, setSupplyMinimum] = useState("4 kg");
+  const [supplyVendor, setSupplyVendor] = useState("Carnes del Llano");
   const visible = items.filter((item) => {
     if (tab === "all") return true;
     if (tab === "low") return item[9] === "low";
@@ -163,28 +168,23 @@ export function SuppliesView({
     <RecordPage
       eyebrow="212 insumos · 9 bajo mínimo"
       title="Insumos"
+      extraActions={
+        <ImportMenu
+          templateName="insumos.csv"
+          templateBody="nombre,unidad,minimo,proveedor\n"
+          onFile={onImportFile}
+        />
+      }
       actions={[
-        { label: "Importar Excel", tone: "ghost", onPress: onImport },
         {
           label: "Nuevo insumo",
           tone: "solid",
           onPress: () => {
-            setItems((current) => [
-              [
-                "Insumo nuevo",
-                "KG",
-                "0",
-                "1",
-                "1",
-                "$0",
-                "Sin proveedor",
-                "Pedir",
-                "meat",
-                "low",
-              ],
-              ...current,
-            ]);
-            onCreate();
+            setSupplyName("Entraña");
+            setSupplyUnit("kg");
+            setSupplyMinimum("4 kg");
+            setSupplyVendor("Carnes del Llano");
+            setSupplyOpen(true);
           },
         },
       ]}
@@ -202,26 +202,105 @@ export function SuppliesView({
       rows={rows}
       caption="Insumos"
       note="Pedido sugerido hasta el máximo: 3 proveedores · $2.184.000"
-      status={status}
     >
       <button type="button" className={ui.button} onClick={onOrder}>
         Crear órdenes
       </button>
-      <button type="button" className={ui.textButton} onClick={onRecipe}>
-        Receta del churrasco
-      </button>
-      <button type="button" className={ui.textButton} onClick={onPurchase}>
-        Orden OC-0418
-      </button>
-      <button type="button" className={ui.textButton} onClick={onConsolidated}>
-        Consolidado
-      </button>
-      <button type="button" className={ui.textButton} onClick={onTransfers}>
-        Traslados
-      </button>
-      <button type="button" className={ui.textButton} onClick={onScarcity}>
-        Alertas de escasez
-      </button>
+      <section className={record.follow} aria-label="Seguir con este insumo">
+        <p className={record.followLabel}>Seguir con este insumo</p>
+        <div className={record.followRow}>
+          <button
+            type="button"
+            className={record.followCard}
+            onClick={onRecipe}
+          >
+            <strong>Receta del churrasco</strong>
+            <span>Costo y líneas</span>
+          </button>
+          <button
+            type="button"
+            className={record.followCard}
+            onClick={onPurchase}
+          >
+            <strong>Orden OC-0418</strong>
+            <span>Compra en curso</span>
+          </button>
+          <button
+            type="button"
+            className={record.followCard}
+            onClick={onConsolidated}
+          >
+            <strong>Consolidado</strong>
+            <span>Bodega central</span>
+          </button>
+          <button
+            type="button"
+            className={record.followCard}
+            onClick={onTransfers}
+          >
+            <strong>Traslados</strong>
+            <span>Entre sedes</span>
+          </button>
+        </div>
+      </section>
+      <section className={record.alerts} aria-label="Alertas de escasez">
+        <div>
+          <p className={record.followLabel}>Alertas de escasez</p>
+          <p className={record.alertsTitle}>9 insumos bajo mínimo</p>
+          <p className={record.alertsDetail}>Entraña en Chapinero y Usaquén.</p>
+        </div>
+        <button type="button" className={ui.button} onClick={onScarcity}>
+          Ver alertas
+        </button>
+      </section>
+      <FormDialog
+        open={supplyOpen}
+        eyebrow="Se abre desde insumos"
+        title="Nuevo insumo"
+        help="Entra al catálogo de la empresa. Las sedes lo ven cuando lo pides o lo compras."
+        submitLabel="Crear insumo"
+        fields={[
+          {
+            label: "Nombre",
+            value: supplyName,
+            required: true,
+            onChange: setSupplyName,
+          },
+          { label: "Unidad", value: supplyUnit, onChange: setSupplyUnit },
+          {
+            label: "Mínimo",
+            value: supplyMinimum,
+            required: true,
+            onChange: setSupplyMinimum,
+          },
+          {
+            label: "Proveedor",
+            value: supplyVendor,
+            onChange: setSupplyVendor,
+          },
+        ]}
+        onClose={() => setSupplyOpen(false)}
+        onSubmit={() => {
+          const name = supplyName.trim();
+          setItems((current) => [
+            [
+              name,
+              supplyUnit.trim() || "KG",
+              "0",
+              supplyMinimum.trim() || "1",
+              "1",
+              "$0",
+              supplyVendor.trim() || "Sin proveedor",
+              "Pedir",
+              "meat",
+              "low",
+            ],
+            ...current,
+          ]);
+          onCreate(name);
+          setSupplyOpen(false);
+        }}
+      />
     </RecordPage>
   );
 }

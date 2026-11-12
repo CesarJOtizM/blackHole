@@ -6,7 +6,7 @@ import {
   RecordAuditEvent,
 } from "@blackhole/platform/application/entry-port";
 import { expect, it, vi } from "vitest";
-
+import { InMemoryDiningRoomRepository } from "#adapters/memory/in-memory-dining-room-repository.js";
 import { Clock } from "#application/ports/clock.js";
 import { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
 import { MenuRepository } from "#application/ports/menu-repository.js";
@@ -22,7 +22,7 @@ import {
   TakeOrder,
 } from "#application/take-order/take-order.js";
 import { Check, ComboNotSent, EmptyOrder } from "#domain/check.js";
-import type { DiningTable } from "#domain/dining-table.js";
+import { DiningTable } from "#domain/dining-table.js";
 import { Menu } from "#domain/menu.js";
 import {
   MissingStation,
@@ -1001,4 +1001,80 @@ it("given a printed pre-bill, when a waiter adds a product without sale.edit-pri
   ]);
   expect(grants.calls).toEqual([]);
   expect(audits.commands).toEqual([]);
+});
+
+it("given an open check on a table, when it is loaded by table, then that check is returned", async () => {
+  const dining = new InMemoryDiningRoomRepository();
+  const table = DiningTable.place({
+    id: TABLE_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    zone: "terrace",
+  });
+  table.open({ diners: 4 });
+  await dining.save(table);
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+  });
+  check.addLine({
+    orderId: ORDER_ID,
+    lineId: "line_soup",
+    productId: SOUP_ID,
+    name: "Soup",
+    course: 1,
+    price: 12_000,
+    channel: "waiter",
+  });
+  await dining.saveCheck(check);
+
+  const loaded = await dining.loadOpenCheckByTable(
+    TENANT_ID,
+    VENUE_ID,
+    TABLE_ID,
+  );
+
+  expect(loaded?.id).toBe(CHECK_ID);
+  expect(
+    await dining.loadOpenCheckByTable(TENANT_ID, VENUE_ID, "table_9"),
+  ).toBeNull();
+  expect(
+    await dining.loadOpenCheckByTable(
+      "organization_tenant_2",
+      VENUE_ID,
+      TABLE_ID,
+    ),
+  ).toBeNull();
+});
+
+it("given a QR table line, when it is sent, then the kitchen job carries the qr_table channel", async () => {
+  const { printer, takeOrder } = await harness([SOUP_ID]);
+
+  await takeOrder.execute({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    venueId: VENUE_ID,
+    checkId: CHECK_ID,
+    course: 1,
+    lines: [
+      {
+        orderId: ORDER_ID,
+        lineId: "line_soup",
+        productId: SOUP_ID,
+        name: "Soup",
+        course: 1,
+        channel: "qr_table",
+      },
+    ],
+  });
+
+  expect(printer.jobs[0]).toMatchObject({
+    document: "kitchen_ticket",
+    channel: "qr_table",
+    table: TABLE_ID,
+    lines: [{ quantity: "1", name: "Soup" }],
+  });
 });

@@ -1,5 +1,6 @@
 import type { Clock } from "#application/ports/clock.js";
 import type { DiningRoomRepository } from "#application/ports/dining-room-repository.js";
+import type { PreBillLink } from "#application/ports/pre-bill-link.js";
 import type { Printer, PrintJobStatus } from "#application/ports/printer.js";
 import type { RealtimeHub } from "#application/ports/realtime-hub.js";
 import { type Check, TableNotOpen } from "#domain/check.js";
@@ -56,6 +57,7 @@ export class RequestCheck {
     private readonly clock: Clock,
     private readonly printer: Printer,
     private readonly hub: RealtimeHub,
+    private readonly preBillLink: PreBillLink,
   ) {}
 
   async execute(input: RequestCheckInput): Promise<Check> {
@@ -85,6 +87,12 @@ export class RequestCheck {
     check: Check,
     requestedAt: string,
   ): Promise<void> {
+    const qr = await this.preBillLink.sign({
+      tenantId: check.tenantId,
+      venueId: check.venueId,
+      checkId: check.id,
+      at: requestedAt,
+    });
     const queued = await this.printer.enqueue({
       document: "pre_bill",
       commandId: `pre_bill:${check.id}:${requestedAt}`,
@@ -98,7 +106,7 @@ export class RequestCheck {
           amount: String(line.price),
         })),
       total: String(check.total),
-      qr: "",
+      qr,
       kickDrawer: false,
     });
 

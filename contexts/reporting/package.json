@@ -1,0 +1,32 @@
+{
+  "name": "@blackhole/reporting",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": "./domain/index.js",
+    "./application/authorize-report": "./application/authorize-report/authorize-report.js",
+    "./application/ports/report-access": "./application/ports/report-access.js",
+    "./application/ports/operation-facts": "./application/ports/operation-facts.js",
+    "./application/entry-port": "./application/entry-port.js",
+    "./application/read-sales-report": "./application/read-sales-report/read-sales-report.js",
+    "./application/read-time-report": "./application/read-time-report/read-time-report.js",
+    "./application/read-cash-report": "./application/read-cash-report/read-cash-report.js",
+    "./application/read-staff-report": "./application/read-staff-report/read-staff-report.js",
+    "./adapters/memory/in-memory-operation-facts": "./adapters/memory/in-memory-operation-facts.js"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
+  "imports": {
+    "#domain/*": "./domain/*",
+    "#application/*": "./application/*",
+    "#application/ports/*": "./application/ports/*",
+    "#application/authorize-report/*": "./application/authorize-report/*",
+    "#application/read-sales-report/*": "./application/read-sales-report/*",
+    "#application/read-time-report/*": "./application/read-time-report/*",
+    "#application/read-cash-report/*": "./application/read-cash-report/*",
+    "#application/read-staff-report/*": "./application/read-staff-report/*",
+    "#adapters/memory/*": "./adapters/memory/*"
+  }
+}

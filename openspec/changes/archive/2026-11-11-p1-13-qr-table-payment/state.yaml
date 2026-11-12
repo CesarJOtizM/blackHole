@@ -1,0 +1,19 @@
+change: p1-13-qr-table-payment
+roadmap_delivery: "1.13"
+roadmap_title: "QR table payment"
+phase: 1
+modules: [M2, M3, M1]
+bounded_contexts: [cash-register, invoicing, orders, contracts, sync]
+apps: [api-cloud, local-node, customer-portal, venue-app]
+status: specified
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: pending, verify: pending, archive: pending}
+depends_on: [p0-07-hybrid-resilience, p1-03-cash-register, p1-05-electronic-invoicing, p1-08-invoicing-portal, p1-10-tips, p1-12-qr-table-ordering]
+source_docs:
+  - docs/roadmap.md
+  - docs/prd/PRD-00-vision-producto.md
+  - docs/prd/PRD-M2-caja.md
+  - docs/trd/TRD-00-arquitectura-base.md
+  - docs/trd/TRD-M2-caja.md
+  - docs/trd/TRD-M3-facturacion.md
+  - docs/flujos/m2-caja.md
+  - docs/arquitectura/componentes/c4-m2-caja.md

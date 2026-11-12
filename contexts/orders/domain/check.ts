@@ -25,9 +25,19 @@ const LINE_RANK: Record<LineState, number> = {
 const ORDER_CHANNEL = {
   WAITER: "waiter",
   FIXED_POINT: "fixed_point",
+  QR_TABLE: "qr_table",
 } as const;
 
 export type OrderChannel = (typeof ORDER_CHANNEL)[keyof typeof ORDER_CHANNEL];
+
+const CHANNEL_LABEL: Record<OrderChannel, string> = {
+  waiter: "waiter",
+  fixed_point: "fixed_point",
+  qr_table: "QR table",
+};
+
+export const channelLabel = (channel: OrderChannel): string =>
+  CHANNEL_LABEL[channel];
 
 const LINE_KIND = {
   PRODUCT: "product",
@@ -42,6 +52,7 @@ interface OpenCheck {
   venueId: string;
   tableId: string;
   openedAt: string;
+  diners?: number | null;
 }
 
 interface AddLine {
@@ -76,6 +87,7 @@ interface AdvanceLine {
   lineId: string;
   state: LineState;
   at: string;
+  stationId?: string;
 }
 
 interface JoinCheck {
@@ -107,6 +119,7 @@ interface StoredLine {
   inPreparationAt?: string;
   readyAt?: string;
   deliveredAt?: string;
+  stationId?: string;
 }
 
 interface StoredOrder {
@@ -130,6 +143,7 @@ interface ListedLine {
   inPreparationAt?: string;
   readyAt?: string;
   deliveredAt?: string;
+  stationId?: string;
 }
 
 interface ListedOrder {
@@ -188,7 +202,7 @@ export class InvalidCheckPrice extends Error {
 
 export class InvalidOrderChannel extends Error {
   constructor() {
-    super("An order channel must be waiter or fixed_point.");
+    super("An order channel must be waiter, fixed_point, or qr_table.");
     this.name = "InvalidOrderChannel";
   }
 }
@@ -240,7 +254,8 @@ function assertCop(price: number): void {
 function parseChannel(channel: string): OrderChannel {
   if (
     channel === ORDER_CHANNEL.WAITER ||
-    channel === ORDER_CHANNEL.FIXED_POINT
+    channel === ORDER_CHANNEL.FIXED_POINT ||
+    channel === ORDER_CHANNEL.QR_TABLE
   ) {
     return channel;
   }
@@ -265,7 +280,9 @@ export class Check {
 
   private readonly orderList: StoredOrder[] = [];
   private readonly readyNoticeList: ReadyNotice[] = [];
+  private readonly dinerCount: number | null;
   private firstSentAtValue: string | undefined;
+  private releasedAtValue: string | undefined;
   private tableStateValue: TableState = "occupied";
   private preBillRequestValue: PreBillRequest | undefined;
   private waiterIdValue: string | null = null;
@@ -276,12 +293,29 @@ export class Check {
     this.venueId = input.venueId;
     this.tableId = input.tableId;
     this.openedAt = input.openedAt;
+    this.dinerCount = input.diners ?? null;
   }
 
   static open(input: OpenCheck): Check {
     assertPrefixed(input.id, CHECK_ID_PREFIX, () => new InvalidCheckId());
 
     return new Check(input);
+  }
+
+  get diners(): number | null {
+    return this.dinerCount;
+  }
+
+  get releasedAt(): string | undefined {
+    return this.releasedAtValue;
+  }
+
+  stampReleased(input: { releasedAt: string }): void {
+    if (this.releasedAtValue !== undefined) {
+      return;
+    }
+
+    this.releasedAtValue = input.releasedAt;
   }
 
   get firstSentAt(): string | undefined {
@@ -468,6 +502,11 @@ export class Check {
 
     if (input.state === LINE_STATE.IN_PREPARATION) {
       line.inPreparationAt = input.at;
+
+      if (input.stationId !== undefined && line.stationId === undefined) {
+        line.stationId = input.stationId;
+      }
+
       return;
     }
 
@@ -642,6 +681,7 @@ export class Check {
       ...(line.deliveredAt === undefined
         ? {}
         : { deliveredAt: line.deliveredAt }),
+      ...(line.stationId === undefined ? {} : { stationId: line.stationId }),
     };
   }
 }

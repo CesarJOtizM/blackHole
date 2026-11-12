@@ -28,7 +28,19 @@ export interface LineReady {
   at: string;
 }
 
-export type RealtimeNotice = OrderIds | PrinterFailed | LineReady;
+export interface BillingDataReceived {
+  kind: "billing_data_received";
+  tenantId: string;
+  venueId: string;
+  checkId: string;
+  tableId: string;
+}
+
+export type RealtimeNotice =
+  | OrderIds
+  | PrinterFailed
+  | LineReady
+  | BillingDataReceived;
 
 export abstract class RealtimeHub {
   abstract publish(notice: RealtimeNotice): Promise<void>;

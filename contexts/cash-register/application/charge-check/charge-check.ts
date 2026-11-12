@@ -32,6 +32,13 @@ export class UnknownAccount extends Error {
   }
 }
 
+export class AccountAlreadyCharged extends Error {
+  constructor() {
+    super("The account already has a cashier closure.");
+    this.name = "AccountAlreadyCharged";
+  }
+}
+
 export interface SaleClosure {
   id: string;
   status: "queued";
@@ -156,6 +163,30 @@ const printCashReceipt = async (
   });
 };
 
+interface CheckClosureLookup {
+  findByCheck(
+    tenantId: string,
+    venueId: string,
+    checkId: string,
+  ): Promise<RecordedCharge | null>;
+}
+
+const priorClosure = async (
+  ledger: ChargeLedger,
+  tenantId: string,
+  venueId: string,
+  checkId: string,
+): Promise<RecordedCharge | null> => {
+  const lookup = ledger as Partial<CheckClosureLookup>;
+  const findByCheck = lookup.findByCheck;
+
+  if (typeof findByCheck !== "function") {
+    return null;
+  }
+
+  return findByCheck.call(ledger, tenantId, venueId, checkId);
+};
+
 const assertClosureId = (id: string): void => {
   if (
     !id.startsWith(CLOSURE_ID_PREFIX) ||
@@ -251,6 +282,17 @@ export class ChargeCheck {
 
     if (existing) {
       return { payment: existing.payment, closure: existing.closure };
+    }
+
+    const prior = await priorClosure(
+      this.ledger,
+      input.tenantId,
+      input.venueId,
+      input.checkId,
+    );
+
+    if (prior) {
+      throw new AccountAlreadyCharged();
     }
 
     assertClosureId(input.closureId);

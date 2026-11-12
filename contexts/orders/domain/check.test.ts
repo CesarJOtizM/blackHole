@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import {
   Check,
   ComboNotSent,
+  channelLabel,
   EmptyOrder,
   InvalidCheckId,
   InvalidCheckPrice,
@@ -56,6 +57,23 @@ const addCourseLine = (
     channel: "waiter",
   });
 };
+
+it("given four diners, when the check opens, then the check keeps that count", () => {
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+    diners: 4,
+  });
+
+  expect(check.diners).toBe(4);
+});
+
+it("given no diner count, when the check opens, then diners stay empty", () => {
+  expect(openTableCheck().diners).toBeNull();
+});
 
 it("given starters and mains, when course 1 is sent, then mains stay held and off the total", () => {
   const check = openTableCheck();
@@ -282,7 +300,7 @@ it("given a price that is not an integer number of COP, when a line is added, th
   expect(check.total).toBe(0);
 });
 
-it("given a channel other than waiter or fixed_point, when a line is added, then it is rejected", () => {
+it("given a channel other than waiter, fixed_point, or qr_table, when a line is added, then it is rejected", () => {
   const check = openTableCheck();
 
   const addLine = () => {
@@ -293,12 +311,29 @@ it("given a channel other than waiter or fixed_point, when a line is added, then
       name: "Soup",
       course: 1,
       price: 12_000,
-      channel: "qr_table",
+      channel: "delivery",
     });
   };
 
   expect(addLine).toThrow(InvalidOrderChannel);
   expect(check.orders).toEqual([]);
+});
+
+it("given a QR table channel, when a line is added, then the order is labeled QR table", () => {
+  const check = openTableCheck();
+
+  check.addLine({
+    orderId: ORDER_ID,
+    lineId: "line_soup",
+    productId: "menu_product_soup",
+    name: "Soup",
+    course: 1,
+    price: 12_000,
+    channel: "qr_table",
+  });
+
+  expect(check.orders[0]?.channel).toBe("qr_table");
+  expect(channelLabel("qr_table")).toBe("QR table");
 });
 
 it("given a sent line, when it moves to in preparation and then ready, then both stamps and a ready notice exist", () => {
