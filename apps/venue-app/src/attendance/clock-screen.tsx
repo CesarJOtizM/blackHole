@@ -1,6 +1,7 @@
 import { Button, Field } from "@blackhole/ui";
 import { useState } from "react";
 import { useService } from "#src/service/service-session.js";
+import { postClock } from "#src/service/venue-cloud.js";
 
 const STAFF_PIN = "1357";
 
@@ -10,14 +11,21 @@ export function ClockScreen() {
   const [error, setError] = useState("");
 
   function submit(action: "in" | "out") {
-    if (pin !== STAFF_PIN) {
-      setError("PIN personal incorrecto.");
-      return;
-    }
-    setError("");
+    const typed = pin;
+
     setPin("");
-    if (action === "in") service.clockIn();
-    else service.clockOut();
+    void postClock(action === "in" ? "clock_in" : "clock_out", typed).then(
+      (recorded) => {
+        if (!recorded && typed !== STAFF_PIN) {
+          setError("PIN personal incorrecto.");
+          return;
+        }
+
+        setError("");
+        if (action === "in") service.clockIn();
+        else service.clockOut();
+      },
+    );
   }
 
   return (

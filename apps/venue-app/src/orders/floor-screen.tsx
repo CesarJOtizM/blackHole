@@ -42,7 +42,9 @@ export function FloorScreen() {
   const [selectedId, setSelectedId] = useState("01");
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
-  const selected = service.tables.find((table) => table.id === selectedId);
+  const selected =
+    service.tables.find((table) => table.id === selectedId) ??
+    service.tables[0];
 
   function authorizeVoid(lineId: string) {
     if (pin !== SUPERVISOR_PIN) {
@@ -73,9 +75,9 @@ export function FloorScreen() {
           <button
             key={table.id}
             type="button"
-            aria-pressed={table.id === selectedId}
+            aria-pressed={table.id === selected?.id}
             onClick={() => setSelectedId(table.id)}
-            className={`grid min-h-24 place-items-center rounded-full border-2 ${tableClass[table.state]} ${table.id === selectedId ? "outline-4 outline-offset-2 outline-action" : ""}`}
+            className={`grid min-h-24 place-items-center rounded-full border-2 ${tableClass[table.state]} ${table.id === selected?.id ? "outline-4 outline-offset-2 outline-action" : ""}`}
           >
             <span className="font-display text-title">{table.label}</span>
             <span className="text-sm">{stateLabel[table.state]}</span>

@@ -83,7 +83,26 @@ export function TablePaymentScreen({
   balanceCop: number;
   parts: readonly TablePaymentPart[];
 }) {
+  const [notice, setNotice] = useState("");
   const occupied = parts.some((part) => !part.paid);
+
+  function pay(partId?: string) {
+    void fetch(`/d/${token}/payments`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(
+        partId === undefined ? { tipCop: 0 } : { tipCop: 0, partId },
+      ),
+    })
+      .then((response) => {
+        setNotice(
+          response.ok ? "Pago iniciado." : "No se pudo iniciar el pago.",
+        );
+      })
+      .catch(() => {
+        setNotice("No se pudo iniciar el pago.");
+      });
+  }
 
   return (
     <main className="mx-auto grid min-h-svh max-w-lg gap-6 px-4 py-8">
@@ -108,13 +127,19 @@ export function TablePaymentScreen({
             {part.paid ? (
               <p>Pagada</p>
             ) : (
-              <Button type="button">
+              <Button type="button" onClick={() => pay(part.partId)}>
                 Pagar parte {partNumber(part.partId)}
               </Button>
             )}
           </li>
         ))}
       </ul>
+      {parts.length === 0 ? (
+        <Button type="button" onClick={() => pay()}>
+          Pagar la cuenta
+        </Button>
+      ) : null}
+      {notice.length > 0 ? <p role="status">{notice}</p> : null}
     </main>
   );
 }
