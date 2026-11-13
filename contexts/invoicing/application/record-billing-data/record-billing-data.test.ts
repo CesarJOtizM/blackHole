@@ -192,22 +192,16 @@ it("given accepted consent, when billing data is stored, then the consent date, 
   expect(run.notifier.notices).toEqual([{ checkId: CHECK_ID }]);
 });
 
-it("given an unknown DANE code and accepted consent, when billing data is stored, then the code is kept and the register is notified once", async () => {
+it("given an unknown DANE code and accepted consent, when billing data is submitted, then nothing is stored and the register is not notified", async () => {
   const run = harness([]);
 
   const result = await run.submit({
     municipalityCode: UNKNOWN_MUNICIPALITY_CODE,
   });
 
-  expect(result).toEqual({
-    outcome: RECORD_BILLING_DATA.STORED,
-    record: storedRecord({ municipalityCode: UNKNOWN_MUNICIPALITY_CODE }),
-  });
-  expect(run.steps).toEqual([
-    `catalog:${UNKNOWN_MUNICIPALITY_CODE}`,
-    `save:${COMPANY_ID}:${CHECK_ID}`,
-    `notify:${CHECK_ID}`,
-  ]);
-  expect(run.notifier.notices).toEqual([{ checkId: CHECK_ID }]);
-  expect(await run.records.find(OTHER_COMPANY_ID, CHECK_ID)).toBeNull();
+  expect(result).toEqual({ outcome: RECORD_BILLING_DATA.NOT_STORED });
+  expect(run.steps).toEqual([`catalog:${UNKNOWN_MUNICIPALITY_CODE}`]);
+  expect(run.records.saved).toEqual([]);
+  expect(await run.records.find(COMPANY_ID, CHECK_ID)).toBeNull();
+  expect(run.notifier.notices).toEqual([]);
 });
