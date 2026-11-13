@@ -1,5 +1,6 @@
 import { Button } from "@blackhole/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { readOrderStatus, readTableMenu } from "#src/cloud.js";
 
 export interface TableOrderProduct {
   id: string;
@@ -47,9 +48,35 @@ export function TableOrderScreen({
   token: string;
   acceptance?: "pending" | "rejected";
 }) {
-  const menu = presentTableOrderMenu(SITE_MENU);
+  const [menuSource, setMenuSource] =
+    useState<readonly TableOrderProduct[]>(SITE_MENU);
+  const [cloudAcceptance, setCloudAcceptance] = useState(acceptance);
+  const menu = presentTableOrderMenu(menuSource);
   const [cart, setCart] = useState<string[]>([]);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void fetch(`/m/${token}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          return null;
+        }
+
+        return readTableMenu(await response.json());
+      })
+      .then((products) => {
+        if (active && products !== null) {
+          setMenuSource(products);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   function removeUnsent(productId: string) {
     setCart((current) => {
@@ -63,21 +90,36 @@ export function TableOrderScreen({
 
   function sendOrder() {
     const intentId = `intent_${crypto.randomUUID()}`;
+    const lines = cart.map((productId) => ({
+      productId,
+      variantIds: [],
+      modifierIds: [],
+    }));
 
+    setCart([]);
+    setSent(true);
     void fetch(`/m/${token}/orders`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        intentId,
-        lines: cart.map((productId) => ({
-          productId,
-          variantIds: [],
-          modifierIds: [],
-        })),
-      }),
-    });
-    setCart([]);
-    setSent(true);
+      body: JSON.stringify({ intentId, lines }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        const statusResponse = await fetch(`/m/${token}/orders/${intentId}`);
+
+        if (!statusResponse.ok) {
+          return;
+        }
+
+        if (readOrderStatus(await statusResponse.json()) === "rejected") {
+          setCloudAcceptance("rejected");
+          setSent(false);
+        }
+      })
+      .catch(() => undefined);
   }
 
   return (
@@ -135,12 +177,12 @@ export function TableOrderScreen({
         </ul>
       ) : null}
       <Button
-        disabled={cart.length === 0 || sent || acceptance === "rejected"}
+        disabled={cart.length === 0 || sent || cloudAcceptance === "rejected"}
         onClick={sendOrder}
       >
         Enviar pedido
       </Button>
-      {acceptance === "rejected" ? (
+      {cloudAcceptance === "rejected" ? (
         <p role="status">El pedido no fue aceptado.</p>
       ) : sent ? (
         <p role="status">Pedido enviado a cocina.</p>

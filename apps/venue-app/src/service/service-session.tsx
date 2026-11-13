@@ -1,4 +1,20 @@
-import { createContext, type ReactNode, use, useMemo, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  use,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  loadVenueCloud,
+  postLineReady,
+  postOpenShift,
+  postOpenTable,
+  postReleaseTable,
+  postRequestCheck,
+  postSendCourse,
+} from "#src/service/venue-cloud.js";
 
 export type TableState = "free" | "occupied" | "check" | "clean";
 
@@ -15,6 +31,7 @@ export interface DiningTable {
   seats: number;
   state: TableState;
   channel?: "waiter" | "qr_table";
+  checkId?: string;
   lines: OrderLine[];
 }
 
@@ -26,6 +43,8 @@ export interface KitchenTicket {
   lines: string[];
   ready: boolean;
   channel?: "waiter" | "qr_table";
+  checkId?: string;
+  lineId?: string;
 }
 
 interface ServiceSession {
@@ -128,6 +147,28 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState("");
   const [sequence, setSequence] = useState(1);
 
+  useEffect(() => {
+    let active = true;
+
+    void loadVenueCloud().then((loaded) => {
+      if (!active) {
+        return;
+      }
+
+      if (loaded.tables !== null) {
+        setTables(loaded.tables);
+      }
+
+      if (loaded.tickets !== null) {
+        setTickets(loaded.tickets);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const value = useMemo<ServiceSession>(() => {
     return {
       clockedIn,
@@ -144,13 +185,17 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
         setNotice("Salida marcada. Sin entrada no se opera.");
       },
       openTable: (tableId) => {
+        const checkId = `check_${crypto.randomUUID()}`;
+        const table = tables.find((item) => item.id === tableId);
+
         setTables((current) =>
-          current.map((table) =>
-            table.id === tableId && table.state === "free"
-              ? { ...table, state: "occupied" }
-              : table,
+          current.map((item) =>
+            item.id === tableId && item.state === "free"
+              ? { ...item, state: "occupied", checkId }
+              : item,
           ),
         );
+        void postOpenTable(tableId, checkId, Math.max(1, table?.seats ?? 1));
         setNotice("Cuenta abierta en el salón.");
       },
       addLine: (tableId) => {
@@ -208,16 +253,24 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
           ...current,
         ]);
         setSequence((current) => current + 1);
+        if (table?.checkId !== undefined) {
+          void postSendCourse(table.checkId);
+        }
         setNotice(
           "Fuego enviado a la estación. La comanda sale por la impresora.",
         );
       },
       requestCheck: (tableId) => {
+        const table = tables.find((item) => item.id === tableId);
+
         setTables((current) =>
-          current.map((table) =>
-            table.id === tableId ? { ...table, state: "check" } : table,
+          current.map((item) =>
+            item.id === tableId ? { ...item, state: "check" } : item,
           ),
         );
+        if (table?.checkId !== undefined) {
+          void postRequestCheck(table.checkId);
+        }
         setNotice("Precuenta impresa en 80 mm, con el QR de facturación.");
       },
       voidLine: (tableId, lineId) => {
@@ -241,18 +294,25 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
               : table,
           ),
         );
+        void postReleaseTable(tableId);
         setNotice("Mesa libre.");
       },
       markTicketReady: (ticketId) => {
+        const ticket = tickets.find((item) => item.id === ticketId);
+
         setTickets((current) =>
-          current.map((ticket) =>
-            ticket.id === ticketId ? { ...ticket, ready: true } : ticket,
+          current.map((item) =>
+            item.id === ticketId ? { ...item, ready: true } : item,
           ),
         );
+        if (ticket?.checkId !== undefined && ticket.lineId !== undefined) {
+          void postLineReady(ticket.checkId, ticket.lineId);
+        }
         setNotice("Estación marcó listo. El mesero puede entregar.");
       },
       openShift: () => {
         setShiftOpen(true);
+        void postOpenShift(200_000);
         setNotice("Turno abierto con base de $200.000.");
       },
       settleTips: () => {

@@ -1,5 +1,6 @@
 import { Button, Field } from "@blackhole/ui";
 import { type FormEvent, useState } from "react";
+import { readBuyerName } from "#src/cloud.js";
 
 export function BillingDataScreen({ token }: { token: string }) {
   const [documentNumber, setDocumentNumber] = useState("");
@@ -10,8 +11,32 @@ export function BillingDataScreen({ token }: { token: string }) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const document = documentNumber;
+
     setOneTimeCode("");
     setSent(true);
+    void fetch("/portal/buyers", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        token,
+        documentType: "13",
+        documentNumber: document,
+        at: new Date().toISOString(),
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        const name = readBuyerName(await response.json());
+
+        if (name !== null) {
+          setSent(true);
+        }
+      })
+      .catch(() => undefined);
   }
 
   return (
