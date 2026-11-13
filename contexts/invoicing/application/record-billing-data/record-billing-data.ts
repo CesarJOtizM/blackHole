@@ -66,8 +66,13 @@ export class RecordBillingData {
   async execute(
     command: RecordBillingDataCommand,
   ): Promise<RecordBillingDataResult> {
-    const listed = await this.municipalities.find(command.municipalityCode);
-    const municipalityCode = listed ?? command.municipalityCode;
+    const municipalityCode = await this.municipalities.find(
+      command.municipalityCode,
+    );
+
+    if (municipalityCode === null) {
+      return { outcome: RECORD_BILLING_DATA.NOT_STORED };
+    }
     let record: BillingDataRecord | undefined;
 
     try {
