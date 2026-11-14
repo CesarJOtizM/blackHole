@@ -78,7 +78,7 @@ export const readTableMap = (
           label: table.id,
           seats: table.diners,
           state,
-          lines: [],
+          lines: [] as [],
         },
       ];
     });
@@ -141,7 +141,8 @@ export const readStationQueue = (
         minutes: minutesSince(line.sentAt),
         lines: [line.name],
         ready: line.state === "ready",
-        channel: line.channel === "qr_table" ? "qr_table" : undefined,
+        channel:
+          line.channel === "qr_table" ? ("qr_table" as const) : undefined,
         checkId: line.checkId,
         lineId: line.lineId,
       },
