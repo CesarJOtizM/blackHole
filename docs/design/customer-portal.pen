@@ -5132,6 +5132,979 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "GEhve",
+              "name": "PROPINA",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "CnIGk",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gevt8",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OSNb3",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "PROPINA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CGQUw",
+                  "name": "Cuenta",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fSCTh",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xqWj4",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "20:14",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZnUju",
+                          "name": "Dirección",
+                          "fill": "$faded",
+                          "content": "blackhole.co/m/7KD2-08",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aD9a7",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Eda2J",
+                          "name": "Marca del local",
+                          "width": "fill_container",
+                          "padding": [
+                            0,
+                            0,
+                            6,
+                            0
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "uqR4O",
+                              "name": "Nombre",
+                              "layout": "vertical",
+                              "gap": 1,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "SZoO5",
+                                  "name": "Local",
+                                  "fill": "$ink",
+                                  "content": "LA PARRILLA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "SUSN9",
+                                  "name": "Contexto",
+                                  "fill": "$faded",
+                                  "content": "CHAPINERO · MESA 08",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 10,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "OEi5j",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kpwKU",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "CUENTA EN VIVO",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "KdxuZ",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Saldo $486.000",
+                              "lineHeight": 1.1,
+                              "fontFamily": "$sans",
+                              "fontSize": 28,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mYBff",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Incluye lo que pidió el mesero.",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "wyGEI",
+                          "name": "Cuenta",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "t0O6a",
+                              "name": "Churrasco 400 g",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "G7uhf2",
+                                  "name": "Producto",
+                                  "fill": "$ink",
+                                  "content": "Churrasco 400 g",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Sm1yH",
+                                  "name": "Precio",
+                                  "fill": "$ink",
+                                  "content": "$44.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "C8ZNtw",
+                              "name": "Bife de chorizo",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Mz9vX",
+                                  "name": "Producto",
+                                  "fill": "$ink",
+                                  "content": "Bife de chorizo",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "CFLgK",
+                                  "name": "Precio",
+                                  "fill": "$ink",
+                                  "content": "$52.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Zsomk",
+                              "name": "Tomahawk 1 kg",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "LTsyf",
+                                  "name": "Producto",
+                                  "fill": "$ink",
+                                  "content": "Tomahawk 1 kg",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "h1KPc5",
+                                  "name": "Precio",
+                                  "fill": "$ink",
+                                  "content": "$139.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "e6Oqs",
+                              "name": "2 × Limonada de coco",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qHe9v",
+                                  "name": "Producto",
+                                  "fill": "$faded",
+                                  "content": "2 × Limonada de coco",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Z26Bvm",
+                                  "name": "Precio",
+                                  "fill": "$go",
+                                  "content": "PAGADO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QWjbV",
+                              "name": "Botella vino Malbec",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "OcpEn",
+                                  "name": "Producto",
+                                  "fill": "$ink",
+                                  "content": "Botella vino Malbec",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "mmumy",
+                                  "name": "Precio",
+                                  "fill": "$ink",
+                                  "content": "$251.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nDiph",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "CQool",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "x3HRwo",
+                              "name": "Subtotal",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "FZP95",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Subtotal",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Czwd2",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$486.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Fap20",
+                              "name": "Descuento cliente frecuente",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "CqOGY",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Descuento cliente frecuente",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "XN9t6",
+                                  "name": "Valor",
+                                  "fill": "$go",
+                                  "content": "$36.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "jLwRV",
+                              "name": "INC 8%",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VQQKf",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "INC 8%",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "nFFlP",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "incluido",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "s5reM",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jnjWK",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "oeKLX",
+                              "name": "Saldo",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "nVkXU",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Saldo",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "YTpmi",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$486.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 20,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Wpfhl",
+                          "name": "Pregunta",
+                          "fill": "$faded",
+                          "content": "¿CÓMO QUIERES PAGAR?",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q6Our",
+                          "name": "Opciones",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "fVAhW",
+                              "name": "Todo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "aGfcM",
+                                  "name": "Texto",
+                                  "fill": "$ink",
+                                  "content": "TODO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "IMTEI",
+                              "name": "En partes iguales",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "uYNWi",
+                                  "name": "Texto",
+                                  "fill": "$sheet",
+                                  "content": "DIVIDIR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YelXD",
+                              "name": "Lo mío",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n8oO6G",
+                                  "name": "Texto",
+                                  "fill": "$ink",
+                                  "content": "LO MÍO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Fwp7J",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "S07ZGr",
+                          "name": "Botón Pagar mi parte",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "KB0n8",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "arrow-right",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "l0KO9",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "PAGAR MI PARTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GdL0t",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DlYHp",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 388,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "tHOwQ",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "U30yf",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zX9ot",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "w5u5B",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE DESDE LA CUENTA",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "YCb74",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "ERKJj",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Propina voluntaria",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "bWbdZ",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Es tu decisión. Va completa a quien te atendió y a la cocina.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "QBEk8",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "B9EGL",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "TU PARTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "C7Zy39",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "bFJlb",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "$121.500",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aU8Gw",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AQOp1",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "PROPINA",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Ud1cc",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "S61bs",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "10% · $12.150",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "e3CRxf",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Fjhr9",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "uumMa",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "MbqYQ",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "OZRRF",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cQMl6",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "APLICAR PROPINA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -7560,6 +8533,1684 @@
                                   "fontFamily": "$mono",
                                   "fontSize": 15,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WKcPK",
+              "name": "CORREGIR FACTURA",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "WWu2e",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hYmt0",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fBUAd",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "CORREGIR FACTURA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "n5Euos",
+                  "name": "Estado",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pufYc",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "z3dMc",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "20:14",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Yz0OO",
+                          "name": "Dirección",
+                          "fill": "$faded",
+                          "content": "blackhole.co/f/FECH-41392",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rZxXO",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jdZNw",
+                          "name": "Marca del local",
+                          "width": "fill_container",
+                          "padding": [
+                            0,
+                            0,
+                            6,
+                            0
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ZQlH2",
+                              "name": "Nombre",
+                              "layout": "vertical",
+                              "gap": 1,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "rRjTv",
+                                  "name": "Local",
+                                  "fill": "$ink",
+                                  "content": "LA PARRILLA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "pwzQv",
+                                  "name": "Contexto",
+                                  "fill": "$faded",
+                                  "content": "CHAPINERO · 05 NOV 2026",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 10,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "M7Sqq",
+                          "name": "Sello",
+                          "width": "fill_container",
+                          "padding": [
+                            12,
+                            0
+                          ],
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Y1ZyY",
+                              "name": "Sello Aceptada DIAN",
+                              "rotation": -5,
+                              "cornerRadius": 3,
+                              "stroke": "$go",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "azWHn",
+                                  "name": "Texto",
+                                  "fill": "$go",
+                                  "content": "ACEPTADA DIAN",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "wl8pL",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "a5IS5",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "FACTURA FECH-41392",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "cAVxw",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Andrea Castro",
+                              "lineHeight": 1.1,
+                              "fontFamily": "$sans",
+                              "fontSize": 28,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lRsYe",
+                              "name": "Detalle",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "CC 1.020.456.778 · enviada a an****@gm***.com",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yfITG",
+                          "name": "Factura",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "XLsgz",
+                              "name": "Total",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cNlj3",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Total",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "FFwC6",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$121.500",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 18,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "PfBir",
+                              "name": "INC 8%",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Yb2rf",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "INC 8% incluido",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "KhP4e",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$9.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pmXuV",
+                              "name": "Propina (no facturable)",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lMD3g",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Propina (no facturable)",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "x6Fiqu",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$12.150",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "fYY9S",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "crkKg",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "tJfJl",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "CUFE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.5
+                            },
+                            {
+                              "type": "text",
+                              "id": "RIkVq",
+                              "name": "CUFE",
+                              "fill": "$ink",
+                              "content": "8f3a91c2e7…b04d7c21",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rwyHT",
+                          "name": "Descargas",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "AmJyZ",
+                              "name": "Botón PDF",
+                              "width": "fill_container",
+                              "height": 56,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "oeXot",
+                                  "name": "Icono",
+                                  "width": 18,
+                                  "height": 18,
+                                  "icon": "file-text",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "htBrr",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "PDF",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nZb2W",
+                              "name": "Botón XML",
+                              "width": "fill_container",
+                              "height": 56,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "vqTAk",
+                                  "name": "Icono",
+                                  "width": 18,
+                                  "height": 18,
+                                  "icon": "file-code",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "c2TW17",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "XML",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SItT0",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "text",
+                          "id": "NwDMZ",
+                          "name": "Plazo",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "¿Los datos están mal? Puedes pedir corrección hasta el 30 nov.",
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HtHkK",
+                          "name": "Botón Pedir corrección",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "j8Hlut",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "pencil",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "zic0P",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "PEDIR CORRECCIÓN",
+                              "fontFamily": "$mono",
+                              "fontSize": 13,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "K8jOU",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OC1VB",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 310,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "j2YzhJ",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "g2knv",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fVf8M",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Phcxa",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE DESDE LA FACTURA",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "wZvKf",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "rBIuP",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Corregir la factura",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "UxVTS",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Se anula con una nota crédito y se emite otra a nombre de la empresa.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "H86eU0",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cfP5d",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "NIT · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Wez1E",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zRcyO",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "900.456.123-4",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "w6WDD5",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Kh9ON",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "CORREO · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "N6q5RX",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "l8qhf",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "facturas@andes.co",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aTDeL",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "OrPtK",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "MOTIVO · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "slDng",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "P0IXv",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "La cena fue de la empresa",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "ysxUA",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "OI44B",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "K5vMUy",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "KfI8f",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "FTVoU",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YDsnC",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "PEDIR CORRECCIÓN",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xuOKM",
+              "name": "CÓDIGO DE CONFIRMACIÓN",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "j9WXVA",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zhldJ",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UP71M",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "CÓDIGO DE CONFIRMACIÓN",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bAwg3",
+                  "name": "Datos de factura",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "zDCxY",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HGpQZ",
+                          "name": "Hora",
+                          "fill": "$ink",
+                          "content": "20:14",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Z8EFc",
+                          "name": "Dirección",
+                          "fill": "$faded",
+                          "content": "blackhole.co/d/Q81K",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fBBDJ",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": [
+                        6,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "F4B0cq",
+                          "name": "Marca del local",
+                          "width": "fill_container",
+                          "padding": [
+                            0,
+                            0,
+                            6,
+                            0
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "O3fdG",
+                              "name": "Nombre",
+                              "layout": "vertical",
+                              "gap": 1,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "rGpWh",
+                                  "name": "Local",
+                                  "fill": "$ink",
+                                  "content": "LA PARRILLA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 16,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "syzV0",
+                                  "name": "Contexto",
+                                  "fill": "$faded",
+                                  "content": "PAGO DE $133.650 · 20:41",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 10,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "P8IgbS",
+                          "name": "Encabezado",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xw8No",
+                              "name": "Antetítulo",
+                              "fill": "$faded",
+                              "content": "FACTURA ELECTRÓNICA",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "Q3XLG",
+                              "name": "Título",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "¿A nombre de quién?",
+                              "lineHeight": 1.1,
+                              "fontFamily": "$sans",
+                              "fontSize": 28,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BricW",
+                          "name": "Tipo",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "eEqIa",
+                              "name": "Persona",
+                              "width": "fill_container",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "HWdKD",
+                                  "name": "Texto",
+                                  "fill": "$sheet",
+                                  "content": "PERSONA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "xzj1r",
+                              "name": "Empresa",
+                              "width": "fill_container",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "mE8Sa",
+                                  "name": "Texto",
+                                  "fill": "$ink",
+                                  "content": "EMPRESA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cjSQQ",
+                          "name": "Documento",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "La3aS",
+                              "name": "Tipo",
+                              "width": 90,
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "s3i5K",
+                                  "name": "Etiqueta",
+                                  "fill": "$faded",
+                                  "content": "TIPO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "X6YI7",
+                                  "name": "Campo",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    14
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "J8bc7O",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "CC",
+                                      "fontFamily": "$sans",
+                                      "fontSize": 16,
+                                      "fontWeight": "500"
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "L2o2at",
+                                      "name": "Icono",
+                                      "width": 18,
+                                      "height": 18,
+                                      "icon": "chevron-down",
+                                      "library": "lucide",
+                                      "fill": "$ink"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "K6OE9r",
+                              "name": "Número",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "i0Wwc",
+                                  "name": "Etiqueta",
+                                  "fill": "$faded",
+                                  "content": "NÚMERO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "e9w896",
+                                  "name": "Campo",
+                                  "width": "fill_container",
+                                  "height": 52,
+                                  "fill": "$sheet",
+                                  "cornerRadius": 4,
+                                  "stroke": "$ink",
+                                  "strokeWidth": 2,
+                                  "strokeAlignment": "inner",
+                                  "padding": [
+                                    0,
+                                    14
+                                  ],
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "bnUme",
+                                      "name": "Valor",
+                                      "fill": "$ink",
+                                      "content": "1.020.456.778",
+                                      "fontFamily": "$mono",
+                                      "fontSize": 16,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZKWdz",
+                          "name": "Encontrado",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$go",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 14,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gEDa4",
+                              "name": "Etiqueta",
+                              "fill": "$go",
+                              "content": "YA TE CONOCEMOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.5
+                            },
+                            {
+                              "type": "frame",
+                              "id": "PfBXE",
+                              "name": "Nombre",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "dOYXU",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Nombre",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "z57vbF",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "AND*** CAS***",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nxxrK",
+                              "name": "Correo",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "dnWAG",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Correo",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "N7Z8v",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "an****@gm***.com",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "W6zuB",
+                              "name": "Nota",
+                              "fill": "$faded",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Mostramos tus datos ocultos. Confirma con el código que te enviamos.",
+                              "fontFamily": "$sans",
+                              "fontSize": 13,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CdVZz",
+                          "name": "Cambiar",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "scReU",
+                              "name": "Texto",
+                              "fill": "$ink",
+                              "content": "¿No eres tú o cambió tu correo? Usa otros datos",
+                              "fontFamily": "$sans",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mhqbP",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WqV8D",
+                          "name": "Botón Enviar código al correo",
+                          "width": "fill_container",
+                          "height": 56,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "mkmPb",
+                              "name": "Icono",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "mail",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Zzfxh",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "ENVIAR CÓDIGO AL CORREO",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VG1nZ",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UhpyT",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 466,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "aoybE",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "r3wuI",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EOjy7",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sS5r4",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE DESPUÉS DE TUS DATOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "saGrR",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "QUVGr",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Confirma que eres tú",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "B147nq",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Te enviamos un código a an****@gm***.com. Sin esta autorización no se emite a tu nombre.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UIKnH",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qLbUf",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "CÓDIGO · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "a2mtwz",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "koNJG",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "4819",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "UXJot",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sVKR2",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cWoIb",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "OI15h",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GJLdF",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qNVi3",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "CONFIRMAR Y EMITIR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
                                 }
                               ]
                             }

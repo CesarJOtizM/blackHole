@@ -4279,6 +4279,2639 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "m7mBCW",
+              "name": "COBRAR",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "yUUBT",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WMwdY",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "N5ejm",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "COBRAR",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "r2qFry",
+                  "name": "Detalle",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tfdzn",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$ink",
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QlcSg",
+                          "name": "Hora",
+                          "fill": "$sheet",
+                          "content": "13:42",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ub9zD",
+                          "name": "Contexto",
+                          "fill": "#CFC6B6",
+                          "content": "ANDRÉS · CHAPINERO",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QGmVj",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        16,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "t01WYD",
+                          "name": "Cab",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bJ6Ec",
+                              "name": "← D-0421",
+                              "fill": "$ink",
+                              "content": "← D-0421",
+                              "fontFamily": "$mono",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "K7th3K",
+                              "name": "Sello Listo",
+                              "cornerRadius": 3,
+                              "stroke": "$go",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jL5TG",
+                                  "name": "Texto",
+                                  "fill": "$go",
+                                  "content": "LISTO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lLcCY",
+                          "name": "Cliente",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "U3bM1E",
+                              "name": "CLIENTE",
+                              "fill": "$faded",
+                              "content": "CLIENTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "u1gIZ0",
+                              "name": "Mariana G.",
+                              "fill": "$ink",
+                              "content": "Mariana G.",
+                              "fontFamily": "$sans",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "M92W2",
+                              "name": "Calle 59 # 9-11, local 2",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Calle 59 # 9-11, local 2",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "E7B4F",
+                              "name": "Nota: timbre dañado, llamar ",
+                              "fill": "$hold",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Nota: timbre dañado, llamar al llegar.",
+                              "fontFamily": "$sans",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FAYbg",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "uuO8L",
+                              "name": "Botón Navegar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "ez3pD",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "navigation",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tNNSo",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "NAVEGAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "UvhBR",
+                              "name": "Botón Llamar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "kbGGL",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "phone",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Xp2no",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "LLAMAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yw81Y",
+                          "name": "Comanda",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "c5X44C",
+                              "name": "BOLSA · 3 PRODUCTOS",
+                              "fill": "$faded",
+                              "content": "BOLSA · 3 PRODUCTOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "frame",
+                              "id": "zI1Zk",
+                              "name": "2× Burger doble",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "y656Cq",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "2× Burger doble",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "WYjae",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 58.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "r29Zxh",
+                              "name": "1× Papas rústicas",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Wl74l",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Papas rústicas",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "O2B1uj",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 14.900",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pyiTI",
+                              "name": "1× Limonada coco",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VmQzI",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Limonada coco",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "vbDkR",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 13.500",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "zijzE",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tBX8c",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "x6bx6A",
+                              "name": "Cobrar al entregar",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "j3OZC",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Cobrar al entregar",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "P26k2A",
+                                  "name": "Valor",
+                                  "fill": "$stamp",
+                                  "content": "$ 86.400",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 20,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Krb5o",
+                              "name": "EFECTIVO · PAGA CON $ 100.00",
+                              "fill": "$faded",
+                              "content": "EFECTIVO · PAGA CON $ 100.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "LpALY",
+                          "name": "Verifiqué la bolsa sellada",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "a3Uib",
+                              "name": "Casilla",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "$ink",
+                              "cornerRadius": 3,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "ZEcDB",
+                                  "name": "Icono",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "check",
+                                  "library": "lucide",
+                                  "fill": "$sheet"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "OlpaV",
+                              "name": "Texto",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "TdXAi",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Verifiqué la bolsa sellada",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "w3pok",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RHo4j",
+                          "name": "Botón Salir a entregar",
+                          "width": "fill_container",
+                          "height": 60,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "HSeuh",
+                              "name": "Icono",
+                              "width": 20,
+                              "height": 20,
+                              "icon": "bike",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "dnxhX",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "SALIR A ENTREGAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "knYsN",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p3CXam",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 388,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "isP84",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "rCoyq",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fC5V5",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "rbj2l",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE EN EL PEDIDO",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "E82kT",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "nbRT6",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Cobro contraentrega",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "U9CWH",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "El cliente eligió efectivo. El total de D-0421 es $86.400.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "iNX65",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "r8NB9i",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "RECIBÍ · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "CS1ug",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "PeWSQ",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "$100.000",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RoC6R",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sAfb0",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "DEVOLVER",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nMGK3",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ihNGW",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "$13.600",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "roywQ",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Us23b",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "A2X6u",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lkJ9m",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "FKNFn",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "KxEkF",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "REGISTRAR COBRO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ISV2H",
+              "name": "CONFIRMAR ENTREGA",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "SX0Cw",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "P8G4J",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ZClco",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "CONFIRMAR ENTREGA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yJAoh",
+                  "name": "Detalle",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "wB40v",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$ink",
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "w799gi",
+                          "name": "Hora",
+                          "fill": "$sheet",
+                          "content": "13:42",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "u2cJk",
+                          "name": "Contexto",
+                          "fill": "#CFC6B6",
+                          "content": "ANDRÉS · CHAPINERO",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "d5jlh",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        16,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "X4jaa",
+                          "name": "Cab",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eKIcQ",
+                              "name": "← D-0421",
+                              "fill": "$ink",
+                              "content": "← D-0421",
+                              "fontFamily": "$mono",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QilGG",
+                              "name": "Sello Listo",
+                              "cornerRadius": 3,
+                              "stroke": "$go",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "o2XEJA",
+                                  "name": "Texto",
+                                  "fill": "$go",
+                                  "content": "LISTO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "o93Up",
+                          "name": "Cliente",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ehSnI",
+                              "name": "CLIENTE",
+                              "fill": "$faded",
+                              "content": "CLIENTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "XkET5",
+                              "name": "Mariana G.",
+                              "fill": "$ink",
+                              "content": "Mariana G.",
+                              "fontFamily": "$sans",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "yEF7e",
+                              "name": "Calle 59 # 9-11, local 2",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Calle 59 # 9-11, local 2",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Pa317",
+                              "name": "Nota: timbre dañado, llamar ",
+                              "fill": "$hold",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Nota: timbre dañado, llamar al llegar.",
+                              "fontFamily": "$sans",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RqShW",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "GFqpX",
+                              "name": "Botón Navegar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "qioQS",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "navigation",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "SKZhS",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "NAVEGAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "g7ABD",
+                              "name": "Botón Llamar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "G29ltO",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "phone",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "v3hWL",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "LLAMAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "In0jN",
+                          "name": "Comanda",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EVIuQ",
+                              "name": "BOLSA · 3 PRODUCTOS",
+                              "fill": "$faded",
+                              "content": "BOLSA · 3 PRODUCTOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "frame",
+                              "id": "estdc",
+                              "name": "2× Burger doble",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "U0Mjtn",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "2× Burger doble",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ibTzd",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 58.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "BdICr",
+                              "name": "1× Papas rústicas",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Ho6Gv",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Papas rústicas",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "f8ArTH",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 14.900",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MKA9M",
+                              "name": "1× Limonada coco",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yqlJO",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Limonada coco",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "MZFfG",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 13.500",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "f38BDh",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "oG3kF",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "HY0vf",
+                              "name": "Cobrar al entregar",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "rnaIL",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Cobrar al entregar",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PvHwJ",
+                                  "name": "Valor",
+                                  "fill": "$stamp",
+                                  "content": "$ 86.400",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 20,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "JgO9k",
+                              "name": "EFECTIVO · PAGA CON $ 100.00",
+                              "fill": "$faded",
+                              "content": "EFECTIVO · PAGA CON $ 100.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Iq1ng",
+                          "name": "Verifiqué la bolsa sellada",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "qHLoJ",
+                              "name": "Casilla",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "$ink",
+                              "cornerRadius": 3,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "PzZCf",
+                                  "name": "Icono",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "check",
+                                  "library": "lucide",
+                                  "fill": "$sheet"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YXKAv",
+                              "name": "Texto",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "k5LPRp",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Verifiqué la bolsa sellada",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Uv9pI",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "z0q3m",
+                          "name": "Botón Salir a entregar",
+                          "width": "fill_container",
+                          "height": 60,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "vWUWB",
+                              "name": "Icono",
+                              "width": 20,
+                              "height": 20,
+                              "icon": "bike",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "prjG0",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "SALIR A ENTREGAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "e1EqXf",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RQjkJ",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 466,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "BqZdC",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "W4gzYe",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RFlfA",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "joqE2",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE AL ENTREGAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "luAZP",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "YtcZA",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Pídele el código",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RNW1g",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Lo recibió por SMS. Si no lo tiene, la foto queda como evidencia.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "p2atZ",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eFJUf",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "CÓDIGO DEL CLIENTE · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MNrXz",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ql5gA",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "4817",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "d7whY",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ciWvD",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "EZky8",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "XQuCL",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "r5ieA",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "xvOY2",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "CONFIRMAR ENTREGA",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "GdivB",
+              "name": "INCIDENCIA",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "P1rIx",
+                  "name": "Rótulo",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wi1Gk",
+                      "name": "Número",
+                      "fill": "$stamp",
+                      "content": "+",
+                      "fontFamily": "$mono",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EoBgU",
+                      "name": "Nombre",
+                      "fill": "$ink",
+                      "content": "INCIDENCIA",
+                      "fontFamily": "$mono",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.2
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HLCl5",
+                  "name": "Detalle",
+                  "clip": true,
+                  "width": 390,
+                  "height": 844,
+                  "fill": "$paper",
+                  "cornerRadius": 28,
+                  "stroke": "$ink",
+                  "strokeWidth": 2,
+                  "strokeAlignment": "inner",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "aS60n",
+                      "name": "Barra de estado",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$ink",
+                      "padding": [
+                        0,
+                        22
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U0Hxa",
+                          "name": "Hora",
+                          "fill": "$sheet",
+                          "content": "13:42",
+                          "fontFamily": "$mono",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "WmWpv",
+                          "name": "Contexto",
+                          "fill": "#CFC6B6",
+                          "content": "ANDRÉS · CHAPINERO",
+                          "fontFamily": "$mono",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f4RS2",
+                      "name": "Contenido",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        16,
+                        20,
+                        24,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "eWbVA",
+                          "name": "Cab",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dvpHR",
+                              "name": "← D-0421",
+                              "fill": "$ink",
+                              "content": "← D-0421",
+                              "fontFamily": "$mono",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QKzbb",
+                              "name": "Sello Listo",
+                              "cornerRadius": 3,
+                              "stroke": "$go",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "c3THrh",
+                                  "name": "Texto",
+                                  "fill": "$go",
+                                  "content": "LISTO",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "kznRL",
+                          "name": "Cliente",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Bi0hI",
+                              "name": "CLIENTE",
+                              "fill": "$faded",
+                              "content": "CLIENTE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "text",
+                              "id": "oB4Zq",
+                              "name": "Mariana G.",
+                              "fill": "$ink",
+                              "content": "Mariana G.",
+                              "fontFamily": "$sans",
+                              "fontSize": 18,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "aGq1B",
+                              "name": "Calle 59 # 9-11, local 2",
+                              "fill": "$ink",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Calle 59 # 9-11, local 2",
+                              "fontFamily": "$sans",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "K85Uq",
+                              "name": "Nota: timbre dañado, llamar ",
+                              "fill": "$hold",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Nota: timbre dañado, llamar al llegar.",
+                              "fontFamily": "$sans",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IsHNd",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ZkmWJ",
+                              "name": "Botón Navegar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "HIGnY",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "navigation",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "lBIvU",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "NAVEGAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pDsjd",
+                              "name": "Botón Llamar",
+                              "width": "fill_container",
+                              "height": 52,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "TuGwl",
+                                  "name": "Icono",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "phone",
+                                  "library": "lucide",
+                                  "fill": "$ink"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "fPzTj",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "LLAMAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "y5oF3",
+                          "name": "Comanda",
+                          "width": "fill_container",
+                          "fill": "$sheet",
+                          "cornerRadius": 2,
+                          "stroke": "$ink",
+                          "strokeWidth": 2,
+                          "strokeAlignment": "inner",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 16,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "n61aov",
+                              "name": "BOLSA · 3 PRODUCTOS",
+                              "fill": "$faded",
+                              "content": "BOLSA · 3 PRODUCTOS",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 2
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ouAdC",
+                              "name": "2× Burger doble",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "h8A9wo",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "2× Burger doble",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "COZKV",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 58.000",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "VLNeG",
+                              "name": "1× Papas rústicas",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "rLNBl",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Papas rústicas",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tu1w9",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 14.900",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "DERVw",
+                              "name": "1× Limonada coco",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "m5ejRo",
+                                  "name": "Clave",
+                                  "fill": "$ink",
+                                  "content": "1× Limonada coco",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 14,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "eTulT",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "content": "$ 13.500",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "SdgMs",
+                              "name": "Corte",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 14,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "O4Ntx",
+                                  "name": "Guiones",
+                                  "fill": "$faded",
+                                  "content": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "r66ch",
+                              "name": "Cobrar al entregar",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "H30kb6",
+                                  "name": "Clave",
+                                  "fill": "$faded",
+                                  "content": "Cobrar al entregar",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "shc2t",
+                                  "name": "Valor",
+                                  "fill": "$stamp",
+                                  "content": "$ 86.400",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 20,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "yNkrD",
+                              "name": "EFECTIVO · PAGA CON $ 100.00",
+                              "fill": "$faded",
+                              "content": "EFECTIVO · PAGA CON $ 100.000",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "e2txXG",
+                          "name": "Verifiqué la bolsa sellada",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "X3ImVw",
+                              "name": "Casilla",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "$ink",
+                              "cornerRadius": 3,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "p9CtV",
+                                  "name": "Icono",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "check",
+                                  "library": "lucide",
+                                  "fill": "$sheet"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "i93e3y",
+                              "name": "Texto",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "pfdAw",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Verifiqué la bolsa sellada",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 15,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "h0gknC",
+                          "name": "Espacio",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qjTHX",
+                          "name": "Botón Salir a entregar",
+                          "width": "fill_container",
+                          "height": 60,
+                          "fill": "$ink",
+                          "cornerRadius": 4,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "G6ySq",
+                              "name": "Icono",
+                              "width": 20,
+                              "height": 20,
+                              "icon": "bike",
+                              "library": "lucide",
+                              "fill": "$sheet"
+                            },
+                            {
+                              "type": "text",
+                              "id": "FsNRm",
+                              "name": "Etiqueta",
+                              "fill": "$sheet",
+                              "content": "SALIR A ENTREGAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 15,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.2
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wejYo",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Velo",
+                      "width": 390,
+                      "height": 844,
+                      "fill": "#1B1916B8"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Bn0Ub",
+                      "layoutPosition": "absolute",
+                      "x": 0,
+                      "y": 388,
+                      "name": "Hoja",
+                      "width": 390,
+                      "fill": "$sheet",
+                      "cornerRadius": [
+                        16,
+                        16,
+                        0,
+                        0
+                      ],
+                      "stroke": "$ink",
+                      "strokeWidth": 2,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        20,
+                        22,
+                        20
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "QTK92",
+                          "name": "Asa",
+                          "width": "fill_container",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "EE2bL",
+                              "name": "Marca",
+                              "width": 40,
+                              "height": 4,
+                              "fill": "$faded",
+                              "cornerRadius": 2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "S9BTZ",
+                          "name": "Cabecera del diálogo",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "h5g83",
+                              "name": "Antetítulo",
+                              "fill": "$stamp",
+                              "content": "SE ABRE SI NADIE ABRE",
+                              "fontFamily": "$mono",
+                              "fontSize": 11,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "text",
+                              "id": "reoyV",
+                              "name": "Cerrar",
+                              "fill": "$ink",
+                              "content": "CERRAR",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "soFMz",
+                          "name": "Título",
+                          "fill": "$ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "¿Qué pasó?",
+                          "fontFamily": "$sans",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y37lg",
+                          "name": "Ayuda",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Avisa antes de devolver el pedido. La sede decide el siguiente paso.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "K8gx6a",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "y4tjFP",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "MOTIVO · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "A0GYbB",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "X0kWak",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "El cliente no responde",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "k4l5OB",
+                          "name": "Bloque",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "aCgaP",
+                              "name": "Etiqueta",
+                              "fill": "$faded",
+                              "content": "DETALLE · OBLIGATORIO",
+                              "fontFamily": "$mono",
+                              "fontSize": 12,
+                              "fontWeight": "700",
+                              "letterSpacing": 1.1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Bm3iT",
+                              "name": "Campo",
+                              "width": "fill_container",
+                              "height": 48,
+                              "fill": "$paper",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ZqRdo",
+                                  "name": "Valor",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Esperé en portería, nadie baja.",
+                                  "fontFamily": "$sans",
+                                  "fontSize": 16,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "FUVqI",
+                          "name": "Aviso",
+                          "fill": "$faded",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Si cierras con cambios sin guardar, te pedimos confirmación.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zigRd",
+                          "name": "Acciones",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Z1EnP",
+                              "name": "Botón cancelar",
+                              "height": 44,
+                              "fill": "$sheet",
+                              "cornerRadius": 4,
+                              "stroke": "$ink",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "WjT5W",
+                                  "name": "Etiqueta",
+                                  "fill": "$ink",
+                                  "content": "CANCELAR",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "d67V7",
+                              "name": "Botón primario",
+                              "height": 44,
+                              "fill": "$ink",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "e7Bxm",
+                                  "name": "Etiqueta",
+                                  "fill": "$sheet",
+                                  "content": "AVISAR A LA SEDE",
+                                  "fontFamily": "$mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "700",
+                                  "letterSpacing": 1.2
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
