@@ -18,6 +18,7 @@ import { MOVEMENT_TYPE, type MovementType } from "#domain/stock-ledger.js";
 const TENANT_A = "organization_tenant_a";
 const TENANT_B = "organization_tenant_b";
 const VENUE_ID = "venue_site";
+const OTHER_VENUE_ID = "venue_other_site";
 const LOCATION_ID = "location_point_of_sale";
 const BEEF_ID = "ingredient_beef";
 const ONION_ID = "ingredient_onion";
@@ -37,6 +38,7 @@ const grams = (quantity: number): number => quantity * QUANTITY_SCALE;
 const line = (input: {
   id: string;
   tenantId?: string;
+  venueId?: string;
   ingredientId?: string;
   quantity: number;
   type: MovementType;
@@ -46,7 +48,7 @@ const line = (input: {
 }): LedgerLine => ({
   id: input.id,
   tenantId: input.tenantId ?? TENANT_A,
-  venueId: VENUE_ID,
+  venueId: input.venueId ?? VENUE_ID,
   locationId: LOCATION_ID,
   ingredientId: input.ingredientId ?? BEEF_ID,
   quantity: input.quantity,
@@ -314,5 +316,57 @@ export function stockLedgerRepositoryContract(
       false,
     );
     expect(await queued(TENANT_A)).toEqual([envelope(existing)]);
+  });
+
+  it("given movements for two tenants and two venues, when one venue is listed, then the other tenant stays hidden and nothing is appended", async () => {
+    const { repository, queued } = await open();
+    const kept = line({
+      id: "movement_listed",
+      tenantId: TENANT_A,
+      quantity: grams(-200),
+      type: MOVEMENT_TYPE.SALE_CONSUMPTION,
+      orderLineId: "line_listed",
+      role: CONSUMPTION_ROLE.CONSUMPTION,
+    });
+    const otherVenue = line({
+      id: "movement_other_venue",
+      tenantId: TENANT_A,
+      venueId: OTHER_VENUE_ID,
+      quantity: grams(-300),
+      type: MOVEMENT_TYPE.SALE_CONSUMPTION,
+      orderLineId: "line_other_venue",
+      role: CONSUMPTION_ROLE.CONSUMPTION,
+    });
+    const otherTenant = line({
+      id: "movement_other_tenant",
+      tenantId: TENANT_B,
+      quantity: grams(-500),
+      type: MOVEMENT_TYPE.SALE_CONSUMPTION,
+      orderLineId: "line_other_tenant",
+      role: CONSUMPTION_ROLE.CONSUMPTION,
+    });
+
+    await repository.append({ movements: [kept, otherVenue], alerts: [] });
+    await repository.append({ movements: [otherTenant], alerts: [] });
+    const queuedBefore = await queued(TENANT_A);
+    const balanceBefore = await repository.balance(
+      TENANT_A,
+      LOCATION_ID,
+      BEEF_ID,
+    );
+
+    expect(await repository.listByVenue(TENANT_A, VENUE_ID)).toEqual([kept]);
+    expect(await repository.listByVenue(TENANT_A, OTHER_VENUE_ID)).toEqual([
+      otherVenue,
+    ]);
+    expect(await repository.listByVenue(TENANT_B, VENUE_ID)).toEqual([
+      otherTenant,
+    ]);
+    expect(await repository.listByVenue(TENANT_B, OTHER_VENUE_ID)).toEqual([]);
+    expect(await queued(TENANT_A)).toEqual(queuedBefore);
+    expect(await queued(TENANT_B)).toEqual([envelope(otherTenant)]);
+    expect(await repository.balance(TENANT_A, LOCATION_ID, BEEF_ID)).toBe(
+      balanceBefore,
+    );
   });
 }

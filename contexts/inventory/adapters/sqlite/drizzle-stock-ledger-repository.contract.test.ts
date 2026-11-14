@@ -7,6 +7,7 @@ import {
   DrizzlePointOfSaleDirectory,
   DrizzleStockLedgerRepository,
 } from "#adapters/sqlite/drizzle-stock-ledger-repository.js";
+import { stockBalances, stockMovements } from "#adapters/sqlite/schema.js";
 import { stockLedgerRepositoryContract } from "#application/ports/stock-ledger-repository.contract.js";
 
 const migration = readFileSync(
@@ -59,4 +60,12 @@ it("given a point-of-sale location for each tenant, when tenant A reads the venu
 
   expect(await directory.locationOf(TENANT_A, VENUE_ID)).toBe(LOCATION_A);
   expect(await directory.locationOf(TENANT_B, VENUE_ID)).toBe(LOCATION_B);
+});
+
+it("given the sqlite stock columns, when they are compared with purchasing, then sale columns are nullable and average cost defaults to 0", () => {
+  expect(stockMovements.orderLineId.notNull).toBe(false);
+  expect(stockMovements.role.notNull).toBe(false);
+  expect(stockMovements.recipeVersion.notNull).toBe(false);
+  expect(stockBalances.averageCost.notNull).toBe(true);
+  expect(stockBalances.averageCost.default).toBe(0);
 });

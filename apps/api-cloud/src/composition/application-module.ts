@@ -47,6 +47,7 @@ import {
   InMemoryStockLedgerRepository,
   InMemoryStockMovementQueue,
 } from "@blackhole/inventory/adapters/memory/in-memory-stock-ledger-repository";
+import { DrizzlePurchasingRepository } from "@blackhole/inventory/adapters/postgres/drizzle-purchasing-repository";
 import {
   DrizzlePointOfSaleDirectory,
   DrizzleStockLedgerRepository,
@@ -58,8 +59,11 @@ import {
   RegisterSaleConsumption,
   ReturnStock,
 } from "@blackhole/inventory/application/entry-port";
+import { InventoryLocationDirectory } from "@blackhole/inventory/application/ports/inventory-location-directory";
 import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
 import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
+import { PublishedPurchaseFactor } from "@blackhole/inventory/application/ports/published-purchase-factor";
+import { PurchasingRepository } from "@blackhole/inventory/application/ports/purchasing-repository";
 import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
 import { RecipeVersionReader } from "@blackhole/inventory/application/ports/recipe-version";
 import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
@@ -193,6 +197,7 @@ import {
   type MiddlewareConsumer,
   Module,
   type NestModule,
+  type Provider,
 } from "@nestjs/common";
 import {
   InMemoryAttendancePolicyRepository,
@@ -203,6 +208,12 @@ import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
 import { CloudPreBillLink } from "#src/composition/cloud-pre-bill-link.js";
 import { ExcelRecipeWorkbook } from "#src/composition/excel-recipe-workbook.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import {
+  CatalogPublishedPurchaseFactor,
+  OrganizationInventoryLocationDirectory,
+  PostgresPurchaseAverageCost,
+  PurchaseAverageCost,
+} from "#src/composition/inventory-location-directory.js";
 import { MenuSitePrice } from "#src/composition/menu-site-price.js";
 import {
   MissingOriginalPaymentReader,
@@ -279,6 +290,7 @@ import {
   PrintingController,
   ReprintCap,
 } from "#src/http/printing.controller.js";
+import { PurchasingController } from "#src/http/purchasing.controller.js";
 import {
   QrPaymentController,
   QrTableAccess,
@@ -370,6 +382,7 @@ export interface CloudApplicationDependencies {
     typeof DrizzleStockLedgerRepository
   >[0];
   saleConsumptionEnabled?: boolean;
+  purchasingEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -393,6 +406,48 @@ const openStockLedger = (
     ledger,
     movements: new InMemoryStockMovementQueue(ledger),
     pointsOfSale: new InMemoryPointOfSaleDirectory(),
+  };
+};
+
+const openPurchasing = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): { controllers: (typeof PurchasingController)[]; providers: Provider[] } => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Purchasing requires PostgreSQL.");
+  }
+
+  const purchasing = new DrizzlePurchasingRepository(database);
+
+  return {
+    controllers: [PurchasingController],
+    providers: [
+      { provide: PurchasingRepository, useValue: purchasing },
+      {
+        provide: InventoryLocationDirectory,
+        useFactory: (organizations: OrganizationRepository) =>
+          new OrganizationInventoryLocationDirectory(organizations),
+        inject: [OrganizationRepository],
+      },
+      {
+        provide: PublishedPurchaseFactor,
+        useFactory: (
+          catalogs: RecipeCatalogRepository,
+          organizations: OrganizationRepository,
+        ) => new CatalogPublishedPurchaseFactor(catalogs, organizations),
+        inject: [RecipeCatalogRepository, OrganizationRepository],
+      },
+      {
+        provide: PurchaseAverageCost,
+        useValue: new PostgresPurchaseAverageCost(purchasing),
+      },
+    ],
   };
 };
 
@@ -472,6 +527,10 @@ export class ApplicationModule implements NestModule {
       : null;
     const stock = openStockLedger(dependencies.inventoryDatabase);
     const saleConsumptionEnabled = dependencies.saleConsumptionEnabled === true;
+    const purchasing = openPurchasing(
+      dependencies.inventoryDatabase,
+      dependencies.purchasingEnabled === true,
+    );
 
     return {
       module: ApplicationModule,
@@ -526,8 +585,10 @@ export class ApplicationModule implements NestModule {
         CashCountController,
         QrPaymentController,
         HealthController,
+        ...purchasing.controllers,
       ],
       providers: [
+        ...purchasing.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,

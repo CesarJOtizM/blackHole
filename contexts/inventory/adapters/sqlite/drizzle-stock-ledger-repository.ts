@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { createNodeSqliteDatabase } from "#adapters/sqlite/node-sqlite-database.js";
 import {
@@ -12,6 +12,7 @@ import {
 import { PointOfSaleDirectory } from "#application/ports/point-of-sale-directory.js";
 import {
   type AppendStock,
+  CONSUMPTION_ROLE,
   type ConsumptionRole,
   type LedgerLine,
   StockLedgerRepository,
@@ -22,7 +23,11 @@ import {
   type StockMovementEnvelope,
   StockMovementQueue,
 } from "#application/ports/stock-movement-queue.js";
-import type { MovementType } from "#domain/stock-ledger.js";
+import {
+  MOVEMENT_TYPE,
+  type MovementType,
+  onHandDelta,
+} from "#domain/stock-ledger.js";
 
 const INSERT_FAILED = "The stock movement insert failed.";
 
@@ -31,26 +36,67 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type MovementRow = typeof stockMovements.$inferSelect;
 type OutboxRow = typeof stockMovementOutbox.$inferSelect;
 
-const lineFromRow = (row: MovementRow): LedgerLine => ({
-  id: row.id,
-  tenantId: row.tenantId,
-  venueId: row.venueId,
-  locationId: row.locationId,
-  ingredientId: row.ingredientId,
-  quantity: row.quantity,
-  unitCost: row.unitCost,
-  type: row.movementType as MovementType,
-  reference: row.reference,
-  occurredAt: row.occurredAt,
-  orderLineId: row.orderLineId,
-  role: row.role as ConsumptionRole,
-  recipeVersion: row.recipeVersion,
-  reason: row.reason,
-  actorId: row.actorId,
-  ...(row.reversesMovementId === null
-    ? {}
-    : { reversesMovementId: row.reversesMovementId }),
-});
+const lineFromRow = (row: MovementRow): LedgerLine => {
+  if (
+    row.orderLineId === null ||
+    row.role === null ||
+    row.recipeVersion === null
+  ) {
+    throw new Error("A sale movement stores its order line.");
+  }
+
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    venueId: row.venueId,
+    locationId: row.locationId,
+    ingredientId: row.ingredientId,
+    quantity: row.quantity,
+    unitCost: row.unitCost,
+    type: row.movementType as MovementType,
+    reference: row.reference,
+    occurredAt: row.occurredAt,
+    orderLineId: row.orderLineId,
+    role: row.role as ConsumptionRole,
+    recipeVersion: row.recipeVersion,
+    reason: row.reason,
+    actorId: row.actorId,
+    ...(row.reversesMovementId === null
+      ? {}
+      : { reversesMovementId: row.reversesMovementId }),
+  };
+};
+
+const listedLine = (row: MovementRow): LedgerLine => {
+  if (
+    row.orderLineId !== null &&
+    row.role !== null &&
+    row.recipeVersion !== null
+  ) {
+    return lineFromRow(row);
+  }
+
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    venueId: row.venueId,
+    locationId: row.locationId,
+    ingredientId: row.ingredientId,
+    quantity: row.quantity,
+    unitCost: row.unitCost,
+    type: row.movementType as MovementType,
+    reference: row.reference,
+    occurredAt: row.occurredAt,
+    orderLineId: row.reference,
+    role: CONSUMPTION_ROLE.CONSUMPTION,
+    recipeVersion: 0,
+    reason: row.reason,
+    actorId: row.actorId,
+    ...(row.reversesMovementId === null
+      ? {}
+      : { reversesMovementId: row.reversesMovementId }),
+  };
+};
 
 const eventFromRow = (row: OutboxRow): StockMovedEvent => {
   if (row.lane !== STOCK_MOVEMENT_LANE) {
@@ -176,6 +222,26 @@ export class DrizzleStockLedgerRepository extends StockLedgerRepository {
         .limit(1);
 
       return rows.length === 1;
+    });
+  }
+
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]> {
+    return this.database.transaction(async (tx) => {
+      const rows = await tx
+        .select()
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.tenantId, tenantId),
+            eq(stockMovements.venueId, venueId),
+          ),
+        )
+        .orderBy(asc(stockMovements.position));
+
+      return rows.map(listedLine);
     });
   }
 
@@ -385,10 +451,52 @@ const nextQueuedPosition = async (tx: Transaction): Promise<number> => {
   return max + 1;
 };
 
+const postedQuantity = async (
+  tx: Transaction,
+  movement: LedgerLine,
+): Promise<number> => {
+  if (
+    movement.type !== MOVEMENT_TYPE.WASTE ||
+    movement.reversesMovementId === undefined
+  ) {
+    return movement.quantity;
+  }
+
+  const [consumed] = await tx
+    .select({
+      id: stockMovements.id,
+      ingredientId: stockMovements.ingredientId,
+      quantity: stockMovements.quantity,
+      movementType: stockMovements.movementType,
+    })
+    .from(stockMovements)
+    .where(
+      and(
+        eq(stockMovements.tenantId, movement.tenantId),
+        eq(stockMovements.id, movement.reversesMovementId),
+      ),
+    )
+    .limit(1);
+  const prior =
+    consumed?.movementType === MOVEMENT_TYPE.SALE_CONSUMPTION
+      ? [
+          {
+            id: consumed.id,
+            type: MOVEMENT_TYPE.SALE_CONSUMPTION,
+            ingredientId: consumed.ingredientId,
+            quantity: consumed.quantity,
+          },
+        ]
+      : [];
+
+  return onHandDelta(movement, prior);
+};
+
 const addBalance = async (
   tx: Transaction,
   movement: LedgerLine,
 ): Promise<void> => {
+  const delta = await postedQuantity(tx, movement);
   const [row] = await tx
     .select({ quantity: stockBalances.quantity })
     .from(stockBalances)
@@ -401,18 +509,26 @@ const addBalance = async (
     );
 
   if (row === undefined) {
-    await tx.insert(stockBalances).values({
-      tenantId: movement.tenantId,
-      locationId: movement.locationId,
-      ingredientId: movement.ingredientId,
-      quantity: movement.quantity,
-    });
+    await tx.run(sql`
+      insert into stock_balances (
+        tenant_id,
+        location_id,
+        ingredient_id,
+        quantity
+      )
+      values (
+        ${movement.tenantId},
+        ${movement.locationId},
+        ${movement.ingredientId},
+        ${delta}
+      )
+    `);
     return;
   }
 
   await tx
     .update(stockBalances)
-    .set({ quantity: row.quantity + movement.quantity })
+    .set({ quantity: row.quantity + delta })
     .where(
       and(
         eq(stockBalances.tenantId, movement.tenantId),

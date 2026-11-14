@@ -266,3 +266,67 @@ export const recipePublications = pgTable(
     }),
   ],
 );
+
+export const producibleIngredientIndex = pgTable(
+  "producible_ingredient_index",
+  {
+    tenantId: text("tenant_id").notNull(),
+    siteId: text("site_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    productId: text("product_id").notNull(),
+    variantId: text("variant_id").notNull(),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [
+        table.tenantId,
+        table.siteId,
+        table.ingredientId,
+        table.productId,
+        table.variantId,
+      ],
+    }),
+  ],
+);
+
+export const producibleQuantities = pgTable(
+  "producible_quantities",
+  {
+    tenantId: text("tenant_id").notNull(),
+    siteId: text("site_id").notNull(),
+    productId: text("product_id").notNull(),
+    variantId: text("variant_id").notNull(),
+    pointUnits: integer("point_units").notNull(),
+    replenishmentUnits: integer("replenishment_units").notNull(),
+    state: text("state").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.siteId, table.productId, table.variantId],
+    }),
+  ],
+);
+
+export const producibleLimitingIngredients = pgTable(
+  "producible_limiting_ingredients",
+  {
+    tenantId: text("tenant_id").notNull(),
+    siteId: text("site_id").notNull(),
+    productId: text("product_id").notNull(),
+    variantId: text("variant_id").notNull(),
+    position: integer("position").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [
+        table.tenantId,
+        table.siteId,
+        table.productId,
+        table.variantId,
+        table.position,
+      ],
+    }),
+  ],
+);

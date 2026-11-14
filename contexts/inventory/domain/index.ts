@@ -1,6 +1,23 @@
 export const layer = "domain" as const;
 
 export type {
+  BaseReceipt,
+  PurchaseOrderLineView,
+  PurchaseOrderStatus,
+  ReceivedLine,
+  Supplier,
+} from "#domain/purchasing.js";
+export {
+  DuplicateId,
+  InvalidPurchase,
+  OverReceipt,
+  PURCHASE_ORDER_STATUS,
+  PurchaseOrder,
+  PurchaseOrderClosed,
+  Purchasing,
+  toBaseReceipt,
+} from "#domain/purchasing.js";
+export type {
   BaseUnit,
   ExplodedQuantity,
   IngredientView,

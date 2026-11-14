@@ -1,5 +1,24 @@
 export type { ApplyRecipeCopyInput } from "#application/apply-recipe-copy/apply-recipe-copy.js";
 export { ApplyRecipeCopy } from "#application/apply-recipe-copy/apply-recipe-copy.js";
+export type { CancelPurchaseOrderInput } from "#application/cancel-purchase-order/cancel-purchase-order.js";
+export {
+  CancelPurchaseOrder,
+  PurchaseCancelChangedStock,
+  UnknownPurchaseOrder,
+} from "#application/cancel-purchase-order/cancel-purchase-order.js";
+export type {
+  CreatePurchaseOrderInput,
+  CreatePurchaseOrderLine,
+} from "#application/create-purchase-order/create-purchase-order.js";
+export {
+  CreatePurchaseOrder,
+  UnknownSupplier,
+} from "#application/create-purchase-order/create-purchase-order.js";
+export type { CreateSupplierInput } from "#application/create-supplier/create-supplier.js";
+export {
+  CreateSupplier,
+  DuplicateSupplierIdentification,
+} from "#application/create-supplier/create-supplier.js";
 export type { ExplodeRecipeInput } from "#application/explode-recipe/explode-recipe.js";
 export { ExplodeRecipe } from "#application/explode-recipe/explode-recipe.js";
 export type {
@@ -11,6 +30,15 @@ export {
   RecipeImportRejected,
 } from "#application/import-recipes/import-recipes.js";
 export type { RecipePublication } from "#application/ports/recipe-catalog-repository.js";
+export type {
+  PurchaseReceipt,
+  ReceivePurchaseInput,
+  ReceivePurchaseLine,
+} from "#application/receive-purchase/receive-purchase.js";
+export {
+  ReceivePurchase,
+  UnknownInventoryLocation,
+} from "#application/receive-purchase/receive-purchase.js";
 export type { RecordWasteInput } from "#application/record-waste/record-waste.js";
 export { RecordWaste } from "#application/record-waste/record-waste.js";
 export type {

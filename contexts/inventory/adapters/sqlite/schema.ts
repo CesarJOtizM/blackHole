@@ -142,9 +142,9 @@ export const stockMovements = sqliteTable(
     movementType: text("movement_type").notNull(),
     reference: text("reference").notNull(),
     occurredAt: text("occurred_at").notNull(),
-    orderLineId: text("order_line_id").notNull(),
-    role: text("role").notNull(),
-    recipeVersion: integer("recipe_version").notNull(),
+    orderLineId: text("order_line_id"),
+    role: text("role"),
+    recipeVersion: integer("recipe_version"),
     reason: text("reason"),
     actorId: text("actor_id"),
     reversesMovementId: text("reverses_movement_id"),
@@ -167,6 +167,7 @@ export const stockBalances = sqliteTable(
     locationId: text("location_id").notNull(),
     ingredientId: text("ingredient_id").notNull(),
     quantity: integer("quantity").notNull(),
+    averageCost: integer("average_cost").notNull().default(0),
   },
   (table) => [
     primaryKey({
