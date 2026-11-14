@@ -4,6 +4,7 @@ import type { MovementType } from "#domain/stock-ledger.js";
 export const CONSUMPTION_ROLE = {
   CONSUMPTION: "consumption",
   REVERSAL: "reversal",
+  OPERATIONAL_WASTE: "operational_waste",
 } as const;
 
 export type ConsumptionRole =
@@ -53,4 +54,9 @@ export abstract class StockLedgerRepository {
   ): Promise<boolean>;
 
   abstract append(input: AppendStock): Promise<void>;
+
+  abstract listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]>;
 }
