@@ -68,6 +68,25 @@ export {
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
 export type {
+  EscalationClock,
+  LevelEvaluation,
+  LevelSeverity,
+  ShortageKind,
+  StockLevels,
+} from "#domain/shortage-alert.js";
+export {
+  defineStockLevels,
+  ESCALATION_CLOCK,
+  escalationClock,
+  evaluateLevel,
+  InvalidStockLevels,
+  LEVEL_ACTION,
+  LEVEL_SEVERITY,
+  roundUpRestock,
+  SHORTAGE_KIND,
+  soldOut,
+} from "#domain/shortage-alert.js";
+export type {
   CountScope,
   FrozenCountLine,
   StockCountResult,

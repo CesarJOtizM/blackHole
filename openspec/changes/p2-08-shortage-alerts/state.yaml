@@ -3,10 +3,10 @@ roadmap_delivery: "2.8"
 roadmap_title: "Early shortage alert"
 phase: 2
 modules: [M4, M0]
-bounded_contexts: [inventory, platform, contracts, sync]
-apps: [api-cloud, local-node]
-status: specified
-artifacts: {proposal: done, specs: done, design: pending, tasks: pending, apply: pending, verify: pending, archive: pending}
+bounded_contexts: [inventory, platform, contracts]
+apps: [api-cloud, admin-web, venue-app]
+status: applying
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
 depends_on: [p0-05-roles-and-permissions, p0-06-audit, p2-02-sale-consumption, p2-03-purchasing, p2-05-warehouses-and-transfers, p2-07-producible-quantity]
 source_docs:
   - docs/roadmap.md

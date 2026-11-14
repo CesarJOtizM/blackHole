@@ -19,6 +19,8 @@ export {
   CreateSupplier,
   DuplicateSupplierIdentification,
 } from "#application/create-supplier/create-supplier.js";
+export type { EvaluateStockLevelsInput } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
+export { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 export type { ExplodeRecipeInput } from "#application/explode-recipe/explode-recipe.js";
 export { ExplodeRecipe } from "#application/explode-recipe/explode-recipe.js";
 export type {
@@ -29,6 +31,11 @@ export {
   ImportRecipes,
   RecipeImportRejected,
 } from "#application/import-recipes/import-recipes.js";
+export type { MarkAlertSeenInput } from "#application/mark-alert-seen/mark-alert-seen.js";
+export {
+  MarkAlertSeen,
+  ShortageAlertNotFound,
+} from "#application/mark-alert-seen/mark-alert-seen.js";
 export type { RecipePublication } from "#application/ports/recipe-catalog-repository.js";
 export type { ProjectProducibleQuantityInput } from "#application/project-producible-quantity/project-producible-quantity.js";
 export { ProjectProducibleQuantity } from "#application/project-producible-quantity/project-producible-quantity.js";
@@ -67,6 +74,11 @@ export type {
   SaleStockResult,
 } from "#application/register-sale-consumption/register-sale-consumption.js";
 export { RegisterSaleConsumption } from "#application/register-sale-consumption/register-sale-consumption.js";
+export type { ResolveAlertInput } from "#application/resolve-alert/resolve-alert.js";
+export {
+  ResolveAlert,
+  ResolveReasonRequired,
+} from "#application/resolve-alert/resolve-alert.js";
 export type { ReturnStockInput } from "#application/return-stock/return-stock.js";
 export {
   LineReversalConflict,
