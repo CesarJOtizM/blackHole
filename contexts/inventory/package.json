@@ -47,11 +47,15 @@
     "#application/create-purchase-order/*": "./application/create-purchase-order/*",
     "#application/create-supplier/*": "./application/create-supplier/*",
     "#application/receive-purchase/*": "./application/receive-purchase/*",
+    "#application/dispatch-transfer/*": "./application/dispatch-transfer/*",
+    "#application/request-transfer/*": "./application/request-transfer/*",
+    "#application/receive-transfer/*": "./application/receive-transfer/*",
     "#application/save-published-version/*": "./application/save-published-version/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
-    "#adapters/sqlite/*": "./adapters/sqlite/*"
+    "#adapters/sqlite/*": "./adapters/sqlite/*",
+    "#application/suggest-replenishment/*": "./application/suggest-replenishment/*"
   },
   "dependencies": {
     "@electric-sql/pglite": "catalog:",

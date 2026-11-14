@@ -61,3 +61,19 @@ export {
   StockLedger,
   UnknownMovement,
 } from "#domain/stock-ledger.js";
+export type {
+  DestinationAverage,
+  ReplenishmentLevels,
+  TransferLineView,
+  TransferMovement,
+  TransferReceipt,
+  TransferStatus,
+} from "#domain/transfer.js";
+export {
+  InsufficientOnHand,
+  InvalidTransfer,
+  suggestReplenishment,
+  TRANSFER_STATUS,
+  Transfer,
+  TransferNotInTransit,
+} from "#domain/transfer.js";
