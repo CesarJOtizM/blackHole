@@ -51,6 +51,7 @@
     "#application/dispatch-transfer/*": "./application/dispatch-transfer/*",
     "#application/request-transfer/*": "./application/request-transfer/*",
     "#application/receive-transfer/*": "./application/receive-transfer/*",
+    "#application/project-producible-quantity/*": "./application/project-producible-quantity/*",
     "#application/save-published-version/*": "./application/save-published-version/*",
     "#application/set-ingredient-category/*": "./application/set-ingredient-category/*",
     "#application/ports/*": "./application/ports/*",
