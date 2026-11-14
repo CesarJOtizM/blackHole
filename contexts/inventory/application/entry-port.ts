@@ -11,6 +11,18 @@ export {
   RecipeImportRejected,
 } from "#application/import-recipes/import-recipes.js";
 export type { RecipePublication } from "#application/ports/recipe-catalog-repository.js";
+export type { RecordWasteInput } from "#application/record-waste/record-waste.js";
+export { RecordWaste } from "#application/record-waste/record-waste.js";
+export type {
+  RegisterSaleConsumptionInput,
+  SaleStockResult,
+} from "#application/register-sale-consumption/register-sale-consumption.js";
+export { RegisterSaleConsumption } from "#application/register-sale-consumption/register-sale-consumption.js";
+export type { ReturnStockInput } from "#application/return-stock/return-stock.js";
+export {
+  LineReversalConflict,
+  ReturnStock,
+} from "#application/return-stock/return-stock.js";
 export type {
   CatalogCommand,
   CatalogLine,

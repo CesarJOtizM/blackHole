@@ -4,6 +4,7 @@ import {
   pgTable,
   primaryKey,
   text,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const ingredients = pgTable(
@@ -154,6 +155,101 @@ export const modifierDeltas = pgTable(
       ],
     }),
   ],
+);
+
+export const stockMovements = pgTable(
+  "stock_movements",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    position: integer("position").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitCost: integer("unit_cost").notNull(),
+    movementType: text("movement_type").notNull(),
+    reference: text("reference").notNull(),
+    occurredAt: text("occurred_at").notNull(),
+    orderLineId: text("order_line_id").notNull(),
+    role: text("role").notNull(),
+    recipeVersion: integer("recipe_version").notNull(),
+    reason: text("reason"),
+    actorId: text("actor_id"),
+    reversesMovementId: text("reverses_movement_id"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.id] }),
+    unique("stock_movements_line").on(
+      table.tenantId,
+      table.orderLineId,
+      table.role,
+      table.ingredientId,
+    ),
+  ],
+);
+
+export const stockBalances = pgTable(
+  "stock_balances",
+  {
+    tenantId: text("tenant_id").notNull(),
+    locationId: text("location_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    quantity: integer("quantity").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.locationId, table.ingredientId],
+    }),
+  ],
+);
+
+export const negativeStockAlerts = pgTable(
+  "negative_stock_alerts",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    balance: integer("balance").notNull(),
+    occurredAt: text("occurred_at").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.locationId, table.ingredientId],
+    }),
+  ],
+);
+
+export const stockMovementOutbox = pgTable(
+  "stock_movement_outbox",
+  {
+    tenantId: text("tenant_id").notNull(),
+    movementId: text("movement_id").notNull(),
+    position: integer("position").notNull(),
+    lane: text("lane").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitCost: integer("unit_cost").notNull(),
+    movementType: text("movement_type").notNull(),
+    orderLineId: text("order_line_id").notNull(),
+    recipeVersion: integer("recipe_version").notNull(),
+    occurredAt: text("occurred_at").notNull(),
+    role: text("role").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.movementId] })],
+);
+
+export const pointOfSaleLocations = pgTable(
+  "point_of_sale_locations",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.venueId] })],
 );
 
 export const recipePublications = pgTable(

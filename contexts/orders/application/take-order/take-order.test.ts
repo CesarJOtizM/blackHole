@@ -306,6 +306,24 @@ const stationFor = (
 const lineIds = (check: Check | null): string[] =>
   check?.orders.flatMap((order) => order.lines.map((line) => line.id)) ?? [];
 
+interface SaleConsumptionDouble {
+  saleConsumptionEnabled: boolean;
+  registerSaleConsumption: {
+    execute(input: {
+      tenantId: string;
+      venueId: string;
+      generation: number;
+      orderLineId: string;
+      productId: string;
+      variantIds: readonly string[];
+      modifierIds: readonly string[];
+      portions: number;
+      occurredAt: string;
+    }): Promise<{ missingRecipe: boolean }>;
+  };
+  generationOf(tenantId: string, venueId: string): Promise<number>;
+}
+
 const harness = async (
   productIds: readonly string[],
   output: StationOutput = "both",
@@ -316,6 +334,7 @@ const harness = async (
     grants: ConsumeAuthorization;
     audits: RecordAuditEvent;
   },
+  saleConsumption?: SaleConsumptionDouble,
 ) => {
   const menus = new MemoryMenus();
   const menu = publishedMenu();
@@ -334,18 +353,16 @@ const harness = async (
   stations.remember(TENANT_ID, stationFor(productIds, output));
   const printer = new MemoryPrinter();
   const hub = new MemoryHub();
-  const takeOrder =
-    printedCheck === undefined
-      ? new TakeOrder(dining, menus, stations, printer, new FixedClock(), hub)
-      : new TakeOrder(
-          dining,
-          menus,
-          stations,
-          printer,
-          new FixedClock(),
-          hub,
-          printedCheck,
-        );
+  const takeOrder = new TakeOrder(
+    dining,
+    menus,
+    stations,
+    printer,
+    new FixedClock(),
+    hub,
+    printedCheck,
+    saleConsumption,
+  );
   const saveTable = vi.spyOn(dining, "save");
   const saveCheck = vi.spyOn(dining, "saveCheck");
 
@@ -1077,4 +1094,193 @@ it("given a QR table line, when it is sent, then the kitchen job carries the qr_
     table: TABLE_ID,
     lines: [{ quantity: "1", name: "Soup" }],
   });
+});
+
+const GENERATION = 4;
+const SENT_AT_ISO = new Date(SENT_AT).toISOString();
+
+const fireCourse = {
+  tenantId: TENANT_ID,
+  brandId: BRAND_ID,
+  venueId: VENUE_ID,
+  checkId: CHECK_ID,
+  course: 1,
+};
+
+const holdLine = (
+  lineId: string,
+  productId: string,
+  name: string,
+  course: number,
+  variantIds?: readonly string[],
+  modifierIds?: readonly string[],
+) => ({
+  tenantId: TENANT_ID,
+  brandId: BRAND_ID,
+  venueId: VENUE_ID,
+  checkId: CHECK_ID,
+  line: {
+    orderId: ORDER_ID,
+    lineId,
+    productId,
+    name,
+    course,
+    channel: "waiter",
+    ...(variantIds === undefined ? {} : { variantIds: [...variantIds] }),
+    ...(modifierIds === undefined ? {} : { modifierIds: [...modifierIds] }),
+  },
+});
+
+const recordingConsumption = (
+  enabled: boolean,
+  missingRecipe = false,
+): {
+  sale: SaleConsumptionDouble;
+  calls: Array<{
+    orderLineId: string;
+    portions: number;
+    generation: number;
+    occurredAt: string;
+    variantIds: readonly string[];
+    modifierIds: readonly string[];
+    productId: string;
+  }>;
+  sequence: string[];
+} => {
+  const calls: Array<{
+    orderLineId: string;
+    portions: number;
+    generation: number;
+    occurredAt: string;
+    variantIds: readonly string[];
+    modifierIds: readonly string[];
+    productId: string;
+  }> = [];
+  const sequence: string[] = [];
+  const sale: SaleConsumptionDouble = {
+    saleConsumptionEnabled: enabled,
+    generationOf: async () => GENERATION,
+    registerSaleConsumption: {
+      execute: async (input) => {
+        sequence.push("consume");
+        calls.push(input);
+        return { missingRecipe };
+      },
+    },
+  };
+
+  return { sale, calls, sequence };
+};
+
+it("given held lines and sale consumption on, when the course is fired, then each line leaving held is consumed once with portions 1 after send and before save", async () => {
+  const { sale, calls, sequence } = recordingConsumption(true);
+  const { dining, takeOrder, saveCheck } = await harness(
+    [SOUP_ID, SODA_ID, STEAK_ID],
+    "both",
+    undefined,
+    sale,
+  );
+  const originalSend = Check.prototype.send;
+  const send = vi.spyOn(Check.prototype, "send").mockImplementation(function (
+    this: Check,
+    input: Parameters<Check["send"]>[0],
+  ) {
+    sequence.push("send");
+    return originalSend.call(this, input);
+  });
+
+  await takeOrder.hold(
+    holdLine("line_soup", SOUP_ID, "Soup", 1, [SINGLE_ID], [CHEESE_ID]),
+  );
+  await takeOrder.hold(holdLine("line_soda", SODA_ID, "Soda", 1));
+  await takeOrder.hold(holdLine("line_steak", STEAK_ID, "Steak", 2));
+  saveCheck.mockImplementation(async (check: Check) => {
+    sequence.push("save");
+    return MemoryDiningRoom.prototype.saveCheck.call(dining, check);
+  });
+
+  try {
+    await takeOrder.fire(fireCourse);
+
+    const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+    expect(sequence).toEqual(["send", "consume", "consume", "save"]);
+    expect(calls).toEqual([
+      {
+        tenantId: TENANT_ID,
+        venueId: VENUE_ID,
+        generation: GENERATION,
+        orderLineId: "line_soup",
+        productId: SOUP_ID,
+        variantIds: [SINGLE_ID],
+        modifierIds: [CHEESE_ID],
+        portions: 1,
+        occurredAt: SENT_AT_ISO,
+      },
+      {
+        tenantId: TENANT_ID,
+        venueId: VENUE_ID,
+        generation: GENERATION,
+        orderLineId: "line_soda",
+        productId: SODA_ID,
+        variantIds: [],
+        modifierIds: [],
+        portions: 1,
+        occurredAt: SENT_AT_ISO,
+      },
+    ]);
+    expect(stored?.orders.flatMap((order) => order.lines)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "line_soup", state: "sent" }),
+        expect.objectContaining({ id: "line_soda", state: "sent" }),
+        expect.objectContaining({ id: "line_steak", state: "held" }),
+      ]),
+    );
+
+    await expect(takeOrder.fire(fireCourse)).rejects.toBeInstanceOf(EmptyOrder);
+    expect(calls).toHaveLength(2);
+  } finally {
+    send.mockRestore();
+  }
+});
+
+it("given sale consumption off, when a held course is fired, then the inventory port is not called and the line is still sent", async () => {
+  const { sale, calls } = recordingConsumption(false);
+  const { dining, takeOrder } = await harness(
+    [SOUP_ID],
+    "both",
+    undefined,
+    sale,
+  );
+
+  await takeOrder.hold(holdLine("line_soup", SOUP_ID, "Soup", 1));
+  await takeOrder.fire(fireCourse);
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+  const soup = stored?.orders
+    .flatMap((order) => order.lines)
+    .find((line) => line.id === "line_soup");
+
+  expect(calls).toEqual([]);
+  expect(soup?.state).toBe("sent");
+});
+
+it("given a held line whose recipe is missing, when the course is fired, then the check is still saved", async () => {
+  const { sale, calls } = recordingConsumption(true, true);
+  const { dining, takeOrder, saveCheck } = await harness(
+    [SOUP_ID],
+    "both",
+    undefined,
+    sale,
+  );
+
+  await takeOrder.hold(holdLine("line_soup", SOUP_ID, "Soup", 1));
+  const saved = await takeOrder.fire(fireCourse);
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]?.orderLineId).toBe("line_soup");
+  expect(saved.orders[0]?.lines[0]?.state).toBe("sent");
+  expect(stored?.orders[0]?.lines[0]?.state).toBe("sent");
+  expect(saveCheck).toHaveBeenCalled();
 });

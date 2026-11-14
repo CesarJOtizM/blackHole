@@ -63,6 +63,7 @@
     "#adapters/postgres/*": "./adapters/postgres/*"
   },
   "dependencies": {
+    "@blackhole/inventory": "workspace:*",
     "@blackhole/platform": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "drizzle-orm": "catalog:"

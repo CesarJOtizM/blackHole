@@ -29,9 +29,22 @@ import {
   TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
 import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
+import {
+  ExplodeRecipe,
+  RecordWaste,
+  RegisterSaleConsumption,
+  ReturnStock,
+} from "@blackhole/inventory/application/entry-port";
+import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
+import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
 import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
+import { RecipeVersionReader } from "@blackhole/inventory/application/ports/recipe-version";
 import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
+import { ReferenceCostList } from "@blackhole/inventory/application/ports/reference-cost";
 import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
+import { StockAlertPublisher } from "@blackhole/inventory/application/ports/stock-alert-publisher";
+import { StockLedgerRepository } from "@blackhole/inventory/application/ports/stock-ledger-repository";
+import { StockMovementQueue } from "@blackhole/inventory/application/ports/stock-movement-queue";
 import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
@@ -480,12 +493,13 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
           SessionReader,
           IdentityReader,
           AuthorizationClock,
+          RegisterSaleConsumption,
         ],
       },
       {
         provide: VoidLine,
         useFactory: expect.any(Function),
-        inject: guardedInject,
+        inject: [...guardedInject, ReturnStock, RecordWaste],
       },
       {
         provide: VoidAccount,
@@ -852,6 +866,78 @@ it("given startup, when it is inspected, then there is no persistence dialect", 
         provide: RecipeVenueDirectory,
         useFactory: expect.any(Function),
         inject: [VenueDirectory],
+      },
+      {
+        provide: StockLedgerRepository,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: PointOfSaleDirectory,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: StockMovementQueue,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: OperationGeneration,
+        useFactory: expect.any(Function),
+        inject: [VenueOperationRepository],
+      },
+      {
+        provide: StockAlertPublisher,
+        useFactory: expect.any(Function),
+      },
+      {
+        provide: RecipeVersionReader,
+        useFactory: expect.any(Function),
+        inject: [RecipeCatalogRepository],
+      },
+      {
+        provide: ReferenceCostList,
+        useFactory: expect.any(Function),
+        inject: [RecipeCatalogRepository, OrganizationRepository],
+      },
+      {
+        provide: ExplodeRecipe,
+        useFactory: expect.any(Function),
+        inject: [RecipeCatalogRepository],
+      },
+      {
+        provide: RegisterSaleConsumption,
+        useFactory: expect.any(Function),
+        inject: [
+          ExplodeRecipe,
+          RecipeVersionReader,
+          ReferenceCostList,
+          RecipeVenueDirectory,
+          PointOfSaleDirectory,
+          OperationGeneration,
+          StockLedgerRepository,
+          StockAlertPublisher,
+          StockMovementQueue,
+        ],
+      },
+      {
+        provide: ReturnStock,
+        useFactory: expect.any(Function),
+        inject: [
+          OperationGeneration,
+          StockLedgerRepository,
+          StockMovementQueue,
+        ],
+      },
+      {
+        provide: RecordWaste,
+        useFactory: expect.any(Function),
+        inject: [
+          OperationGeneration,
+          StockLedgerRepository,
+          StockMovementQueue,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
       },
       {
         provide: QrTableAccess,

@@ -1,0 +1,247 @@
+import { StaleGeneration } from "@blackhole/platform/application/entry-port";
+import { expect, it } from "vitest";
+
+import { OperationGeneration } from "#application/ports/operation-generation.js";
+import {
+  type AppendStock,
+  CONSUMPTION_ROLE,
+  type LedgerLine,
+  StockLedgerRepository,
+} from "#application/ports/stock-ledger-repository.js";
+import type { StockMovementEnvelope } from "#application/ports/stock-movement-queue.js";
+import { StockMovementQueue } from "#application/ports/stock-movement-queue.js";
+import {
+  LineReversalConflict,
+  ReturnStock,
+} from "#application/return-stock/return-stock.js";
+import { QUANTITY_SCALE } from "#domain/recipe-catalog.js";
+import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
+
+const TENANT_ID = "organization_tenant_1";
+const VENUE_ID = "organization_venue_1";
+const LOCATION_ID = "location_point_of_sale";
+const BEEF_ID = "ingredient_beef";
+const CHEESE_ID = "ingredient_cheese";
+const LINE_ID = "order_line_burger";
+const GENERATION = 1;
+const SENT_AT = "2026-11-13T18:00:00.000Z";
+const RETURNED_AT = "2026-11-13T18:05:00.000Z";
+const BEEF_COST = 180_000;
+const CHEESE_COST = 90_000;
+const OTHER_COST = 1;
+
+const grams = (value: number): number => value * QUANTITY_SCALE;
+
+class MemoryLedger extends StockLedgerRepository {
+  readonly lines: LedgerLine[] = [];
+  private readonly balances = new Map<string, number>();
+
+  seed(line: LedgerLine): void {
+    this.lines.push(line);
+    const key = `${line.tenantId}:${line.locationId}:${line.ingredientId}`;
+    this.balances.set(key, (this.balances.get(key) ?? 0) + line.quantity);
+  }
+
+  override async findLine(
+    tenantId: string,
+    orderLineId: string,
+    role: LedgerLine["role"],
+  ): Promise<readonly LedgerLine[]> {
+    return this.lines.filter(
+      (line) =>
+        line.tenantId === tenantId &&
+        line.orderLineId === orderLineId &&
+        line.role === role,
+    );
+  }
+
+  override async balance(
+    tenantId: string,
+    locationId: string,
+    ingredientId: string,
+  ): Promise<number> {
+    return this.balances.get(`${tenantId}:${locationId}:${ingredientId}`) ?? 0;
+  }
+
+  override async hasOpenAlert(): Promise<boolean> {
+    return false;
+  }
+
+  override async append(input: AppendStock): Promise<void> {
+    for (const movement of input.movements) {
+      const key = `${movement.tenantId}:${movement.locationId}:${movement.ingredientId}`;
+      this.balances.set(key, (this.balances.get(key) ?? 0) + movement.quantity);
+      this.lines.push(movement);
+    }
+  }
+}
+
+class MemoryQueue extends StockMovementQueue {
+  readonly envelopes: StockMovementEnvelope[] = [];
+
+  override async enqueue(envelope: StockMovementEnvelope): Promise<void> {
+    this.envelopes.push(envelope);
+  }
+}
+
+class FixedGeneration extends OperationGeneration {
+  constructor(private readonly current: number) {
+    super();
+  }
+
+  override async assertCurrent(
+    _tenantId: string,
+    _venueId: string,
+    generation: number,
+  ): Promise<void> {
+    if (generation !== this.current) {
+      throw new StaleGeneration();
+    }
+  }
+}
+
+const consumption = (
+  ingredientId: string,
+  quantity: number,
+  unitCost: number,
+): LedgerLine => ({
+  id: `movement_${LINE_ID}_consumption_${ingredientId}`,
+  tenantId: TENANT_ID,
+  venueId: VENUE_ID,
+  locationId: LOCATION_ID,
+  ingredientId,
+  quantity,
+  unitCost,
+  type: MOVEMENT_TYPE.SALE_CONSUMPTION,
+  reference: LINE_ID,
+  occurredAt: SENT_AT,
+  orderLineId: LINE_ID,
+  role: CONSUMPTION_ROLE.CONSUMPTION,
+  recipeVersion: 4,
+  reason: null,
+  actorId: null,
+});
+
+const command = (generation = GENERATION) => ({
+  tenantId: TENANT_ID,
+  venueId: VENUE_ID,
+  generation,
+  orderLineId: LINE_ID,
+  productId: "product_burger",
+  variantIds: [] as readonly string[],
+  modifierIds: [] as readonly string[],
+  portions: 2,
+  occurredAt: RETURNED_AT,
+});
+
+const build = () => {
+  const ledger = new MemoryLedger();
+  const queue = new MemoryQueue();
+  const restore = new ReturnStock(
+    new FixedGeneration(GENERATION),
+    ledger,
+    queue,
+  );
+
+  return { ledger, queue, restore };
+};
+
+it("given a line consumed at version 4, when it is returned after that version was current, then the stored quantities and unit cost are restored", async () => {
+  const { ledger, queue, restore } = build();
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+  ledger.seed(consumption(CHEESE_ID, grams(-60), CHEESE_COST));
+
+  const result = await restore.execute(command());
+
+  expect(result).toEqual({ missingRecipe: false });
+  const returns = ledger.lines.filter(
+    (line) => line.type === MOVEMENT_TYPE.SALE_RETURN,
+  );
+  expect(returns).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        ingredientId: BEEF_ID,
+        quantity: grams(300),
+        unitCost: BEEF_COST,
+        recipeVersion: 4,
+        role: CONSUMPTION_ROLE.REVERSAL,
+        occurredAt: RETURNED_AT,
+        reversesMovementId: `movement_${LINE_ID}_consumption_${BEEF_ID}`,
+      }),
+      expect.objectContaining({
+        ingredientId: CHEESE_ID,
+        quantity: grams(60),
+        unitCost: CHEESE_COST,
+        recipeVersion: 4,
+      }),
+    ]),
+  );
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, BEEF_ID)).toBe(0);
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, CHEESE_ID)).toBe(0);
+  expect(queue.envelopes).toHaveLength(2);
+  for (const envelope of queue.envelopes) {
+    expect(envelope.lane).toBe("after_sales");
+    expect(envelope.key).toBe(envelope.event.movementId);
+    expect(envelope.event.recipeVersion).toBe(4);
+    expect(envelope.event.unitCost).toBe(
+      envelope.event.ingredientId === BEEF_ID ? BEEF_COST : CHEESE_COST,
+    );
+  }
+});
+
+it("given a void already returned, when it is redelivered, then no extra return is recorded", async () => {
+  const { ledger, queue, restore } = build();
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+  await restore.execute(command());
+  const movements = ledger.lines.length;
+  const queued = queue.envelopes.length;
+
+  const result = await restore.execute(command());
+
+  expect(result).toEqual({ missingRecipe: false });
+  expect(ledger.lines).toHaveLength(movements);
+  expect(queue.envelopes).toHaveLength(queued);
+});
+
+it("given the line was already reversed as waste, when a return is requested, then LineReversalConflict carries the stored unit cost and nothing is written", async () => {
+  const { ledger, queue, restore } = build();
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+  ledger.seed({
+    id: `movement_${LINE_ID}_reversal_${BEEF_ID}`,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    locationId: LOCATION_ID,
+    ingredientId: BEEF_ID,
+    quantity: grams(-300),
+    unitCost: OTHER_COST,
+    type: MOVEMENT_TYPE.WASTE,
+    reference: LINE_ID,
+    occurredAt: RETURNED_AT,
+    orderLineId: LINE_ID,
+    role: CONSUMPTION_ROLE.REVERSAL,
+    recipeVersion: 4,
+    reason: "customer left",
+    actorId: "user_cook",
+  });
+  const movements = ledger.lines.length;
+
+  const pending = restore.execute(command());
+
+  await expect(pending).rejects.toBeInstanceOf(LineReversalConflict);
+  await expect(pending).rejects.toMatchObject({ unitCost: BEEF_COST });
+  expect(ledger.lines).toHaveLength(movements);
+  expect(
+    ledger.lines.some((line) => line.type === MOVEMENT_TYPE.SALE_RETURN),
+  ).toBe(false);
+  expect(queue.envelopes).toHaveLength(0);
+});
+
+it("given the current generation, when a return arrives with another generation, then StaleGeneration is thrown and nothing is written", async () => {
+  const { ledger, restore } = build();
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+
+  await expect(restore.execute(command(GENERATION + 1))).rejects.toBeInstanceOf(
+    StaleGeneration,
+  );
+  expect(ledger.lines).toHaveLength(1);
+});

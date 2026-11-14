@@ -584,6 +584,9 @@ importers:
 
   contexts/orders:
     dependencies:
+      '@blackhole/inventory':
+        specifier: workspace:*
+        version: link:../inventory
       '@blackhole/platform':
         specifier: workspace:*
         version: link:../platform

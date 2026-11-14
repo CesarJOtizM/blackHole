@@ -289,6 +289,63 @@ const lineState = (check: Check | null, lineId: string): LineState | null =>
     .flatMap((order) => order.lines)
     .find((line) => line.id === lineId)?.state ?? null;
 
+interface StockCommand {
+  tenantId: string;
+  venueId: string;
+  generation: number;
+  orderLineId: string;
+  productId: string;
+  variantIds: readonly string[];
+  modifierIds: readonly string[];
+  portions: number;
+  occurredAt: string;
+  actorId?: string;
+  reason?: string;
+  recipeVersion?: number;
+}
+
+interface SaleReversalDouble {
+  saleConsumptionEnabled: boolean;
+  returnStock: {
+    execute(input: StockCommand): Promise<{ missingRecipe: boolean }>;
+  };
+  recordWaste: {
+    execute(input: StockCommand): Promise<{ missingRecipe: boolean }>;
+  };
+  generationOf(tenantId: string, venueId: string): Promise<number>;
+}
+
+const GENERATION = 4;
+
+const recordingReversal = (
+  enabled: boolean,
+): {
+  sale: SaleReversalDouble;
+  returns: StockCommand[];
+  wastes: StockCommand[];
+} => {
+  const returns: StockCommand[] = [];
+  const wastes: StockCommand[] = [];
+  const sale: SaleReversalDouble = {
+    saleConsumptionEnabled: enabled,
+    generationOf: async () => GENERATION,
+    returnStock: {
+      execute: async (input) => {
+        returns.push(input);
+        return { missingRecipe: false };
+      },
+    },
+    recordWaste: {
+      execute: async (input) => {
+        wastes.push(input);
+        return { missingRecipe: false };
+      },
+    },
+  };
+
+  return { sale, returns, wastes };
+};
+
 const harness = async (
   check: Check,
   options: {
@@ -297,6 +354,7 @@ const harness = async (
     open: boolean;
     grant: StoredGrant | null;
   },
+  sale?: SaleReversalDouble,
 ) => {
   const steps: string[] = [];
   const dining = new MemoryDiningRoom(steps);
@@ -317,7 +375,15 @@ const harness = async (
     permissions,
     grants,
     audits,
-    voidLine: new VoidLine(dining, shifts, counts, permissions, grants, audits),
+    voidLine: new VoidLine(
+      dining,
+      shifts,
+      counts,
+      permissions,
+      grants,
+      audits,
+      sale,
+    ),
   };
 };
 
@@ -393,21 +459,27 @@ it("given a held line and 2 of 3 allowed voids this shift, when the waiter voids
   expect(grants.calls).toEqual([]);
 });
 
-it("given a line in preparation or later, when the waiter voids it without authorization, then the line stays", async () => {
+it("given a line in preparation or later, when the waiter voids it within the cap, then the line leaves on the after-kitchen permission", async () => {
   for (const state of ["in_preparation", "ready", "delivered"] as const) {
-    const { dining, steps, grants, audits, voidLine } = await harness(
-      openCheck(state),
-      withinCap,
-    );
+    const { dining, steps, permissions, grants, audits, voidLine } =
+      await harness(openCheck(state), withinCap);
 
     await voidLine.execute(command());
 
     const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
-    expect(lineState(stored, LINE_ID)).toBe(state);
+    expect(lineState(stored, LINE_ID)).toBeNull();
     expect(lineState(stored, OTHER_LINE_ID)).toBe("held");
+    expect(permissions.inputs[0]).toMatchObject({
+      permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+      value: 12_000,
+    });
     expect(grants.calls).toEqual([]);
-    expect(audits.commands).toEqual([]);
-    expect(steps).toEqual([]);
+    expect(audits.commands[0]).toMatchObject({
+      action: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+      reason: REASON,
+      after: { kitchen: "after", value: 12_000, shiftId: SHIFT_ID },
+    });
+    expect(steps).toEqual(["count", "evaluate", "save", "audit"]);
   }
 });
 
@@ -537,4 +609,174 @@ it("given a sent QR table line, when the waiter voids it within the cap, then it
   expect(permissions.inputs[0]?.permission).toBe(
     PERMISSION.SALE_VOID_BEFORE_KITCHEN,
   );
+});
+
+const sentWithRecipe = (): Check => {
+  const check = Check.open({
+    id: CHECK_ID,
+    tenantId: TENANT_ID,
+    venueId: VENUE_ID,
+    tableId: TABLE_ID,
+    openedAt: OPENED_AT,
+  });
+
+  check.addLine({
+    orderId: ORDER_ID,
+    lineId: LINE_ID,
+    productId: "menu_product_soup",
+    name: "Soup",
+    course: 1,
+    price: 12_000,
+    channel: "waiter",
+    variantIds: ["menu_variant_single"],
+    modifierIds: ["menu_modifier_extra_cheese"],
+  });
+  check.addLine({
+    orderId: ORDER_ID,
+    lineId: OTHER_LINE_ID,
+    productId: "menu_product_bread",
+    name: "Bread",
+    course: 2,
+    price: 4_000,
+    channel: "waiter",
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+
+  return check;
+};
+
+it("given a sent line and sale consumption on, when the waiter voids it before the kitchen starts, then stock is returned for the stored line and waste is not recorded", async () => {
+  const { sale, returns, wastes } = recordingReversal(true);
+  const { dining, voidLine } = await harness(sentWithRecipe(), withinCap, sale);
+
+  await voidLine.execute(command());
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+  expect(lineState(stored, LINE_ID)).toBeNull();
+  expect(returns).toEqual([
+    expect.objectContaining({
+      tenantId: TENANT_ID,
+      venueId: VENUE_ID,
+      generation: GENERATION,
+      orderLineId: LINE_ID,
+      productId: "menu_product_soup",
+      variantIds: ["menu_variant_single"],
+      modifierIds: ["menu_modifier_extra_cheese"],
+      portions: 1,
+    }),
+  ]);
+  expect(returns[0]).not.toHaveProperty("recipeVersion");
+  expect(returns[0]).not.toHaveProperty("actorId");
+  expect(wastes).toEqual([]);
+});
+
+it("given a line the kitchen already started and sale consumption on, when the waiter voids it, then waste records the reason and actor and stock is not returned", async () => {
+  for (const state of ["in_preparation", "ready", "delivered"] as const) {
+    const { sale, returns, wastes } = recordingReversal(true);
+    const { dining, permissions, audits, voidLine } = await harness(
+      openCheck(state),
+      withinCap,
+      sale,
+    );
+
+    await voidLine.execute(command());
+
+    const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+    expect(lineState(stored, LINE_ID)).toBeNull();
+    expect(permissions.inputs[0]).toMatchObject({
+      permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+      value: 12_000,
+    });
+    expect(returns).toEqual([]);
+    expect(wastes).toEqual([
+      expect.objectContaining({
+        orderLineId: LINE_ID,
+        productId: "menu_product_soup",
+        portions: 1,
+        generation: GENERATION,
+        actorId: WAITER_ID,
+        reason: REASON,
+        variantIds: [],
+        modifierIds: [],
+      }),
+    ]);
+    expect(wastes[0]).not.toHaveProperty("recipeVersion");
+    expect(audits.commands[0]).toMatchObject({
+      actorId: WAITER_ID,
+      action: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+      reason: REASON,
+      after: { kitchen: "after", value: 12_000, shiftId: SHIFT_ID },
+    });
+  }
+});
+
+it("given a held line and sale consumption on, when the waiter voids it, then the ledger is not called", async () => {
+  const { sale, returns, wastes } = recordingReversal(true);
+  const { dining, voidLine } = await harness(
+    openCheck("held"),
+    withinCap,
+    sale,
+  );
+
+  await voidLine.execute(command());
+
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+  expect(lineState(stored, LINE_ID)).toBeNull();
+  expect(returns).toEqual([]);
+  expect(wastes).toEqual([]);
+});
+
+it("given sale consumption off, when a sent line or a started line is voided, then the inventory port is skipped", async () => {
+  const sent = recordingReversal(false);
+  const sentHarness = await harness(openCheck("sent"), withinCap, sent.sale);
+
+  await sentHarness.voidLine.execute(command());
+
+  const sentStored = await sentHarness.dining.loadCheck(
+    TENANT_ID,
+    VENUE_ID,
+    CHECK_ID,
+  );
+
+  expect(lineState(sentStored, LINE_ID)).toBeNull();
+  expect(sent.returns).toEqual([]);
+  expect(sent.wastes).toEqual([]);
+
+  const started = recordingReversal(false);
+  const startedHarness = await harness(
+    openCheck("in_preparation"),
+    withinCap,
+    started.sale,
+  );
+
+  await startedHarness.voidLine.execute(command());
+
+  const startedStored = await startedHarness.dining.loadCheck(
+    TENANT_ID,
+    VENUE_ID,
+    CHECK_ID,
+  );
+
+  expect(lineState(startedStored, LINE_ID)).toBeNull();
+  expect(lineState(startedStored, OTHER_LINE_ID)).toBe("held");
+  expect(startedHarness.permissions.inputs[0]).toMatchObject({
+    permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+    value: 12_000,
+  });
+  expect(startedHarness.steps).toEqual([
+    "count",
+    "evaluate",
+    "save",
+    "audit",
+  ]);
+  expect(startedHarness.audits.commands[0]).toMatchObject({
+    action: PERMISSION.SALE_VOID_AFTER_KITCHEN,
+    reason: REASON,
+    after: { kitchen: "after", value: 12_000, shiftId: SHIFT_ID },
+  });
+  expect(started.returns).toEqual([]);
+  expect(started.wastes).toEqual([]);
 });
