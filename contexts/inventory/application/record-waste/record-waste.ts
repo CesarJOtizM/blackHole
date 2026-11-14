@@ -150,6 +150,7 @@ const wastedLines = (
       recipeVersion: line.recipeVersion,
       reason: input.reason,
       actorId: input.actorId,
+      reversesMovementId: line.id,
     });
   }
 

@@ -2,6 +2,8 @@ import { expect, it } from "vitest";
 
 import {
   BASE_UNIT,
+  InvalidQuantity,
+  MissingOutputQuantity,
   QUANTITY_SCALE,
   RecipeCatalog,
   RecipeCycle,
@@ -32,6 +34,13 @@ const BECHAMEL_RECIPE_ID = "recipe_bechamel";
 const LASAGNA_RECIPE_ID = "recipe_lasagna";
 const SAUCE_A_ID = "recipe_sauce_a";
 const SAUCE_B_ID = "recipe_sauce_b";
+const TOMATO_ID = "ingredient_tomato";
+const TOMATO_SAUCE_ID = "recipe_tomato_sauce";
+const TOMATO_SAUCE_PRODUCT_ID = "product_tomato_sauce";
+const PASTA_PRODUCT_ID = "product_pasta";
+const PASTA_RECIPE_ID = "recipe_pasta";
+const PREP_RECIPE_ID = "recipe_service_prep";
+const PREP_PRODUCT_ID = "product_service_prep";
 
 const EXTRA_CHEESE_ID = "modifier_extra_cheese";
 const NO_ONION_ID = "modifier_no_onion";
@@ -405,4 +414,152 @@ it("given version 3 is current, when an owner publishes a change, then version 4
     { ingredientId: ONION_ID, quantity: 10 * QUANTITY_SCALE },
   ]);
   expect(catalog.publishedVersion(4).authorId).toBe(EDITOR_ID);
+});
+
+it("given a preparation uses a stocked sauce and a non-stocked bechamel, when explodePreparation runs, then the sauce stays collapsed on the id explode returns and bechamel expands", () => {
+  const catalog = openCatalog();
+  catalog.upsertIngredient(gramIngredient(TOMATO_ID, "tomato"));
+  catalog.upsertIngredient(gramIngredient(ONION_ID, "onion"));
+  catalog.upsertIngredient(gramIngredient(BUTTER_ID, "butter"));
+  catalog.upsertRecipe({
+    id: TOMATO_SAUCE_ID,
+    name: "tomato sauce",
+    productId: TOMATO_SAUCE_PRODUCT_ID,
+    outputQuantity: 5000,
+    lines: [
+      {
+        kind: "ingredient",
+        ingredientId: TOMATO_ID,
+        netQuantity: 6000,
+        yieldPercent: 100,
+      },
+      {
+        kind: "ingredient",
+        ingredientId: ONION_ID,
+        netQuantity: 500,
+        yieldPercent: 100,
+      },
+    ],
+  });
+  catalog.upsertRecipe({
+    id: BECHAMEL_RECIPE_ID,
+    name: "bechamel",
+    productId: "product_bechamel",
+    lines: [
+      {
+        kind: "ingredient",
+        ingredientId: BUTTER_ID,
+        netQuantity: 40,
+        yieldPercent: 100,
+      },
+    ],
+  });
+  catalog.upsertRecipe({
+    id: PASTA_RECIPE_ID,
+    name: "pasta",
+    productId: PASTA_PRODUCT_ID,
+    lines: [
+      {
+        kind: "recipe",
+        recipeId: TOMATO_SAUCE_ID,
+        netQuantity: 80,
+        yieldPercent: 100,
+        stocked: true,
+      },
+    ],
+  });
+  catalog.upsertRecipe({
+    id: PREP_RECIPE_ID,
+    name: "service prep",
+    productId: PREP_PRODUCT_ID,
+    outputQuantity: 1,
+    lines: [
+      {
+        kind: "recipe",
+        recipeId: TOMATO_SAUCE_ID,
+        netQuantity: 80,
+        yieldPercent: 100,
+        stocked: true,
+      },
+      {
+        kind: "recipe",
+        recipeId: BECHAMEL_RECIPE_ID,
+        netQuantity: 2,
+        yieldPercent: 100,
+        stocked: false,
+      },
+    ],
+  });
+
+  catalog.publish({ authorId: AUTHOR_ID });
+
+  const sold = catalog.explode({ productId: PASTA_PRODUCT_ID });
+  const prepared = catalog.explodePreparation({ recipeId: PREP_RECIPE_ID });
+  const sauce = catalog
+    .publishedVersion(1)
+    .recipes.find((recipe) => recipe.id === TOMATO_SAUCE_ID);
+
+  expect(sold).toEqual([
+    { ingredientId: TOMATO_SAUCE_ID, quantity: 80 * QUANTITY_SCALE },
+  ]);
+  expect(sold.some((line) => line.ingredientId === TOMATO_ID)).toBe(false);
+  expect(prepared).toEqual([
+    { ingredientId: BUTTER_ID, quantity: 80 * QUANTITY_SCALE },
+    { ingredientId: TOMATO_SAUCE_ID, quantity: 80 * QUANTITY_SCALE },
+  ]);
+  expect(
+    prepared.find((line) => line.ingredientId === sold[0]?.ingredientId)
+      ?.ingredientId,
+  ).toBe(TOMATO_SAUCE_ID);
+  expect(
+    prepared.some((line) => line.ingredientId === BECHAMEL_RECIPE_ID),
+  ).toBe(false);
+  expect(catalog.explodePreparation({ recipeId: TOMATO_SAUCE_ID })).toEqual([
+    { ingredientId: ONION_ID, quantity: 500 * QUANTITY_SCALE },
+    { ingredientId: TOMATO_ID, quantity: 6000 * QUANTITY_SCALE },
+  ]);
+  expect(sauce?.outputQuantity).toBe(5000 * QUANTITY_SCALE);
+});
+
+it("given a recipe without outputQuantity, when explodePreparation is called, then it is rejected and product explode still expands the recipe", () => {
+  const catalog = openCatalog();
+  catalog.upsertIngredient(gramIngredient(BUTTER_ID, "butter"));
+  catalog.upsertRecipe({
+    id: BECHAMEL_RECIPE_ID,
+    name: "bechamel",
+    productId: "product_bechamel",
+    lines: [
+      {
+        kind: "ingredient",
+        ingredientId: BUTTER_ID,
+        netQuantity: 40,
+        yieldPercent: 100,
+      },
+    ],
+  });
+  catalog.publish({ authorId: AUTHOR_ID });
+
+  const explodePreparation = () => {
+    catalog.explodePreparation({ recipeId: BECHAMEL_RECIPE_ID });
+  };
+
+  expect(catalog.explode({ productId: "product_bechamel" })).toEqual([
+    { ingredientId: BUTTER_ID, quantity: 40 * QUANTITY_SCALE },
+  ]);
+  expect(explodePreparation).toThrow(MissingOutputQuantity);
+});
+
+it("given a preparation, when outputQuantity is 0, then the recipe is rejected", () => {
+  const catalog = openCatalog();
+  const save = () => {
+    catalog.upsertRecipe({
+      id: TOMATO_SAUCE_ID,
+      name: "tomato sauce",
+      productId: TOMATO_SAUCE_PRODUCT_ID,
+      outputQuantity: 0,
+      lines: [],
+    });
+  };
+
+  expect(save).toThrow(InvalidQuantity);
 });
