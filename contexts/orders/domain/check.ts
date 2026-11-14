@@ -10,17 +10,21 @@ const LINE_STATE = {
   IN_PREPARATION: "in_preparation",
   READY: "ready",
   DELIVERED: "delivered",
+  NOT_DELIVERED: "not_delivered",
 } as const;
 
 export type LineState = (typeof LINE_STATE)[keyof typeof LINE_STATE];
 
-const LINE_RANK: Record<LineState, number> = {
+const LINE_RANK: Record<Exclude<LineState, "not_delivered">, number> = {
   held: 0,
   sent: 1,
   in_preparation: 2,
   ready: 3,
   delivered: 4,
 };
+
+const lineRank = (state: LineState): number | undefined =>
+  state === LINE_STATE.NOT_DELIVERED ? undefined : LINE_RANK[state];
 
 const ORDER_CHANNEL = {
   WAITER: "waiter",
@@ -90,6 +94,17 @@ interface AdvanceLine {
   stationId?: string;
 }
 
+interface WithdrawUncoveredSent {
+  productId: string;
+  uncoveredPortions: number;
+  at: string;
+}
+
+interface MarkNotDeliverable {
+  lineId: string;
+  at: string;
+}
+
 interface JoinCheck {
   source: Check;
   sourceState: TableState;
@@ -119,6 +134,7 @@ interface StoredLine {
   inPreparationAt?: string;
   readyAt?: string;
   deliveredAt?: string;
+  notDeliveredAt?: string;
   stationId?: string;
 }
 
@@ -143,6 +159,7 @@ interface ListedLine {
   inPreparationAt?: string;
   readyAt?: string;
   deliveredAt?: string;
+  notDeliveredAt?: string;
   stationId?: string;
 }
 
@@ -225,6 +242,13 @@ export class LineTransitionRejected extends Error {
   constructor() {
     super("A line only moves forward one step.");
     this.name = "LineTransitionRejected";
+  }
+}
+
+export class UndeliverableLineRejected extends Error {
+  constructor() {
+    super("Only a line in preparation or ready can be marked not deliverable.");
+    this.name = "UndeliverableLineRejected";
   }
 }
 
@@ -368,7 +392,11 @@ export class Check {
   get total(): number {
     return this.orderList
       .flatMap((order) => order.lines)
-      .filter((line) => line.state !== LINE_STATE.HELD)
+      .filter(
+        (line) =>
+          line.state !== LINE_STATE.HELD &&
+          line.state !== LINE_STATE.NOT_DELIVERED,
+      )
       .reduce((sum, line) => sum + line.price, 0);
   }
 
@@ -505,9 +533,15 @@ export class Check {
       throw new InvalidLineId();
     }
 
-    const nextRank = LINE_RANK[line.state] + 1;
+    const currentRank = lineRank(line.state);
+    const requestedRank = lineRank(input.state);
 
-    if (line.state === LINE_STATE.HELD || LINE_RANK[input.state] !== nextRank) {
+    if (
+      currentRank === undefined ||
+      requestedRank === undefined ||
+      line.state === LINE_STATE.HELD ||
+      requestedRank !== currentRank + 1
+    ) {
       throw new LineTransitionRejected();
     }
 
@@ -534,6 +568,60 @@ export class Check {
     }
 
     line.deliveredAt = input.at;
+  }
+
+  withdrawUncoveredSent(input: WithdrawUncoveredSent): void {
+    if (
+      !Number.isFinite(input.uncoveredPortions) ||
+      input.uncoveredPortions < 1
+    ) {
+      return;
+    }
+
+    const candidates = this.orderList
+      .flatMap((order) => order.lines)
+      .map((line, index) => ({ line, index }))
+      .filter(
+        ({ line }) =>
+          line.productId === input.productId &&
+          line.state === LINE_STATE.SENT,
+      )
+      .sort((left, right) => {
+        const byTime = (left.line.sentAt ?? "").localeCompare(
+          right.line.sentAt ?? "",
+        );
+
+        return byTime === 0 ? left.index - right.index : byTime;
+      });
+    let remaining = input.uncoveredPortions;
+
+    for (const { line } of candidates) {
+      if (remaining < 1) {
+        return;
+      }
+
+      this.recordNotDelivered(line, input.at);
+      remaining -= 1;
+    }
+  }
+
+  markNotDeliverable(input: MarkNotDeliverable): void {
+    assertPrefixed(input.lineId, LINE_ID_PREFIX, () => new InvalidLineId());
+
+    const line = this.findLine(input.lineId);
+
+    if (!line) {
+      throw new InvalidLineId();
+    }
+
+    if (
+      line.state !== LINE_STATE.IN_PREPARATION &&
+      line.state !== LINE_STATE.READY
+    ) {
+      throw new UndeliverableLineRejected();
+    }
+
+    this.recordNotDelivered(line, input.at);
   }
 
   join(input: JoinCheck): void {
@@ -670,6 +758,11 @@ export class Check {
     return this.locateLine(lineId)?.line;
   }
 
+  private recordNotDelivered(line: StoredLine, at: string): void {
+    line.state = LINE_STATE.NOT_DELIVERED;
+    line.notDeliveredAt = at;
+  }
+
   private presentLine(line: StoredLine): ListedLine {
     return {
       id: line.id,
@@ -694,6 +787,9 @@ export class Check {
       ...(line.deliveredAt === undefined
         ? {}
         : { deliveredAt: line.deliveredAt }),
+      ...(line.notDeliveredAt === undefined
+        ? {}
+        : { notDeliveredAt: line.notDeliveredAt }),
       ...(line.stationId === undefined ? {} : { stationId: line.stationId }),
     };
   }

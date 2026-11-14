@@ -23,7 +23,11 @@ const OPENED_AT = "2026-10-28T12:00:00Z";
 const SENT_AT = "2026-10-28T12:03:10Z";
 const PREPARED_AT = "2026-10-28T12:05:00Z";
 const READY_AT = "2026-10-28T12:11:00Z";
+const DELIVERED_AT = "2026-10-28T12:15:00Z";
 const LATER_SENT_AT = "2026-10-28T12:20:00Z";
+const NOT_DELIVERED_AT = "2026-10-28T12:30:00Z";
+const RIBS_ID = "menu_product_ribs";
+const SALAD_ID = "menu_product_salad";
 
 const openTableCheck = () =>
   Check.open({
@@ -51,6 +55,27 @@ const addCourseLine = (
     orderId: input.orderId,
     lineId: input.lineId,
     productId: `menu_product_${input.name.toLowerCase()}`,
+    name: input.name,
+    course: 1,
+    price: input.price,
+    channel: "waiter",
+  });
+};
+
+const addProductLine = (
+  check: Check,
+  input: {
+    orderId: string;
+    lineId: string;
+    productId: string;
+    name: string;
+    price: number;
+  },
+) => {
+  check.addLine({
+    orderId: input.orderId,
+    lineId: input.lineId,
+    productId: input.productId,
     name: input.name,
     course: 1,
     price: input.price,
@@ -663,4 +688,390 @@ it("given soup at 12000, when the new price is not an integer or the line is unk
     check.changePrice({ lineId: "line_missing", price: 9_000 });
   }).toThrow(InvalidLineId);
   expect(check.orders[0]?.lines.map((line) => line.price)).toEqual([12_000]);
+});
+
+it("given ribs sent at 12:20 and ribs sent at 12:03, when one uncovered portion is withdrawn, then the older line is not delivered and the total skips it", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: "order_late",
+    lineId: "line_late",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 18_000,
+  });
+  check.send({ course: 1, sentAt: LATER_SENT_AT });
+  addProductLine(check, {
+    orderId: "order_early",
+    lineId: "line_early",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 22_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+
+  check.withdrawUncoveredSent({
+    productId: RIBS_ID,
+    uncoveredPortions: 1,
+    at: NOT_DELIVERED_AT,
+  });
+
+  expect(check.orders[1]?.lines[0]).toEqual({
+    id: "line_early",
+    productId: RIBS_ID,
+    name: "Ribs",
+    course: 1,
+    price: 22_000,
+    state: "not_delivered",
+    originTableId: TABLE_ID,
+    sentAt: SENT_AT,
+    notDeliveredAt: NOT_DELIVERED_AT,
+  });
+  expect(check.orders[0]?.lines[0]).toMatchObject({
+    id: "line_late",
+    state: "sent",
+    sentAt: LATER_SENT_AT,
+    price: 18_000,
+  });
+  expect(check.total).toBe(18_000);
+  expect(check.readyNotices).toEqual([]);
+  expect(Object.hasOwn(check, "stockMovements")).toBe(false);
+  expect(Object.hasOwn(check.orders[1]?.lines[0] ?? {}, "stockMovement")).toBe(
+    false,
+  );
+});
+
+it("given two ribs sent together, when one uncovered portion is withdrawn, then the earlier line is not delivered", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_first",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 10_000,
+  });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_second",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 14_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+
+  check.withdrawUncoveredSent({
+    productId: RIBS_ID,
+    uncoveredPortions: 1,
+    at: NOT_DELIVERED_AT,
+  });
+
+  expect(check.orders[0]?.lines.map((line) => line.state)).toEqual([
+    "not_delivered",
+    "sent",
+  ]);
+  expect(check.total).toBe(14_000);
+});
+
+it("given sent ribs and no uncovered portion, when withdrawal runs, then every sent line stays and the total stays", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_ribs",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 22_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  const before = { orders: check.orders, total: check.total };
+
+  check.withdrawUncoveredSent({
+    productId: RIBS_ID,
+    uncoveredPortions: 0,
+    at: NOT_DELIVERED_AT,
+  });
+
+  expect(check.orders).toEqual(before.orders);
+  expect(check.total).toBe(before.total);
+  expect(check.total).toBe(22_000);
+});
+
+it("given sent, in preparation, ready, delivered, and held ribs, when uncovered portions are withdrawn, then started and held lines stay", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_sent",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 10_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_prep",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 11_000,
+  });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_ready",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 12_000,
+  });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_delivered",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 13_000,
+  });
+  addProductLine(check, {
+    orderId: "order_salad",
+    lineId: "line_salad",
+    productId: SALAD_ID,
+    name: "Salad",
+    price: 8_000,
+  });
+  check.send({ course: 1, sentAt: LATER_SENT_AT });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_held",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 9_000,
+  });
+  check.advance({
+    lineId: "line_prep",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({
+    lineId: "line_ready",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({ lineId: "line_ready", state: "ready", at: READY_AT });
+  check.advance({
+    lineId: "line_delivered",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({ lineId: "line_delivered", state: "ready", at: READY_AT });
+  check.advance({
+    lineId: "line_delivered",
+    state: "delivered",
+    at: DELIVERED_AT,
+  });
+
+  check.withdrawUncoveredSent({
+    productId: RIBS_ID,
+    uncoveredPortions: 4,
+    at: NOT_DELIVERED_AT,
+  });
+
+  expect(
+    check.orders[0]?.lines.map((line) => ({ id: line.id, state: line.state })),
+  ).toEqual([
+    { id: "line_sent", state: "not_delivered" },
+    { id: "line_prep", state: "in_preparation" },
+    { id: "line_ready", state: "ready" },
+    { id: "line_delivered", state: "delivered" },
+    { id: "line_held", state: "held" },
+  ]);
+  expect(check.orders[1]?.lines[0]).toMatchObject({
+    id: "line_salad",
+    state: "sent",
+    price: 8_000,
+  });
+  expect(check.orders[0]?.lines[0]).toMatchObject({
+    sentAt: SENT_AT,
+    notDeliveredAt: NOT_DELIVERED_AT,
+  });
+  expect(check.orders[0]?.lines[1]).toMatchObject({
+    state: "in_preparation",
+    inPreparationAt: PREPARED_AT,
+  });
+  expect(check.orders[0]?.lines[2]).toMatchObject({
+    state: "ready",
+    readyAt: READY_AT,
+  });
+  expect(check.orders[0]?.lines[3]).toMatchObject({
+    state: "delivered",
+    deliveredAt: DELIVERED_AT,
+  });
+  expect(check.total).toBe(44_000);
+  expect(Object.hasOwn(check, "stockMovements")).toBe(false);
+});
+
+it("given ribs in preparation and ribs ready, when the station cannot finish them, then those lines are not delivered and delivered or sent lines stay", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_sent",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 10_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_prep",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 11_000,
+  });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_ready",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 12_000,
+  });
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_delivered",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 13_000,
+  });
+  check.send({ course: 1, sentAt: LATER_SENT_AT });
+  check.advance({
+    lineId: "line_prep",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({
+    lineId: "line_ready",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({ lineId: "line_ready", state: "ready", at: READY_AT });
+  check.advance({
+    lineId: "line_delivered",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+  check.advance({ lineId: "line_delivered", state: "ready", at: READY_AT });
+  check.advance({
+    lineId: "line_delivered",
+    state: "delivered",
+    at: DELIVERED_AT,
+  });
+  const kept = {
+    sent: check.orders[0]?.lines[0],
+    delivered: check.orders[0]?.lines[3],
+    notices: check.readyNotices,
+  };
+
+  check.markNotDeliverable({ lineId: "line_prep", at: NOT_DELIVERED_AT });
+  check.markNotDeliverable({ lineId: "line_ready", at: NOT_DELIVERED_AT });
+
+  expect(check.orders[0]?.lines[1]).toEqual({
+    id: "line_prep",
+    productId: RIBS_ID,
+    name: "Ribs",
+    course: 1,
+    price: 11_000,
+    state: "not_delivered",
+    originTableId: TABLE_ID,
+    sentAt: LATER_SENT_AT,
+    inPreparationAt: PREPARED_AT,
+    notDeliveredAt: NOT_DELIVERED_AT,
+  });
+  expect(check.orders[0]?.lines[2]).toMatchObject({
+    id: "line_ready",
+    state: "not_delivered",
+    sentAt: LATER_SENT_AT,
+    inPreparationAt: PREPARED_AT,
+    readyAt: READY_AT,
+    notDeliveredAt: NOT_DELIVERED_AT,
+  });
+  expect(check.total).toBe(23_000);
+  expect(check.readyNotices).toEqual(kept.notices);
+  expect(() => {
+    check.markNotDeliverable({
+      lineId: "line_delivered",
+      at: NOT_DELIVERED_AT,
+    });
+  }).toThrow(expect.objectContaining({ name: "UndeliverableLineRejected" }));
+  expect(() => {
+    check.markNotDeliverable({ lineId: "line_sent", at: NOT_DELIVERED_AT });
+  }).toThrow(expect.objectContaining({ name: "UndeliverableLineRejected" }));
+  expect(check.orders[0]?.lines[0]).toEqual(kept.sent);
+  expect(check.orders[0]?.lines[3]).toEqual(kept.delivered);
+  expect(() => {
+    check.advance({ lineId: "line_prep", state: "ready", at: READY_AT });
+  }).toThrow(LineTransitionRejected);
+  expect(check.orders[0]?.lines[1]?.state).toBe("not_delivered");
+  expect(Object.hasOwn(check.orders[0]?.lines[1] ?? {}, "stockMovement")).toBe(
+    false,
+  );
+});
+
+it("given a sent rib, when advance targets not delivered, then LineTransitionRejected and the line still moves one rank", () => {
+  const check = openTableCheck();
+  addProductLine(check, {
+    orderId: ORDER_ID,
+    lineId: "line_ribs",
+    productId: RIBS_ID,
+    name: "Ribs",
+    price: 22_000,
+  });
+  check.send({ course: 1, sentAt: SENT_AT });
+  const sent = check.orders;
+
+  expect(() => {
+    check.advance({
+      lineId: "line_ribs",
+      state: "not_delivered",
+      at: NOT_DELIVERED_AT,
+    });
+  }).toThrow(LineTransitionRejected);
+  expect(check.orders).toEqual(sent);
+
+  check.advance({
+    lineId: "line_ribs",
+    state: "in_preparation",
+    at: PREPARED_AT,
+  });
+
+  expect(check.orders[0]?.lines[0]?.state).toBe("in_preparation");
+  expect(() => {
+    check.advance({
+      lineId: "line_ribs",
+      state: "not_delivered",
+      at: NOT_DELIVERED_AT,
+    });
+  }).toThrow(LineTransitionRejected);
+  expect(check.orders[0]?.lines[0]?.state).toBe("in_preparation");
+
+  check.advance({ lineId: "line_ribs", state: "ready", at: READY_AT });
+
+  expect(() => {
+    check.advance({
+      lineId: "line_ribs",
+      state: "not_delivered",
+      at: NOT_DELIVERED_AT,
+    });
+  }).toThrow(LineTransitionRejected);
+
+  check.advance({
+    lineId: "line_ribs",
+    state: "delivered",
+    at: DELIVERED_AT,
+  });
+
+  expect(check.orders[0]?.lines[0]).toMatchObject({
+    state: "delivered",
+    deliveredAt: DELIVERED_AT,
+  });
+  expect(check.total).toBe(22_000);
+  expect(() => {
+    check.advance({
+      lineId: "line_ribs",
+      state: "not_delivered",
+      at: NOT_DELIVERED_AT,
+    });
+  }).toThrow(LineTransitionRejected);
+  expect(check.orders[0]?.lines[0]?.state).toBe("delivered");
 });

@@ -6,6 +6,8 @@ export {
   PurchaseCancelChangedStock,
   UnknownPurchaseOrder,
 } from "#application/cancel-purchase-order/cancel-purchase-order.js";
+export type { ConfirmNoRestockTodayInput } from "#application/confirm-no-restock-today/confirm-no-restock-today.js";
+export { ConfirmNoRestockToday } from "#application/confirm-no-restock-today/confirm-no-restock-today.js";
 export type {
   CreatePurchaseOrderInput,
   CreatePurchaseOrderLine,
@@ -39,6 +41,11 @@ export {
 export type { RecipePublication } from "#application/ports/recipe-catalog-repository.js";
 export type { ProjectProducibleQuantityInput } from "#application/project-producible-quantity/project-producible-quantity.js";
 export { ProjectProducibleQuantity } from "#application/project-producible-quantity/project-producible-quantity.js";
+export type {
+  ProposeNoRestockTodayInput,
+  ProposeNoRestockTodayResult,
+} from "#application/propose-no-restock-today/propose-no-restock-today.js";
+export { ProposeNoRestockToday } from "#application/propose-no-restock-today/propose-no-restock-today.js";
 export type {
   PurchaseReceipt,
   ReceivePurchaseInput,
@@ -74,6 +81,8 @@ export type {
   SaleStockResult,
 } from "#application/register-sale-consumption/register-sale-consumption.js";
 export { RegisterSaleConsumption } from "#application/register-sale-consumption/register-sale-consumption.js";
+export type { RemoveNoRestockTodayInput } from "#application/remove-no-restock-today/remove-no-restock-today.js";
+export { RemoveNoRestockToday } from "#application/remove-no-restock-today/remove-no-restock-today.js";
 export type { ResolveAlertInput } from "#application/resolve-alert/resolve-alert.js";
 export {
   ResolveAlert,

@@ -60,7 +60,8 @@
     "#application/void-line/*": "./application/void-line/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
-    "#adapters/postgres/*": "./adapters/postgres/*"
+    "#adapters/postgres/*": "./adapters/postgres/*",
+    "#application/withdraw-unstarted-lines/*": "./application/withdraw-unstarted-lines/*"
   },
   "dependencies": {
     "@blackhole/inventory": "workspace:*",

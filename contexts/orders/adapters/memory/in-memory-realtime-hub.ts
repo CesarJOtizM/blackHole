@@ -4,7 +4,7 @@ import {
 } from "#application/ports/realtime-hub.js";
 
 const cloneNotice = (notice: RealtimeNotice): RealtimeNotice => {
-  if (notice.kind === "ids") {
+  if (notice.kind === "ids" || notice.kind === "not_restocked") {
     return { ...notice, lineIds: [...notice.lineIds] };
   }
 
