@@ -36,11 +36,23 @@ export interface BillingDataReceived {
   tableId: string;
 }
 
+export interface NotRestocked {
+  kind: "not_restocked";
+  tenantId: string;
+  venueId: string;
+  checkId: string;
+  tableId: string;
+  productId: string;
+  lineIds: readonly string[];
+  at: string;
+}
+
 export type RealtimeNotice =
   | OrderIds
   | PrinterFailed
   | LineReady
-  | BillingDataReceived;
+  | BillingDataReceived
+  | NotRestocked;
 
 export abstract class RealtimeHub {
   abstract publish(notice: RealtimeNotice): Promise<void>;

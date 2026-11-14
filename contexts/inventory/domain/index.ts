@@ -1,5 +1,6 @@
 export const layer = "domain" as const;
 
+export { NoRestockToday } from "#domain/no-restock-today.js";
 export type {
   OperationalWaste,
   WasteReason,

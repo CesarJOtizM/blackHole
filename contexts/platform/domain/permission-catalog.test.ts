@@ -75,6 +75,8 @@ const expectedMatrix: Record<PermissionCode, Record<MatrixRole, Grant>> = {
   [PERMISSION.INVENTORY_RECEIVE_PURCHASE]: cells(Y, Y, Y, N, N, N, Y, Y),
   [PERMISSION.INVENTORY_RECEIVE_TRANSFER]: cells(Y, Y, Y, N, N, N, A, A),
   [PERMISSION.INVENTORY_REQUEST_REPLENISHMENT]: cells(Y, Y, Y, Y, N, N, Y, Y),
+  [PERMISSION.INVENTORY_CONFIRM_NO_RESTOCK]: cells(Y, Y, Y, N, N, N, Y, N),
+  [PERMISSION.INVENTORY_REMOVE_NO_RESTOCK]: cells(Y, Y, Y, N, N, N, Y, N),
   [PERMISSION.RECIPE_EDIT]: cells(Y, Y, N, N, N, N, N, N),
   [PERMISSION.INVENTORY_VIEW_COST]: cells(Y, Y, Y, N, N, N, N, N),
   [PERMISSION.INVENTORY_CONFIGURE_LEVELS]: cells(Y, Y, Y, N, N, N, L, L),
@@ -121,6 +123,23 @@ for (const permission of Object.values(PERMISSION)) {
     }
   });
 }
+
+it("given inventory.confirm-no-restock, when the default matrix is read, then owner, general manager, site administrator, and kitchen chief are yes", () => {
+  const code = "inventory.confirm-no-restock" as PermissionCode;
+
+  expect(PERMISSION.INVENTORY_CONFIRM_NO_RESTOCK).toBe(code);
+  expect(permissionMatrix[code]).toEqual(cells(Y, Y, Y, N, N, N, Y, N));
+});
+
+it("given inventory.remove-no-restock, when the default matrix is read, then the same roles are yes", () => {
+  const code = "inventory.remove-no-restock" as PermissionCode;
+
+  expect(PERMISSION.INVENTORY_REMOVE_NO_RESTOCK).toBe(code);
+  expect(permissionMatrix[code]).toEqual(
+    permissionMatrix[PERMISSION.INVENTORY_CONFIRM_NO_RESTOCK],
+  );
+  expect(permissionMatrix[code]).toEqual(cells(Y, Y, Y, N, N, N, Y, N));
+});
 
 it("given tax.configure, when every matrix role is read, then only the owner is yes", () => {
   expect(PERMISSION.TAX_CONFIGURE).toBe("tax.configure");
