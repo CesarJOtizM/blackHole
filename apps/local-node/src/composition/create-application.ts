@@ -9,19 +9,22 @@ import {
 
 import {
   ApplicationModule,
-  registerRecipeCopies,
+  type NodeStockLedger,
+  registerNodeDependencies,
 } from "#src/composition/application-module.js";
 
 export interface NodeApplicationDependencies {
   recipeCopies?: RecipeCopyRepository;
+  stock?: NodeStockLedger;
 }
 
 export async function createApplication(
   dependencies: NodeApplicationDependencies = {},
 ): Promise<NestFastifyApplication> {
-  const root = dependencies.recipeCopies
-    ? registerRecipeCopies(dependencies.recipeCopies)
-    : ApplicationModule;
+  const root =
+    dependencies.recipeCopies || dependencies.stock
+      ? registerNodeDependencies(dependencies)
+      : ApplicationModule;
   const application = await NestFactory.create<NestFastifyApplication>(
     root,
     new FastifyAdapter(),

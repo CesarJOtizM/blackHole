@@ -228,6 +228,12 @@ export {
   sensitiveActionEnvelope,
 } from "#contracts/sensitive-actions.js";
 export {
+  type NegativeStockOpened,
+  negativeStockOpened,
+  type StockMoved,
+  stockMoved,
+} from "#contracts/stock-movement.js";
+export {
   type AdjustTipSettlementCommand,
   adjustTipSettlementCommand,
   type ClosedTipSettlement,

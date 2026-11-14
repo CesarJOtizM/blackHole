@@ -1,3 +1,8 @@
+import type {
+  RecordWasteInput,
+  ReturnStockInput,
+  SaleStockResult,
+} from "@blackhole/inventory/application/entry-port";
 import {
   type ConsumeAuthorization,
   type CountExecutedOperations,
@@ -32,6 +37,21 @@ export interface VoidLineInput {
   reason: string;
   authorizationId: string | null;
 }
+
+export interface SaleReversal {
+  saleConsumptionEnabled: boolean;
+  returnStock: {
+    execute(input: ReturnStockInput): Promise<SaleStockResult>;
+  };
+  recordWaste: {
+    execute(input: RecordWasteInput): Promise<SaleStockResult>;
+  };
+  generationOf(tenantId: string, venueId: string): Promise<number>;
+}
+
+type VoidPermission =
+  | typeof PERMISSION.SALE_VOID_BEFORE_KITCHEN
+  | typeof PERMISSION.SALE_VOID_AFTER_KITCHEN;
 
 const beforeKitchen = (state: LineState): boolean =>
   state === "held" || state === "sent";
@@ -83,6 +103,7 @@ export class VoidLine {
     private readonly permissions: EvaluatePermission,
     private readonly grants: ConsumeAuthorization,
     private readonly audits: RecordAuditEvent,
+    private readonly saleConsumption?: SaleReversal,
   ) {}
 
   async execute(input: VoidLineInput): Promise<Check> {
@@ -93,10 +114,12 @@ export class VoidLine {
       throw new InvalidLineId();
     }
 
-    if (!beforeKitchen(line.state)) {
-      return check;
-    }
-
+    const afterStart = !beforeKitchen(line.state);
+    const permission = afterStart
+      ? PERMISSION.SALE_VOID_AFTER_KITCHEN
+      : PERMISSION.SALE_VOID_BEFORE_KITCHEN;
+    const value = afterStart ? line.price : VOID_VALUE;
+    const kitchen = afterStart ? "after" : "before";
     const open = await this.shifts.isOpen({
       tenantId: input.tenantId,
       venueId: input.venueId,
@@ -115,9 +138,9 @@ export class VoidLine {
     const decision = await this.permissions.execute({
       tenantId: input.tenantId,
       sessionId: input.sessionId,
-      permission: PERMISSION.SALE_VOID_BEFORE_KITCHEN,
+      permission,
       target: { kind: "site", id: input.venueId, brandId: null },
-      value: VOID_VALUE,
+      value,
       supportGrantId: null,
       shiftTotals,
     });
@@ -127,15 +150,22 @@ export class VoidLine {
     }
 
     if (decision.outcome === "requires_authorization") {
-      const consumed = await this.consumeGrant(input);
+      const consumed = await this.consumeGrant(input, permission, value);
 
       if (!consumed) {
         return check;
       }
     }
 
-    const state = line.state;
+    const stockLine = {
+      state: line.state,
+      productId: line.productId,
+      variantIds: [...(line.variantIds ?? [])],
+      modifierIds: [...(line.modifierIds ?? [])],
+    };
+
     detachLine(check, input.lineId);
+    await this.reverseConsumption(input, stockLine);
     await this.diningRoom.saveCheck(check);
     await this.audits.execute({
       tenantId: input.tenantId,
@@ -143,13 +173,13 @@ export class VoidLine {
       authorizerId: input.authorizerId,
       deviceId: input.deviceId,
       siteId: input.venueId,
-      action: PERMISSION.SALE_VOID_BEFORE_KITCHEN,
+      action: permission,
       entity: input.lineId,
-      before: { state },
+      before: { state: stockLine.state },
       after: {
-        value: VOID_VALUE,
+        value,
         shiftId: input.shiftId,
-        kitchen: "before",
+        kitchen,
       },
       reason: input.reason,
     });
@@ -157,7 +187,51 @@ export class VoidLine {
     return check;
   }
 
-  private async consumeGrant(input: VoidLineInput): Promise<boolean> {
+  private async reverseConsumption(
+    input: VoidLineInput,
+    line: {
+      state: LineState;
+      productId: string;
+      variantIds: readonly string[];
+      modifierIds: readonly string[];
+    },
+  ): Promise<void> {
+    const sale = this.saleConsumption;
+
+    if (sale?.saleConsumptionEnabled !== true || line.state === "held") {
+      return;
+    }
+
+    const generation = await sale.generationOf(input.tenantId, input.venueId);
+    const command = {
+      tenantId: input.tenantId,
+      venueId: input.venueId,
+      generation,
+      orderLineId: input.lineId,
+      productId: line.productId,
+      variantIds: [...line.variantIds],
+      modifierIds: [...line.modifierIds],
+      portions: 1,
+      occurredAt: new Date().toISOString(),
+    };
+
+    if (line.state === "sent") {
+      await sale.returnStock.execute(command);
+      return;
+    }
+
+    await sale.recordWaste.execute({
+      ...command,
+      actorId: input.actorId,
+      reason: input.reason,
+    });
+  }
+
+  private async consumeGrant(
+    input: VoidLineInput,
+    permission: VoidPermission,
+    value: number,
+  ): Promise<boolean> {
     if (input.authorizationId === null) {
       return false;
     }
@@ -166,9 +240,9 @@ export class VoidLine {
       return await this.grants.execute({
         tenantId: input.tenantId,
         authorizationId: input.authorizationId,
-        permission: PERMISSION.SALE_VOID_BEFORE_KITCHEN,
+        permission,
         targetId: input.lineId,
-        value: VOID_VALUE,
+        value,
       });
     } catch (error: unknown) {
       if (error instanceof UnknownAuthorizationReference) {

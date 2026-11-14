@@ -25,6 +25,7 @@
     "recipe-catalog.ts",
     "reporting.ts",
     "sensitive-actions.ts",
+    "stock-movement.ts",
     "tips.ts",
     "update-structure.ts"
   ]

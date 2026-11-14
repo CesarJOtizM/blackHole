@@ -23,3 +23,12 @@ export {
   UnknownRecipeVersion,
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
+export type { MovementType, StockMovement } from "#domain/stock-ledger.js";
+export {
+  MOVEMENT_TYPE,
+  MovementAlreadyReversed,
+  MovementImmutable,
+  MovementTypeNotWritable,
+  StockLedger,
+  UnknownMovement,
+} from "#domain/stock-ledger.js";

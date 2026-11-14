@@ -42,9 +42,32 @@ import {
 } from "@blackhole/cash-register/application/entry-port";
 import type { NumberingRangeAssignment } from "@blackhole/contracts";
 import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
+import {
+  InMemoryPointOfSaleDirectory,
+  InMemoryStockLedgerRepository,
+  InMemoryStockMovementQueue,
+} from "@blackhole/inventory/adapters/memory/in-memory-stock-ledger-repository";
+import {
+  DrizzlePointOfSaleDirectory,
+  DrizzleStockLedgerRepository,
+  DrizzleStockMovementQueue,
+} from "@blackhole/inventory/adapters/postgres/drizzle-stock-ledger-repository";
+import {
+  ExplodeRecipe,
+  RecordWaste,
+  RegisterSaleConsumption,
+  ReturnStock,
+} from "@blackhole/inventory/application/entry-port";
+import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
+import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
 import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
+import { RecipeVersionReader } from "@blackhole/inventory/application/ports/recipe-version";
 import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
+import { ReferenceCostList } from "@blackhole/inventory/application/ports/reference-cost";
 import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
+import { StockAlertPublisher } from "@blackhole/inventory/application/ports/stock-alert-publisher";
+import { StockLedgerRepository } from "@blackhole/inventory/application/ports/stock-ledger-repository";
+import { StockMovementQueue } from "@blackhole/inventory/application/ports/stock-movement-queue";
 import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
@@ -208,6 +231,13 @@ import {
   VenueOpenShift,
 } from "#src/composition/reporting-facts.js";
 import {
+  CatalogRecipeVersionReader,
+  CatalogReferenceCostList,
+  currentGeneration,
+  StoredStockAlertPublisher,
+  VenueOperationGeneration,
+} from "#src/composition/sale-consumption.js";
+import {
   PendingSalePrinter,
   RecordedDrawerAudit,
 } from "#src/composition/sale-receipt.js";
@@ -336,7 +366,35 @@ export interface CloudApplicationDependencies {
   structurePrinters?: StructurePrinters;
   paidAccounts?: PaidAccountReader;
   originalPayments?: OriginalPaymentReader;
+  inventoryDatabase?: ConstructorParameters<
+    typeof DrizzleStockLedgerRepository
+  >[0];
+  saleConsumptionEnabled?: boolean;
 }
+
+const openStockLedger = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+) => {
+  if (database) {
+    const ledger = new DrizzleStockLedgerRepository(database);
+
+    return {
+      ledger,
+      movements: new DrizzleStockMovementQueue(ledger),
+      pointsOfSale: new DrizzlePointOfSaleDirectory(database),
+    };
+  }
+
+  const ledger = new InMemoryStockLedgerRepository();
+
+  return {
+    ledger,
+    movements: new InMemoryStockMovementQueue(ledger),
+    pointsOfSale: new InMemoryPointOfSaleDirectory(),
+  };
+};
 
 class OrdersClockAdapter extends OrdersClock {
   constructor(private readonly source: Clock) {
@@ -412,6 +470,8 @@ export class ApplicationModule implements NestModule {
     const qrTable = dependencies.ordersDatabase
       ? postgresQrTable(dependencies.ordersDatabase)
       : null;
+    const stock = openStockLedger(dependencies.inventoryDatabase);
+    const saleConsumptionEnabled = dependencies.saleConsumptionEnabled === true;
 
     return {
       module: ApplicationModule,
@@ -811,6 +871,7 @@ export class ApplicationModule implements NestModule {
             sessions: SessionReader,
             identities: IdentityReader,
             authorizationClock: AuthorizationClock,
+            registerSaleConsumption: RegisterSaleConsumption,
           ) =>
             new TakeOrder(
               diningRoom,
@@ -834,6 +895,12 @@ export class ApplicationModule implements NestModule {
                 ),
                 audits: new RecordAuditEvent(audits, digests, clock),
               },
+              {
+                saleConsumptionEnabled,
+                registerSaleConsumption,
+                generationOf: (_tenantId, venueId) =>
+                  currentGeneration(dependencies.venueOperations, venueId),
+              },
             ),
           inject: [
             DiningRoomRepository,
@@ -850,6 +917,7 @@ export class ApplicationModule implements NestModule {
             SessionReader,
             IdentityReader,
             AuthorizationClock,
+            RegisterSaleConsumption,
           ],
         },
         {
@@ -864,6 +932,8 @@ export class ApplicationModule implements NestModule {
             sessions: SessionReader,
             identities: IdentityReader,
             authorizationClock: AuthorizationClock,
+            returnStock: ReturnStock,
+            recordWaste: RecordWaste,
           ) =>
             new VoidLine(
               diningRoom,
@@ -877,6 +947,13 @@ export class ApplicationModule implements NestModule {
               ),
               new ConsumeAuthorization(authorizations, authorizationClock),
               new RecordAuditEvent(audits, digests, clock),
+              {
+                saleConsumptionEnabled,
+                returnStock,
+                recordWaste,
+                generationOf: (_tenantId, venueId) =>
+                  currentGeneration(dependencies.venueOperations, venueId),
+              },
             ),
           inject: [
             DiningRoomRepository,
@@ -888,6 +965,8 @@ export class ApplicationModule implements NestModule {
             SessionReader,
             IdentityReader,
             AuthorizationClock,
+            ReturnStock,
+            RecordWaste,
           ],
         },
         {
@@ -1616,6 +1695,122 @@ export class ApplicationModule implements NestModule {
           useFactory: (venues: VenueDirectory) =>
             new OrdersRecipeVenueDirectory(venues),
           inject: [VenueDirectory],
+        },
+        {
+          provide: StockLedgerRepository,
+          useFactory: () => stock.ledger,
+        },
+        {
+          provide: PointOfSaleDirectory,
+          useFactory: () => stock.pointsOfSale,
+        },
+        {
+          provide: StockMovementQueue,
+          useFactory: () => stock.movements,
+        },
+        {
+          provide: OperationGeneration,
+          useFactory: (operations: VenueOperationRepository) =>
+            new VenueOperationGeneration(operations),
+          inject: [VenueOperationRepository],
+        },
+        {
+          provide: StockAlertPublisher,
+          useFactory: () => new StoredStockAlertPublisher(),
+        },
+        {
+          provide: RecipeVersionReader,
+          useFactory: (catalogs: RecipeCatalogRepository) =>
+            new CatalogRecipeVersionReader(catalogs),
+          inject: [RecipeCatalogRepository],
+        },
+        {
+          provide: ReferenceCostList,
+          useFactory: (
+            catalogs: RecipeCatalogRepository,
+            organizations: OrganizationRepository,
+          ) => new CatalogReferenceCostList(catalogs, organizations),
+          inject: [RecipeCatalogRepository, OrganizationRepository],
+        },
+        {
+          provide: ExplodeRecipe,
+          useFactory: (catalogs: RecipeCatalogRepository) =>
+            new ExplodeRecipe(catalogs),
+          inject: [RecipeCatalogRepository],
+        },
+        {
+          provide: RegisterSaleConsumption,
+          useFactory: (
+            recipes: ExplodeRecipe,
+            versions: RecipeVersionReader,
+            costs: ReferenceCostList,
+            venues: RecipeVenueDirectory,
+            pointsOfSale: PointOfSaleDirectory,
+            generations: OperationGeneration,
+            ledger: StockLedgerRepository,
+            alerts: StockAlertPublisher,
+            queue: StockMovementQueue,
+          ) =>
+            new RegisterSaleConsumption(
+              recipes,
+              versions,
+              costs,
+              venues,
+              pointsOfSale,
+              generations,
+              ledger,
+              alerts,
+              queue,
+            ),
+          inject: [
+            ExplodeRecipe,
+            RecipeVersionReader,
+            ReferenceCostList,
+            RecipeVenueDirectory,
+            PointOfSaleDirectory,
+            OperationGeneration,
+            StockLedgerRepository,
+            StockAlertPublisher,
+            StockMovementQueue,
+          ],
+        },
+        {
+          provide: ReturnStock,
+          useFactory: (
+            generations: OperationGeneration,
+            ledger: StockLedgerRepository,
+            queue: StockMovementQueue,
+          ) => new ReturnStock(generations, ledger, queue),
+          inject: [
+            OperationGeneration,
+            StockLedgerRepository,
+            StockMovementQueue,
+          ],
+        },
+        {
+          provide: RecordWaste,
+          useFactory: (
+            generations: OperationGeneration,
+            ledger: StockLedgerRepository,
+            queue: StockMovementQueue,
+            audits: AuditRepository,
+            digests: AuditDigest,
+            clock: Clock,
+          ) =>
+            new RecordWaste(
+              generations,
+              ledger,
+              queue,
+              new RecordAuditEvent(audits, digests, clock),
+            ),
+          inject: [
+            OperationGeneration,
+            StockLedgerRepository,
+            StockMovementQueue,
+            AuditRepository,
+            AuditDigest,
+            Clock,
+          ],
         },
         {
           provide: QrTableAccess,

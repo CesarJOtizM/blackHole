@@ -1,3 +1,7 @@
+import type {
+  RegisterSaleConsumptionInput,
+  SaleStockResult,
+} from "@blackhole/inventory/application/entry-port";
 import {
   type ConsumeAuthorization,
   type CountExecutedOperations,
@@ -102,6 +106,14 @@ export interface FireCourseInput {
   course: number;
 }
 
+export interface SaleConsumption {
+  saleConsumptionEnabled: boolean;
+  registerSaleConsumption: {
+    execute(input: RegisterSaleConsumptionInput): Promise<SaleStockResult>;
+  };
+  generationOf(tenantId: string, venueId: string): Promise<number>;
+}
+
 interface RoutedTicket {
   commandId: string;
   stationId: string;
@@ -148,6 +160,7 @@ export class TakeOrder {
     private readonly clock: Clock,
     private readonly hub: RealtimeHub,
     private readonly printedCheck?: PrintedCheckGuard,
+    private readonly saleConsumption?: SaleConsumption,
   ) {}
 
   async execute(input: TakeOrderInput): Promise<Check> {
@@ -408,6 +421,7 @@ export class TakeOrder {
     const sentAt = new Date(this.clock.now()).toISOString();
 
     check.send({ course: input.course, sentAt });
+    await this.consumeHeldLines(input, held, sentAt);
     await this.commit(
       check,
       held.map((line) => line.id),
@@ -415,6 +429,39 @@ export class TakeOrder {
     );
 
     return check;
+  }
+
+  private async consumeHeldLines(
+    input: FireCourseInput,
+    held: readonly {
+      id: string;
+      productId: string;
+      variantIds?: readonly string[];
+      modifierIds?: readonly string[];
+    }[],
+    sentAt: string,
+  ): Promise<void> {
+    const sale = this.saleConsumption;
+
+    if (sale?.saleConsumptionEnabled !== true) {
+      return;
+    }
+
+    const generation = await sale.generationOf(input.tenantId, input.venueId);
+
+    for (const line of held) {
+      await sale.registerSaleConsumption.execute({
+        tenantId: input.tenantId,
+        venueId: input.venueId,
+        generation,
+        orderLineId: line.id,
+        productId: line.productId,
+        variantIds: [...(line.variantIds ?? [])],
+        modifierIds: [...(line.modifierIds ?? [])],
+        portions: 1,
+        occurredAt: sentAt,
+      });
+    }
   }
 
   private async loadCheck(input: {
