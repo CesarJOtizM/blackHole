@@ -277,3 +277,13 @@ pnpm exec vitest run --project orders
 | Focused test command and exact result | `pnpm exec vitest run --project orders contexts/orders/application/void-line/void-line.test.ts` — RED exit 1, 2 failed, 11 passed (13); GREEN exit 0, 1 file, 13 passed. Then `pnpm exec vitest run --project orders` — exit 0, 43 files, 226 passed. |
 | Runtime harness | N/A. In-memory check and inventory port doubles only. No browser and no HTTP entry. |
 | Rollback boundary | Restore the early return in `contexts/orders/application/void-line/void-line.ts` and the two started-line expectations in `void-line.test.ts`. |
+
+## Balance fix: waste does not deduct twice
+
+Void-after-start still appends a waste line with the stored version-4 quantity, unit cost, reason, and actor. `StockMoved` still carries that quantity. The line sets `reversesMovementId` to the sale consumption. `onHandDelta` posts 0 for that waste because the consumption already deducted the ingredient, so on-hand stays at −300 g and there is no `sale_return`. The consumption row is not updated or deleted. Standalone waste still reduces on-hand. The waste test publishes recipe version 5 before recording waste and still stores the version-4 quantities. RecordWaste does not re-explode.
+
+RED, after the balance expectation changed and before the ledger rule: exit 1. Expected −300000, received −600000. Test Files 1 failed. Tests 1 failed, 3 passed (4).
+
+GREEN: `pnpm exec vitest run --project inventory contexts/inventory/application/record-waste/record-waste.test.ts` exit 0, 1 file, 4 passed. `pnpm exec vitest run --project orders contexts/orders/application/void-line/void-line.test.ts` exit 0, 1 file, 13 passed. Verify stays fail.
+
+Re-verify on 2026-11-13 stayed FAIL: 21/25 scenarios, four hybrid and upward-sync scenarios untested. `pnpm exec biome check --write` then sorted `MOVEMENT_TYPE`, `MovementType`, and `onHandDelta` in the Postgres and SQLite ledger repositories. That does not change the verdict.
