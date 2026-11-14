@@ -21,6 +21,7 @@ export interface EvaluatePermissionInput {
   value: number | null;
   supportGrantId: string | null;
   shiftTotals: { waiterVoidsBeforeKitchen: number };
+  selfAuthorizationAttempt?: boolean;
 }
 
 const denied = (): Evaluation => ({ outcome: "denied", selfAuthorized: false });
@@ -68,7 +69,7 @@ export class EvaluatePermission {
       target: input.target,
       value: input.value,
       shiftTotals: input.shiftTotals,
-      selfAuthorizationAttempt: false,
+      selfAuthorizationAttempt: input.selfAuthorizationAttempt ?? false,
       shiftId: null,
     });
   }
