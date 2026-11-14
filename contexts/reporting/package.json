@@ -27,6 +27,8 @@
     "#application/read-time-report/*": "./application/read-time-report/*",
     "#application/read-cash-report/*": "./application/read-cash-report/*",
     "#application/read-staff-report/*": "./application/read-staff-report/*",
+    "#application/read-food-cost-report/*": "./application/read-food-cost-report/*",
+    "#application/read-stock-gap-report/*": "./application/read-stock-gap-report/*",
     "#adapters/memory/*": "./adapters/memory/*"
   }
 }

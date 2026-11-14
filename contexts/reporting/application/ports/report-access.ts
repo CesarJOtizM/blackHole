@@ -1,6 +1,7 @@
 export const REPORT_PERMISSION = {
   VIEW_SALES: "report.view-sales",
   VIEW_EXPECTED_TOTAL: "cash.view-expected-total",
+  VIEW_COST: "inventory.view-cost",
 } as const;
 
 export type ReportPermission =

@@ -61,6 +61,7 @@
     "#application/evaluate-stock-levels/*": "./application/evaluate-stock-levels/*",
     "#application/mark-alert-seen/*": "./application/mark-alert-seen/*",
     "#application/resolve-alert/*": "./application/resolve-alert/*",
+    "#application/list-venue-stock-facts/*": "./application/list-venue-stock-facts/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
