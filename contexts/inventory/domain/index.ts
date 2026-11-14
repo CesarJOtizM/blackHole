@@ -12,6 +12,11 @@ export {
   WasteNoteRequired,
 } from "#domain/operational-waste.js";
 export type {
+  AvailabilityState,
+  PossibleUnits,
+} from "#domain/producible-quantity.js";
+export { possibleUnits } from "#domain/producible-quantity.js";
+export type {
   ProductionCostRule,
   ProductionMovement,
 } from "#domain/production.js";

@@ -30,6 +30,8 @@ export {
   RecipeImportRejected,
 } from "#application/import-recipes/import-recipes.js";
 export type { RecipePublication } from "#application/ports/recipe-catalog-repository.js";
+export type { ProjectProducibleQuantityInput } from "#application/project-producible-quantity/project-producible-quantity.js";
+export { ProjectProducibleQuantity } from "#application/project-producible-quantity/project-producible-quantity.js";
 export type {
   PurchaseReceipt,
   ReceivePurchaseInput,

@@ -26,7 +26,10 @@ module.exports = {
       severity: "error",
       from: {
         path: "(?:^|/)contexts/[^/]+/application/",
-        pathNot: "\\.test\\.ts$",
+        pathNot: [
+          "\\.test\\.ts$",
+          "producible-quantity-repository\\.contract\\.ts$",
+        ],
       },
       to: {
         path: "drizzle-orm|(?:^|/)contexts/[^/]+/adapters/|(?:^|/)apps/",
@@ -35,7 +38,9 @@ module.exports = {
     {
       name: "application-tests-import-only-memory-adapters",
       severity: "error",
-      from: { path: "(?:^|/)contexts/[^/]+/application/.*\\.test\\.ts$" },
+      from: {
+        path: "(?:^|/)contexts/[^/]+/application/(?:.*\\.test\\.ts$|ports/producible-quantity-repository\\.contract\\.ts$)",
+      },
       to: {
         path: "drizzle-orm|(?:^|/)apps/|(?:^|/)contexts/[^/]+/adapters/(?!memory/)",
       },
