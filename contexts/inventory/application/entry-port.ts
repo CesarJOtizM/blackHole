@@ -33,6 +33,11 @@ export {
   ImportRecipes,
   RecipeImportRejected,
 } from "#application/import-recipes/import-recipes.js";
+export type {
+  ListVenueStockFactsQuery,
+  VenueStockFacts,
+} from "#application/list-venue-stock-facts/list-venue-stock-facts.js";
+export { ListVenueStockFacts } from "#application/list-venue-stock-facts/list-venue-stock-facts.js";
 export type { MarkAlertSeenInput } from "#application/mark-alert-seen/mark-alert-seen.js";
 export {
   MarkAlertSeen,

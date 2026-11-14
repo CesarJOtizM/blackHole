@@ -13,6 +13,12 @@ export type {
 } from "#application/read-cash-report/read-cash-report.js";
 export { ReadCashReport } from "#application/read-cash-report/read-cash-report.js";
 export type {
+  FoodCostProductRow,
+  FoodCostReport,
+  FoodCostReportResult,
+} from "#application/read-food-cost-report/read-food-cost-report.js";
+export { ReadFoodCostReport } from "#application/read-food-cost-report/read-food-cost-report.js";
+export type {
   ProductRank,
   SalesReport,
   SalesReportResult,
@@ -26,6 +32,8 @@ export type {
   StaffTipRow,
 } from "#application/read-staff-report/read-staff-report.js";
 export { ReadStaffReport } from "#application/read-staff-report/read-staff-report.js";
+export type { StockGapReportResult } from "#application/read-stock-gap-report/read-stock-gap-report.js";
+export { ReadStockGapReport } from "#application/read-stock-gap-report/read-stock-gap-report.js";
 export type {
   DurationFigures,
   TimeReport,
