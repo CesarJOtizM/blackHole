@@ -1,6 +1,17 @@
 export const layer = "domain" as const;
 
 export type {
+  OperationalWaste,
+  WasteReason,
+} from "#domain/operational-waste.js";
+export {
+  InvalidWaste,
+  MissingWasteReason,
+  recordOperationalWaste,
+  WASTE_REASON,
+  WasteNoteRequired,
+} from "#domain/operational-waste.js";
+export type {
   ProductionCostRule,
   ProductionMovement,
 } from "#domain/production.js";
@@ -51,6 +62,17 @@ export {
   UnknownRecipeVersion,
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
+export type {
+  CountScope,
+  FrozenCountLine,
+  StockCountResult,
+} from "#domain/stock-count.js";
+export {
+  COUNT_SCOPE,
+  InvalidCount,
+  MissingCountLine,
+  submitStockCount,
+} from "#domain/stock-count.js";
 export type { MovementType, StockMovement } from "#domain/stock-ledger.js";
 export {
   MOVEMENT_TYPE,

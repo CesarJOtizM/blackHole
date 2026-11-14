@@ -15,6 +15,7 @@ const OWNER_ID = "user_owner";
 const CASHIER_ID = "user_cashier";
 const WAITER_ID = "user_waiter";
 const SUPPORT_ID = "user_support";
+const KITCHEN_CHIEF_ID = "user_kitchen_chief";
 const SITE_1 = "organization_venue_1";
 const HOUR = 60 * 60 * 1000;
 
@@ -279,6 +280,82 @@ it("given an inactive user, when they charge, then it is denied and nothing is s
     value: null,
     supportGrantId: null,
     shiftTotals: { waiterVoidsBeforeKitchen: 0 },
+  });
+
+  expect(result).toEqual({ outcome: "denied", selfAuthorized: false });
+  expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
+});
+
+const openKitchenChief = async (at: number) => {
+  const ready = harness(at);
+  const authorization = Authorization.open(TENANT_ID);
+  authorization.appointOwner({
+    assignmentId: "assignment_owner",
+    userId: OWNER_ID,
+  });
+  authorization.assign({
+    assignmentId: "assignment_kitchen",
+    userId: KITCHEN_CHIEF_ID,
+    roleId: "kitchenChief",
+    scopeKind: "site",
+    scopeId: SITE_1,
+    validFrom: null,
+    validUntil: null,
+    actorUserId: OWNER_ID,
+    at: 0,
+  });
+  await ready.authorizations.save(authorization, {
+    before: Authorization.open(TENANT_ID).snapshot(),
+    after: authorization.snapshot(),
+  });
+  ready.identities.put(TENANT_ID, { userId: KITCHEN_CHIEF_ID, active: true });
+  ready.sessions.put(TENANT_ID, {
+    sessionId: "session_kitchen",
+    userId: KITCHEN_CHIEF_ID,
+    displayName: "Kitchen chief",
+    deviceId: "device_kitchen",
+    venueId: SITE_1,
+    kind: "pin",
+  });
+
+  return ready;
+};
+
+it("given a kitchen chief over the waste cap, when selfAuthorizationAttempt is omitted, then authorization is required and nothing is stored", async () => {
+  const { authorizations, evaluatePermission } = await openKitchenChief(HOUR);
+  const recorded = await authorizations.eventsFor(TENANT_ID);
+
+  const result = await evaluatePermission.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_kitchen",
+    permission: PERMISSION.INVENTORY_RECORD_WASTE,
+    target,
+    value: 45_000,
+    supportGrantId: null,
+    shiftTotals: { waiterVoidsBeforeKitchen: 0 },
+  });
+
+  expect(result).toEqual({
+    outcome: "requires_authorization",
+    exceededLimit: { code: "wasteCop", cap: 30_000, unit: "cop" },
+    selfAuthorized: false,
+  });
+  expect(await authorizations.eventsFor(TENANT_ID)).toEqual(recorded);
+});
+
+it("given the same chief over the waste cap, when selfAuthorizationAttempt is true, then the attempt is forwarded and the decision is denied", async () => {
+  const { authorizations, evaluatePermission } = await openKitchenChief(HOUR);
+  const recorded = await authorizations.eventsFor(TENANT_ID);
+
+  const result = await evaluatePermission.execute({
+    tenantId: TENANT_ID,
+    sessionId: "session_kitchen",
+    permission: PERMISSION.INVENTORY_RECORD_WASTE,
+    target,
+    value: 45_000,
+    supportGrantId: null,
+    shiftTotals: { waiterVoidsBeforeKitchen: 0 },
+    selfAuthorizationAttempt: true,
   });
 
   expect(result).toEqual({ outcome: "denied", selfAuthorized: false });

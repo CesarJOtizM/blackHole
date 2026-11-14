@@ -38,6 +38,7 @@
     "#application/explode-recipe/*": "./application/explode-recipe/*",
     "#application/register-sale-consumption/*": "./application/register-sale-consumption/*",
     "#application/return-stock/*": "./application/return-stock/*",
+    "#application/record-operational-waste/*": "./application/record-operational-waste/*",
     "#application/configure-production-cost/*": "./application/configure-production-cost/*",
     "#application/correct-production/*": "./application/correct-production/*",
     "#application/record-production/*": "./application/record-production/*",
@@ -51,11 +52,13 @@
     "#application/request-transfer/*": "./application/request-transfer/*",
     "#application/receive-transfer/*": "./application/receive-transfer/*",
     "#application/save-published-version/*": "./application/save-published-version/*",
+    "#application/set-ingredient-category/*": "./application/set-ingredient-category/*",
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
     "#adapters/sqlite/*": "./adapters/sqlite/*",
-    "#application/suggest-replenishment/*": "./application/suggest-replenishment/*"
+    "#application/suggest-replenishment/*": "./application/suggest-replenishment/*",
+    "#application/record-stock-count/*": "./application/record-stock-count/*"
   },
   "dependencies": {
     "@electric-sql/pglite": "catalog:",
