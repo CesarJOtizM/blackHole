@@ -13,9 +13,15 @@ export const MOVEMENT_TYPE = {
 export type MovementType = (typeof MOVEMENT_TYPE)[keyof typeof MOVEMENT_TYPE];
 
 const WRITABLE_MOVEMENT_TYPES: ReadonlySet<string> = new Set([
+  MOVEMENT_TYPE.PURCHASE,
   MOVEMENT_TYPE.SALE_CONSUMPTION,
   MOVEMENT_TYPE.SALE_RETURN,
   MOVEMENT_TYPE.WASTE,
+  MOVEMENT_TYPE.PRODUCTION_CONSUMPTION,
+  MOVEMENT_TYPE.PRODUCTION_OUTPUT,
+  MOVEMENT_TYPE.TRANSFER_OUT,
+  MOVEMENT_TYPE.TRANSFER_IN,
+  MOVEMENT_TYPE.COUNT_ADJUSTMENT,
 ]);
 
 export interface StockMovement {
@@ -43,6 +49,76 @@ interface AppendMovement {
   type: MovementType;
   reference: string;
   occurredAt: string;
+  reversesMovementId?: string;
+}
+
+interface OnHandMovement {
+  id: string;
+  type: MovementType;
+  ingredientId: string;
+  quantity: number;
+  reversesMovementId?: string;
+}
+
+// A waste line that points at a sale consumption does not move on-hand.
+// That consumption already deducted the ingredient. Standalone waste still does.
+export function onHandDelta(
+  movement: OnHandMovement,
+  prior: readonly OnHandMovement[],
+): number {
+  const alreadyDeducted =
+    movement.type === MOVEMENT_TYPE.WASTE &&
+    movement.reversesMovementId !== undefined &&
+    prior.some(
+      (item) =>
+        item.id === movement.reversesMovementId &&
+        item.type === MOVEMENT_TYPE.SALE_CONSUMPTION &&
+        item.ingredientId === movement.ingredientId,
+    );
+
+  return alreadyDeducted ? 0 : movement.quantity;
+}
+
+interface AverageCostInput {
+  onHand: number;
+  averageCost: number;
+  receivedQuantity: number;
+  receiptCost: number;
+}
+
+// Whole COP per base unit. A negative or empty balance takes the receipt cost.
+// Callers are purchase, transfer_in, and a positive production_output.
+export function nextAverageCost(input: AverageCostInput): number {
+  if (
+    !Number.isInteger(input.receivedQuantity) ||
+    input.receivedQuantity <= 0 ||
+    !Number.isInteger(input.onHand)
+  ) {
+    throw new InvalidQuantity();
+  }
+
+  if (
+    !Number.isInteger(input.receiptCost) ||
+    input.receiptCost < 0 ||
+    !Number.isInteger(input.averageCost) ||
+    input.averageCost < 0
+  ) {
+    throw new InvalidUnitCost();
+  }
+
+  if (input.onHand <= 0) {
+    return input.receiptCost;
+  }
+
+  return roundHalfUp(
+    input.onHand * input.averageCost +
+      input.receivedQuantity * input.receiptCost,
+    input.onHand + input.receivedQuantity,
+  );
+}
+
+function roundHalfUp(numerator: number, denominator: number): number {
+  return Math.floor((numerator + Math.floor(denominator / 2)) / denominator);
 }
 
 interface ReverseMovement {
@@ -124,13 +200,28 @@ function assertQuantity(type: MovementType, quantity: number): void {
   }
 
   const decreases =
-    type === MOVEMENT_TYPE.SALE_CONSUMPTION || type === MOVEMENT_TYPE.WASTE;
+    type === MOVEMENT_TYPE.SALE_CONSUMPTION ||
+    type === MOVEMENT_TYPE.WASTE ||
+    type === MOVEMENT_TYPE.PRODUCTION_CONSUMPTION ||
+    type === MOVEMENT_TYPE.TRANSFER_OUT;
 
   if (decreases && quantity > 0) {
     throw new InvalidQuantity();
   }
 
   if (type === MOVEMENT_TYPE.SALE_RETURN && quantity < 0) {
+    throw new InvalidQuantity();
+  }
+
+  if (type === MOVEMENT_TYPE.PURCHASE && quantity < 0) {
+    throw new InvalidQuantity();
+  }
+
+  if (type === MOVEMENT_TYPE.TRANSFER_IN && quantity < 0) {
+    throw new InvalidQuantity();
+  }
+
+  if (type === MOVEMENT_TYPE.PRODUCTION_OUTPUT && quantity < 0) {
     throw new InvalidQuantity();
   }
 }
@@ -166,15 +257,56 @@ export class StockLedger {
   }
 
   balance(ingredientId: string): number {
-    let total = 0;
+    return this.replay(ingredientId).onHand;
+  }
+
+  balanceUntil(ingredientId: string, occurredAt: string): number {
+    return this.replay(ingredientId, occurredAt).onHand;
+  }
+
+  averageCost(ingredientId: string): number {
+    return this.replay(ingredientId).average;
+  }
+
+  averageCostUntil(ingredientId: string, occurredAt: string): number {
+    return this.replay(ingredientId, occurredAt).average;
+  }
+
+  private replay(
+    ingredientId: string,
+    occurredAt?: string,
+  ): { onHand: number; average: number } {
+    let onHand = 0;
+    let average = 0;
+    const prior: StockMovement[] = [];
 
     for (const movement of this.stored) {
-      if (movement.ingredientId === ingredientId) {
-        total += movement.quantity;
+      if (occurredAt !== undefined && movement.occurredAt > occurredAt) {
+        continue;
       }
+
+      if (movement.ingredientId === ingredientId) {
+        if (
+          movement.type === MOVEMENT_TYPE.PURCHASE ||
+          movement.type === MOVEMENT_TYPE.TRANSFER_IN ||
+          (movement.type === MOVEMENT_TYPE.PRODUCTION_OUTPUT &&
+            movement.quantity > 0)
+        ) {
+          average = nextAverageCost({
+            onHand,
+            averageCost: average,
+            receivedQuantity: movement.quantity,
+            receiptCost: movement.unitCost,
+          });
+        }
+
+        onHand += onHandDelta(movement, prior);
+      }
+
+      prior.push(movement);
     }
 
-    return total;
+    return { onHand, average };
   }
 
   append(input: AppendMovement): void {
@@ -192,6 +324,9 @@ export class StockLedger {
       type: input.type,
       reference: input.reference,
       occurredAt: input.occurredAt,
+      ...(input.reversesMovementId === undefined
+        ? {}
+        : { reversesMovementId: input.reversesMovementId }),
     });
   }
 

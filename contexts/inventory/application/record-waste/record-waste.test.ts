@@ -15,8 +15,12 @@ import type { StockMovementEnvelope } from "#application/ports/stock-movement-qu
 import { StockMovementQueue } from "#application/ports/stock-movement-queue.js";
 import { RecordWaste } from "#application/record-waste/record-waste.js";
 import { LineReversalConflict } from "#application/return-stock/return-stock.js";
-import { QUANTITY_SCALE } from "#domain/recipe-catalog.js";
-import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
+import {
+  BASE_UNIT,
+  QUANTITY_SCALE,
+  RecipeCatalog,
+} from "#domain/recipe-catalog.js";
+import { MOVEMENT_TYPE, StockLedger } from "#domain/stock-ledger.js";
 
 const TENANT_ID = "organization_tenant_1";
 const VENUE_ID = "organization_venue_1";
@@ -30,17 +34,19 @@ const SENT_AT = "2026-11-13T18:00:00.000Z";
 const WASTED_AT = "2026-11-13T18:20:00.000Z";
 const BEEF_COST = 180_000;
 const OTHER_COST = 1;
+const BRAND_ID = "organization_brand_1";
+const PRODUCT_ID = "product_burger";
+const VERSION_4_GRAMS = 150;
+const VERSION_5_GRAMS = 80;
+const PORTIONS = 2;
 
 const grams = (value: number): number => value * QUANTITY_SCALE;
 
 class MemoryLedger extends StockLedgerRepository {
   readonly lines: LedgerLine[] = [];
-  private readonly balances = new Map<string, number>();
 
   seed(line: LedgerLine): void {
     this.lines.push(line);
-    const key = `${line.tenantId}:${line.locationId}:${line.ingredientId}`;
-    this.balances.set(key, (this.balances.get(key) ?? 0) + line.quantity);
   }
 
   override async findLine(
@@ -61,7 +67,28 @@ class MemoryLedger extends StockLedgerRepository {
     locationId: string,
     ingredientId: string,
   ): Promise<number> {
-    return this.balances.get(`${tenantId}:${locationId}:${ingredientId}`) ?? 0;
+    const ledger = StockLedger.open({ tenantId, locationId });
+
+    for (const line of this.lines) {
+      if (line.tenantId !== tenantId || line.locationId !== locationId) {
+        continue;
+      }
+
+      ledger.append({
+        id: line.id,
+        ingredientId: line.ingredientId,
+        quantity: line.quantity,
+        unitCost: line.unitCost,
+        type: line.type,
+        reference: line.reference,
+        occurredAt: line.occurredAt,
+        ...(line.reversesMovementId === undefined
+          ? {}
+          : { reversesMovementId: line.reversesMovementId }),
+      });
+    }
+
+    return ledger.balance(ingredientId);
   }
 
   override async hasOpenAlert(): Promise<boolean> {
@@ -70,8 +97,6 @@ class MemoryLedger extends StockLedgerRepository {
 
   override async append(input: AppendStock): Promise<void> {
     for (const movement of input.movements) {
-      const key = `${movement.tenantId}:${movement.locationId}:${movement.ingredientId}`;
-      this.balances.set(key, (this.balances.get(key) ?? 0) + movement.quantity);
       this.lines.push(movement);
     }
   }
@@ -145,10 +170,10 @@ const command = (generation = GENERATION) => ({
   venueId: VENUE_ID,
   generation,
   orderLineId: LINE_ID,
-  productId: "product_burger",
+  productId: PRODUCT_ID,
   variantIds: [] as readonly string[],
   modifierIds: [] as readonly string[],
-  portions: 2,
+  portions: PORTIONS,
   occurredAt: WASTED_AT,
   actorId: ACTOR_ID,
   reason: REASON,
@@ -168,9 +193,75 @@ const build = () => {
   return { ledger, queue, audit, record };
 };
 
-it("given a line consumed at version 4, when it is wasted after start, then waste stores reason and actor, keeps version 4 and unit cost, and does not return stock", async () => {
+const publishVersionFive = (): RecipeCatalog => {
+  const catalog = RecipeCatalog.open({
+    id: `recipe_catalog_${BRAND_ID}`,
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+  });
+  catalog.upsertIngredient({
+    id: BEEF_ID,
+    name: "beef",
+    baseUnit: BASE_UNIT.GRAM,
+    purchaseUnit: { name: "g", baseQuantity: 1 },
+    recipeUnit: { name: "g", baseQuantity: 1 },
+    referenceCostCop: BEEF_COST,
+  });
+  const burger = {
+    id: "recipe_burger",
+    name: "burger",
+    productId: PRODUCT_ID,
+    lines: [
+      {
+        kind: "ingredient" as const,
+        ingredientId: BEEF_ID,
+        netQuantity: VERSION_4_GRAMS,
+        yieldPercent: 100,
+      },
+    ],
+  };
+  catalog.upsertRecipe(burger);
+  catalog.publish({ authorId: ACTOR_ID });
+  catalog.publish({ authorId: ACTOR_ID });
+  catalog.publish({ authorId: ACTOR_ID });
+  catalog.publish({ authorId: ACTOR_ID });
+  catalog.upsertRecipe({
+    ...burger,
+    lines: [
+      {
+        kind: "ingredient",
+        ingredientId: BEEF_ID,
+        netQuantity: VERSION_5_GRAMS,
+        yieldPercent: 100,
+      },
+    ],
+  });
+  catalog.publish({ authorId: ACTOR_ID });
+
+  return catalog;
+};
+
+it("given a line consumed at version 4, when version 5 is published and the line is wasted after start, then waste stores the version 4 quantities, reason and actor, and on-hand stays at the consumption", async () => {
   const { ledger, queue, audit, record } = build();
-  ledger.seed(consumption());
+  const stored = consumption();
+  ledger.seed(stored);
+  const catalog = publishVersionFive();
+  const versionFour = catalog.explode({
+    productId: PRODUCT_ID,
+    version: 4,
+  });
+  const versionFive = catalog.explode({
+    productId: PRODUCT_ID,
+    version: 5,
+  });
+
+  expect(catalog.currentVersion).toBe(5);
+  expect(versionFour).toEqual([
+    { ingredientId: BEEF_ID, quantity: grams(VERSION_4_GRAMS) },
+  ]);
+  expect(versionFive).toEqual([
+    { ingredientId: BEEF_ID, quantity: grams(VERSION_5_GRAMS) },
+  ]);
 
   const result = await record.execute(command());
 
@@ -178,7 +269,7 @@ it("given a line consumed at version 4, when it is wasted after start, then wast
   const wasted = ledger.lines.find((line) => line.type === MOVEMENT_TYPE.WASTE);
   expect(wasted).toMatchObject({
     ingredientId: BEEF_ID,
-    quantity: grams(-300),
+    quantity: grams(-VERSION_4_GRAMS * PORTIONS),
     unitCost: BEEF_COST,
     recipeVersion: 4,
     role: CONSUMPTION_ROLE.REVERSAL,
@@ -186,11 +277,15 @@ it("given a line consumed at version 4, when it is wasted after start, then wast
     actorId: ACTOR_ID,
     occurredAt: WASTED_AT,
   });
+  expect(wasted?.quantity).not.toBe(
+    -(versionFive[0]?.quantity ?? 0) * PORTIONS,
+  );
+  expect(ledger.lines[0]).toEqual(stored);
   expect(
     ledger.lines.some((line) => line.type === MOVEMENT_TYPE.SALE_RETURN),
   ).toBe(false);
   expect(await ledger.balance(TENANT_ID, LOCATION_ID, BEEF_ID)).toBe(
-    grams(-600),
+    grams(-VERSION_4_GRAMS * PORTIONS),
   );
   expect(queue.envelopes).toEqual([
     expect.objectContaining({
@@ -201,7 +296,7 @@ it("given a line consumed at version 4, when it is wasted after start, then wast
         movementType: MOVEMENT_TYPE.WASTE,
         unitCost: BEEF_COST,
         recipeVersion: 4,
-        quantity: grams(-300),
+        quantity: grams(-VERSION_4_GRAMS * PORTIONS),
       }),
     }),
   ]);

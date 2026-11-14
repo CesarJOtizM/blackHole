@@ -39,6 +39,25 @@ export {
   ReceivePurchase,
   UnknownInventoryLocation,
 } from "#application/receive-purchase/receive-purchase.js";
+export type { ConfigureProductionCostInput } from "#application/configure-production-cost/configure-production-cost.js";
+export {
+  ConfigureProductionCost,
+  InvalidProductionCost,
+  ProductionCostDenied,
+} from "#application/configure-production-cost/configure-production-cost.js";
+export type { CorrectProductionInput } from "#application/correct-production/correct-production.js";
+export {
+  CorrectProduction,
+  ProductionCorrectionDenied,
+  UnknownProductionRun,
+} from "#application/correct-production/correct-production.js";
+export type { RecordProductionInput } from "#application/record-production/record-production.js";
+export {
+  MissingProductionCostPolicy,
+  PreparationNotStocked,
+  RecordProduction,
+  UnknownProductionLocation,
+} from "#application/record-production/record-production.js";
 export type { RecordWasteInput } from "#application/record-waste/record-waste.js";
 export { RecordWaste } from "#application/record-waste/record-waste.js";
 export type {

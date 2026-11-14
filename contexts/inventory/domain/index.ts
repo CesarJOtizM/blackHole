@@ -1,6 +1,16 @@
 export const layer = "domain" as const;
 
 export type {
+  ProductionCostRule,
+  ProductionMovement,
+} from "#domain/production.js";
+export {
+  InvalidProduction,
+  PRODUCTION_COST_RULE,
+  ProductionAlreadyCompensated,
+  ProductionRun,
+} from "#domain/production.js";
+export type {
   BaseReceipt,
   PurchaseOrderLineView,
   PurchaseOrderStatus,
@@ -31,6 +41,7 @@ export {
   InvalidRecipeCatalogId,
   InvalidReferenceCost,
   InvalidYield,
+  MissingOutputQuantity,
   QUANTITY_SCALE,
   RecipeCatalog,
   RecipeCycle,
@@ -46,6 +57,7 @@ export {
   MovementAlreadyReversed,
   MovementImmutable,
   MovementTypeNotWritable,
+  nextAverageCost,
   StockLedger,
   UnknownMovement,
 } from "#domain/stock-ledger.js";

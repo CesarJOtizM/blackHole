@@ -68,6 +68,7 @@ interface UpsertRecipe {
   name: string;
   productId: string;
   variantId?: string;
+  outputQuantity?: number;
   lines: readonly RecipeLineInput[];
 }
 
@@ -92,6 +93,11 @@ interface ExplodeRecipe {
   variantId?: string;
   version?: number;
   modifierIds?: readonly string[];
+}
+
+interface ExplodePreparation {
+  recipeId: string;
+  version?: number;
 }
 
 export interface ExplodedQuantity {
@@ -121,6 +127,7 @@ export interface RecipeView {
   name: string;
   productId: string;
   variantId?: string;
+  outputQuantity?: number;
   lines: readonly RecipeLineView[];
 }
 
@@ -184,6 +191,7 @@ interface StoredRecipe {
   name: string;
   productId: string;
   variantId?: string;
+  outputQuantity?: number;
   lines: StoredLine[];
 }
 
@@ -240,6 +248,13 @@ export class InvalidYield extends Error {
   constructor() {
     super("A yield percent must be a positive whole number.");
     this.name = "InvalidYield";
+  }
+}
+
+export class MissingOutputQuantity extends Error {
+  constructor() {
+    super("A preparation requires an output quantity.");
+    this.name = "MissingOutputQuantity";
   }
 }
 
@@ -313,6 +328,22 @@ function assertWholeQuantity(quantity: number): void {
   if (!Number.isInteger(quantity) || quantity < 0) {
     throw new InvalidQuantity();
   }
+}
+
+function storeOutputQuantity(
+  outputQuantity: number | undefined,
+): number | undefined {
+  if (outputQuantity === undefined) {
+    return undefined;
+  }
+
+  assertWholeQuantity(outputQuantity);
+
+  if (outputQuantity === 0) {
+    throw new InvalidQuantity();
+  }
+
+  return scale(outputQuantity);
 }
 
 function assertYield(yieldPercent: number): void {
@@ -432,20 +463,15 @@ function lineView(line: StoredLine): RecipeLineView {
 }
 
 function recipeView(recipe: StoredRecipe): RecipeView {
-  const view = {
+  return {
     id: recipe.id,
     name: recipe.name,
     productId: recipe.productId,
     lines: recipe.lines.map(lineView),
-  };
-
-  if (recipe.variantId === undefined) {
-    return view;
-  }
-
-  return {
-    ...view,
-    variantId: recipe.variantId,
+    ...(recipe.variantId === undefined ? {} : { variantId: recipe.variantId }),
+    ...(recipe.outputQuantity === undefined
+      ? {}
+      : { outputQuantity: recipe.outputQuantity }),
   };
 }
 
@@ -664,6 +690,7 @@ export class RecipeCatalog {
 
   upsertRecipe(input: UpsertRecipe): void {
     const lines = input.lines.map(storeLine);
+    const outputQuantity = storeOutputQuantity(input.outputQuantity);
     const recipe: StoredRecipe = {
       id: input.id,
       name: input.name,
@@ -673,6 +700,10 @@ export class RecipeCatalog {
 
     if (input.variantId !== undefined) {
       recipe.variantId = input.variantId;
+    }
+
+    if (outputQuantity !== undefined) {
+      recipe.outputQuantity = outputQuantity;
     }
 
     this.draft.recipes.set(input.id, recipe);
@@ -757,6 +788,21 @@ export class RecipeCatalog {
     }
 
     return explodedLines(totals);
+  }
+
+  explodePreparation(input: ExplodePreparation): readonly ExplodedQuantity[] {
+    const published = this.version(input.version ?? this.versionCount);
+    const recipe = published.draft.recipes.get(input.recipeId);
+
+    if (!recipe) {
+      throw new UnknownRecipe();
+    }
+
+    if (recipe.outputQuantity === undefined) {
+      throw new MissingOutputQuantity();
+    }
+
+    return explodedLines(explodeRecipe(published.draft, recipe.id, new Set()));
   }
 
   private version(version: number): StoredVersion {
