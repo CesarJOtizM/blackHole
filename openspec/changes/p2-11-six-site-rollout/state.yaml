@@ -5,8 +5,8 @@ phase: 2
 modules: [M0, M1, M2, M3, M4, M6, M8]
 bounded_contexts: [platform, inventory, reporting, infra]
 apps: [api-cloud, local-node]
-status: planned
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: pending, verify: pending, archive: pending}
+status: applied
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: pass, archive: pending}
 depends_on: [p0-03-organization, p0-07-hybrid-resilience, p1-14-go-live, p2-05-warehouses-and-transfers, p2-06-waste-and-counts, p2-10-inventory-reports]
 source_docs:
   - docs/roadmap.md
