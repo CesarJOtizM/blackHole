@@ -270,6 +270,18 @@ export {
   settleTipsCommand,
 } from "#contracts/tips.js";
 export {
+  type DispatchTransferCommand,
+  dispatchTransferCommand,
+  type ReceiveTransferCommand,
+  type RecordedTransfer,
+  type RequestTransferCommand,
+  receiveTransferCommand,
+  recordedTransfer,
+  requestTransferCommand,
+  type StockLevelsCommand,
+  stockLevelsCommand,
+} from "#contracts/transfer.js";
+export {
   type OrganizationChanged,
   organizationChanged,
   type StructureCommand,

@@ -58,12 +58,22 @@ const purchasingRoute = createRoute({
   ),
 });
 
+const transfersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "transfers",
+  component: lazyRouteComponent(
+    () => import("#src/transfers/transfer-screen.js"),
+    "TransferScreen",
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   floorRoute,
   kitchenRoute,
   registerRoute,
   clockRoute,
   purchasingRoute,
+  transfersRoute,
 ]);
 
 export const router = createRouter({
@@ -138,6 +148,15 @@ function VenueLayout() {
               }}
             >
               Recepción
+            </Link>
+            <Link
+              to="/transfers"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Traslados
             </Link>
           </nav>
         </header>

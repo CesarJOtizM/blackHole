@@ -70,6 +70,7 @@
     "#application/accept-cloud-write/*": "./application/accept-cloud-write/*",
     "#application/consume-authorization/*": "./application/consume-authorization/*",
     "#application/count-executed-operations/*": "./application/count-executed-operations/*",
+    "#application/declare-warehouse-supply/*": "./application/declare-warehouse-supply/*",
     "#application/detect-unusual-behavior/*": "./application/detect-unusual-behavior/*",
     "#application/update-structure/*": "./application/update-structure/*",
     "#application/operate-devices/*": "./application/operate-devices/*",

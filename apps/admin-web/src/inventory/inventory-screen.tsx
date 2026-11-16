@@ -2,6 +2,7 @@ import {
   productionCostPolicy,
   productionRun,
   purchaseReceipt,
+  recordedTransfer,
 } from "@blackhole/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -11,8 +12,6 @@ import {
   ConsolidatedView,
   RecipeView,
   SuppliesView,
-  TransferDetailView,
-  TransfersView,
 } from "#src/inventory/inventory-view.js";
 import { NoticeToast } from "#src/shell/notice-toast.js";
 import { RecordPage } from "#src/shell/record-page.js";
@@ -73,6 +72,7 @@ export function RecipeScreen() {
 const RECEIPT_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/purchase-receipts`;
 const RUN_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/production-runs`;
 const POLICY_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/venues/${encodeURIComponent(ADMIN_SCOPE.venueId)}/production-cost-policy`;
+const TRANSFERS_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/transfers`;
 const ORDER_ID = "oc-0418";
 
 function counted(value: string, allowZero: boolean): number | null {
@@ -455,30 +455,326 @@ export function ConsolidatedScreen() {
   );
 }
 
-export function TransfersScreen() {
-  const navigate = useNavigate();
-  const [status, setStatus] = useState("");
-  return (
-    <TransfersView
-      status={status}
-      onCreate={() => setStatus("El traslado nuevo sale de la bodega general.")}
-      onOpen={() => {
-        void navigate({ to: "/inventory/transfers/t-0112" });
-      }}
-    />
+type TransferPost =
+  | { readonly ok: true; readonly costs: readonly number[] }
+  | { readonly ok: false; readonly offline: boolean };
+
+interface VoucherLine {
+  ingredientId: string;
+  quantity: number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function costsFrom(payload: unknown): number[] | null {
+  const parsed = recordedTransfer.safeParse(payload);
+
+  if (!parsed.success) {
+    return null;
+  }
+
+  return parsed.data.lines.flatMap((line) =>
+    line.unitCost === undefined ? [] : [line.unitCost],
   );
 }
 
-export function TransferDetailScreen() {
-  const [status, setStatus] = useState("");
-  return (
-    <TransferDetailView
-      status={status}
-      onPrint={() =>
-        setStatus(
-          "El comprobante sale por el puente cuando la impresora esté conectada.",
-        )
-      }
-    />
+function voucherFrom(
+  raw: string,
+): { transferId: string; lines: VoucherLine[] } | null {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  if (
+    !isRecord(parsed) ||
+    typeof parsed.transferId !== "string" ||
+    parsed.transferId.trim().length === 0 ||
+    !Array.isArray(parsed.lines) ||
+    parsed.lines.length === 0
+  ) {
+    return null;
+  }
+
+  const lines: VoucherLine[] = [];
+
+  for (const line of parsed.lines) {
+    if (
+      !isRecord(line) ||
+      typeof line.ingredientId !== "string" ||
+      line.ingredientId.trim().length === 0 ||
+      typeof line.quantity !== "number" ||
+      !Number.isSafeInteger(line.quantity) ||
+      line.quantity <= 0
+    ) {
+      return null;
+    }
+
+    lines.push({
+      ingredientId: line.ingredientId.trim(),
+      quantity: line.quantity,
+    });
+  }
+
+  return { transferId: parsed.transferId.trim(), lines };
+}
+
+async function postTransfer(
+  path: string,
+  body: unknown,
+): Promise<TransferPost> {
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "x-session-id": ADMIN_SCOPE.sessionId,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      return { ok: false, offline: false };
+    }
+
+    const costs = costsFrom(await response.json());
+
+    if (costs === null) {
+      return { ok: false, offline: false };
+    }
+
+    return { ok: true, costs };
+  } catch {
+    return { ok: false, offline: true };
+  }
+}
+
+function showTransfer(
+  result: TransferPost,
+  success: string,
+  failure: string,
+  setCosts: (costs: readonly number[]) => void,
+  setStatus: (status: string) => void,
+) {
+  if (result.ok) {
+    setCosts(result.costs);
+    setStatus(success);
+    return;
+  }
+
+  setCosts([]);
+  setStatus(
+    result.offline
+      ? "No se puede registrar hasta que vuelva la conexión."
+      : failure,
   );
+}
+
+export function TransferScreen({
+  transferId: initialTransferId = "",
+}: {
+  transferId?: string;
+}) {
+  const [originLocationId, setOriginLocationId] = useState("");
+  const [destinationLocationId, setDestinationLocationId] = useState("");
+  const [ingredientId, setIngredientId] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [transferId, setTransferId] = useState(initialTransferId);
+  const [actorId, setActorId] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+  const [voucherText, setVoucherText] = useState("");
+  const [receivedQuantity, setReceivedQuantity] = useState("");
+  const [authorizerId, setAuthorizerId] = useState("");
+  const [requestId] = useState(() => crypto.randomUUID());
+  const [status, setStatus] = useState("");
+  const [costs, setCosts] = useState<readonly number[]>([]);
+
+  async function requestTransfer() {
+    const amount = counted(quantity, false);
+    const origin = originLocationId.trim();
+    const destination = destinationLocationId.trim();
+    const ingredient = ingredientId.trim();
+
+    if (
+      origin.length === 0 ||
+      destination.length === 0 ||
+      ingredient.length === 0 ||
+      amount === null
+    ) {
+      setCosts([]);
+      setStatus("Revisa el traslado.");
+      return;
+    }
+
+    showTransfer(
+      await postTransfer(TRANSFERS_PATH, {
+        transferId: requestId,
+        originLocationId: origin,
+        destinationLocationId: destination,
+        lines: [{ ingredientId: ingredient, quantity: amount }],
+      }),
+      "Traslado solicitado.",
+      "El traslado no quedó registrado.",
+      setCosts,
+      setStatus,
+    );
+  }
+
+  async function dispatchTransfer() {
+    const id = transferId.trim();
+    const actor = actorId.trim();
+    const device = deviceId.trim();
+
+    if (id.length === 0 || actor.length === 0 || device.length === 0) {
+      setCosts([]);
+      setStatus("Revisa el traslado.");
+      return;
+    }
+
+    showTransfer(
+      await postTransfer(
+        `${TRANSFERS_PATH}/${encodeURIComponent(id)}/dispatch`,
+        {
+          actorId: actor,
+          deviceId: device,
+        },
+      ),
+      "Traslado despachado.",
+      "El despacho no quedó registrado.",
+      setCosts,
+      setStatus,
+    );
+  }
+
+  async function receiveTransfer() {
+    const voucher = voucherFrom(voucherText);
+    const received = counted(receivedQuantity, true);
+    const authorizer = authorizerId.trim();
+
+    if (voucher === null || received === null) {
+      setCosts([]);
+      setStatus("Revisa el traslado.");
+      return;
+    }
+
+    showTransfer(
+      await postTransfer(
+        `${TRANSFERS_PATH}/${encodeURIComponent(voucher.transferId)}/receipt`,
+        {
+          lines: voucher.lines.map((line) => ({
+            ingredientId: line.ingredientId,
+            receivedQuantity: received,
+          })),
+          ...(authorizer.length === 0 ? {} : { authorizerId: authorizer }),
+        },
+      ),
+      "Recepción registrada.",
+      "La recepción no quedó registrada.",
+      setCosts,
+      setStatus,
+    );
+  }
+
+  return (
+    <RecordPage
+      eyebrow="Inventario"
+      title="Traslados"
+      actions={[
+        {
+          label: "Solicitar traslado",
+          tone: "solid",
+          onPress: () => {
+            void requestTransfer();
+          },
+        },
+        {
+          label: "Despachar",
+          tone: "solid",
+          onPress: () => {
+            void dispatchTransfer();
+          },
+        },
+        {
+          label: "Recibir por QR",
+          tone: "solid",
+          onPress: () => {
+            void receiveTransfer();
+          },
+        },
+      ]}
+      status={status}
+      note="El traslado se registra en la nube."
+    >
+      <TextField
+        label="Origen"
+        value={originLocationId}
+        onChange={(event) => setOriginLocationId(event.target.value)}
+      />
+      <TextField
+        label="Destino"
+        value={destinationLocationId}
+        onChange={(event) => setDestinationLocationId(event.target.value)}
+      />
+      <TextField
+        label="Insumo"
+        value={ingredientId}
+        onChange={(event) => setIngredientId(event.target.value)}
+      />
+      <TextField
+        label="Cantidad"
+        inputMode="numeric"
+        value={quantity}
+        onChange={(event) => setQuantity(event.target.value)}
+      />
+      <TextField
+        label="Traslado"
+        value={transferId}
+        onChange={(event) => setTransferId(event.target.value)}
+      />
+      <TextField
+        label="Actor"
+        value={actorId}
+        onChange={(event) => setActorId(event.target.value)}
+      />
+      <TextField
+        label="Dispositivo"
+        value={deviceId}
+        onChange={(event) => setDeviceId(event.target.value)}
+      />
+      <TextField
+        label="QR"
+        value={voucherText}
+        onChange={(event) => setVoucherText(event.target.value)}
+      />
+      <TextField
+        label="Cantidad recibida"
+        inputMode="numeric"
+        value={receivedQuantity}
+        onChange={(event) => setReceivedQuantity(event.target.value)}
+      />
+      <TextField
+        label="Autorizador"
+        value={authorizerId}
+        onChange={(event) => setAuthorizerId(event.target.value)}
+      />
+      {costs.map((cost, index) => (
+        <p key={`${index}-${cost}`}>Costo unitario {cost}</p>
+      ))}
+    </RecordPage>
+  );
+}
+
+export function TransfersScreen() {
+  return <TransferScreen />;
+}
+
+export function TransferDetailScreen() {
+  return <TransferScreen transferId="t-0112" />;
 }
