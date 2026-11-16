@@ -58,6 +58,10 @@ import {
   DrizzleStockLedgerRepository,
   DrizzleStockMovementQueue,
 } from "@blackhole/inventory/adapters/postgres/drizzle-stock-ledger-repository";
+import { InMemoryProducibleQuantityRepository } from "@blackhole/inventory/adapters/memory/in-memory-producible-quantity-repository";
+import { DrizzleProducibleQuantityRepository } from "@blackhole/inventory/adapters/postgres/drizzle-producible-quantity-repository";
+import { DrizzleShortageRepository } from "@blackhole/inventory/adapters/postgres/drizzle-shortage-repository";
+import { DrizzleTransferRepository } from "@blackhole/inventory/adapters/postgres/drizzle-transfer-repository";
 import {
   AcceptStockLevels,
   ApproveAdjustment,
@@ -76,19 +80,31 @@ import {
   SetStockLevels,
   TransferStock,
 } from "@blackhole/inventory/application/entry-port";
+import {
+  AvailabilityPublisher,
+  type AvailabilityChanged,
+} from "@blackhole/inventory/application/ports/availability-publisher";
 import { InventoryLocationDirectory } from "@blackhole/inventory/application/ports/inventory-location-directory";
+import { LowUnitsThreshold } from "@blackhole/inventory/application/ports/low-units-threshold";
 import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
 import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
 import { ProductionRepository } from "@blackhole/inventory/application/ports/production-repository";
 import { PublishedPurchaseFactor } from "@blackhole/inventory/application/ports/published-purchase-factor";
 import { PurchasingRepository } from "@blackhole/inventory/application/ports/purchasing-repository";
-import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
+import {
+  RecipeCatalogRepository,
+  type RecipePublication,
+} from "@blackhole/inventory/application/ports/recipe-catalog-repository";
 import { RecipeVersionReader } from "@blackhole/inventory/application/ports/recipe-version";
 import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-workbook";
 import { ReferenceCostList } from "@blackhole/inventory/application/ports/reference-cost";
 import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
 import { StockAlertPublisher } from "@blackhole/inventory/application/ports/stock-alert-publisher";
-import { StockLedgerRepository } from "@blackhole/inventory/application/ports/stock-ledger-repository";
+import {
+  CONSUMPTION_ROLE,
+  StockLedgerRepository,
+} from "@blackhole/inventory/application/ports/stock-ledger-repository";
+import { SupplyingLocations } from "@blackhole/inventory/application/ports/supplying-locations";
 import { StockMovementQueue } from "@blackhole/inventory/application/ports/stock-movement-queue";
 import { TransferRepository } from "@blackhole/inventory/application/ports/transfer-repository";
 import { TransferVoucher } from "@blackhole/inventory/application/ports/transfer-voucher";
@@ -155,6 +171,7 @@ import {
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
+import { ApplyMenuAvailability } from "@blackhole/orders/application/apply-menu-availability/apply-menu-availability";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { Printer } from "@blackhole/orders/application/ports/printer";
 import { QrOrderIntentRepository } from "@blackhole/orders/application/ports/qr-order-intent-repository";
@@ -769,6 +786,78 @@ export class ApplicationModule implements NestModule {
       ? postgresQrTable(dependencies.ordersDatabase)
       : null;
     const stock = openStockLedger(dependencies.inventoryDatabase);
+    const menus = dependencies.menus ?? new InMemoryMenuRepository();
+    const ordersVenues = new OrganizationVenueDirectory(
+      dependencies.organizations,
+    );
+    const recipeVenues = new OrdersRecipeVenueDirectory(ordersVenues);
+    const realtimeHub = dependencies.realtime ?? new InMemoryRealtimeHub();
+    const projections = dependencies.inventoryDatabase
+      ? new DrizzleProducibleQuantityRepository(dependencies.inventoryDatabase)
+      : new InMemoryProducibleQuantityRepository();
+    const recipeCatalogs =
+      dependencies.recipeCatalogs ?? new InMemoryRecipeCatalogRepository();
+    let explodeRecipe: ExplodeRecipe | undefined;
+    const projectProducible = (
+      tenantId: string,
+    ): ProjectProducibleQuantity => {
+      if (explodeRecipe === undefined) {
+        throw new Error("The recipe explosion is not ready.");
+      }
+
+      return new ProjectProducibleQuantity(
+        explodeRecipe,
+        recipeVenues,
+        stock.pointsOfSale,
+        stock.ledger,
+        projections,
+        emptySupplyingLocations,
+        new MenuLowUnitsThreshold(menus, ordersVenues),
+        new MenuAvailabilityPublisher(
+          tenantId,
+          new ApplyMenuAvailability(menus, ordersVenues, realtimeHub),
+        ),
+      );
+    };
+    const projectingCatalogs = new ProjectingRecipeCatalog(
+      recipeCatalogs,
+      async (publication) => {
+        const organization = await dependencies.organizations.load(
+          publication.tenantId,
+        );
+
+        if (organization === null || explodeRecipe === undefined) {
+          return;
+        }
+
+        for (const venue of organization.venues) {
+          if (venue.brandId !== publication.brandId) {
+            continue;
+          }
+
+          for (const recipe of publication.recipes) {
+            try {
+              await projectProducible(publication.tenantId).execute({
+                kind: "recipe",
+                tenantId: publication.tenantId,
+                siteId: venue.id,
+                productId: recipe.productId,
+                ...(recipe.variantId === undefined
+                  ? {}
+                  : { variantId: recipe.variantId }),
+              });
+            } catch (error: unknown) {
+              if (isMissingPointOfSale(error)) {
+                continue;
+              }
+
+              throw error;
+            }
+          }
+        }
+      },
+    );
+    explodeRecipe = new ExplodeRecipe(projectingCatalogs);
     const saleConsumptionEnabled = dependencies.saleConsumptionEnabled === true;
     const purchasing = openPurchasing(
       dependencies.inventoryDatabase,
@@ -934,7 +1023,7 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: MenuRepository,
-          useValue: dependencies.menus ?? new InMemoryMenuRepository(),
+          useValue: menus,
         },
         {
           provide: TableQrRepository,
@@ -1168,7 +1257,7 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: RealtimeHub,
-          useValue: dependencies.realtime ?? new InMemoryRealtimeHub(),
+          useValue: realtimeHub,
         },
         {
           provide: StationDirectory,
@@ -1757,7 +1846,7 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: VenueDirectory,
-          useValue: new OrganizationVenueDirectory(dependencies.organizations),
+          useValue: ordersVenues,
         },
         {
           provide: AuditDigest,
@@ -1995,9 +2084,7 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: RecipeCatalogRepository,
-          useValue:
-            dependencies.recipeCatalogs ??
-            new InMemoryRecipeCatalogRepository(),
+          useValue: projectingCatalogs,
         },
         {
           provide: RecipeWorkbook,
@@ -2014,9 +2101,7 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: RecipeVenueDirectory,
-          useFactory: (venues: VenueDirectory) =>
-            new OrdersRecipeVenueDirectory(venues),
-          inject: [VenueDirectory],
+          useValue: recipeVenues,
         },
         {
           provide: StockLedgerRepository,
@@ -2056,9 +2141,13 @@ export class ApplicationModule implements NestModule {
         },
         {
           provide: ExplodeRecipe,
-          useFactory: (catalogs: RecipeCatalogRepository) =>
-            new ExplodeRecipe(catalogs),
-          inject: [RecipeCatalogRepository],
+          useFactory: () => {
+            if (explodeRecipe === undefined) {
+              throw new Error("The recipe explosion is not ready.");
+            }
+
+            return explodeRecipe;
+          },
         },
         {
           provide: RegisterSaleConsumption,
@@ -2073,7 +2162,7 @@ export class ApplicationModule implements NestModule {
             alerts: StockAlertPublisher,
             queue: StockMovementQueue,
           ) =>
-            new RegisterSaleConsumption(
+            new ProjectingSaleConsumption(
               recipes,
               versions,
               costs,
@@ -2083,6 +2172,7 @@ export class ApplicationModule implements NestModule {
               ledger,
               alerts,
               queue,
+              projectProducible,
             ),
           inject: [
             ExplodeRecipe,
@@ -2102,7 +2192,13 @@ export class ApplicationModule implements NestModule {
             generations: OperationGeneration,
             ledger: StockLedgerRepository,
             queue: StockMovementQueue,
-          ) => new ReturnStock(generations, ledger, queue),
+          ) =>
+            new ProjectingReturnStock(
+              generations,
+              ledger,
+              queue,
+              projectProducible,
+            ),
           inject: [
             OperationGeneration,
             StockLedgerRepository,
@@ -2119,11 +2215,12 @@ export class ApplicationModule implements NestModule {
             digests: AuditDigest,
             clock: Clock,
           ) =>
-            new RecordWaste(
+            new ProjectingRecordWaste(
               generations,
               ledger,
               queue,
               new RecordAuditEvent(audits, digests, clock),
+              projectProducible,
             ),
           inject: [
             OperationGeneration,
@@ -2749,3 +2846,216 @@ export class MemoryNumberingRanges extends NumberingRangeStore {
     return stored;
   }
 }
+const isMissingPointOfSale = (error: unknown): boolean =>
+  error instanceof Error &&
+  error.message === "The venue has no point-of-sale location.";
+
+class EmptySupplyingLocations extends SupplyingLocations {
+  override async locationIds(): Promise<readonly string[]> {
+    return [];
+  }
+}
+
+const emptySupplyingLocations = new EmptySupplyingLocations();
+
+class MenuLowUnitsThreshold extends LowUnitsThreshold {
+  constructor(
+    private readonly menus: MenuRepository,
+    private readonly venues: VenueDirectory,
+  ) {
+    super();
+  }
+
+  override async thresholdOf(
+    tenantId: string,
+    siteId: string,
+    productId: string,
+  ): Promise<number | null> {
+    const brandId = await this.venues.brandOf(tenantId, siteId);
+
+    if (brandId === null) {
+      return null;
+    }
+
+    const menu = await this.menus.load(tenantId, brandId);
+    const price = menu?.venuePrices.find(
+      (entry) => entry.venueId === siteId && entry.itemId === productId,
+    );
+
+    return price?.lowUnitsThreshold ?? null;
+  }
+}
+
+class MenuAvailabilityPublisher extends AvailabilityPublisher {
+  constructor(
+    private readonly tenantId: string,
+    private readonly apply: ApplyMenuAvailability,
+  ) {
+    super();
+  }
+
+  override async publish(notice: AvailabilityChanged): Promise<void> {
+    await this.apply.execute({
+      tenantId: this.tenantId,
+      venueId: notice.siteId,
+      productId: notice.productId,
+      variantId: notice.variantId,
+      state: notice.state,
+    });
+  }
+}
+
+class ProjectingRecipeCatalog extends RecipeCatalogRepository {
+  constructor(
+    private readonly inner: RecipeCatalogRepository,
+    private readonly after: (publication: RecipePublication) => Promise<void>,
+  ) {
+    super();
+  }
+
+  override load(tenantId: string, brandId: string) {
+    return this.inner.load(tenantId, brandId);
+  }
+
+  override listPublications(tenantId: string, brandId: string) {
+    return this.inner.listPublications(tenantId, brandId);
+  }
+
+  override async save(
+    ...args: Parameters<RecipeCatalogRepository["save"]>
+  ): Promise<void> {
+    await this.inner.save(...args);
+    const publication = args[1];
+
+    if (publication !== undefined) {
+      await this.after(publication);
+    }
+  }
+}
+
+class ProjectingSaleConsumption extends RegisterSaleConsumption {
+  constructor(
+    recipes: ExplodeRecipe,
+    versions: RecipeVersionReader,
+    costs: ReferenceCostList,
+    venues: RecipeVenueDirectory,
+    pointsOfSale: PointOfSaleDirectory,
+    generations: OperationGeneration,
+    ledger: StockLedgerRepository,
+    alerts: StockAlertPublisher,
+    queue: StockMovementQueue,
+    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
+  ) {
+    super(
+      recipes,
+      versions,
+      costs,
+      venues,
+      pointsOfSale,
+      generations,
+      ledger,
+      alerts,
+      queue,
+    );
+    this.movedLedger = ledger;
+  }
+
+  private readonly movedLedger: StockLedgerRepository;
+
+  override async execute(
+    input: Parameters<RegisterSaleConsumption["execute"]>[0],
+  ) {
+    const result = await super.execute(input);
+
+    if (!result.missingRecipe) {
+      await projectMovedStock(
+        this.movedLedger,
+        this.project,
+        input.tenantId,
+        input.venueId,
+        input.orderLineId,
+        CONSUMPTION_ROLE.CONSUMPTION,
+      );
+    }
+
+    return result;
+  }
+}
+
+class ProjectingReturnStock extends ReturnStock {
+  constructor(
+    generations: OperationGeneration,
+    ledger: StockLedgerRepository,
+    queue: StockMovementQueue,
+    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
+  ) {
+    super(generations, ledger, queue);
+    this.movedLedger = ledger;
+  }
+
+  private readonly movedLedger: StockLedgerRepository;
+
+  override async execute(input: Parameters<ReturnStock["execute"]>[0]) {
+    const result = await super.execute(input);
+    await projectMovedStock(
+      this.movedLedger,
+      this.project,
+      input.tenantId,
+      input.venueId,
+      input.orderLineId,
+      CONSUMPTION_ROLE.REVERSAL,
+    );
+
+    return result;
+  }
+}
+
+class ProjectingRecordWaste extends RecordWaste {
+  constructor(
+    generations: OperationGeneration,
+    ledger: StockLedgerRepository,
+    queue: StockMovementQueue,
+    audits: RecordAuditEvent,
+    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
+  ) {
+    super(generations, ledger, queue, audits);
+    this.movedLedger = ledger;
+  }
+
+  private readonly movedLedger: StockLedgerRepository;
+
+  override async execute(input: Parameters<RecordWaste["execute"]>[0]) {
+    const result = await super.execute(input);
+    await projectMovedStock(
+      this.movedLedger,
+      this.project,
+      input.tenantId,
+      input.venueId,
+      input.orderLineId,
+      CONSUMPTION_ROLE.REVERSAL,
+    );
+
+    return result;
+  }
+}
+
+const projectMovedStock = async (
+  ledger: StockLedgerRepository,
+  project: (tenantId: string) => ProjectProducibleQuantity,
+  tenantId: string,
+  venueId: string,
+  orderLineId: string,
+  role: (typeof CONSUMPTION_ROLE)[keyof typeof CONSUMPTION_ROLE],
+): Promise<void> => {
+  const lines = await ledger.findLine(tenantId, orderLineId, role);
+
+  for (const line of lines) {
+    await project(tenantId).execute({
+      kind: "stock",
+      tenantId,
+      siteId: venueId,
+      locationId: line.locationId,
+      ingredientId: line.ingredientId,
+    });
+  }
+};

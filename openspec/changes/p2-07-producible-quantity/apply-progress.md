@@ -60,7 +60,9 @@ Projector, ports, stores, menu flag, and cloud HTTP stay in tasks 2.1–5.2. No 
 - [x] 2.1 and 2.2 (work unit 2)
 - [x] 3.1 and 3.2 (work unit 3)
 - [x] 3.3 and 3.4 (work unit 4)
-- [ ] 4.1 through 5.2
+- [x] 4.1 and 4.2 (domain half of work unit 5)
+- [x] 4.3 and 4.4 (application half of work unit 5)
+- [x] 5.1 and 5.2
 
 ## Work unit 2
 
@@ -186,3 +188,114 @@ The task text says the next SQL file after `0002_stock_ledger.sql`. `0003_purcha
 ### Deferred
 
 The menu flag and cloud HTTP stay in tasks 4.1–5.2. No Nest listener. `package.json` was not edited. Not committed.
+
+## Work unit 5 (domain half)
+
+Work unit 5 of 6, domain half only: menu flag (tasks 4.1 and 4.2). Mode: Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing tests were written and run before `setInventoryState` existed.
+
+Delivery: chained PR slice. Chain strategy: feature-branch-chain. Decision needed before apply: No. This batch is the orders menu domain only. Intended PR 5, base PR 4. Not created. Not committed. Not pushed. Tasks 4.3, 4.4, 5.1, and 5.2 stay out. `package.json`, `entry-port.ts`, `take-order.ts`, `apply-qr-order.ts`, `application-module.ts`, the inventory context, `apps/**`, and the realtime hub were not edited. `state.yaml` stays `applying` / `apply: partial`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.1 → 4.2 | `pnpm exec vitest run --project orders contexts/orders/domain/menu.test.ts` exit 1. `FAIL \|orders\| contexts/orders/domain/menu.test.ts` — `TypeError: menu.setInventoryState is not a function` on the manual-off and `low_units` tests. `Test Files  1 failed (1)`. `Tests  2 failed \| 11 passed (13)`. The no-state test already passed because `presentProduct` did not yet emit `inventoryState`. | Same command after `setInventoryState` and `inventoryState` in `presentProduct`: exit 0. `Test Files  1 passed (1)`. `Tests  13 passed (13)`. Re-run after `pnpm exec biome check --write` on the two menu files (`Checked 2 files in 16ms. Fixed 2 files.`): exit 0. `Test Files  1 passed (1)`. `Tests  13 passed (13)`. |
+
+## Work unit 5 evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project orders contexts/orders/domain/menu.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  13 passed (13)`. Run after `pnpm exec biome check --write` on `contexts/orders/domain/menu.ts` and `contexts/orders/domain/menu.test.ts`. |
+| Runtime harness command/scenario and exact result | N/A. Pure domain. `presentProduct` does not open files, sockets, or a database. `isOrderable` still reads only the venue price and the schedule window. |
+| Rollback boundary | `contexts/orders/domain/menu.ts` and `contexts/orders/domain/menu.test.ts`. Reverting those removes this slice. Inventory, HTTP, `package.json`, and `application-module.ts` stay. Phase marks live in this change's `tasks.md` and `apply-progress.md`. `state.yaml` was not edited. |
+
+### Menu flag
+
+`isOrderable` is unchanged: a missing venue price is orderable; `available: false` is not; a window outside the minute is not. `presentProduct` adds `inventoryState` only when this venue has a stored state for that product. No state omits the key.
+
+- Fish of the day disabled at site S, with inventory state `available` (20 units still allowed), stays `orderable: false` and shows `inventoryState: "available"`.
+- Burger enabled from 11:00 to 15:00, viewed at 12:00, with state `low_units`, stays `orderable: true` and shows `inventoryState: "low_units"`.
+- Soda with manual availability on and no stored state is `orderable: true` and the presented product has no `inventoryState` property.
+
+`InventoryState` is `"available" | "low_units" | "sold_out"`, local to the orders menu. The orders domain does not import the inventory context. `setInventoryState` replaces the previous state for the same venue and product. An unknown product throws `UnknownMenuReference`.
+
+### Deviations
+
+None in the assigned behavior. The design names the presented field and does not name a setter. `setInventoryState` is the domain write that keeps the flag off `isOrderable`. The 20 units are not stored; `available` is the state for a product inventory still allows. The flag is per venue and product. The availability notice also carries `variantId`; this slice does not key the menu flag by variant.
+
+### Deferred
+
+`apply-menu-availability`, the orders `package.json` import, cloud HTTP, and composition stay in tasks 4.3–5.2. No Nest listener. Not committed.
+
+## Work unit 5 (application half)
+
+Work unit 5 of 6, application half only: menu availability on the hub (tasks 4.3 and 4.4). Mode: Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing test was written and run before `apply-menu-availability.ts` and the package import existed.
+
+Delivery: chained PR slice. Chain strategy: feature-branch-chain. Decision needed before apply: No. This batch is the orders use case only. Intended PR 5, base PR 4. Not created. Not committed. Not pushed. Tasks 5.1 and 5.2 stay out. `menu.ts`, `take-order.ts`, `apply-qr-order.ts`, `check.ts`, `entry-port.ts`, `contexts/inventory/**`, `apps/**`, and `application-module.ts` were not edited. `state.yaml` stays `applying` / `apply: partial`.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 4.3 → 4.4 | `pnpm exec vitest run --project orders contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts` exit 1. `FAIL \|orders\| contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts` — `Missing "#application/apply-menu-availability/apply-menu-availability.js" specifier in "@blackhole/orders" package`. `Test Files  1 failed (1)`. `Tests  no tests`. | `pnpm exec vitest run --project orders contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts contexts/orders/domain/menu.test.ts` after the use case, `AvailabilityChanged` on `RealtimeHub`, the imports key, and Biome: exit 0. `Test Files  2 passed (2)`. `Tests  15 passed (15)`. |
+
+## Work unit 5 evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project orders contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts contexts/orders/domain/menu.test.ts` — exit 0. `Test Files  2 passed (2)`. `Tests  15 passed (15)`. The new file contributes 2. `menu.test.ts` contributes 13. Run after `pnpm exec biome check --write` on the use case, its test, `realtime-hub.ts`, and `contexts/orders/package.json` (`Checked 4 files in 11ms. Fixed 3 files.`). |
+| Runtime harness command/scenario and exact result | N/A. The use case talks to in-memory menu, venue, and hub ports. It does not open a socket, listen, or read SQL. `isOrderable` is not called by this use case and was not changed. |
+| Rollback boundary | `contexts/orders/application/apply-menu-availability/apply-menu-availability.ts`, `contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts`, the `AvailabilityChanged` member on `RealtimeNotice` in `contexts/orders/application/ports/realtime-hub.ts`, and the `#application/apply-menu-availability/*` imports entry in `contexts/orders/package.json`. Reverting those removes this slice. `not_restocked` stays. Menu domain, inventory, HTTP, and `application-module.ts` stay. |
+
+### Availability on the hub
+
+`ApplyMenuAvailability` loads the brand menu through `VenueDirectory.brandOf` and `MenuRepository`. It reads the stored flag with `viewAt`. The same `inventoryState` returns before `setInventoryState` and before `publish`. A different state, including `sold_out`, is stored and one `availability_changed` notice is published: `tenantId`, `venueId`, `productId`, `variantId`, `state`. A second call with that same state does not publish. `isOrderable` stays the manual flag. A missing brand or a missing menu publishes nothing.
+
+- Burger already `available`, applied again as `available`: `hub.published` is empty and the product stays `orderable: true` with `inventoryState: "available"`.
+- Burger `available` applied as `sold_out`, then `sold_out` again: one notice, `state: "sold_out"`, `variantId` `menu_variant_single`. The product stays `orderable: true` with `inventoryState: "sold_out"`.
+
+`not_restocked` is unchanged. The in-memory hub still clones that notice with its `lineIds`.
+
+### Deviations
+
+None in the assigned behavior. `entry-port.ts` was not changed: task 4.4 names the imports key and does not name that export. The notice kind is `availability_changed`. The menu flag stays per venue and product; `variantId` is only on the notice. `idsOnly` in `orders-realtime.controller.ts` still assumes every other kind has `checkId`, `tableId`, and `lineIds`. That file was left for task 5.2. Postgres `drizzle-menu-repository` still does not store `inventoryState`, so a later SQL load does not remember the flag. The in-memory repository keeps the same menu object, which is what these tests use. The projector already skips an unchanged state before it calls this use case.
+
+### Deferred
+
+Cloud HTTP and composition stay in tasks 5.1 and 5.2. No Nest listener. Not committed. `state.yaml` was not edited.
+
+## Work unit 6 (cloud HTTP)
+
+Work unit 6 of 6: cloud threshold, menu flag, and projector wiring (tasks 5.1 and 5.2). Mode: Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing HTTP test was written and run before the route, the column, and the projector wiring existed.
+
+Delivery: chained PR slice. Chain strategy: feature-branch-chain. Decision needed before apply: No. This batch is the cloud HTTP slice only. Intended PR 6, base PR 5. Not created. Not committed. Not pushed. Tasks 1.1–4.4 stay done. `state.yaml` was not edited.
+
+### RED then GREEN
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 5.1 → 5.2 | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/producible-quantity.controller.test.ts` exit 1. `Failed Tests 4`. `Test Files  1 failed (1)`. `Tests  4 failed (4)`. Waiter route permission was missing, the owner threshold returned 404, the sold-out menu path returned 404, and 30 units published no `availability_changed` event. | Same command exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Also `orders-realtime.controller.test.ts` exit 0, `Tests  2 passed (2)`. `menu.test.ts` plus `apply-menu-availability.test.ts` exit 0, `Test Files  2 passed (2)`, `Tests  15 passed (15)`. `project-producible-quantity.test.ts` exit 0, `Tests  12 passed (12)`. |
+
+## Work unit 6 evidence
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/producible-quantity.controller.test.ts` — exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Companion commands, all exit 0: `orders-realtime.controller.test.ts` (`Tests  2 passed (2)`); `contexts/orders/domain/menu.test.ts` and `apply-menu-availability.test.ts` (`Test Files  2 passed (2)`, `Tests  15 passed (15)`); `project-producible-quantity.test.ts` (`Tests  12 passed (12)`). Full inventory, orders, typecheck, lint, and architecture were not run. |
+| Runtime harness command/scenario and exact result | Nest `inject` only. `server.listening` stayed false. Waiter `POST .../low-units-threshold` is 403 `InventoryConfigureLevelsDenied` and writes no audit. Owner sets threshold 5, gets 200, and one `inventory.configure-levels` audit with `after.lowUnitsThreshold` 5. Five units under that threshold show `low_units` and stay orderable; a fillet with no stock shows `sold_out`, stays orderable, and the waiter send returns 200. Publishing 30 units emits one `available` event; sending one unit (30 to 29) adds no event and no cost field. |
+| Rollback boundary | `apps/api-cloud/test/http/producible-quantity.controller.test.ts`, `apps/api-cloud/src/http/update-menu.controller.ts`, the projector wiring appended in `apps/api-cloud/src/composition/application-module.ts`, the `availability_changed` branch in `orders-realtime.controller.ts`, the appended member in `shared/contracts/dining-room.ts`, the optional `inventoryState` on `shared/contracts/menu.ts`, `contexts/orders/adapters/postgres/schema.ts` (`low_units_threshold` plus `menu_inventory_states`), `0008_low_units_threshold.sql`, `drizzle-menu-repository.ts`, the threshold and `inventoryStates` getter on `contexts/orders/domain/menu.ts` (`isOrderable` unchanged), and the package export entries. Reverting those removes this slice. Purchase, production, transfer, shortage routes, and `EvaluateStockLevels` inside the ledger transaction stay. |
+
+### Threshold, flag, and projector
+
+`POST /tenants/:tenantId/venues/:venueId/low-units-threshold` requires `inventory.configure-levels`. Null stores a skip. The menu view keeps the stored `inventoryState` without a second availability rule. `isOrderable` is unchanged: manual off stays not orderable, in-schedule `low_units` stays orderable, and `sold_out` still sends.
+
+`ProjectProducibleQuantity` runs after sale, return, waste, and recipe publish. Each call binds the tenant on a new publisher so the notice can reach `ApplyMenuAvailability`. Purchase, production, and transfer do not call it. `EvaluateStockLevels` remains inside the ledger transaction of register-sale, record-waste, return-stock, and receive-purchase.
+
+`orders-realtime` maps `availability_changed` to site (`venueId`), product, variant, and state before the bare-kind return. Existing `printer_failed`, `line_ready`, `billing_data_received`, and `not_restocked` branches stay. The payload has no cost.
+
+### Deviations
+
+`contexts/orders/domain/menu.ts` gained `lowUnitsThreshold` and an `inventoryStates` getter so the in-memory menu and Drizzle can round-trip the threshold and the stored flag. `isOrderable` was not changed. `shared/contracts/menu.ts` gained an optional `inventoryState` so `venueMenu.parse` does not strip the flag. `0008` also creates `menu_inventory_states`; `venue_prices` has the one nullable column. `contexts/orders/package.json` exports `ApplyMenuAvailability`. `contexts/inventory/package.json` exports the projector ports and the two projection repositories so api-cloud can construct them without editing `entry-port.ts`. `drizzle-menu-repository.contract.test.ts` now applies `0008` after `0001`. `shared/sync` was not edited.
+
+### Deferred
+
+No archive. Not committed. `state.yaml` was not edited. The full inventory and orders suites were not run.

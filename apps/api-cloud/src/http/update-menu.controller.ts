@@ -39,17 +39,29 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  NotFoundException,
   Param,
   Post,
 } from "@nestjs/common";
+import { z } from "zod";
 
 const SESSION_HEADER = "x-session-id";
 
 export const routePermissions = {
   "POST menu": "menu.edit",
+  "POST venues/:venueId/low-units-threshold": "inventory.configure-levels",
 } as const;
 
 const ACTION = routePermissions["POST menu"];
+const THRESHOLD_ACTION =
+  routePermissions["POST venues/:venueId/low-units-threshold"];
+
+const lowUnitsThresholdCommand = z
+  .object({
+    productId: z.string().min(1),
+    threshold: z.number().int().nonnegative().nullable(),
+  })
+  .strict();
 
 const DOMAIN_REJECTION = [
   DuplicateMenuId,
@@ -168,11 +180,101 @@ export class UpdateMenuController {
     }
   }
 
+  @Post("venues/:venueId/low-units-threshold")
+  @HttpCode(HttpStatus.OK)
+  async setLowUnitsThreshold(
+    @Param("tenantId") tenantId: string,
+    @Param("venueId") venueId: string,
+    @Headers(SESSION_HEADER) sessionHeader: unknown,
+    @Body() body: unknown,
+  ): Promise<{ productId: string; lowUnitsThreshold: number | null }> {
+    const sessionId = readText(sessionHeader);
+    const parsed = lowUnitsThresholdCommand.safeParse(body);
+
+    if (sessionId === null || !parsed.success) {
+      throw new BadRequestException();
+    }
+
+    const brandId = await this.venues.brandOf(tenantId, venueId);
+
+    if (brandId === null) {
+      throw new NotFoundException();
+    }
+
+    const decision = await this.permit(
+      tenantId,
+      sessionId,
+      brandId,
+      venueId,
+      THRESHOLD_ACTION,
+    );
+
+    if (decision.outcome !== "allowed") {
+      throw new ForbiddenException({
+        error: "InventoryConfigureLevelsDenied",
+      });
+    }
+
+    const session = await this.sessions.find(tenantId, sessionId);
+
+    if (!session) {
+      throw new ForbiddenException({ error: "UnknownSession" });
+    }
+
+    const menu = await this.menus.load(tenantId, brandId);
+
+    if (menu === null) {
+      throw new NotFoundException();
+    }
+
+    const before =
+      menu.venuePrices.find(
+        (price) =>
+          price.venueId === venueId && price.itemId === parsed.data.productId,
+      )?.lowUnitsThreshold ?? null;
+
+    try {
+      menu.setLowUnitsThreshold({
+        venueId,
+        itemId: parsed.data.productId,
+        threshold: parsed.data.threshold,
+      });
+      await this.menus.save(menu);
+    } catch (error: unknown) {
+      const rejection = domainRejectionName(error);
+
+      if (rejection !== null) {
+        throw new ConflictException({ error: rejection });
+      }
+
+      throw error;
+    }
+
+    await new RecordAuditEvent(this.audits, this.digests, this.clock).execute({
+      tenantId,
+      actorId: session.userId,
+      authorizerId: decision.selfAuthorized ? session.userId : null,
+      deviceId: session.deviceId,
+      siteId: venueId,
+      action: THRESHOLD_ACTION,
+      entity: parsed.data.productId,
+      before: { lowUnitsThreshold: before },
+      after: { lowUnitsThreshold: parsed.data.threshold },
+      reason: THRESHOLD_ACTION,
+    });
+
+    return {
+      productId: parsed.data.productId,
+      lowUnitsThreshold: parsed.data.threshold,
+    };
+  }
+
   private async permit(
     tenantId: string,
     sessionId: string,
     brandId: string,
     venueId: string | null,
+    permission: typeof ACTION | typeof THRESHOLD_ACTION = ACTION,
   ) {
     const evaluate = new EvaluatePermission(
       this.authorizations,
@@ -185,7 +287,7 @@ export class UpdateMenuController {
       return await evaluate.execute({
         tenantId,
         sessionId,
-        permission: ACTION,
+        permission,
         target:
           venueId === null
             ? { kind: "brand", id: brandId, brandId: null }

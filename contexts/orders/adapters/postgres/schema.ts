@@ -110,10 +110,27 @@ export const venuePrices = pgTable(
     available: boolean("available").notNull(),
     windowStart: text("window_start"),
     windowEnd: text("window_end"),
+    lowUnitsThreshold: integer("low_units_threshold"),
   },
   (table) => [
     primaryKey({
       columns: [table.tenantId, table.menuId, table.venueId, table.itemId],
+    }),
+  ],
+);
+
+export const menuInventoryStates = pgTable(
+  "menu_inventory_states",
+  {
+    tenantId: text("tenant_id").notNull(),
+    menuId: text("menu_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    productId: text("product_id").notNull(),
+    state: text("state").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.menuId, table.venueId, table.productId],
     }),
   ],
 );

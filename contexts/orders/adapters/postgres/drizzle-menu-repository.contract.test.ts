@@ -5,10 +5,11 @@ import { afterAll, expect, it } from "vitest";
 import { DrizzleMenuRepository } from "#adapters/postgres/drizzle-menu-repository.js";
 import { menuRepositoryContract } from "#application/ports/menu-repository.contract.js";
 
-const migration = readFileSync(
-  fileURLToPath(new URL("./0001_menu.sql", import.meta.url)),
-  "utf8",
-);
+const migration = ["0001_menu.sql", "0008_low_units_threshold.sql"]
+  .map((name) =>
+    readFileSync(fileURLToPath(new URL(`./${name}`, import.meta.url)), "utf8"),
+  )
+  .join("\n");
 
 const clients: PGlite[] = [];
 

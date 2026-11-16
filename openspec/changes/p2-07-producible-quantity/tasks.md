@@ -41,12 +41,12 @@ Read-only on api-cloud. No stock append, `shared/sync`, SQLite, or local-node. D
 
 ## 4. Menu
 
-- [ ] 4.1 RED `contexts/orders/domain/menu.test.ts`: manual off stays not orderable at 20 units; in-schedule `low_units` stays orderable; no state omits `inventoryState`.
-- [ ] 4.2 GREEN `contexts/orders/domain/menu.ts`: `inventoryState` in `presentProduct`. `isOrderable` stays manual availability plus schedule.
-- [ ] 4.3 RED `contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts`: same state does not publish; `sold_out` still sends.
-- [ ] 4.4 GREEN that folder on `RealtimeHub` only on change. Add `#application/apply-menu-availability/*` in `contexts/orders/package.json`.
+- [x] 4.1 RED `contexts/orders/domain/menu.test.ts`: manual off stays not orderable at 20 units; in-schedule `low_units` stays orderable; no state omits `inventoryState`.
+- [x] 4.2 GREEN `contexts/orders/domain/menu.ts`: `inventoryState` in `presentProduct`. `isOrderable` stays manual availability plus schedule.
+- [x] 4.3 RED `contexts/orders/application/apply-menu-availability/apply-menu-availability.test.ts`: same state does not publish; `sold_out` still sends.
+- [x] 4.4 GREEN that folder on `RealtimeHub` only on change. Add `#application/apply-menu-availability/*` in `contexts/orders/package.json`.
 
 ## 5. Cloud HTTP
 
-- [ ] 5.1 RED `apps/api-cloud/test/http/producible-quantity.controller.test.ts` via `inject`, no `listen`: waiter denied; `inventory.configure-levels` audits 5; the menu shows the flag; `sold_out` send succeeds; 30 to 29 emits nothing.
-- [ ] 5.2 GREEN the threshold on `update-menu.controller.ts`. Nullable `lowUnitsThreshold` on `venue_prices` (null skips `low_units`). Projector in `application-module.ts` after sale, return, waste, and publish. `availability_changed` on `orders-realtime`. No `shared/sync`. Skip purchase, production, and transfer. `pnpm vitest run --project inventory`, `--project orders`, and the api-cloud test.
+- [x] 5.1 RED `apps/api-cloud/test/http/producible-quantity.controller.test.ts` via `inject`, no `listen`: waiter denied; `inventory.configure-levels` audits 5; the menu shows the flag; `sold_out` send succeeds; 30 to 29 emits nothing.
+- [x] 5.2 GREEN the threshold on `update-menu.controller.ts`. Nullable `lowUnitsThreshold` on `venue_prices` (null skips `low_units`). Projector in `application-module.ts` after sale, return, waste, and publish. `availability_changed` on `orders-realtime`. No `shared/sync`. Skip purchase, production, and transfer. `pnpm vitest run --project inventory`, `--project orders`, and the api-cloud test.

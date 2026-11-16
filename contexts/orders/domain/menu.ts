@@ -59,6 +59,15 @@ export interface VenuePrice {
   price: number;
   available: boolean;
   window?: VenueWindow;
+  lowUnitsThreshold?: number | null;
+}
+
+export type InventoryState = "available" | "low_units" | "sold_out";
+
+interface StoredInventoryState {
+  venueId: string;
+  productId: string;
+  state: InventoryState;
 }
 
 export class InvalidMenuId extends Error {
@@ -151,6 +160,7 @@ export class Menu {
   private readonly productList: ListedProduct[] = [];
   private readonly comboList: ListedCombo[] = [];
   private readonly venuePriceList: VenuePrice[] = [];
+  private readonly inventoryStateList: StoredInventoryState[] = [];
 
   private constructor(id: string, tenantId: string, brandId: string) {
     this.id = id;
@@ -206,6 +216,21 @@ export class Menu {
             },
           }
         : {}),
+      ...(venuePrice.lowUnitsThreshold === undefined
+        ? {}
+        : { lowUnitsThreshold: venuePrice.lowUnitsThreshold }),
+    }));
+  }
+
+  get inventoryStates(): readonly {
+    venueId: string;
+    productId: string;
+    state: InventoryState;
+  }[] {
+    return this.inventoryStateList.map((entry) => ({
+      venueId: entry.venueId,
+      productId: entry.productId,
+      state: entry.state,
     }));
   }
 
@@ -295,6 +320,11 @@ export class Menu {
     assertCop(input.price);
     this.sellableById(input.itemId);
 
+    const previous = this.venuePriceFor(input.venueId, input.itemId);
+    const lowUnitsThreshold =
+      input.lowUnitsThreshold !== undefined
+        ? input.lowUnitsThreshold
+        : previous?.lowUnitsThreshold;
     const stored: VenuePrice = {
       venueId: input.venueId,
       itemId: input.itemId,
@@ -308,6 +338,7 @@ export class Menu {
             },
           }
         : {}),
+      ...(lowUnitsThreshold === undefined ? {} : { lowUnitsThreshold }),
     };
     const index = this.venuePriceList.findIndex(
       (price) =>
@@ -320,6 +351,51 @@ export class Menu {
     }
 
     this.venuePriceList[index] = stored;
+  }
+
+  setLowUnitsThreshold(input: {
+    venueId: string;
+    itemId: string;
+    threshold: number | null;
+  }): void {
+    assertMenuId(input.itemId);
+    const product = this.productById(input.itemId);
+    const current = this.venuePriceFor(input.venueId, input.itemId);
+
+    this.setVenuePrice({
+      venueId: input.venueId,
+      itemId: input.itemId,
+      price: current?.price ?? product.price,
+      available: current?.available ?? true,
+      ...(current?.window === undefined ? {} : { window: current.window }),
+      lowUnitsThreshold: input.threshold,
+    });
+  }
+
+  setInventoryState(input: {
+    venueId: string;
+    productId: string;
+    state: InventoryState;
+  }): void {
+    assertMenuId(input.productId);
+    this.productById(input.productId);
+
+    const stored: StoredInventoryState = {
+      venueId: input.venueId,
+      productId: input.productId,
+      state: input.state,
+    };
+    const index = this.inventoryStateList.findIndex(
+      (entry) =>
+        entry.venueId === input.venueId && entry.productId === input.productId,
+    );
+
+    if (index === -1) {
+      this.inventoryStateList.push(stored);
+      return;
+    }
+
+    this.inventoryStateList[index] = stored;
   }
 
   quote(input: {
@@ -419,6 +495,15 @@ export class Menu {
     );
   }
 
+  private inventoryStateFor(
+    venueId: string,
+    productId: string,
+  ): InventoryState | undefined {
+    return this.inventoryStateList.find(
+      (entry) => entry.venueId === venueId && entry.productId === productId,
+    )?.state;
+  }
+
   private priceInForce(
     itemId: string,
     brandPrice: number,
@@ -468,6 +553,8 @@ export class Menu {
     venueId: string,
     minute: string,
   ) {
+    const inventoryState = this.inventoryStateFor(venueId, product.id);
+
     return {
       id: product.id,
       name: product.name,
@@ -483,6 +570,7 @@ export class Menu {
         price: modifier.price,
       })),
       orderable: this.isOrderable(product.id, venueId, minute),
+      ...(inventoryState === undefined ? {} : { inventoryState }),
     };
   }
 }
