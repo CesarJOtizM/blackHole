@@ -9,7 +9,7 @@ Chained PRs recommended: Yes
 Chain strategy: feature-branch-chain
 400-line budget risk: High
 
-PA-42 open: variance after submit, no hide/show. Session feeds 2.10. No snapshot, node, sync, SQLite, VAT, or `record-waste` edits. Paths omit `contexts/inventory/`.
+D-49, after verify: the sheet hides theory and variance stays on the submit response. Session feeds 2.10. No snapshot, node, sync, SQLite, VAT, or `record-waste` edits. Paths omit `contexts/inventory/`.
 
 ### Suggested Work Units
 
@@ -40,19 +40,19 @@ PA-42 open: variance after submit, no hide/show. Session feeds 2.10. No snapshot
 - [x] 2.6 GREEN `application/record-operational-waste/`. `StockMoved` on `after_sales`, `recipeVersion` 0, document id as `orderLineId`.
 - [x] 2.7 RED `application/record-stock-count/record-stock-count.test.ts`: dairy. −600 g at 900 under 1000 posts one `count_adjustment`; 1500 posts none. Later sale ignored. `LimitRaised` if raised. Factor, then `QUANTITY_SCALE`.
 - [x] 2.8 GREEN `application/record-stock-count/`. Snapshot `averageCost`. Never `nextAverageCost`.
-- [ ] 2.9 RED `application/approve-adjustment/approve-adjustment.test.ts`: approval posts frozen lines. Reject audits, writes nothing, recount may open. Self-approval needs the shift flag.
-- [ ] 2.10 GREEN `application/approve-adjustment/`. Export four use cases from `application/entry-port.ts` and `#application/<folder>/*` in `package.json`.
+- [x] 2.9 RED `application/approve-adjustment/approve-adjustment.test.ts`: approval posts frozen lines. Reject audits, writes nothing, recount may open. Self-approval needs the shift flag.
+- [x] 2.10 GREEN `application/approve-adjustment/`. Export four use cases from `application/entry-port.ts` and `#application/<folder>/*` in `package.json`.
 
 ## 3. Persistence
 
-- [ ] 3.1 RED `application/ports/stock-count-repository.contract.ts` on memory: freeze matches, other tenant hidden, reject leaves stock. No Drizzle mock.
-- [ ] 3.2 GREEN `adapters/memory` for sessions, lines, and classifications. Roles on `application/ports/stock-ledger-repository.ts` and `application/ports/stock-movement-queue.ts`.
-- [ ] 3.3 RED that contract on PGlite with `SET LOCAL` `app.tenant_id`.
-- [ ] 3.4 GREEN `adapters/postgres/schema.ts` and the next `*_waste_and_counts.sql`: session, line, classification. Reuse `stock_movements`.
-- [ ] 3.5 GREEN Postgres repositories and `package.json` exports. Retry unique (tenant, document, role, ingredient). Sale rows stay.
-- [ ] 3.6 `shared/contracts/stock-movement.ts` and `shared/contracts/index.ts`: allow both roles on `StockMoved`.
+- [x] 3.1 RED `application/ports/stock-count-repository.contract.ts` on memory: freeze matches, other tenant hidden, reject leaves stock. No Drizzle mock.
+- [x] 3.2 GREEN `adapters/memory` for sessions, lines, and classifications. Roles on `application/ports/stock-ledger-repository.ts` and `application/ports/stock-movement-queue.ts`.
+- [x] 3.3 RED that contract on PGlite with `SET LOCAL` `app.tenant_id`.
+- [x] 3.4 GREEN `adapters/postgres/schema.ts` and the next `*_waste_and_counts.sql`: session, line, classification. Reuse `stock_movements`.
+- [x] 3.5 GREEN Postgres repositories and `package.json` exports. Retry unique (tenant, document, role, ingredient). Sale rows stay.
+- [x] 3.6 `shared/contracts/stock-movement.ts` and `shared/contracts/index.ts`: allow both roles on `StockMoved`.
 
 ## 4. Cloud HTTP
 
-- [ ] 4.1 RED `apps/api-cloud/test/http/stock-operations.controller.test.ts` via `inject`, no listen: flag off skips routes. Over-cap waste posts nothing. Approval returns the freeze. Bad reason is 400.
-- [ ] 4.2 GREEN `apps/api-cloud/src/http/stock-operations.controller.ts` and `apps/api-cloud/src/composition/application-module.ts`. Postgres. `wasteAndCountsEnabled` defaults off.
+- [x] 4.1 RED `apps/api-cloud/test/http/stock-operations.controller.test.ts` via `inject`, no listen: flag off skips routes. Over-cap waste posts nothing. Approval returns the freeze. Bad reason is 400.
+- [x] 4.2 GREEN `apps/api-cloud/src/http/stock-operations.controller.ts` and `apps/api-cloud/src/composition/application-module.ts`. Postgres. `wasteAndCountsEnabled` defaults off.

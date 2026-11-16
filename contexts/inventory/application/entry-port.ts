@@ -128,6 +128,20 @@ export {
   UnknownRecipeVersion,
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
+export type { ApproveAdjustmentInput } from "#application/approve-adjustment/approve-adjustment.js";
+export {
+  ApproveAdjustment,
+  UnknownCountSession,
+} from "#application/approve-adjustment/approve-adjustment.js";
+export type { RecordOperationalWasteInput } from "#application/record-operational-waste/record-operational-waste.js";
+export { RecordOperationalWaste } from "#application/record-operational-waste/record-operational-waste.js";
+export type { RecordStockCountInput } from "#application/record-stock-count/record-stock-count.js";
+export { RecordStockCount } from "#application/record-stock-count/record-stock-count.js";
+export type { SetIngredientCategoryInput } from "#application/set-ingredient-category/set-ingredient-category.js";
+export {
+  IngredientHidden,
+  SetIngredientCategory,
+} from "#application/set-ingredient-category/set-ingredient-category.js";
 export type {
   RequestTransferInput,
   RequestTransferLine,

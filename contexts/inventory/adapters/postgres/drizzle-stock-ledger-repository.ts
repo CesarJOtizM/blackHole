@@ -247,6 +247,23 @@ export class DrizzleStockLedgerRepository extends StockLedgerRepository {
     const failAt = this.failAt;
     this.failAt = null;
 
+    try {
+      await this.writeAppend(tenantId, input, failAt, false);
+    } catch (error: unknown) {
+      if (!canRetryDocumentLine(input, error)) {
+        throw error;
+      }
+
+      await this.writeAppend(tenantId, input, null, true);
+    }
+  }
+
+  private async writeAppend(
+    tenantId: string,
+    input: AppendStock,
+    failAt: number | null,
+    skipExisting: boolean,
+  ): Promise<void> {
     await this.inTenant(tenantId, async (tx) => {
       let position = await nextMovementPosition(tx);
       let queuedPosition = await nextQueuedPosition(tx);
@@ -254,6 +271,14 @@ export class DrizzleStockLedgerRepository extends StockLedgerRepository {
       for (const [index, movement] of input.movements.entries()) {
         if (failAt === index + 1) {
           throw new Error(INSERT_FAILED);
+        }
+
+        if (
+          skipExisting &&
+          postsDocumentBalance(movement.role) &&
+          (await documentLineStored(tx, movement))
+        ) {
+          continue;
         }
 
         await tx.insert(stockMovements).values({
@@ -452,6 +477,61 @@ export class DrizzlePointOfSaleDirectory extends PointOfSaleDirectory {
     });
   }
 }
+
+const postsDocumentBalance = (role: string): boolean =>
+  role === CONSUMPTION_ROLE.OPERATIONAL_WASTE ||
+  role === CONSUMPTION_ROLE.COUNT_ADJUSTMENT;
+
+const isDocumentLineConflict = (error: unknown): boolean => {
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current && typeof current === "object" && !visited.has(current)) {
+    visited.add(current);
+    const record = current as {
+      code?: string;
+      constraint?: string;
+      message?: string;
+      cause?: unknown;
+    };
+    const namesThisLine =
+      record.constraint === "stock_movements_line" ||
+      record.message?.includes("stock_movements_line") === true;
+
+    if (record.code === "23505" && namesThisLine) {
+      return true;
+    }
+
+    current = record.cause;
+  }
+
+  return false;
+};
+
+const canRetryDocumentLine = (input: AppendStock, error: unknown): boolean =>
+  input.movements.length > 0 &&
+  input.movements.every((movement) => postsDocumentBalance(movement.role)) &&
+  isDocumentLineConflict(error);
+
+const documentLineStored = async (
+  tx: Transaction,
+  movement: LedgerLine,
+): Promise<boolean> => {
+  const [row] = await tx
+    .select({ id: stockMovements.id })
+    .from(stockMovements)
+    .where(
+      and(
+        eq(stockMovements.tenantId, movement.tenantId),
+        eq(stockMovements.orderLineId, movement.orderLineId),
+        eq(stockMovements.role, movement.role),
+        eq(stockMovements.ingredientId, movement.ingredientId),
+      ),
+    )
+    .limit(1);
+
+  return row !== undefined;
+};
 
 const nextMovementPosition = async (tx: Transaction): Promise<number> => {
   const [row] = await tx

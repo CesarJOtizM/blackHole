@@ -17,6 +17,8 @@ interface StockContract {
       type: string;
       quantity: number;
       movementType: string;
+      orderLineId: string;
+      recipeVersion: number;
       role: string;
     };
     safeParse: (input: unknown) => { success: boolean };
@@ -83,4 +85,73 @@ it("given a stock movement and an opened shortage, when the contracts parse them
   expect(index).toContain("stockMoved");
   expect(index).toContain("negativeStockOpened");
   expect(ledger.includes("zod")).toBe(false);
+});
+
+it("given operational waste and a count adjustment, when StockMoved parses them, then both roles stay valid with recipeVersion 0 and the document id beside consumption and reversal", async () => {
+  const loaded = (await import(
+    pathToFileURL(contractPath).href
+  )) as StockContract;
+  const documentId = "document_milk_shortage";
+  const movement = (
+    role: string,
+    movementType: string,
+    recipeVersion: number,
+  ) => ({
+    type: "StockMoved",
+    movementId: `movement_${documentId}_${role}`,
+    tenantId: "organization_tenant_1",
+    venueId: "organization_venue_1",
+    locationId: "location_point_of_sale",
+    ingredientId: "ingredient_milk",
+    quantity: -600_000,
+    unitCost: 1_500,
+    movementType,
+    orderLineId: documentId,
+    recipeVersion,
+    occurredAt: "2026-11-13T18:00:00.000Z",
+    role,
+  });
+
+  const consumption = loaded.stockMoved.parse(
+    movement("consumption", "sale_consumption", 0),
+  );
+  const reversal = loaded.stockMoved.parse(movement("reversal", "waste", 0));
+  const operationalWaste = loaded.stockMoved.parse(
+    movement("operational_waste", "waste", 0),
+  );
+  const countAdjustment = loaded.stockMoved.parse(
+    movement("count_adjustment", "count_adjustment", 0),
+  );
+
+  expect(consumption).toMatchObject({
+    role: "consumption",
+    orderLineId: documentId,
+    recipeVersion: 0,
+  });
+  expect(reversal).toMatchObject({
+    role: "reversal",
+    orderLineId: documentId,
+    recipeVersion: 0,
+  });
+  expect(operationalWaste).toMatchObject({
+    role: "operational_waste",
+    movementType: "waste",
+    orderLineId: documentId,
+    recipeVersion: 0,
+  });
+  expect(countAdjustment).toMatchObject({
+    role: "count_adjustment",
+    movementType: "count_adjustment",
+    orderLineId: documentId,
+    recipeVersion: 0,
+  });
+  expect(
+    loaded.stockMoved.safeParse({
+      ...movement("operational_waste", "waste", 0),
+      extra: true,
+    }).success,
+  ).toBe(false);
+  expect(
+    loaded.stockMoved.safeParse(movement("sale_void", "waste", 0)).success,
+  ).toBe(false);
 });

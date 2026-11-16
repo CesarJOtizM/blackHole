@@ -15,6 +15,8 @@ const MOVEMENT_TYPE = {
 const CONSUMPTION_ROLE = {
   CONSUMPTION: "consumption",
   REVERSAL: "reversal",
+  OPERATIONAL_WASTE: "operational_waste",
+  COUNT_ADJUSTMENT: "count_adjustment",
 } as const;
 
 export const stockMoved = z

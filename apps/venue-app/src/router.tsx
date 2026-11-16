@@ -67,6 +67,15 @@ const transfersRoute = createRoute({
   ),
 });
 
+const stockCountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "stock-count",
+  component: lazyRouteComponent(
+    () => import("#src/stock-counts/count-screen.js"),
+    "StockCountScreen",
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   floorRoute,
   kitchenRoute,
@@ -74,6 +83,7 @@ const routeTree = rootRoute.addChildren([
   clockRoute,
   purchasingRoute,
   transfersRoute,
+  stockCountRoute,
 ]);
 
 export const router = createRouter({
@@ -157,6 +167,15 @@ function VenueLayout() {
               }}
             >
               Traslados
+            </Link>
+            <Link
+              to="/stock-count"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Conteo
             </Link>
           </nav>
         </header>

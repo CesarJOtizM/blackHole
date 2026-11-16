@@ -50,6 +50,10 @@ import {
 import { DrizzleProductionRepository } from "@blackhole/inventory/adapters/postgres/drizzle-production-repository";
 import { DrizzlePurchasingRepository } from "@blackhole/inventory/adapters/postgres/drizzle-purchasing-repository";
 import {
+  DrizzleIngredientClassification,
+  DrizzleStockCountRepository,
+} from "@blackhole/inventory/adapters/postgres/drizzle-stock-count-repository";
+import {
   DrizzlePointOfSaleDirectory,
   DrizzleStockLedgerRepository,
   DrizzleStockMovementQueue,
@@ -61,6 +65,10 @@ import {
   CreatePurchaseOrder,
   DestinationStock,
   ExplodeRecipe,
+  MarkAlertSeen,
+  ProjectProducibleQuantity,
+  RecordOperationalWaste,
+  RecordStockCount,
   RecordWaste,
   RegisterSaleConsumption,
   ReturnStock,
@@ -320,6 +328,10 @@ import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
 import { SettleTipsController } from "#src/http/settle-tips.controller.js";
+import {
+  CountSessionReader,
+  StockOperationsController,
+} from "#src/http/stock-operations.controller.js";
 import { TableQrController } from "#src/http/table-qr.controller.js";
 import { TableQrAdminController } from "#src/http/table-qr-admin.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
@@ -407,6 +419,7 @@ export interface CloudApplicationDependencies {
   purchasingEnabled?: boolean;
   productionEnabled?: boolean;
   transfersEnabled?: boolean;
+  wasteAndCountsEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -539,6 +552,148 @@ const openTransfers = (
   };
 };
 
+const openWasteAndCounts = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): {
+  controllers: (typeof StockOperationsController)[];
+  providers: Provider[];
+} => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Waste and counts require PostgreSQL.");
+  }
+
+  const counts = new DrizzleStockCountRepository(database);
+  const classifications = new DrizzleIngredientClassification(database);
+
+  return {
+    controllers: [StockOperationsController],
+    providers: [
+      {
+        provide: CountSessionReader,
+        useValue: {
+          sessionOf: (tenantId: string, documentId: string) =>
+            counts.sessionOf(tenantId, documentId),
+        },
+      },
+      {
+        provide: RecordOperationalWaste,
+        useFactory: (
+          ledger: StockLedgerRepository,
+          queue: StockMovementQueue,
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new RecordOperationalWaste(
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            ledger,
+            queue,
+            new RecordAuditEvent(audits, digests, clock),
+          ),
+        inject: [
+          StockLedgerRepository,
+          StockMovementQueue,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      {
+        provide: RecordStockCount,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+          catalogs: RecipeCatalogRepository,
+          organizations: OrganizationRepository,
+        ) =>
+          new RecordStockCount(
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            counts,
+            classifications,
+            new CatalogPublishedPurchaseFactor(catalogs, organizations),
+            new RecordAuditEvent(audits, digests, clock),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          RecipeCatalogRepository,
+          OrganizationRepository,
+        ],
+      },
+      {
+        provide: ApproveAdjustment,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new ApproveAdjustment(
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            counts,
+            new RecordAuditEvent(audits, digests, clock),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      {
+        provide: SetIngredientCategory,
+        useValue: new SetIngredientCategory(classifications),
+      },
+    ],
+  };
+};
+
 class OrdersClockAdapter extends OrdersClock {
   constructor(private readonly source: Clock) {
     super();
@@ -627,6 +782,10 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.transfersEnabled === true,
     );
+    const wasteAndCounts = openWasteAndCounts(
+      dependencies.inventoryDatabase,
+      dependencies.wasteAndCountsEnabled === true,
+    );
 
     return {
       module: ApplicationModule,
@@ -684,11 +843,13 @@ export class ApplicationModule implements NestModule {
         ...purchasing.controllers,
         ...production.controllers,
         ...transfers.controllers,
+        ...wasteAndCounts.controllers,
       ],
       providers: [
         ...purchasing.providers,
         ...production.providers,
         ...transfers.providers,
+        ...wasteAndCounts.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,
