@@ -6,6 +6,7 @@
   "exports": {
     "./domain": "./domain/index.js",
     "./application/entry-port": "./application/entry-port.js",
+    "./application/apply-menu-availability/apply-menu-availability": "./application/apply-menu-availability/apply-menu-availability.js",
     "./application/ports/clock": "./application/ports/clock.js",
     "./application/ports/dining-room-repository": "./application/ports/dining-room-repository.js",
     "./application/ports/menu-repository": "./application/ports/menu-repository.js",
@@ -61,7 +62,10 @@
     "#application/ports/*": "./application/ports/*",
     "#adapters/memory/*": "./adapters/memory/*",
     "#adapters/postgres/*": "./adapters/postgres/*",
-    "#application/withdraw-unstarted-lines/*": "./application/withdraw-unstarted-lines/*"
+    "#application/withdraw-unstarted-lines/*": "./application/withdraw-unstarted-lines/*",
+    "#application/confirm-guest-told/*": "./application/confirm-guest-told/*",
+    "#application/mark-line-undeliverable/*": "./application/mark-line-undeliverable/*",
+    "#application/apply-menu-availability/*": "./application/apply-menu-availability/*"
   },
   "dependencies": {
     "@blackhole/inventory": "workspace:*",

@@ -49,11 +49,21 @@ const clockRoute = createRoute({
   ),
 });
 
+const purchasingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "purchasing",
+  component: lazyRouteComponent(
+    () => import("#src/purchasing/receive-screen.js"),
+    "ReceiveScreen",
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   floorRoute,
   kitchenRoute,
   registerRoute,
   clockRoute,
+  purchasingRoute,
 ]);
 
 export const router = createRouter({
@@ -119,6 +129,15 @@ function VenueLayout() {
               }}
             >
               Asistencia
+            </Link>
+            <Link
+              to="/purchasing"
+              className="rounded-md px-3 py-2 text-ink-muted"
+              activeProps={{
+                className: "rounded-md bg-ink px-3 py-2 text-on-strong",
+              }}
+            >
+              Recepción
             </Link>
           </nav>
         </header>
