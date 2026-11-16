@@ -220,4 +220,62 @@ Vitest does not collect `stock-ledger-repository.contract.ts`, so the assigned c
 
 ## Remaining
 
-Phase 4 (4.1–4.3) remains. `state.yaml` stays `applying` with `apply: partial`.
+Phase 4 (4.1–4.3) was open at the end of work unit 3. Work unit 4 starts below.
+
+## Work unit 4 — Cloud HTTP
+
+**Mode**: Standard (`strict_tdd: false`). The failing HTTP test was written before the controller, per ADR-017 and `openspec/config.yaml` `rules.apply`.
+**Delivery**: `auto-chain` / `feature-branch-chain`
+**Work unit**: 4 — Cloud HTTP (tasks 4.1–4.3). Intended PR 4, base: PR 3 branch.
+**Batch**: 4.1, 4.2, and 4.3 only. No food-cost or stock-gap formula changes. No `listByVenue` changes. No admin-web screen. No commit.
+
+## RED then GREEN
+
+Command (both runs):
+
+```text
+pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/read-inventory-report.controller.test.ts
+```
+
+| Phase | Exit code | Result |
+|-------|-----------|--------|
+| RED | 1 | 1 failed suite, no tests. The file failed to load: `Cannot find module '#src/http/read-inventory-report.controller.js'`. |
+| GREEN | 0 | 1 file, 3 passed. Same result after `pnpm exec biome check --write` on the touched files. |
+
+RED was recorded after the contract families and the HTTP test, and before the controller, the facts composition, and the module wiring. GREEN is the same command after those implementations. Nest mapped `GET /tenants/:tenantId/venues/:venueId/inventory-reports/:family`. `server.listening` stayed false.
+
+## Work Unit Evidence
+
+| Evidence | Required value |
+|----------|----------------|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud apps/api-cloud/test/http/read-inventory-report.controller.test.ts` — RED exit 1, 1 failed suite / no tests. GREEN exit 0, 3 passed. |
+| Runtime harness command/scenario and exact result | The same Vitest file boots Nest on Fastify and calls `application.inject`. No `listen`. `server.listening` is false. Missing `inventory.view-cost` is 403 `missing_permission`. Another venue is 403 `other_venue`. Home-venue stock gap is `{ outcome: "ready", report: { status: "pending" } }` and the body has no zero difference. |
+| Rollback boundary | Remove `apps/api-cloud/src/http/read-inventory-report.controller.ts`, `apps/api-cloud/src/composition/inventory-report-facts.ts`, and `apps/api-cloud/test/http/read-inventory-report.controller.test.ts`. Remove the inventory-report controller, `InventoryReportFacts`, `ReadFoodCostReport`, and `ReadStockGapReport` wiring from `apps/api-cloud/src/composition/application-module.ts`. Remove `food-cost` and `stock-gap` from `shared/contracts/reporting.ts` and their names from the existing reporting export in `shared/contracts/index.ts`. Leave purchasing, production, and stock registrations in place. |
+
+## Completed tasks
+
+- [x] 4.1 Families `food-cost` and `stock-gap` in `shared/contracts/reporting.ts`
+- [x] 4.2 RED HTTP test: missing `inventory.view-cost`, other venue, pending is not zero, inject only
+- [x] 4.3 GREEN controller, PostgreSQL facts composition, and `inventory.view-cost` wiring
+
+## Behavior locked
+
+- `GET /tenants/:tenantId/venues/:venueId/inventory-reports/:family` accepts only `food-cost` and `stock-gap`. The site families `sales`, `times`, `cash`, and `staff` stay on the existing reports route.
+- A kitchen chief without `inventory.view-cost` receives 403 `{ error: "missing_permission" }` for both families. The body is not a zeroed report.
+- A site administrator whose session is bound to venue 1 receives 403 `{ error: "other_venue" }` for venue 2.
+- The same administrator on venue 1 receives food cost with `ratio: null` and stock gap `{ status: "pending" }`. The pending body does not contain `differenceQuantity` or `differenceCop` of 0.
+- `routePermissions["GET inventory-reports/:family"]` is `inventory.view-cost`. No local-node controller was added. `server.listening` stays false.
+
+## Deviations
+
+`food-cost` and `stock-gap` are `inventoryReportFamily`, not new members of `reportFamily`. Adding them to the site enum would make `GET .../reports/food-cost` fall through to the staff reader.
+
+A company-scoped administration session has no venue. Its home venue is the requested venue, so the company role is not rejected as `other_venue`. A site assignment, or a pin session with a venue, is the home venue. The HTTP test uses that site session for the other-venue denial.
+
+`ApprovedCountFacts` stays empty. It is not exported from `@blackhole/inventory`, and this batch does not edit that package. With no approved counts, stock gap is pending. When `inventoryDatabase` is set, facts read through `DrizzleStockLedgerRepository`. The inject tests have no database, so they use the ledger the module already opened.
+
+The new schemas are exported from the existing `@blackhole/contracts` reporting barrel. The package exposes only that entry, so the controller can import them. No other contract file was added.
+
+## Remaining
+
+None. Tasks 1.1–4.3 are complete. `state.yaml` is `applied` with `apply: done`. Verify is still pending.

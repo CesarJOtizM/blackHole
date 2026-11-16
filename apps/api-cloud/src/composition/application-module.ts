@@ -239,8 +239,10 @@ import {
 } from "@blackhole/printing/application/entry-port";
 import {
   ReadCashReport,
+  ReadFoodCostReport,
   ReadSalesReport,
   ReadStaffReport,
+  ReadStockGapReport,
   ReadTimeReport,
 } from "@blackhole/reporting/application/entry-port";
 import {
@@ -265,6 +267,10 @@ import {
   PostgresPurchaseAverageCost,
   PurchaseAverageCost,
 } from "#src/composition/inventory-location-directory.js";
+import {
+  createInventoryReportFacts,
+  InventoryReportFacts,
+} from "#src/composition/inventory-report-facts.js";
 import { MenuSitePrice } from "#src/composition/menu-site-price.js";
 import {
   MissingOriginalPaymentReader,
@@ -362,6 +368,7 @@ import {
 } from "#src/http/qr-payment.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
+import { ReadInventoryReportController } from "#src/http/read-inventory-report.controller.js";
 import { ReadSiteReportController } from "#src/http/read-site-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { RecipeCatalogController } from "#src/http/recipe-catalog.controller.js";
@@ -1282,6 +1289,7 @@ export class ApplicationModule implements NestModule {
         AuthorizationController,
         ReadAuditController,
         ReadControlReportController,
+        ReadInventoryReportController,
         ReadSiteReportController,
         DetectUnusualBehaviorController,
         UpdateMenuController,
@@ -2477,6 +2485,33 @@ export class ApplicationModule implements NestModule {
             facts: ReportingFacts,
           ) => new ReadStaffReport(access, shifts, facts),
           inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
+        },
+        {
+          provide: InventoryReportFacts,
+          useFactory: (ledger: StockLedgerRepository) =>
+            createInventoryReportFacts(dependencies.inventoryDatabase, ledger),
+          inject: [StockLedgerRepository],
+        },
+        {
+          provide: ReadFoodCostReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            sales: ReportingFacts,
+            inventory: InventoryReportFacts,
+          ) => new ReadFoodCostReport(access, sales, inventory),
+          inject: [
+            PermissionReportAccess,
+            ReportingFacts,
+            InventoryReportFacts,
+          ],
+        },
+        {
+          provide: ReadStockGapReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            inventory: InventoryReportFacts,
+          ) => new ReadStockGapReport(access, inventory),
+          inject: [PermissionReportAccess, InventoryReportFacts],
         },
         {
           provide: DetectUnusualBehavior,

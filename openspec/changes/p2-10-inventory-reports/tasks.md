@@ -51,6 +51,6 @@ Approved count = p2-06 frozen session (`locationId`, `ingredientId`, quantity, `
 
 ## Phase 4: Cloud HTTP
 
-- [ ] 4.1 Add families `food-cost` and `stock-gap` only in `shared/contracts/reporting.ts`.
-- [ ] 4.2 RED `apps/api-cloud/test/http/read-inventory-report.controller.test.ts` via `application.inject`, no listen: missing `inventory.view-cost` denied; other venue denied; `pending` is not zero.
-- [ ] 4.3 GREEN `apps/api-cloud/src/http/read-inventory-report.controller.ts` (`GET .../venues/:venueId/inventory-reports/:family`). Create `apps/api-cloud/src/composition/inventory-report-facts.ts` on PostgreSQL. Wire `inventory.view-cost` in `apps/api-cloud/src/composition/application-module.ts`. No admin-web screen.
+- [x] 4.1 Add families `food-cost` and `stock-gap` only in `shared/contracts/reporting.ts`.
+- [x] 4.2 RED `apps/api-cloud/test/http/read-inventory-report.controller.test.ts` via `application.inject`, no listen: missing `inventory.view-cost` denied; other venue denied; `pending` is not zero.
+- [x] 4.3 GREEN `apps/api-cloud/src/http/read-inventory-report.controller.ts` (`GET .../venues/:venueId/inventory-reports/:family`). Create `apps/api-cloud/src/composition/inventory-report-facts.ts` on PostgreSQL. Wire `inventory.view-cost` in `apps/api-cloud/src/composition/application-module.ts`. No admin-web screen.
