@@ -58,6 +58,7 @@ export const recipes = pgTable(
     name: text("name").notNull(),
     productId: text("product_id").notNull(),
     variantId: text("variant_id"),
+    outputQuantity: integer("output_quantity"),
   },
   (table) => [
     primaryKey({ columns: [table.tenantId, table.brandId, table.id] }),
@@ -96,6 +97,7 @@ export const recipeVersions = pgTable(
     name: text("name").notNull(),
     productId: text("product_id").notNull(),
     variantId: text("variant_id"),
+    outputQuantity: integer("output_quantity"),
   },
   (table) => [
     primaryKey({
@@ -330,3 +332,40 @@ export const producibleLimitingIngredients = pgTable(
     }),
   ],
 );
+
+export const productionRuns = pgTable(
+  "production_runs",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    recipeId: text("recipe_id").notNull(),
+    recipeVersion: integer("recipe_version").notNull(),
+    expectedQuantity: integer("expected_quantity").notNull(),
+    actualQuantity: integer("actual_quantity").notNull(),
+    variance: integer("variance").notNull(),
+    outputUnitCost: integer("output_unit_cost"),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
+);
+
+export const productionCostPolicies = pgTable(
+  "production_cost_policies",
+  {
+    tenantId: text("tenant_id").notNull(),
+    costRule: text("cost_rule").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId] })],
+);
+
+export const preparationStandardCosts = pgTable(
+  "preparation_standard_costs",
+  {
+    tenantId: text("tenant_id").notNull(),
+    recipeId: text("recipe_id").notNull(),
+    standardUnitCost: integer("standard_unit_cost").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.recipeId] })],
+);
+

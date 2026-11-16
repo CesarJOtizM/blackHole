@@ -30,6 +30,9 @@ const openRepository = (): DrizzleRecipeCopyRepository => {
   const client = new DatabaseSync(":memory:");
   clients.push(client);
   client.exec(migration);
+  client.exec(
+    "ALTER TABLE recipe_copy_recipes ADD COLUMN output_quantity integer",
+  );
 
   return new DrizzleRecipeCopyRepository(client);
 };

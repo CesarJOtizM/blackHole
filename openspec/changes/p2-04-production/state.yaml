@@ -5,8 +5,8 @@ phase: 2
 modules: [M4]
 bounded_contexts: [inventory, contracts, sync]
 apps: [api-cloud, local-node]
-status: applying
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
+status: applied
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: pass, archive: pending}
 depends_on: [p2-01-ingredients-and-recipes, p2-02-sale-consumption, p2-03-purchasing]
 source_docs:
   - docs/roadmap.md

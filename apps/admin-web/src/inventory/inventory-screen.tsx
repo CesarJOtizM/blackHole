@@ -1,4 +1,6 @@
 import {
+  productionCostPolicy,
+  productionRun,
   purchaseReceipt,
 } from "@blackhole/contracts";
 import { useNavigate } from "@tanstack/react-router";
@@ -69,6 +71,8 @@ export function RecipeScreen() {
 }
 
 const RECEIPT_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/purchase-receipts`;
+const RUN_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/production-runs`;
+const POLICY_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/venues/${encodeURIComponent(ADMIN_SCOPE.venueId)}/production-cost-policy`;
 const ORDER_ID = "oc-0418";
 
 function counted(value: string, allowZero: boolean): number | null {
@@ -97,6 +101,42 @@ function averagesFrom(payload: unknown): number[] | null {
   return parsed.data.lines.flatMap((line) =>
     line.averageCost === undefined ? [] : [line.averageCost],
   );
+}
+
+function shownVariance(
+  payload: unknown,
+): { readonly variance: number | null } | null {
+  const parsed = productionRun.safeParse(payload);
+
+  if (!parsed.success) {
+    return null;
+  }
+
+  return {
+    variance: parsed.data.variance === undefined ? null : parsed.data.variance,
+  };
+}
+
+function preparationsFor(
+  rule: "consumed_average" | "standard",
+  preparationId: string,
+  standardCost: string,
+): { recipeId: string; standardUnitCost: number }[] | null {
+  const preparation = preparationId.trim();
+  const hasPreparation = preparation.length > 0;
+  const hasCost = standardCost.trim().length > 0;
+
+  if (rule === "consumed_average" && !hasPreparation && !hasCost) {
+    return [];
+  }
+
+  const cost = counted(standardCost, true);
+
+  if (!hasPreparation || cost === null) {
+    return null;
+  }
+
+  return [{ recipeId: preparation, standardUnitCost: cost }];
 }
 
 export function PurchaseScreen() {
@@ -219,6 +259,187 @@ export function PurchaseScreen() {
       {averages.map((cost, index) => (
         <p key={`${index}-${cost}`}>Costo promedio {cost}</p>
       ))}
+    </RecordPage>
+  );
+}
+
+export function ProductionScreen() {
+  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [recipeId, setRecipeId] = useState("");
+  const [expectedQuantity, setExpectedQuantity] = useState("");
+  const [actualQuantity, setActualQuantity] = useState("");
+  const [costRule, setCostRule] = useState("");
+  const [preparationId, setPreparationId] = useState("");
+  const [standardUnitCost, setStandardUnitCost] = useState("");
+  const [runId] = useState(() => crypto.randomUUID());
+  const [status, setStatus] = useState("");
+  const [variance, setVariance] = useState<number | null>(null);
+
+  async function record() {
+    const expected = counted(expectedQuantity, false);
+    const actual = counted(actualQuantity, true);
+    const recipe = recipeId.trim();
+    const location = locationId.trim();
+
+    if (
+      recipe.length === 0 ||
+      location.length === 0 ||
+      expected === null ||
+      actual === null
+    ) {
+      setVariance(null);
+      setStatus("Revisa la cantidad y la receta.");
+      return;
+    }
+
+    try {
+      const response = await fetch(RUN_PATH, {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "x-session-id": ADMIN_SCOPE.sessionId,
+        },
+        body: JSON.stringify({
+          runId,
+          locationId: location,
+          recipeId: recipe,
+          expectedQuantity: expected,
+          actualQuantity: actual,
+        }),
+      });
+
+      if (!response.ok) {
+        setVariance(null);
+        setStatus("La producción no quedó registrada.");
+        return;
+      }
+
+      const shown = shownVariance(await response.json());
+
+      if (shown === null) {
+        setVariance(null);
+        setStatus("La producción no quedó registrada.");
+        return;
+      }
+
+      setVariance(shown.variance);
+      setStatus("Producción registrada.");
+    } catch {
+      setVariance(null);
+      setStatus("No se puede registrar hasta que vuelva la conexión.");
+    }
+  }
+
+  async function savePolicy() {
+    const rule = costRule.trim();
+
+    if (rule !== "consumed_average" && rule !== "standard") {
+      setVariance(null);
+      setStatus("Revisa la regla de costo.");
+      return;
+    }
+
+    const preparations = preparationsFor(rule, preparationId, standardUnitCost);
+
+    if (preparations === null) {
+      setVariance(null);
+      setStatus("Revisa la regla de costo.");
+      return;
+    }
+
+    try {
+      const response = await fetch(POLICY_PATH, {
+        method: "PUT",
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "x-session-id": ADMIN_SCOPE.sessionId,
+        },
+        body: JSON.stringify({ costRule: rule, preparations }),
+      });
+
+      if (
+        !response.ok ||
+        !productionCostPolicy.safeParse(await response.json()).success
+      ) {
+        setVariance(null);
+        setStatus("La política no quedó registrada.");
+        return;
+      }
+
+      setVariance(null);
+      setStatus("Política guardada.");
+    } catch {
+      setVariance(null);
+      setStatus("No se puede registrar hasta que vuelva la conexión.");
+    }
+  }
+
+  return (
+    <RecordPage
+      eyebrow="Producción"
+      title="Corrida"
+      actions={[
+        {
+          label: "Registrar producción",
+          tone: "solid",
+          onPress: () => {
+            void record();
+          },
+        },
+        {
+          label: "Guardar política",
+          tone: "ghost",
+          onPress: () => {
+            void savePolicy();
+          },
+        },
+      ]}
+      status={status}
+      note="La producción se registra en la nube."
+    >
+      <TextField
+        label="Ubicación"
+        value={locationId}
+        onChange={(event) => setLocationId(event.target.value)}
+      />
+      <TextField
+        label="Receta"
+        value={recipeId}
+        onChange={(event) => setRecipeId(event.target.value)}
+      />
+      <TextField
+        label="Cantidad esperada"
+        inputMode="numeric"
+        value={expectedQuantity}
+        onChange={(event) => setExpectedQuantity(event.target.value)}
+      />
+      <TextField
+        label="Cantidad real"
+        inputMode="numeric"
+        value={actualQuantity}
+        onChange={(event) => setActualQuantity(event.target.value)}
+      />
+      <TextField
+        label="Regla"
+        value={costRule}
+        onChange={(event) => setCostRule(event.target.value)}
+      />
+      <TextField
+        label="Preparación"
+        value={preparationId}
+        onChange={(event) => setPreparationId(event.target.value)}
+      />
+      <TextField
+        label="Costo estándar"
+        inputMode="numeric"
+        value={standardUnitCost}
+        onChange={(event) => setStandardUnitCost(event.target.value)}
+      />
+      {variance === null ? null : <p>Variación {variance}</p>}
     </RecordPage>
   );
 }

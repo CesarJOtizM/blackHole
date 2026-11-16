@@ -47,6 +47,7 @@ import {
   InMemoryStockLedgerRepository,
   InMemoryStockMovementQueue,
 } from "@blackhole/inventory/adapters/memory/in-memory-stock-ledger-repository";
+import { DrizzleProductionRepository } from "@blackhole/inventory/adapters/postgres/drizzle-production-repository";
 import { DrizzlePurchasingRepository } from "@blackhole/inventory/adapters/postgres/drizzle-purchasing-repository";
 import {
   DrizzlePointOfSaleDirectory,
@@ -62,6 +63,7 @@ import {
 import { InventoryLocationDirectory } from "@blackhole/inventory/application/ports/inventory-location-directory";
 import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
 import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
+import { ProductionRepository } from "@blackhole/inventory/application/ports/production-repository";
 import { PublishedPurchaseFactor } from "@blackhole/inventory/application/ports/published-purchase-factor";
 import { PurchasingRepository } from "@blackhole/inventory/application/ports/purchasing-repository";
 import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
@@ -290,6 +292,7 @@ import {
   PrintingController,
   ReprintCap,
 } from "#src/http/printing.controller.js";
+import { ProductionController } from "#src/http/production.controller.js";
 import { PurchasingController } from "#src/http/purchasing.controller.js";
 import {
   QrPaymentController,
@@ -383,6 +386,7 @@ export interface CloudApplicationDependencies {
   >[0];
   saleConsumptionEnabled?: boolean;
   purchasingEnabled?: boolean;
+  productionEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -446,6 +450,31 @@ const openPurchasing = (
       {
         provide: PurchaseAverageCost,
         useValue: new PostgresPurchaseAverageCost(purchasing),
+      },
+    ],
+  };
+};
+
+const openProduction = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): { controllers: (typeof ProductionController)[]; providers: Provider[] } => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Production requires PostgreSQL.");
+  }
+
+  return {
+    controllers: [ProductionController],
+    providers: [
+      {
+        provide: ProductionRepository,
+        useValue: new DrizzleProductionRepository(database),
       },
     ],
   };
@@ -531,6 +560,10 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.purchasingEnabled === true,
     );
+    const production = openProduction(
+      dependencies.inventoryDatabase,
+      dependencies.productionEnabled === true,
+    );
 
     return {
       module: ApplicationModule,
@@ -586,9 +619,11 @@ export class ApplicationModule implements NestModule {
         QrPaymentController,
         HealthController,
         ...purchasing.controllers,
+        ...production.controllers,
       ],
       providers: [
         ...purchasing.providers,
+        ...production.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,
