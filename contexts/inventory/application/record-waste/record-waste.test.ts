@@ -4,7 +4,10 @@ import {
 } from "@blackhole/platform/application/entry-port";
 import { expect, it } from "vitest";
 
+import { InMemoryShortageRepository } from "#adapters/memory/in-memory-shortage-repository.js";
+import { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import { OperationGeneration } from "#application/ports/operation-generation.js";
+import { ShortageAudit } from "#application/ports/shortage-audit.js";
 import {
   type AppendStock,
   CONSUMPTION_ROLE,
@@ -13,6 +16,7 @@ import {
 } from "#application/ports/stock-ledger-repository.js";
 import type { StockMovementEnvelope } from "#application/ports/stock-movement-queue.js";
 import { StockMovementQueue } from "#application/ports/stock-movement-queue.js";
+import { VenueDirectory } from "#application/ports/venue-directory.js";
 import { RecordWaste } from "#application/record-waste/record-waste.js";
 import { LineReversalConflict } from "#application/return-stock/return-stock.js";
 import {
@@ -20,6 +24,7 @@ import {
   QUANTITY_SCALE,
   RecipeCatalog,
 } from "#domain/recipe-catalog.js";
+import { LEVEL_SEVERITY, SHORTAGE_KIND } from "#domain/shortage-alert.js";
 import { MOVEMENT_TYPE, StockLedger } from "#domain/stock-ledger.js";
 
 const TENANT_ID = "organization_tenant_1";
@@ -98,6 +103,17 @@ class MemoryLedger extends StockLedgerRepository {
   override async append(input: AppendStock): Promise<void> {
     for (const movement of input.movements) {
       this.lines.push(movement);
+    }
+  }
+
+  override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
+    const lines = this.lines.map((line) => ({ ...line }));
+
+    try {
+      return await super.inTransaction(work);
+    } catch (error) {
+      this.lines.splice(0, this.lines.length, ...lines);
+      throw error;
     }
   }
 }
@@ -179,7 +195,26 @@ const command = (generation = GENERATION) => ({
   reason: REASON,
 });
 
-const build = () => {
+class FixedBrand extends VenueDirectory {
+  override async brandOf(): Promise<string> {
+    return BRAND_ID;
+  }
+}
+
+class SilentShortageAudit extends ShortageAudit {
+  override async record(): Promise<void> {}
+}
+
+class ThrowingShortage extends InMemoryShortageRepository {
+  override async saveLevelAlert(): Promise<void> {
+    throw new Error("alert insert failed");
+  }
+}
+
+const build = (
+  levels: EvaluateStockLevels | null = null,
+  venues: VenueDirectory | null = null,
+) => {
   const ledger = new MemoryLedger();
   const queue = new MemoryQueue();
   const audit = new CapturedAudit();
@@ -188,6 +223,8 @@ const build = () => {
     ledger,
     queue,
     audit,
+    levels,
+    venues,
   );
 
   return { ledger, queue, audit, record };
@@ -373,4 +410,63 @@ it("given the current generation, when waste arrives with another generation, th
   );
   expect(ledger.lines).toHaveLength(1);
   expect(audit.commands).toHaveLength(0);
+});
+
+const beefLevels = {
+  tenantId: TENANT_ID,
+  brandId: BRAND_ID,
+  ingredientId: BEEF_ID,
+  maximum: grams(20),
+  reorderPoint: grams(15),
+  minimum: grams(8),
+};
+
+it("given a consumed line and alerts on, when waste is recorded, then one critical alert opens in that ledger transaction", async () => {
+  const shortages = new InMemoryShortageRepository();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, record } = build(
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+    new FixedBrand(),
+  );
+  ledger.seed(consumption());
+
+  await record.execute(command());
+
+  const open = await shortages.listOpenShortages(TENANT_ID, VENUE_ID);
+  expect(open).toHaveLength(1);
+  expect(open[0]).toMatchObject({
+    kind: SHORTAGE_KIND.LEVEL,
+    alert: {
+      ingredientId: BEEF_ID,
+      severity: LEVEL_SEVERITY.CRITICAL,
+      soldOut: true,
+    },
+  });
+  expect(ledger.lines.some((line) => line.type === MOVEMENT_TYPE.WASTE)).toBe(
+    true,
+  );
+});
+
+it("given alerts on, when saving the level alert fails, then the waste movement rolls back", async () => {
+  const shortages = new ThrowingShortage();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, queue, audit, record } = build(
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+    new FixedBrand(),
+  );
+  ledger.seed(consumption());
+
+  await expect(record.execute(command())).rejects.toThrow(
+    "alert insert failed",
+  );
+
+  expect(ledger.lines).toHaveLength(1);
+  expect(ledger.lines.some((line) => line.type === MOVEMENT_TYPE.WASTE)).toBe(
+    false,
+  );
+  expect(queue.envelopes).toHaveLength(0);
+  expect(audit.commands).toHaveLength(0);
+  expect(await shortages.listOpenShortages(TENANT_ID, VENUE_ID)).toEqual([]);
 });

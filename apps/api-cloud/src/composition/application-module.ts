@@ -40,7 +40,10 @@ import {
   TipRuleStore,
   TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
-import type { NumberingRangeAssignment } from "@blackhole/contracts";
+import {
+  type NumberingRangeAssignment,
+  shortageNotice,
+} from "@blackhole/contracts";
 import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
 import {
   InMemoryPointOfSaleDirectory,
@@ -75,6 +78,9 @@ import {
   RecordStockCount,
   RecordWaste,
   RegisterSaleConsumption,
+  RemoveNoRestockToday,
+  ResolveAlert,
+  RestockFromAlert,
   ReturnStock,
   SetIngredientCategory,
   SetStockLevels,
@@ -321,6 +327,14 @@ import {
   OrdersRealtimeController,
   RealtimeSocketMiddleware,
 } from "#src/http/orders-realtime.controller.js";
+import {
+  ShortageAlertsController,
+  ShortageTransactions,
+} from "#src/http/shortage-alerts.controller.js";
+import {
+  ShortageNoticeFeed,
+  ShortageRealtimeController,
+} from "#src/http/shortage-realtime.controller.js";
 import { PlaceTableController } from "#src/http/place-table.controller.js";
 import { PortalController } from "#src/http/portal.controller.js";
 import { PrintTipSettlementController } from "#src/http/print-tip-settlement.controller.js";
@@ -437,6 +451,7 @@ export interface CloudApplicationDependencies {
   productionEnabled?: boolean;
   transfersEnabled?: boolean;
   wasteAndCountsEnabled?: boolean;
+  shortageAlertsEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -711,6 +726,234 @@ const openWasteAndCounts = (
   };
 };
 
+class PostgresShortageNoticeFeed extends ShortageNoticeFeed {
+  constructor(private readonly shortages: DrizzleShortageRepository) {
+    super();
+  }
+
+  override async list(tenantId: string, venueId: string) {
+    const open = await this.shortages.listOpenShortages(tenantId, venueId);
+    const notices = [];
+
+    for (const row of open) {
+      const stored = await this.shortages.listRoleNotices(
+        tenantId,
+        row.alert.id,
+      );
+
+      for (const notice of stored) {
+        if (notice.venueId !== venueId) {
+          continue;
+        }
+
+        const parsed = shortageNotice.safeParse({
+          alertId: notice.alertId,
+          kind: notice.kind,
+          severity: notice.severity,
+          role: notice.role,
+          venueId: notice.venueId,
+        });
+
+        if (parsed.success) {
+          notices.push(parsed.data);
+        }
+      }
+    }
+
+    return notices;
+  }
+}
+
+class PostgresShortageTransactions extends ShortageTransactions {
+  override run<T>(
+    _tenantId: string,
+    work: (tx: Parameters<RestockFromAlert["execute"]>[0]) => Promise<T>,
+  ): Promise<T> {
+    return work({
+      balance: () => Promise.resolve(0),
+    });
+  }
+}
+
+const openShortageAlerts = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): {
+  controllers: (
+    | typeof ShortageAlertsController
+    | typeof ShortageRealtimeController
+  )[];
+  providers: Provider[];
+} => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Shortage alerts require PostgreSQL.");
+  }
+
+  const shortages = new DrizzleShortageRepository(database);
+  const orders = new CreatePurchaseOrder(
+    new DrizzlePurchasingRepository(database),
+  );
+
+  return {
+    controllers: [ShortageAlertsController, ShortageRealtimeController],
+    providers: [
+      {
+        provide: ShortageTransactions,
+        useValue: new PostgresShortageTransactions(),
+      },
+      {
+        provide: ShortageNoticeFeed,
+        useValue: new PostgresShortageNoticeFeed(shortages),
+      },
+      {
+        provide: SetStockLevels,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+        ) =>
+          new SetStockLevels(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: AcceptStockLevels,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+        ) =>
+          new AcceptStockLevels(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: MarkAlertSeen,
+        useFactory: (
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new MarkAlertSeen(shortages, {
+            record: async (command) => {
+              await new RecordAuditEvent(audits, digests, clock).execute(
+                command,
+              );
+            },
+          }),
+        inject: [AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: ResolveAlert,
+        useFactory: (
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new ResolveAlert(shortages, {
+            record: async (command) => {
+              await new RecordAuditEvent(audits, digests, clock).execute(
+                command,
+              );
+            },
+          }),
+        inject: [AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: RestockFromAlert,
+        useFactory: (
+          organizations: OrganizationRepository,
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new RestockFromAlert(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            {
+              locationIds: async (tenantId, siteId) => {
+                const organization = await organizations.load(tenantId);
+
+                return (
+                  organization?.locations
+                    .filter(
+                      (location) =>
+                        location.kind === "warehouse" &&
+                        location.venueId === siteId,
+                    )
+                    .map((location) => location.id) ?? []
+                );
+              },
+            },
+            {
+              request: (command) =>
+                Promise.resolve(`transfer_${command.alertId}`),
+            },
+            orders,
+            {
+              record: async (command) => {
+                await new RecordAuditEvent(audits, digests, clock).execute(
+                  command,
+                );
+              },
+            },
+          ),
+        inject: [
+          OrganizationRepository,
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+    ],
+  };
+};
+
 class OrdersClockAdapter extends OrdersClock {
   constructor(private readonly source: Clock) {
     super();
@@ -736,7 +979,7 @@ export class ApplicationModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(RealtimeSocketMiddleware)
-      .forRoutes(OrdersRealtimeController);
+      .forRoutes(OrdersRealtimeController, ShortageRealtimeController);
   }
 
   static register(dependencies: CloudApplicationDependencies): DynamicModule {
@@ -875,6 +1118,10 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.wasteAndCountsEnabled === true,
     );
+    const shortageAlerts = openShortageAlerts(
+      dependencies.inventoryDatabase,
+      dependencies.shortageAlertsEnabled === true,
+    );
 
     return {
       module: ApplicationModule,
@@ -933,12 +1180,14 @@ export class ApplicationModule implements NestModule {
         ...production.controllers,
         ...transfers.controllers,
         ...wasteAndCounts.controllers,
+        ...shortageAlerts.controllers,
       ],
       providers: [
         ...purchasing.providers,
         ...production.providers,
         ...transfers.providers,
         ...wasteAndCounts.providers,
+        ...shortageAlerts.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,

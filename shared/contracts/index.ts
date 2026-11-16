@@ -287,3 +287,7 @@ export {
   type StructureCommand,
   structureCommand,
 } from "#contracts/update-structure.js";
+export {
+  type ShortageNotice,
+  shortageNotice,
+} from "#contracts/shortage-alerts.js";

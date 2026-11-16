@@ -128,6 +128,28 @@ export {
   UnknownRecipeVersion,
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
+export type { AcceptStockLevelsInput } from "#application/accept-stock-levels/accept-stock-levels.js";
+export {
+  AcceptStockLevels,
+  AcceptStockLevelsDenied,
+} from "#application/accept-stock-levels/accept-stock-levels.js";
+export type { EscalateAlertsInput } from "#application/escalate-alerts/escalate-alerts.js";
+export { EscalateAlerts } from "#application/escalate-alerts/escalate-alerts.js";
+export type { EvaluateCoverageInput } from "#application/evaluate-coverage/evaluate-coverage.js";
+export { EvaluateCoverage } from "#application/evaluate-coverage/evaluate-coverage.js";
+export type { EvaluateDishAlertInput } from "#application/evaluate-dish-alert/evaluate-dish-alert.js";
+export { EvaluateDishAlert } from "#application/evaluate-dish-alert/evaluate-dish-alert.js";
+export type { ProposeStockLevelsInput } from "#application/propose-stock-levels/propose-stock-levels.js";
+export { ProposeStockLevels } from "#application/propose-stock-levels/propose-stock-levels.js";
+export type {
+  RestockFromAlertInput,
+  RestockFromAlertResult,
+} from "#application/restock-from-alert/restock-from-alert.js";
+export {
+  RestockDenied,
+  RestockFromAlert,
+  WarehouseChoiceRequired,
+} from "#application/restock-from-alert/restock-from-alert.js";
 export type { ApproveAdjustmentInput } from "#application/approve-adjustment/approve-adjustment.js";
 export {
   ApproveAdjustment,
@@ -179,3 +201,12 @@ export {
   OnHandStock,
   SuggestReplenishment,
 } from "#application/suggest-replenishment/suggest-replenishment.js";
+export type {
+  LocationStockLevelsInput,
+  SetStockLevelsInput,
+} from "#application/set-stock-levels/set-stock-levels.js";
+export {
+  MissingLocationLevels,
+  SetStockLevels,
+  StockLevelsDenied,
+} from "#application/set-stock-levels/set-stock-levels.js";

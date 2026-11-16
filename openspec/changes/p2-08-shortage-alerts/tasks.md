@@ -41,36 +41,36 @@ Cloud-only. No `shared/sync`.
 
 ## Phase 3: Jobs
 
-- [ ] 3.1 RED `contexts/inventory/application/evaluate-coverage/evaluate-coverage.test.ts`: Friday hours; history under N skips; missing N, margin, slot, or service end skips. No numeric default.
-- [ ] 3.2 GREEN `contexts/inventory/application/evaluate-coverage/`, `application/ports/consumption-history.ts`.
-- [ ] 3.3 RED `contexts/inventory/application/evaluate-dish-alert/evaluate-dish-alert.test.ts`: name every limiter; no minimum skips. Port `producible-units.ts`.
-- [ ] 3.4 GREEN `contexts/inventory/application/evaluate-dish-alert/`. Leave p2-07.
-- [ ] 3.5 RED `contexts/inventory/application/escalate-alerts/escalate-alerts.test.ts`: red clock only; `critical` shares it; yellow, coverage do not.
-- [ ] 3.6 GREEN `contexts/inventory/application/escalate-alerts/`. One `RoleNotice` per role. No WhatsApp, SMS, email, or Web Push.
+- [x] 3.1 RED `contexts/inventory/application/evaluate-coverage/evaluate-coverage.test.ts`: Friday hours; history under N skips; missing N, margin, slot, or service end skips. No numeric default.
+- [x] 3.2 GREEN `contexts/inventory/application/evaluate-coverage/`, `application/ports/consumption-history.ts`.
+- [x] 3.3 RED `contexts/inventory/application/evaluate-dish-alert/evaluate-dish-alert.test.ts`: name every limiter; no minimum skips. Port `producible-units.ts`.
+- [x] 3.4 GREEN `contexts/inventory/application/evaluate-dish-alert/`. Leave p2-07.
+- [x] 3.5 RED `contexts/inventory/application/escalate-alerts/escalate-alerts.test.ts`: red clock only; `critical` shares it; yellow, coverage do not.
+- [x] 3.6 GREEN `contexts/inventory/application/escalate-alerts/`. One `RoleNotice` per role. No WhatsApp, SMS, email, or Web Push.
 
 ## Phase 4: One tap
 
-- [ ] 4.1 RED `contexts/inventory/application/restock-from-alert/restock-from-alert.test.ts`: 16 kg; one link is the destination; several need actor warehouse id; zero offers a purchase order; actor `supplierId`; no preferred supplier.
-- [ ] 4.2 GREEN `contexts/inventory/application/restock-from-alert/` via `ports/transfer-request.ts` or `CreatePurchaseOrder`. Store document id. Cases unchanged.
-- [ ] 4.3 RED `contexts/inventory/application/propose-stock-levels/`, `accept-stock-levels/` tests: pending ignored; accept activates.
-- [ ] 4.4 GREEN both. Export `entry-port.ts`. Add imports in `contexts/inventory/package.json`.
+- [x] 4.1 RED `contexts/inventory/application/restock-from-alert/restock-from-alert.test.ts`: 16 kg; one link is the destination; several need actor warehouse id; zero offers a purchase order; actor `supplierId`; no preferred supplier.
+- [x] 4.2 GREEN `contexts/inventory/application/restock-from-alert/` via `ports/transfer-request.ts` or `CreatePurchaseOrder`. Store document id. Cases unchanged.
+- [x] 4.3 RED `contexts/inventory/application/propose-stock-levels/`, `accept-stock-levels/` tests: pending ignored; accept activates.
+- [x] 4.4 GREEN both. Export `entry-port.ts`. Add imports in `contexts/inventory/package.json`.
 
 ## Phase 5: Persistence
 
-- [ ] 5.1 RED `contexts/inventory/application/ports/shortage-repository.contract.ts` on memory: hidden tenant; rollback; one open row.
-- [ ] 5.2 GREEN `contexts/inventory/adapters/memory/in-memory-shortage-repository.ts`.
-- [ ] 5.3 RED that contract on PGlite, `SET LOCAL` `app.tenant_id`.
-- [ ] 5.4 GREEN `contexts/inventory/adapters/postgres/schema.ts`, `drizzle-shortage-repository.ts`, next SQL for `stock_level_templates`, `stock_levels`, `dish_levels`, `coverage_settings`, `notification_rules`, `shortage_alerts`, `role_notices`, `suggested_stock_levels`. No SQLite. Flag off.
-- [ ] 5.5 `EvaluateStockLevels` inside `ledger.inTransaction`: `register-sale-consumption`, `record-waste`, `return-stock`, `receive-purchase`. Leave `NegativeStockOpened`.
+- [x] 5.1 RED `contexts/inventory/application/ports/shortage-repository.contract.ts` on memory: hidden tenant; rollback; one open row.
+- [x] 5.2 GREEN `contexts/inventory/adapters/memory/in-memory-shortage-repository.ts`.
+- [x] 5.3 RED that contract on PGlite, `SET LOCAL` `app.tenant_id`.
+- [x] 5.4 GREEN `contexts/inventory/adapters/postgres/schema.ts`, `drizzle-shortage-repository.ts`, next SQL for `stock_level_templates`, `stock_levels`, `dish_levels`, `coverage_settings`, `notification_rules`, `shortage_alerts`, `role_notices`, `suggested_stock_levels`. No SQLite. Flag off.
+- [x] 5.5 `EvaluateStockLevels` inside `ledger.inTransaction`: `register-sale-consumption`, `record-waste`, `return-stock`, `receive-purchase`. Leave `NegativeStockOpened`.
 
 ## Phase 6: HTTP
 
-- [ ] 6.1 `shared/contracts/shortage-alerts.ts`: Zod `alertId`, `kind`, `severity`, `role`, `venueId`. Export `index.ts`. No Zod in domain.
-- [ ] 6.2 RED `apps/api-cloud/test/http/shortage-alerts.controller.test.ts`, `shortage-realtime.controller.test.ts`: `inject`, no listen. Flag off; waiter denied; kitchen sees it.
-- [ ] 6.3 GREEN `apps/api-cloud/src/http/shortage-alerts.controller.ts`, `shortage-realtime.controller.ts`, `src/composition/application-module.ts`. Postgres only. `inventory.request-replenishment` guards one tap.
-- [ ] 6.4 `apps/api-cloud/src/composition/worker.ts`: PgBoss coverage every 15 minutes, dish, escalation, suggestions.
+- [x] 6.1 `shared/contracts/shortage-alerts.ts`: Zod `alertId`, `kind`, `severity`, `role`, `venueId`. Export `index.ts`. No Zod in domain.
+- [x] 6.2 RED `apps/api-cloud/test/http/shortage-alerts.controller.test.ts`, `shortage-realtime.controller.test.ts`: `inject`, no listen. Flag off; waiter denied; kitchen sees it.
+- [x] 6.3 GREEN `apps/api-cloud/src/http/shortage-alerts.controller.ts`, `shortage-realtime.controller.ts`, `src/composition/application-module.ts`. Postgres only. `inventory.request-replenishment` guards one tap.
+- [x] 6.4 `apps/api-cloud/src/composition/worker.ts`: PgBoss coverage every 15 minutes, dish, escalation, suggestions.
 
 ## Phase 7: Screens
 
-- [ ] 7.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: edit levels; accept proposals.
-- [ ] 7.2 `apps/venue-app/src/kitchen/kitchen-screen.tsx`, `cash-register/register-screen.tsx`: notice, one tap.
+- [x] 7.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: edit levels; accept proposals.
+- [x] 7.2 `apps/venue-app/src/kitchen/kitchen-screen.tsx`, `cash-register/register-screen.tsx`: notice, one tap.

@@ -411,3 +411,151 @@ export const ingredientClassifications = pgTable(
   (table) => [primaryKey({ columns: [table.tenantId, table.ingredientId] })],
 );
 
+export const stockLevelTemplates = pgTable(
+  "stock_level_templates",
+  {
+    tenantId: text("tenant_id").notNull(),
+    brandId: text("brand_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    maximum: integer("maximum").notNull(),
+    reorderPoint: integer("reorder_point").notNull(),
+    minimum: integer("minimum").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.brandId, table.ingredientId],
+    }),
+  ],
+);
+
+export const stockLevels = pgTable(
+  "stock_levels",
+  {
+    tenantId: text("tenant_id").notNull(),
+    scope: text("scope").notNull(),
+    scopeId: text("scope_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    maximum: integer("maximum").notNull(),
+    reorderPoint: integer("reorder_point").notNull(),
+    minimum: integer("minimum").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.scope, table.scopeId, table.ingredientId],
+    }),
+  ],
+);
+
+export const dishLevels = pgTable(
+  "dish_levels",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    productId: text("product_id").notNull(),
+    minimum: integer("minimum").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.venueId, table.productId],
+    }),
+  ],
+);
+
+export const coverageSettings = pgTable(
+  "coverage_settings",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    weeks: integer("weeks"),
+    marginHours: integer("margin_hours"),
+    slotMinutes: integer("slot_minutes"),
+    serviceStartMinute: integer("service_start_minute"),
+    serviceEndMinute: integer("service_end_minute"),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.venueId] })],
+);
+
+export const notificationRules = pgTable(
+  "notification_rules",
+  {
+    tenantId: text("tenant_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    escalationMinutes: integer("escalation_minutes"),
+    shortageAlertsEnabled: boolean("shortage_alerts_enabled")
+      .notNull()
+      .default(false),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.venueId] })],
+);
+
+export const shortageAlerts = pgTable(
+  "shortage_alerts",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    venueId: text("venue_id").notNull(),
+    kind: text("kind").notNull(),
+    status: text("status").notNull(),
+    openedAt: text("opened_at").notNull(),
+    brandId: text("brand_id"),
+    locationId: text("location_id"),
+    ingredientId: text("ingredient_id"),
+    productId: text("product_id"),
+    severity: text("severity"),
+    soldOut: boolean("sold_out"),
+    escalationClock: text("escalation_clock"),
+    seenBy: text("seen_by"),
+    seenAt: text("seen_at"),
+    resolvedBy: text("resolved_by"),
+    resolvedAt: text("resolved_at"),
+    reason: text("reason"),
+    hoursLeft: integer("hours_left"),
+    remainingServiceHours: integer("remaining_service_hours"),
+    units: integer("units"),
+    minimum: integer("minimum"),
+    limiterIngredientIds: text("limiter_ingredient_ids"),
+    documentId: text("document_id"),
+    documentKind: text("document_kind"),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
+);
+
+export const roleNotices = pgTable(
+  "role_notices",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    venueId: text("venue_id").notNull(),
+    alertId: text("alert_id").notNull(),
+    role: text("role").notNull(),
+    kind: text("kind").notNull(),
+    severity: text("severity"),
+    notifiedAt: text("notified_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tenantId, table.id] }),
+    unique("role_notices_alert_role").on(
+      table.tenantId,
+      table.alertId,
+      table.role,
+    ),
+  ],
+);
+
+export const suggestedStockLevels = pgTable(
+  "suggested_stock_levels",
+  {
+    tenantId: text("tenant_id").notNull(),
+    id: text("id").notNull(),
+    brandId: text("brand_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    maximum: integer("maximum").notNull(),
+    reorderPoint: integer("reorder_point").notNull(),
+    minimum: integer("minimum").notNull(),
+    leadTimeDays: integer("lead_time_days").notNull(),
+    status: text("status").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.id] })],
+);

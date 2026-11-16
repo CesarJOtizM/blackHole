@@ -1,16 +1,19 @@
 import { expect, it } from "vitest";
 
 import { InMemoryPurchasingRepository } from "#adapters/memory/in-memory-purchasing-repository.js";
+import { InMemoryShortageRepository } from "#adapters/memory/in-memory-shortage-repository.js";
 import { InMemoryStockLedgerRepository } from "#adapters/memory/in-memory-stock-ledger-repository.js";
 import { CancelPurchaseOrder } from "#application/cancel-purchase-order/cancel-purchase-order.js";
 import { CreatePurchaseOrder } from "#application/create-purchase-order/create-purchase-order.js";
 import { CreateSupplier } from "#application/create-supplier/create-supplier.js";
+import { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import {
   INVENTORY_LOCATION_KIND,
   type InventoryLocation,
   InventoryLocationDirectory,
 } from "#application/ports/inventory-location-directory.js";
 import { PublishedPurchaseFactor } from "#application/ports/published-purchase-factor.js";
+import { ShortageAudit } from "#application/ports/shortage-audit.js";
 import type { AppendStock } from "#application/ports/stock-ledger-repository.js";
 import {
   CONSUMPTION_ROLE,
@@ -26,6 +29,7 @@ import {
   PurchaseOrderClosed,
 } from "#domain/purchasing.js";
 import { QUANTITY_SCALE } from "#domain/recipe-catalog.js";
+import { LEVEL_SEVERITY, SHORTAGE_KIND } from "#domain/shortage-alert.js";
 import { MOVEMENT_TYPE, nextAverageCost } from "#domain/stock-ledger.js";
 
 const TENANT_ID = "organization_tenant_1";
@@ -686,4 +690,118 @@ it("given an order line with a frozen factor, when the published factor changes,
       (order) => order.id === ORDER_ID,
     )?.lines[0]?.factor,
   ).toBe(KG_FACTOR);
+});
+
+const BRAND_ID = "organization_brand_1";
+const VENUE_ID = "organization_venue_1";
+
+class SilentShortageAudit extends ShortageAudit {
+  override async record(): Promise<void> {}
+}
+
+class ThrowingShortage extends InMemoryShortageRepository {
+  override async saveLevelAlert(): Promise<void> {
+    throw new Error("alert insert failed");
+  }
+}
+
+const levelHarness = (shortages: InMemoryShortageRepository) => {
+  const ledger = new InMemoryStockLedgerRepository();
+  const purchasing = new InMemoryPurchasingRepository(ledger);
+  const locations = new MemoryLocations();
+  const factors = new MemoryFactors();
+  const receive = new ReceivePurchase(
+    purchasing,
+    locations,
+    factors,
+    ledger,
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+  );
+
+  return { purchasing, locations, factors, receive, ledger };
+};
+
+it("given alerts on and a reorder point above the receipt, when the purchase is received, then one yellow alert opens in that ledger transaction", async () => {
+  const shortages = new InMemoryShortageRepository();
+  await shortages.saveBrandLevel({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    ingredientId: TOMATO_ID,
+    maximum: grams(20_000),
+    reorderPoint: grams(6_000),
+    minimum: grams(1_000),
+  });
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { locations, factors, receive } = levelHarness(shortages);
+  rememberPoint(locations);
+  factors.remember(TENANT_ID, TOMATO_ID, KG_FACTOR);
+
+  const receipt = await receive.execute({
+    tenantId: TENANT_ID,
+    receiptId: "receipt_shortage",
+    locationId: LOCATION_ID,
+    actorId: ACTOR_ID,
+    occurredAt: OCCURRED_AT,
+    brandId: BRAND_ID,
+    venueId: VENUE_ID,
+    lines: [
+      {
+        ingredientId: TOMATO_ID,
+        purchaseQuantity: 5,
+        purchaseUnitCost: 4000,
+      },
+    ],
+  });
+
+  expect(receipt.lines[0]?.quantity).toBe(5_000 * QUANTITY_SCALE);
+  const open = await shortages.listOpenShortages(TENANT_ID, VENUE_ID);
+  expect(open).toHaveLength(1);
+  expect(open[0]).toMatchObject({
+    kind: SHORTAGE_KIND.LEVEL,
+    alert: {
+      ingredientId: TOMATO_ID,
+      severity: LEVEL_SEVERITY.YELLOW,
+      soldOut: false,
+    },
+  });
+});
+
+it("given alerts on, when saving the level alert fails, then the purchase movement rolls back", async () => {
+  const shortages = new ThrowingShortage();
+  await shortages.saveBrandLevel({
+    tenantId: TENANT_ID,
+    brandId: BRAND_ID,
+    ingredientId: TOMATO_ID,
+    maximum: grams(20_000),
+    reorderPoint: grams(6_000),
+    minimum: grams(1_000),
+  });
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { locations, factors, receive, ledger, purchasing } =
+    levelHarness(shortages);
+  rememberPoint(locations);
+  factors.remember(TENANT_ID, TOMATO_ID, KG_FACTOR);
+
+  await expect(
+    receive.execute({
+      tenantId: TENANT_ID,
+      receiptId: "receipt_shortage_rollback",
+      locationId: LOCATION_ID,
+      actorId: ACTOR_ID,
+      occurredAt: OCCURRED_AT,
+      brandId: BRAND_ID,
+      venueId: VENUE_ID,
+      lines: [
+        {
+          ingredientId: TOMATO_ID,
+          purchaseQuantity: 5,
+          purchaseUnitCost: 4000,
+        },
+      ],
+    }),
+  ).rejects.toThrow("alert insert failed");
+
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, TOMATO_ID)).toBe(0);
+  expect(purchasing.purchaseMovements(TENANT_ID)).toEqual([]);
+  expect(await shortages.listOpenShortages(TENANT_ID, VENUE_ID)).toEqual([]);
 });

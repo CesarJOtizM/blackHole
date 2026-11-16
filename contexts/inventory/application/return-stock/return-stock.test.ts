@@ -1,7 +1,10 @@
 import { StaleGeneration } from "@blackhole/platform/application/entry-port";
 import { expect, it } from "vitest";
 
+import { InMemoryShortageRepository } from "#adapters/memory/in-memory-shortage-repository.js";
+import { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import { OperationGeneration } from "#application/ports/operation-generation.js";
+import { ShortageAudit } from "#application/ports/shortage-audit.js";
 import {
   type AppendStock,
   CONSUMPTION_ROLE,
@@ -10,11 +13,13 @@ import {
 } from "#application/ports/stock-ledger-repository.js";
 import type { StockMovementEnvelope } from "#application/ports/stock-movement-queue.js";
 import { StockMovementQueue } from "#application/ports/stock-movement-queue.js";
+import { VenueDirectory } from "#application/ports/venue-directory.js";
 import {
   LineReversalConflict,
   ReturnStock,
 } from "#application/return-stock/return-stock.js";
 import { QUANTITY_SCALE } from "#domain/recipe-catalog.js";
+import { LEVEL_SEVERITY, SHORTAGE_KIND } from "#domain/shortage-alert.js";
 import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
 
 const TENANT_ID = "organization_tenant_1";
@@ -72,6 +77,24 @@ class MemoryLedger extends StockLedgerRepository {
       const key = `${movement.tenantId}:${movement.locationId}:${movement.ingredientId}`;
       this.balances.set(key, (this.balances.get(key) ?? 0) + movement.quantity);
       this.lines.push(movement);
+    }
+  }
+
+  override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
+    const lines = this.lines.map((line) => ({ ...line }));
+    const balances = new Map(this.balances);
+
+    try {
+      return await super.inTransaction(work);
+    } catch (error) {
+      this.lines.splice(0, this.lines.length, ...lines);
+      this.balances.clear();
+
+      for (const [key, quantity] of balances) {
+        this.balances.set(key, quantity);
+      }
+
+      throw error;
     }
   }
 }
@@ -134,13 +157,36 @@ const command = (generation = GENERATION) => ({
   occurredAt: RETURNED_AT,
 });
 
-const build = () => {
+const BRAND_ID = "organization_brand_1";
+
+class FixedBrand extends VenueDirectory {
+  override async brandOf(): Promise<string> {
+    return BRAND_ID;
+  }
+}
+
+class SilentShortageAudit extends ShortageAudit {
+  override async record(): Promise<void> {}
+}
+
+class ThrowingShortage extends InMemoryShortageRepository {
+  override async saveLevelAlert(): Promise<void> {
+    throw new Error("alert insert failed");
+  }
+}
+
+const build = (
+  levels: EvaluateStockLevels | null = null,
+  venues: VenueDirectory | null = null,
+) => {
   const ledger = new MemoryLedger();
   const queue = new MemoryQueue();
   const restore = new ReturnStock(
     new FixedGeneration(GENERATION),
     ledger,
     queue,
+    levels,
+    venues,
   );
 
   return { ledger, queue, restore };
@@ -244,4 +290,64 @@ it("given the current generation, when a return arrives with another generation,
     StaleGeneration,
   );
   expect(ledger.lines).toHaveLength(1);
+});
+
+const beefLevels = {
+  tenantId: TENANT_ID,
+  brandId: BRAND_ID,
+  ingredientId: BEEF_ID,
+  maximum: grams(20),
+  reorderPoint: grams(15),
+  minimum: grams(8),
+};
+
+it("given a consumed line and alerts on, when stock is returned to zero, then one critical alert opens in that ledger transaction", async () => {
+  const shortages = new InMemoryShortageRepository();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, restore } = build(
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+    new FixedBrand(),
+  );
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+  ledger.seed(consumption(CHEESE_ID, grams(-60), CHEESE_COST));
+
+  await restore.execute(command());
+
+  const open = await shortages.listOpenShortages(TENANT_ID, VENUE_ID);
+  expect(open).toHaveLength(1);
+  expect(open[0]).toMatchObject({
+    kind: SHORTAGE_KIND.LEVEL,
+    alert: {
+      ingredientId: BEEF_ID,
+      severity: LEVEL_SEVERITY.CRITICAL,
+      soldOut: true,
+    },
+  });
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, BEEF_ID)).toBe(0);
+});
+
+it("given alerts on, when saving the level alert fails, then the return movement rolls back", async () => {
+  const shortages = new ThrowingShortage();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, queue, restore } = build(
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+    new FixedBrand(),
+  );
+  ledger.seed(consumption(BEEF_ID, grams(-300), BEEF_COST));
+
+  await expect(restore.execute(command())).rejects.toThrow(
+    "alert insert failed",
+  );
+
+  expect(ledger.lines).toHaveLength(1);
+  expect(
+    ledger.lines.some((line) => line.type === MOVEMENT_TYPE.SALE_RETURN),
+  ).toBe(false);
+  expect(queue.envelopes).toHaveLength(0);
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, BEEF_ID)).toBe(
+    grams(-300),
+  );
+  expect(await shortages.listOpenShortages(TENANT_ID, VENUE_ID)).toEqual([]);
 });
