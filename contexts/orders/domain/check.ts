@@ -81,6 +81,7 @@ interface ChangeLinePrice {
 interface SendCourse {
   course: number;
   sentAt: string;
+  lineIds?: readonly string[];
 }
 
 interface ResendLine {
@@ -468,18 +469,22 @@ export class Check {
 
   send(input: SendCourse): void {
     const inCourse = this.linesInCourse(input.course);
+    const selected =
+      input.lineIds === undefined
+        ? inCourse
+        : inCourse.filter((line) => input.lineIds?.includes(line.id));
 
-    if (inCourse.length === 0) {
+    if (selected.length === 0) {
       throw new EmptyOrder();
     }
 
-    if (inCourse.some((line) => line.kind === LINE_KIND.COMBO)) {
+    if (selected.some((line) => line.kind === LINE_KIND.COMBO)) {
       throw new ComboNotSent();
     }
 
     let sentOne = false;
 
-    for (const line of inCourse) {
+    for (const line of selected) {
       if (line.state !== LINE_STATE.HELD) {
         continue;
       }
@@ -583,8 +588,7 @@ export class Check {
       .map((line, index) => ({ line, index }))
       .filter(
         ({ line }) =>
-          line.productId === input.productId &&
-          line.state === LINE_STATE.SENT,
+          line.productId === input.productId && line.state === LINE_STATE.SENT,
       )
       .sort((left, right) => {
         const byTime = (left.line.sentAt ?? "").localeCompare(

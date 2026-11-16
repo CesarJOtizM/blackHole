@@ -403,6 +403,15 @@ export const ordersRealtimeEvent = z.discriminatedUnion("kind", [
     .strict(),
   z
     .object({
+      kind: z.enum(["not_restocked"]),
+      ...realtimeIds,
+      productId: z.string().min(1),
+      lineIds: z.array(z.string().min(1)).min(1),
+      at: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
       kind: z.enum(["availability_changed"]),
       tenantId: z.string().min(1),
       venueId: z.string().min(1),

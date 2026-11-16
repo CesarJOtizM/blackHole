@@ -46,28 +46,28 @@ Chain strategy: feature-branch-chain
 
 - [x] 4.1 RED `withdraw-unstarted-lines.test.ts`: uncovered `sent` to `not_delivered`; one `not_restocked` per check.
 - [x] 4.2 GREEN that folder and `not_restocked` on `application/ports/realtime-hub.ts`.
-- [ ] 4.3 RED `confirm-guest-told.test.ts`: notice stays until `orders.guest-told`.
-- [ ] 4.4 GREEN that folder for `checkId`, `lineId`, `actorId`.
-- [ ] 4.5 RED `mark-line-undeliverable.test.ts`: `in_preparation` or `ready` only; `delivered` rejected.
-- [ ] 4.6 GREEN that folder. Export three use cases and `#` maps.
-- [ ] 4.7 RED `take-order.test.ts` and `apply-qr-order.test.ts`: marked product rejected; other lines proceed. No reconnect.
-- [ ] 4.8 GREEN `take-order.ts` `fire` and `apply-qr-order.ts` via the inventory entry port.
+- [x] 4.3 RED `confirm-guest-told.test.ts`: notice stays until `orders.guest-told`.
+- [x] 4.4 GREEN that folder for `checkId`, `lineId`, `actorId`.
+- [x] 4.5 RED `mark-line-undeliverable.test.ts`: `in_preparation` or `ready` only; `delivered` rejected.
+- [x] 4.6 GREEN that folder. Export three use cases and `#` maps.
+- [x] 4.7 RED `take-order.test.ts` and `apply-qr-order.test.ts`: marked product rejected; other lines proceed. No reconnect.
+- [x] 4.8 GREEN `take-order.ts` `fire` and `apply-qr-order.ts` via the inventory entry port.
 
 ## 5. Memory, then Postgres
 
-- [ ] 5.1 RED `no-restock-repository.contract.ts` on memory: other tenant hidden; later date is `expired`.
-- [ ] 5.2 GREEN `adapters/memory/in-memory-no-restock-repository.ts`. No Drizzle mock.
-- [ ] 5.3 RED that contract on PGlite with `app.tenant_id`.
-- [ ] 5.4 GREEN `no_restock_today` (`tenant_id`, RLS) and orders withdrawal columns. No SQLite.
+- [x] 5.1 RED `no-restock-repository.contract.ts` on memory: other tenant hidden; later date is `expired`.
+- [x] 5.2 GREEN `adapters/memory/in-memory-no-restock-repository.ts`. No Drizzle mock.
+- [x] 5.3 RED that contract on PGlite with `app.tenant_id`.
+- [x] 5.4 GREEN `no_restock_today` (`tenant_id`, RLS) and orders withdrawal columns. No SQLite.
 
 ## 6. HTTP inject, then screen
 
-- [ ] 6.1 RED `apps/api-cloud/test/http/no-restock.controller.test.ts` with `inject`, not `listen`: list, confirm, remove, guest told, cannot finish. Waiter gets 403.
-- [ ] 6.2 GREEN `apps/api-cloud/src/http/no-restock.controller.ts`.
-- [ ] 6.3 RED `orders-realtime.controller.test.ts`: forward `not_restocked`.
-- [ ] 6.4 GREEN that controller and `ordersRealtimeEvent` in `shared/contracts/dining-room.ts`.
-- [ ] 6.5 GREEN `application-module.ts`: flag default off; confirm, then withdraw, then audit tables. No SQLite.
-- [ ] 6.6 RED `apps/venue-app/test/venue-cloud.test.tsx`: notice stays until guest told.
-- [ ] 6.7 GREEN `venue-cloud.ts` and `service-session.tsx`.
+- [x] 6.1 RED `apps/api-cloud/test/http/no-restock.controller.test.ts` with `inject`, not `listen`: list, confirm, remove, guest told, cannot finish. Waiter gets 403.
+- [x] 6.2 GREEN `apps/api-cloud/src/http/no-restock.controller.ts`.
+- [x] 6.3 RED `orders-realtime.controller.test.ts`: forward `not_restocked`.
+- [x] 6.4 GREEN that controller and `ordersRealtimeEvent` in `shared/contracts/dining-room.ts`.
+- [x] 6.5 GREEN `application-module.ts`: flag default off; confirm, then withdraw, then audit tables. No SQLite.
+- [x] 6.6 RED `apps/venue-app/test/venue-cloud.test.tsx`: notice stays until guest told.
+- [x] 6.7 GREEN `venue-cloud.ts` and `service-session.tsx`.
 
 No E2E.

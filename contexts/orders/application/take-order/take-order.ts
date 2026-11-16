@@ -41,6 +41,56 @@ export class ProductNotOrderable extends Error {
   }
 }
 
+export class ProductNotRestocked extends Error {
+  constructor() {
+    super("The product is not restocked today.");
+    this.name = "ProductNotRestocked";
+  }
+}
+
+export interface NotRestockedProductQuery {
+  tenantId: string;
+  venueId: string;
+  productId: string;
+  at: Date;
+}
+
+export interface NotRestockedProducts {
+  execute(input: NotRestockedProductQuery): Promise<boolean>;
+}
+
+export const rejectedNotRestockedProducts = async (
+  reader: NotRestockedProducts | undefined,
+  input: {
+    tenantId: string;
+    venueId: string;
+    at: Date;
+    productIds: readonly string[];
+  },
+): Promise<ReadonlySet<string>> => {
+  if (reader === undefined || input.productIds.length === 0) {
+    return new Set();
+  }
+
+  const unique = [...new Set(input.productIds)];
+  const marked = await Promise.all(
+    unique.map(async (productId) => {
+      const blocked = await reader.execute({
+        tenantId: input.tenantId,
+        venueId: input.venueId,
+        productId,
+        at: input.at,
+      });
+
+      return blocked ? productId : null;
+    }),
+  );
+
+  return new Set(
+    marked.flatMap((productId) => (productId === null ? [] : [productId])),
+  );
+};
+
 export interface TakeOrderLine {
   orderId: string;
   lineId: string;
@@ -161,6 +211,7 @@ export class TakeOrder {
     private readonly hub: RealtimeHub,
     private readonly printedCheck?: PrintedCheckGuard,
     private readonly saleConsumption?: SaleConsumption,
+    private readonly notRestocked?: NotRestockedProducts,
   ) {}
 
   async execute(input: TakeOrderInput): Promise<Check> {
@@ -384,10 +435,25 @@ export class TakeOrder {
       throw new EmptyOrder();
     }
 
+    const marked =
+      this.notRestocked === undefined
+        ? new Set<string>()
+        : await rejectedNotRestockedProducts(this.notRestocked, {
+            tenantId: input.tenantId,
+            venueId: input.venueId,
+            at: new Date(this.clock.now()),
+            productIds: held.map((line) => line.productId),
+          });
+    const sending = held.filter((line) => !marked.has(line.productId));
+
+    if (sending.length === 0) {
+      throw new ProductNotRestocked();
+    }
+
     const router = await this.stations.load(input.tenantId, check.venueId);
     const tickets: RoutedTicket[] = [];
 
-    for (const line of held) {
+    for (const line of sending) {
       if (view.combos.some((combo) => combo.id === line.productId)) {
         throw new ComboNotSent();
       }
@@ -420,11 +486,19 @@ export class TakeOrder {
 
     const sentAt = new Date(this.clock.now()).toISOString();
 
-    check.send({ course: input.course, sentAt });
-    await this.consumeHeldLines(input, held, sentAt);
+    check.send(
+      marked.size === 0
+        ? { course: input.course, sentAt }
+        : {
+            course: input.course,
+            sentAt,
+            lineIds: sending.map((line) => line.id),
+          },
+    );
+    await this.consumeHeldLines(input, sending, sentAt);
     await this.commit(
       check,
-      held.map((line) => line.id),
+      sending.map((line) => line.id),
       tickets,
     );
 

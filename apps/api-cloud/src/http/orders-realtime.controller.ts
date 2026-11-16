@@ -143,6 +143,19 @@ const idsOnly = (notice: RealtimeNotice): unknown => {
     };
   }
 
+  if (notice.kind === "not_restocked") {
+    return {
+      kind: notice.kind,
+      tenantId: notice.tenantId,
+      venueId: notice.venueId,
+      checkId: notice.checkId,
+      tableId: notice.tableId,
+      productId: notice.productId,
+      lineIds: [...notice.lineIds],
+      at: notice.at,
+    };
+  }
+
   if (notice.kind === "availability_changed") {
     return {
       kind: notice.kind,

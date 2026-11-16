@@ -324,6 +324,15 @@ interface SaleConsumptionDouble {
   generationOf(tenantId: string, venueId: string): Promise<number>;
 }
 
+interface NotRestockedDouble {
+  execute(input: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+    at: Date;
+  }): Promise<boolean>;
+}
+
 const harness = async (
   productIds: readonly string[],
   output: StationOutput = "both",
@@ -335,6 +344,7 @@ const harness = async (
     audits: RecordAuditEvent;
   },
   saleConsumption?: SaleConsumptionDouble,
+  notRestocked?: NotRestockedDouble,
 ) => {
   const menus = new MemoryMenus();
   const menu = publishedMenu();
@@ -362,6 +372,7 @@ const harness = async (
     hub,
     printedCheck,
     saleConsumption,
+    notRestocked,
   );
   const saveTable = vi.spyOn(dining, "save");
   const saveCheck = vi.spyOn(dining, "saveCheck");
@@ -1283,4 +1294,58 @@ it("given a held line whose recipe is missing, when the course is fired, then th
   expect(saved.orders[0]?.lines[0]?.state).toBe("sent");
   expect(stored?.orders[0]?.lines[0]?.state).toBe("sent");
   expect(saveCheck).toHaveBeenCalled();
+});
+
+const markedAs = (productId: string): NotRestockedDouble => ({
+  execute: (input) => Promise.resolve(input.productId === productId),
+});
+
+const statesOf = async (
+  dining: MemoryDiningRoom,
+): Promise<Array<{ id: string; state: string }>> => {
+  const stored = await dining.loadCheck(TENANT_ID, VENUE_ID, CHECK_ID);
+
+  return (
+    stored?.orders.flatMap((order) =>
+      order.lines.map((line) => ({ id: line.id, state: line.state })),
+    ) ?? []
+  );
+};
+
+it("given ribs marked beside a soup, when the course is fired, then ribs stay held and soup is sent", async () => {
+  const { dining, takeOrder } = await harness(
+    [SOUP_ID, STEAK_ID],
+    "both",
+    undefined,
+    undefined,
+    markedAs(STEAK_ID),
+  );
+
+  await takeOrder.hold(holdLine("line_soup", SOUP_ID, "Soup", 1));
+  await takeOrder.hold(holdLine("line_steak", STEAK_ID, "Steak", 1));
+  await takeOrder.fire(fireCourse);
+
+  expect(await statesOf(dining)).toEqual([
+    { id: "line_soup", state: "sent" },
+    { id: "line_steak", state: "held" },
+  ]);
+});
+
+it("given only ribs marked, when the course is fired, then the line is rejected and stays held", async () => {
+  const { dining, takeOrder, saveCheck } = await harness(
+    [STEAK_ID],
+    "both",
+    undefined,
+    undefined,
+    markedAs(STEAK_ID),
+  );
+
+  await takeOrder.hold(holdLine("line_steak", STEAK_ID, "Steak", 1));
+  saveCheck.mockClear();
+
+  await expect(takeOrder.fire(fireCourse)).rejects.toThrow(
+    "The product is not restocked today.",
+  );
+  expect(await statesOf(dining)).toEqual([{ id: "line_steak", state: "held" }]);
+  expect(saveCheck).not.toHaveBeenCalled();
 });

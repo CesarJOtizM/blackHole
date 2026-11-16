@@ -157,8 +157,10 @@ import {
   ChangeLineState,
   ChangePrice,
   ConfigureStationRoute,
+  ConfirmGuestTold,
   GetCheck,
   MarkAccountPaid,
+  MarkLineUndeliverable,
   MarkTableReady,
   OpenShiftReader,
   OpenTable,
@@ -174,6 +176,7 @@ import {
   ViewVenueMenu,
   VoidAccount,
   VoidLine,
+  WithdrawUnstartedLines,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
@@ -198,7 +201,10 @@ import {
   RecordAuditEvent,
 } from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
-import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
+import {
+  type AuditEvent,
+  AuditRepository,
+} from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
@@ -319,6 +325,11 @@ import {
   InvoicingController,
   NumberingRangeStore,
 } from "#src/http/invoicing.controller.js";
+import {
+  ConfirmNoRestockFlow,
+  NoRestockCatalog,
+  NoRestockController,
+} from "#src/http/no-restock.controller.js";
 import { OpenDrawerController } from "#src/http/open-drawer.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
@@ -450,6 +461,7 @@ export interface CloudApplicationDependencies {
   purchasingEnabled?: boolean;
   productionEnabled?: boolean;
   transfersEnabled?: boolean;
+  noRestockTodayEnabled?: boolean;
   wasteAndCountsEnabled?: boolean;
   shortageAlertsEnabled?: boolean;
 }
@@ -580,6 +592,138 @@ const openTransfers = (
         inject: [OrganizationRepository],
       },
       { provide: TransferVoucher, useValue: new PendingTransferVoucher() },
+    ],
+  };
+};
+
+const openNoRestock = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): { controllers: (typeof NoRestockController)[]; providers: Provider[] } => {
+  if (!enabled) {
+    return {
+      controllers: [],
+      providers: [
+        {
+          provide: NotRestockedProductReader,
+          useValue: new NotRestockedProductReader(null),
+        },
+      ],
+    };
+  }
+
+  if (!database) {
+    throw new Error("Not restocked today requires PostgreSQL.");
+  }
+
+  const marks = new PostgresNoRestockMarks(database as NoRestockDatabase);
+  const told = new MemoryGuestTold();
+
+  return {
+    controllers: [NoRestockController],
+    providers: [
+      {
+        provide: NotRestockedProductReader,
+        useValue: new NotRestockedProductReader(marks),
+      },
+      { provide: NoRestockCatalog, useValue: marks },
+      {
+        provide: ConfirmGuestTold,
+        useFactory: (
+          dining: DiningRoomRepository,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new ConfirmGuestTold(
+            dining,
+            told,
+            new RecordAuditEvent(audits, digests, clock),
+          ),
+        inject: [DiningRoomRepository, AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: RemoveNoRestockToday,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new RemoveNoRestockToday(
+            marks,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            new RecordAuditEvent(audits, digests, clock),
+            true,
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      {
+        provide: MarkLineUndeliverable,
+        useFactory: (
+          dining: DiningRoomRepository,
+          ordersClock: OrdersClock,
+          hub: RealtimeHub,
+        ) => new MarkLineUndeliverable(dining, ordersClock, hub),
+        inject: [DiningRoomRepository, OrdersClock, RealtimeHub],
+      },
+      {
+        provide: ConfirmNoRestockFlow,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+          dining: DiningRoomRepository,
+          hub: RealtimeHub,
+        ) =>
+          new CloudConfirmNoRestockFlow(
+            marks,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            audits,
+            digests,
+            clock,
+            dining,
+            hub,
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          DiningRoomRepository,
+          RealtimeHub,
+        ],
+      },
     ],
   };
 };
@@ -1114,6 +1258,10 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.transfersEnabled === true,
     );
+    const noRestock = openNoRestock(
+      dependencies.inventoryDatabase,
+      dependencies.noRestockTodayEnabled === true,
+    );
     const wasteAndCounts = openWasteAndCounts(
       dependencies.inventoryDatabase,
       dependencies.wasteAndCountsEnabled === true,
@@ -1179,6 +1327,7 @@ export class ApplicationModule implements NestModule {
         ...purchasing.controllers,
         ...production.controllers,
         ...transfers.controllers,
+        ...noRestock.controllers,
         ...wasteAndCounts.controllers,
         ...shortageAlerts.controllers,
       ],
@@ -1186,6 +1335,7 @@ export class ApplicationModule implements NestModule {
         ...purchasing.providers,
         ...production.providers,
         ...transfers.providers,
+        ...noRestock.providers,
         ...wasteAndCounts.providers,
         ...shortageAlerts.providers,
         {
@@ -1532,6 +1682,7 @@ export class ApplicationModule implements NestModule {
             identities: IdentityReader,
             authorizationClock: AuthorizationClock,
             registerSaleConsumption: RegisterSaleConsumption,
+            notRestocked: NotRestockedProductReader,
           ) =>
             new TakeOrder(
               diningRoom,
@@ -1561,6 +1712,7 @@ export class ApplicationModule implements NestModule {
                 generationOf: (_tenantId, venueId) =>
                   currentGeneration(dependencies.venueOperations, venueId),
               },
+              notRestocked,
             ),
           inject: [
             DiningRoomRepository,
@@ -1578,6 +1730,7 @@ export class ApplicationModule implements NestModule {
             IdentityReader,
             AuthorizationClock,
             RegisterSaleConsumption,
+            NotRestockedProductReader,
           ],
         },
         {
@@ -3095,6 +3248,339 @@ export class MemoryNumberingRanges extends NumberingRangeStore {
     return stored;
   }
 }
+
+type NoRestockSql = {
+  exec(statement: string): Promise<unknown>;
+  query<Row extends Record<string, unknown>>(
+    statement: string,
+    params?: readonly unknown[],
+  ): Promise<{ rows: Row[] }>;
+};
+
+type NoRestockDatabase = {
+  transaction<T>(work: (tx: NoRestockSql) => Promise<T>): Promise<T>;
+};
+
+interface NoRestockRow extends Record<string, unknown> {
+  tenant_id: string;
+  venue_id: string;
+  product_id: string;
+  status: string;
+  actor_id: string | null;
+  service_date: string | null;
+}
+
+interface GuestToldKey {
+  tenantId: string;
+  venueId: string;
+  checkId: string;
+  lineId: string;
+}
+
+interface GuestToldRow {
+  checkId: string;
+  lineId: string;
+  actorId: string;
+}
+
+const UNCOVERED_PORTIONS = {
+  pointPortions: 0,
+  supplyingWarehousePortions: 0,
+  inboundTransfers: [],
+} as const;
+
+const instantOnServiceDate = (serviceDate: string): Date =>
+  new Date(`${serviceDate}T17:00:00.000Z`);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const restoreNoRestock = (row: NoRestockRow): NoRestockToday => {
+  const mark = NoRestockToday.propose({
+    tenantId: row.tenant_id,
+    venueId: row.venue_id,
+    productId: row.product_id,
+    coverage: UNCOVERED_PORTIONS,
+  });
+
+  if (mark === null) {
+    throw new Error("A stored not-restocked mark could not be restored.");
+  }
+
+  if (row.status === "proposed") {
+    return mark;
+  }
+
+  if (row.actor_id === null || row.service_date === null) {
+    throw new Error("A confirmed not-restocked mark is missing its stamp.");
+  }
+
+  mark.confirm({
+    actorId: row.actor_id,
+    at: instantOnServiceDate(row.service_date),
+  });
+
+  if (row.status === "removed") {
+    mark.remove({ actorId: row.actor_id });
+  }
+
+  return mark;
+};
+
+const snapshotNoRestock = (
+  mark: NoRestockToday,
+): {
+  status: string;
+  actorId: string | null;
+  serviceDate: string | null;
+} => {
+  if (mark.serviceDate === null) {
+    return { status: "proposed", actorId: null, serviceDate: null };
+  }
+
+  const status = mark.statusAt(instantOnServiceDate(mark.serviceDate));
+
+  return {
+    status,
+    actorId: mark.actorId,
+    serviceDate: mark.serviceDate,
+  };
+};
+
+class PostgresNoRestockMarks extends NoRestockCatalog {
+  constructor(private readonly client: NoRestockDatabase) {
+    super();
+  }
+
+  override async list(
+    tenantId: string,
+    venueId: string,
+    at: Date,
+  ): Promise<
+    readonly {
+      productId: string;
+      status: string;
+      serviceDate: string | null;
+      actorId: string | null;
+    }[]
+  > {
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.query<NoRestockRow>(
+        `SELECT tenant_id, venue_id, product_id, status, actor_id, service_date
+         FROM no_restock_today
+         WHERE tenant_id = $1 AND venue_id = $2
+         ORDER BY product_id`,
+        [tenantId, venueId],
+      ),
+    );
+
+    return rows.map((row) => {
+      const mark = restoreNoRestock(row);
+
+      return {
+        productId: mark.productId,
+        status: mark.statusAt(at),
+        serviceDate: mark.serviceDate,
+        actorId: mark.actorId,
+      };
+    });
+  }
+
+  async find(query: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+  }): Promise<NoRestockToday | null> {
+    const rows = await this.inTenant(query.tenantId, (tx) =>
+      tx.query<NoRestockRow>(
+        `SELECT tenant_id, venue_id, product_id, status, actor_id, service_date
+         FROM no_restock_today
+         WHERE tenant_id = $1 AND venue_id = $2 AND product_id = $3
+         LIMIT 1`,
+        [query.tenantId, query.venueId, query.productId],
+      ),
+    );
+    const row = rows[0];
+
+    return row === undefined ? null : restoreNoRestock(row);
+  }
+
+  async save(mark: NoRestockToday): Promise<void> {
+    const stored = snapshotNoRestock(mark);
+
+    await this.inTenant(mark.tenantId, (tx) =>
+      tx.query(
+        `INSERT INTO no_restock_today (
+           tenant_id, venue_id, product_id, status, actor_id, service_date
+         ) VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (tenant_id, venue_id, product_id)
+         DO UPDATE SET
+           status = excluded.status,
+           actor_id = excluded.actor_id,
+           service_date = excluded.service_date`,
+        [
+          mark.tenantId,
+          mark.venueId,
+          mark.productId,
+          stored.status,
+          stored.actorId,
+          stored.serviceDate,
+        ],
+      ),
+    );
+  }
+
+  private async inTenant<T>(
+    tenantId: string,
+    work: (tx: NoRestockSql) => Promise<{ rows: T[] }>,
+  ): Promise<T[]> {
+    return this.client.transaction(async (tx) => {
+      await tx.exec("SET LOCAL ROLE inventory_app");
+      await tx.query("SELECT set_config('app.tenant_id', $1, true)", [
+        tenantId,
+      ]);
+      const selected = await work(tx);
+
+      return selected.rows;
+    });
+  }
+}
+
+class NotRestockedProductReader {
+  constructor(private readonly marks: PostgresNoRestockMarks | null) {}
+
+  async execute(input: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+    at: Date;
+  }): Promise<boolean> {
+    if (this.marks === null) {
+      return false;
+    }
+
+    const mark = await this.marks.find(input);
+
+    return mark !== null && mark.statusAt(input.at) === "confirmed";
+  }
+}
+
+class MemoryGuestTold {
+  private readonly rows = new Map<string, GuestToldRow>();
+
+  async find(query: GuestToldKey): Promise<GuestToldRow | null> {
+    return this.rows.get(this.key(query)) ?? null;
+  }
+
+  async save(record: GuestToldKey & GuestToldRow): Promise<void> {
+    this.rows.set(this.key(record), {
+      checkId: record.checkId,
+      lineId: record.lineId,
+      actorId: record.actorId,
+    });
+  }
+
+  private key(query: GuestToldKey): string {
+    return `${query.tenantId}\u0000${query.venueId}\u0000${query.checkId}\u0000${query.lineId}`;
+  }
+}
+
+type RecordAuditCommand = Parameters<RecordAuditEvent["execute"]>[0];
+
+class DeferredConfirmAudit extends RecordAuditEvent {
+  private held: RecordAuditCommand | null = null;
+
+  override async execute(command: RecordAuditCommand): Promise<AuditEvent> {
+    if (command.action !== "inventory.confirm-no-restock") {
+      return super.execute(command);
+    }
+
+    this.held = command;
+
+    return {
+      tenantId: command.tenantId,
+      actorId: command.actorId,
+      authorizerId: command.authorizerId,
+      deviceId: command.deviceId,
+      siteId: command.siteId,
+      action: command.action,
+      entity: command.entity,
+      before: command.before,
+      after: command.after,
+      reason: command.reason,
+      occurredAt: 0,
+      sequence: 0,
+      previousHash: "",
+      digest: "",
+      kind: "event",
+    };
+  }
+
+  async flush(tables: readonly string[]): Promise<void> {
+    const command = this.held;
+
+    if (command === null) {
+      return;
+    }
+
+    this.held = null;
+    const after = isRecord(command.after) ? { ...command.after } : {};
+    after.tables = [...tables];
+    await super.execute({ ...command, after });
+  }
+}
+
+class CloudConfirmNoRestockFlow extends ConfirmNoRestockFlow {
+  constructor(
+    private readonly marks: PostgresNoRestockMarks,
+    private readonly permissions: EvaluatePermission,
+    private readonly audits: AuditRepository,
+    private readonly digests: AuditDigest,
+    private readonly clock: Clock,
+    private readonly dining: DiningRoomRepository,
+    private readonly hub: RealtimeHub,
+  ) {
+    super();
+  }
+
+  override async execute(
+    input: Parameters<ConfirmNoRestockFlow["execute"]>[0],
+  ): Promise<Awaited<ReturnType<ConfirmNoRestockFlow["execute"]>>> {
+    const deferred = new DeferredConfirmAudit(
+      this.audits,
+      this.digests,
+      this.clock,
+    );
+    const confirmed = await new ConfirmNoRestockToday(
+      this.marks,
+      this.permissions,
+      deferred,
+      true,
+    ).execute(input);
+    const withdrawn = await new WithdrawUnstartedLines(
+      this.dining,
+      this.hub,
+    ).execute({
+      tenantId: input.tenantId,
+      venueId: input.venueId,
+      productId: input.productId,
+      uncoveredPortions: Number.MAX_SAFE_INTEGER,
+      at: input.at,
+    });
+    const tables = [
+      ...new Set(withdrawn.withdrawn.map((item) => item.tableId)),
+    ];
+    await deferred.flush(tables);
+
+    return {
+      productId: confirmed.mark.productId,
+      status: confirmed.mark.statusAt(input.at),
+      serviceDate: confirmed.mark.serviceDate,
+      tables,
+    };
+  }
+}
+
 const isMissingPointOfSale = (error: unknown): boolean =>
   error instanceof Error &&
   error.message === "The venue has no point-of-sale location.";

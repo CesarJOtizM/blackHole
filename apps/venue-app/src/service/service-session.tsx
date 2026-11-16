@@ -7,13 +7,16 @@ import {
   useState,
 } from "react";
 import {
+  guestToldNotice,
   loadVenueCloud,
+  postGuestTold,
   postLineReady,
   postOpenShift,
   postOpenTable,
   postReleaseTable,
   postRequestCheck,
   postSendCourse,
+  subscribeNotRestocked,
 } from "#src/service/venue-cloud.js";
 
 export type TableState = "free" | "occupied" | "check" | "clean";
@@ -64,6 +67,7 @@ interface ServiceSession {
   markTicketReady: (ticketId: string) => void;
   openShift: () => void;
   settleTips: () => void;
+  tellGuest: (checkId: string, lineId: string) => Promise<void>;
 }
 
 const ServiceContext = createContext<ServiceSession | null>(null);
@@ -144,8 +148,15 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
   const [tables, setTables] = useState(initialTables);
   const [tickets, setTickets] = useState(initialTickets);
   const [shiftOpen, setShiftOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [floorNotice, setFloorNotice] = useState("");
+  const [pendingGuests, setPendingGuests] = useState<
+    Array<{ checkId: string; lineId: string; tableId: string }>
+  >([]);
   const [sequence, setSequence] = useState(1);
+  const notice =
+    pendingGuests[0] === undefined
+      ? floorNotice
+      : guestToldNotice(pendingGuests[0].tableId);
 
   useEffect(() => {
     let active = true;
@@ -169,6 +180,26 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    subscribeNotRestocked((incoming) => {
+      setPendingGuests((current) => {
+        const alreadyListed = current.some(
+          (item) =>
+            item.checkId === incoming.checkId &&
+            item.lineId === incoming.lineId,
+        );
+
+        return alreadyListed ? current : [...current, incoming];
+      });
+    }, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
   const value = useMemo<ServiceSession>(() => {
     return {
       clockedIn,
@@ -178,11 +209,11 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
       notice,
       clockIn: () => {
         setClockedIn(true);
-        setNotice("Entrada marcada. Jorge Díaz puede operar Chapinero.");
+        setFloorNotice("Entrada marcada. Jorge Díaz puede operar Chapinero.");
       },
       clockOut: () => {
         setClockedIn(false);
-        setNotice("Salida marcada. Sin entrada no se opera.");
+        setFloorNotice("Salida marcada. Sin entrada no se opera.");
       },
       openTable: (tableId) => {
         const checkId = `check_${crypto.randomUUID()}`;
@@ -196,7 +227,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
           ),
         );
         void postOpenTable(tableId, checkId, Math.max(1, table?.seats ?? 1));
-        setNotice("Cuenta abierta en el salón.");
+        setFloorNotice("Cuenta abierta en el salón.");
       },
       addLine: (tableId) => {
         setTables((current) =>
@@ -217,17 +248,17 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
           }),
         );
         setSequence((current) => current + 1);
-        setNotice("Producto en la cuenta. Todavía no está en cocina.");
+        setFloorNotice("Producto en la cuenta. Todavía no está en cocina.");
       },
       sendCourse: (tableId) => {
         if (!clockedIn) {
-          setNotice("Sin entrada no se envía a cocina.");
+          setFloorNotice("Sin entrada no se envía a cocina.");
           return;
         }
         const table = tables.find((item) => item.id === tableId);
         const pending = table?.lines.filter((line) => !line.sent) ?? [];
         if (pending.length === 0) {
-          setNotice("No hay productos nuevos para este fuego.");
+          setFloorNotice("No hay productos nuevos para este fuego.");
           return;
         }
         setTables((current) =>
@@ -256,7 +287,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
         if (table?.checkId !== undefined) {
           void postSendCourse(table.checkId);
         }
-        setNotice(
+        setFloorNotice(
           "Fuego enviado a la estación. La comanda sale por la impresora.",
         );
       },
@@ -271,7 +302,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
         if (table?.checkId !== undefined) {
           void postRequestCheck(table.checkId);
         }
-        setNotice("Precuenta impresa en 80 mm, con el QR de facturación.");
+        setFloorNotice("Precuenta impresa en 80 mm, con el QR de facturación.");
       },
       voidLine: (tableId, lineId) => {
         setTables((current) =>
@@ -284,7 +315,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
               : table,
           ),
         );
-        setNotice("Línea anulada con PIN del supervisor. Queda en auditoría.");
+        setFloorNotice("Línea anulada con PIN del supervisor. Queda en auditoría.");
       },
       markClean: (tableId) => {
         setTables((current) =>
@@ -295,7 +326,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
           ),
         );
         void postReleaseTable(tableId);
-        setNotice("Mesa libre.");
+        setFloorNotice("Mesa libre.");
       },
       markTicketReady: (ticketId) => {
         const ticket = tickets.find((item) => item.id === ticketId);
@@ -308,16 +339,29 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
         if (ticket?.checkId !== undefined && ticket.lineId !== undefined) {
           void postLineReady(ticket.checkId, ticket.lineId);
         }
-        setNotice("Estación marcó listo. El mesero puede entregar.");
+        setFloorNotice("Estación marcó listo. El mesero puede entregar.");
       },
       openShift: () => {
         setShiftOpen(true);
         void postOpenShift(200_000);
-        setNotice("Turno abierto con base de $200.000.");
+        setFloorNotice("Turno abierto con base de $200.000.");
       },
       settleTips: () => {
-        setNotice(
+        setFloorNotice(
           "Propinas del sábado: $186.000 entre 6 personas. $31.000 cada una. Liquidación impresa.",
+        );
+      },
+      tellGuest: async (checkId, lineId) => {
+        const accepted = await postGuestTold(checkId, lineId);
+
+        if (!accepted) {
+          return;
+        }
+
+        setPendingGuests((current) =>
+          current.filter(
+            (item) => item.checkId !== checkId || item.lineId !== lineId,
+          ),
         );
       },
     };

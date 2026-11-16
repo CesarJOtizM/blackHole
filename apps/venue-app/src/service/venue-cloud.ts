@@ -257,6 +257,112 @@ export const postLineReady = (
 ): Promise<boolean> =>
   postJson(`${venueBase}/checks/${checkId}/lines/${lineId}/ready`, {});
 
+export const guestToldNotice = (tableId: string): string =>
+  `Mesa ${tableId}: el plato no sale hoy. Avisa al cliente.`;
+
+export interface GuestWithdrawal {
+  checkId: string;
+  lineId: string;
+  tableId: string;
+}
+
+export const postGuestTold = (
+  checkId: string,
+  lineId: string,
+): Promise<boolean> =>
+  postJson(`${venueBase}/checks/${checkId}/lines/${lineId}/guest-told`, {});
+
+export const subscribeNotRestocked = (
+  onNotice: (notice: GuestWithdrawal) => void,
+  signal: AbortSignal,
+): void => {
+  if (typeof fetch !== "function" || signal.aborted) {
+    return;
+  }
+
+  void readNotRestocked(onNotice, signal);
+};
+
+const readNotRestocked = async (
+  onNotice: (notice: GuestWithdrawal) => void,
+  signal: AbortSignal,
+): Promise<void> => {
+  try {
+    const response = await fetch(`${venueBase}/orders-realtime`, {
+      headers: {
+        accept: "text/event-stream",
+        [SESSION_HEADER]: VENUE_SCOPE.sessionId,
+      },
+      signal,
+    });
+
+    if (!response.ok || response.body === null) {
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = "";
+
+    while (!signal.aborted) {
+      const chunk = await reader.read();
+
+      if (chunk.done) {
+        return;
+      }
+
+      pending += decoder.decode(chunk.value, { stream: true });
+      const frames = pending.split("\n\n");
+      pending = frames.pop() ?? "";
+
+      for (const frame of frames) {
+        for (const notice of readNotRestockedFrame(frame)) {
+          onNotice(notice);
+        }
+      }
+    }
+  } catch {
+    return;
+  }
+};
+
+const readNotRestockedFrame = (frame: string): GuestWithdrawal[] => {
+  const data = frame
+    .split("\n")
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice("data:".length).trim())
+    .join("");
+
+  if (data.length === 0) {
+    return [];
+  }
+
+  try {
+    const record = readRecord(JSON.parse(data) as unknown);
+    const checkId = record?.checkId;
+    const tableId = record?.tableId;
+    const lineIds = record?.lineIds;
+
+    if (
+      record === null ||
+      record.kind !== "not_restocked" ||
+      typeof checkId !== "string" ||
+      typeof tableId !== "string" ||
+      !Array.isArray(lineIds)
+    ) {
+      return [];
+    }
+
+    return lineIds.flatMap((lineId) =>
+      typeof lineId === "string" && lineId.length > 0
+        ? [{ checkId, lineId, tableId }]
+        : [],
+    );
+  } catch {
+    return [];
+  }
+};
+
 const readCoordinates = async (): Promise<{
   latitude: number;
   longitude: number;
