@@ -47,7 +47,9 @@ function ingredientIdsFrom(payload: unknown): string[] | null {
   return ids;
 }
 
-function differencesFrom(payload: unknown): DifferenceLine[] | "pending" | null {
+function differencesFrom(
+  payload: unknown,
+): DifferenceLine[] | "pending" | null {
   if (!isRecord(payload)) {
     return null;
   }
@@ -111,7 +113,9 @@ async function readSheet(
   }
 }
 
-async function sendCount(body: unknown): Promise<DifferenceLine[] | "pending" | null> {
+async function sendCount(
+  body: unknown,
+): Promise<DifferenceLine[] | "pending" | null> {
   try {
     const response = await fetch(`${venueBase}/stock-counts`, {
       method: "POST",
@@ -139,9 +143,9 @@ export function StockCountScreen() {
   const [cutOff, setCutOff] = useState("");
   const [documentId, setDocumentId] = useState("");
   const [ingredientIds, setIngredientIds] = useState<readonly string[]>([]);
-  const [quantities, setQuantities] = useState<Readonly<Record<string, string>>>(
-    {},
-  );
+  const [quantities, setQuantities] = useState<
+    Readonly<Record<string, string>>
+  >({});
   const [differences, setDifferences] = useState<readonly DifferenceLine[]>([]);
   const [status, setStatus] = useState("");
 

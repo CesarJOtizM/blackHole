@@ -29,7 +29,7 @@ export interface ShortageAlertBoss {
   work(
     name: string,
     handler: (jobs: ReadonlyArray<{ data: object }>) => Promise<void>,
-  ): Promise<void | string>;
+  ): Promise<undefined | string>;
   schedule(
     name: string,
     cron: string,

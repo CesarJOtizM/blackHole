@@ -315,7 +315,9 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
               : table,
           ),
         );
-        setFloorNotice("Línea anulada con PIN del supervisor. Queda en auditoría.");
+        setFloorNotice(
+          "Línea anulada con PIN del supervisor. Queda en auditoría.",
+        );
       },
       markClean: (tableId) => {
         setTables((current) =>

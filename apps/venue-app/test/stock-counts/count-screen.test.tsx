@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { StockCountScreen } from "#src/stock-counts/count-screen.js";
 import { router } from "#src/router.js";
+import { StockCountScreen } from "#src/stock-counts/count-screen.js";
 
 const theoreticalQuantity = 8_000_000;
 const averageCost = 3000;

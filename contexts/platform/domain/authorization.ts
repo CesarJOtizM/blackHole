@@ -619,7 +619,7 @@ export class Authorization {
       (item) => item.id === input.requestId,
     );
 
-    if (!request || request.status !== "pending") {
+    if (request?.status !== "pending") {
       throw new UnknownAuthorizationReference();
     }
 

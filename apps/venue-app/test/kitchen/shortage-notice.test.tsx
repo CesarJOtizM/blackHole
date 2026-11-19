@@ -150,7 +150,7 @@ it("given a notice for another venue, when the kitchen reads the stream, then th
 
 it("given a red level notice, when the kitchen taps restock, then the cloud receives one restock and no local stock", async () => {
   const fetchMock = vi.fn(
-    async (input: RequestInfo | URL, init?: RequestInit) => {
+    async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
 
       if (url.endsWith("/shortage-realtime")) {

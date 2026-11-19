@@ -1,9 +1,9 @@
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite } from "@electric-sql/pglite";
 import { afterAll, expect, it } from "vitest";
 
 import {
-  ShortageAlertsController,
   routePermissions,
+  ShortageAlertsController,
 } from "#src/http/shortage-alerts.controller.js";
 import {
   chiefSession,

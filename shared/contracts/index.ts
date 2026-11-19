@@ -256,6 +256,10 @@ export {
   sensitiveActionEnvelope,
 } from "#contracts/sensitive-actions.js";
 export {
+  type ShortageNotice,
+  shortageNotice,
+} from "#contracts/shortage-alerts.js";
+export {
   type NegativeStockOpened,
   negativeStockOpened,
   type StockMoved,
@@ -295,7 +299,3 @@ export {
   type StructureCommand,
   structureCommand,
 } from "#contracts/update-structure.js";
-export {
-  type ShortageNotice,
-  shortageNotice,
-} from "#contracts/shortage-alerts.js";

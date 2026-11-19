@@ -124,7 +124,9 @@ it("given inconsistent levels, when the cloud rejects them, then the active leve
   fillLevels();
   fireEvent.click(screen.getByRole("button", { name: "Guardar niveles" }));
 
-  expect(await screen.findByText("Los niveles no quedaron guardados.")).toBeTruthy();
+  expect(
+    await screen.findByText("Los niveles no quedaron guardados."),
+  ).toBeTruthy();
   expect(screen.queryByText("Máximo activo 20")).toBeNull();
   expect(screen.queryByText("Niveles guardados.")).toBeNull();
   expect(localStorage.length).toBe(0);
@@ -197,7 +199,9 @@ it("given a beef proposal, when the administrator accepts it, then those levels 
 });
 
 it("given the shortage flag is off, when the administrator saves levels, then the route is absent and nothing is stored locally", async () => {
-  const fetchMock = vi.fn().mockResolvedValue(jsonResponse(404, { error: "Not Found" }));
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue(jsonResponse(404, { error: "Not Found" }));
   vi.stubGlobal("fetch", fetchMock);
   render(<StockLevelsScreen />);
   fillLevels();

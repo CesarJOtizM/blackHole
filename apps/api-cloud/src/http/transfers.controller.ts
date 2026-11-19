@@ -131,7 +131,7 @@ export class OrganizationWarehouseSupply extends WarehouseSupply {
       (location) => location.id === warehouseLocationId,
     );
 
-    if (!warehouse || warehouse.kind !== "warehouse") {
+    if (warehouse?.kind !== "warehouse") {
       return false;
     }
 
