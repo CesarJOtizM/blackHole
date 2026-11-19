@@ -27,6 +27,7 @@ import {
   ConflictException,
   Controller,
   ForbiddenException,
+  Get,
   Headers,
   HttpCode,
   HttpStatus,
@@ -36,6 +37,7 @@ import {
   Post,
 } from "@nestjs/common";
 import { z } from "zod";
+import { RestockFacts } from "#src/composition/restock-facts.js";
 
 const SESSION_HEADER = "x-session-id";
 
@@ -46,6 +48,8 @@ export const routePermissions = {
   "POST shortage-alerts/:alertId/seen": "session",
   "POST shortage-alerts/:alertId/resolution": "session",
   "POST shortage-alerts/:alertId/restock": "inventory.request-replenishment",
+  "GET shortage-alerts/:alertId/restock-facts":
+    "inventory.request-replenishment",
 } as const;
 
 const levelsCommand = z
@@ -100,6 +104,8 @@ export class ShortageAlertsController {
     private readonly resolutions: ResolveAlert,
     @Inject(RestockFromAlert)
     private readonly restocks: RestockFromAlert,
+    @Inject(RestockFacts)
+    private readonly facts: RestockFacts,
     @Inject(ShortageTransactions)
     private readonly transactions: ShortageTransactions,
     @Inject(SessionReader)
@@ -117,7 +123,7 @@ export class ShortageAlertsController {
     @Param("venueId") venueId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = levelsCommand.safeParse(body);
 
@@ -150,7 +156,7 @@ export class ShortageAlertsController {
     @Param("venueId") venueId: string,
     @Param("suggestionId") suggestionId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const venue = await this.venueOf(tenantId, venueId);
 
@@ -174,7 +180,7 @@ export class ShortageAlertsController {
     @Param("venueId") venueId: string,
     @Param("alertId") alertId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     await this.venueOf(tenantId, venueId);
 
@@ -201,7 +207,7 @@ export class ShortageAlertsController {
     @Param("alertId") alertId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = resolveCommand.safeParse(body);
 
@@ -225,6 +231,18 @@ export class ShortageAlertsController {
     } catch (error: unknown) {
       throw this.failure(error);
     }
+  }
+
+  @Get("shortage-alerts/:alertId/restock-facts")
+  async restockFacts(
+    @Param("tenantId") tenantId: string,
+    @Param("venueId") venueId: string,
+    @Param("alertId") alertId: string,
+    @Headers(SESSION_HEADER) sessionHeader: unknown,
+  ) {
+    await this.actor(tenantId, sessionHeader);
+
+    return this.facts.read(tenantId, venueId, alertId);
   }
 
   @Post("shortage-alerts/:alertId/restock")

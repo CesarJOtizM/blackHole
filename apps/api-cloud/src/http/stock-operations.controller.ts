@@ -166,7 +166,7 @@ export class StockOperationsController {
     @Param("venueId") venueId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = wasteCommand.safeParse(body);
 
@@ -250,7 +250,7 @@ export class StockOperationsController {
     @Param("venueId") venueId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = countCommand.safeParse(body);
 
@@ -299,7 +299,7 @@ export class StockOperationsController {
     @Param("documentId") documentId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = approvalCommand.safeParse(body);
 
@@ -368,7 +368,7 @@ export class StockOperationsController {
     @Param("ingredientId") ingredientId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<unknown> {
     const actor = await this.actor(tenantId, sessionHeader);
     const parsed = categoryCommand.safeParse(body);
 

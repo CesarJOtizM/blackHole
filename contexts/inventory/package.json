@@ -38,6 +38,7 @@
     "./adapters/sqlite/drizzle-stock-ledger-repository": "./adapters/sqlite/drizzle-stock-ledger-repository.js",
     "./adapters/postgres/drizzle-stock-count-repository": "./adapters/postgres/drizzle-stock-count-repository.js",
     "./adapters/postgres/drizzle-shortage-repository": "./adapters/postgres/drizzle-shortage-repository.js",
+    "./adapters/memory/in-memory-shortage-repository": "./adapters/memory/in-memory-shortage-repository.js",
     "./adapters/memory/in-memory-producible-quantity-repository": "./adapters/memory/in-memory-producible-quantity-repository.js",
     "./adapters/postgres/drizzle-producible-quantity-repository": "./adapters/postgres/drizzle-producible-quantity-repository.js",
     "./application/ports/producible-quantity-repository": "./application/ports/producible-quantity-repository.js",

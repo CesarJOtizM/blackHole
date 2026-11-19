@@ -140,6 +140,15 @@ class MemoryLedger extends StockLedgerRepository {
     this.alerts.push(...input.alerts);
   }
 
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]> {
+    return this.lines.filter(
+      (line) => line.tenantId === tenantId && line.venueId === venueId,
+    );
+  }
+
   override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
     const lines = this.lines.map((line) => ({ ...line }));
     const alerts = this.alerts.map((alert) => ({ ...alert }));

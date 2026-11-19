@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import type {
   AppendProductionCompensation,
+  ProductionCompensationLine,
   ProductionRepository,
   ProductionStockLine,
   RecordedProductionRun,
@@ -134,12 +135,25 @@ const seedPantry = async (
   });
 };
 
+const compensationLine = (
+  id: string,
+  ingredientId: string,
+  quantity: number,
+  unitCost: number,
+  type: ProductionStockLine["type"],
+  reference: string,
+  reversesMovementId: string,
+): ProductionCompensationLine => ({
+  ...movement(id, ingredientId, quantity, unitCost, type, reference),
+  reversesMovementId,
+});
+
 const compensation = (): AppendProductionCompensation => ({
   tenantId: TENANT_A,
   originalRunId: RUN_ID,
   correctionRunId: "run_sauce_correction",
   movements: [
-    movement(
+    compensationLine(
       "run_sauce_correction:consumption:0",
       TOMATO_ID,
       grams(6000),
@@ -148,7 +162,7 @@ const compensation = (): AppendProductionCompensation => ({
       "run_sauce_correction",
       `${RUN_ID}:consumption:0`,
     ),
-    movement(
+    compensationLine(
       "run_sauce_correction:consumption:1",
       ONION_ID,
       grams(500),
@@ -157,7 +171,7 @@ const compensation = (): AppendProductionCompensation => ({
       "run_sauce_correction",
       `${RUN_ID}:consumption:1`,
     ),
-    movement(
+    compensationLine(
       "run_sauce_correction:output",
       SAUCE_ID,
       grams(-4600),

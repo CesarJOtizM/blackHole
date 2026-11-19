@@ -1,27 +1,27 @@
 import {
   dispatchTransferCommand,
-  receiveTransferCommand,
   type RecordedTransfer,
+  receiveTransferCommand,
   recordedTransfer,
   requestTransferCommand,
 } from "@blackhole/contracts";
-import { DrizzleTransferRepository } from "@blackhole/inventory/adapters/postgres/drizzle-transfer-repository";
+import type { DrizzleTransferRepository } from "@blackhole/inventory/adapters/postgres/drizzle-transfer-repository";
 import {
   DestinationStock,
   DispatchTransfer,
   ReceiveTransfer,
   RequestTransfer,
-  TransferStock,
   type TransferOutRecord,
+  TransferStock,
   UnauthorizedTransferDifference,
-  UnlinkedWarehouse,
   UnknownTransferDispatch,
   UnknownTransferReceipt,
+  UnlinkedWarehouse,
 } from "@blackhole/inventory/application/entry-port";
 import { TransferRepository } from "@blackhole/inventory/application/ports/transfer-repository";
 import {
-  type TransferVoucherDraft,
   TransferVoucher,
+  type TransferVoucherDraft,
 } from "@blackhole/inventory/application/ports/transfer-voucher";
 import { WarehouseSupply } from "@blackhole/inventory/application/ports/warehouse-supply";
 import {
@@ -44,6 +44,7 @@ import { Clock } from "@blackhole/platform/application/ports/clock";
 import { IdentityReader } from "@blackhole/platform/application/ports/identity-reader";
 import { OrganizationRepository } from "@blackhole/platform/application/ports/organization-repository";
 import { SessionReader } from "@blackhole/platform/application/ports/session-reader";
+import type { EnqueuePrintJob } from "@blackhole/printing/application/entry-port";
 import type { PGlite } from "@electric-sql/pglite";
 import {
   BadRequestException,
@@ -55,9 +56,11 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Optional,
   Param,
   Post,
 } from "@nestjs/common";
+import { ProjectAffectedProducts } from "#src/composition/project-affected-products.js";
 
 const SESSION_HEADER = "x-session-id";
 const REQUEST_DENIED = "TransferRequestDenied";
@@ -157,7 +160,9 @@ export class PostgresTransferStock extends TransferStock {
     return { onHand, averageCost };
   }
 
-  override async append(movements: readonly TransferOutRecord[]): Promise<void> {
+  override async append(
+    movements: readonly TransferOutRecord[],
+  ): Promise<void> {
     const [first] = movements;
 
     if (!first) {
@@ -260,10 +265,56 @@ export class PostgresDestinationStock extends DestinationStock {
   }
 }
 
+interface BoundTransferPrinter {
+  printJobs: EnqueuePrintJob;
+  printerId: string;
+}
+
+let boundTransferPrinter: BoundTransferPrinter | undefined;
+
+export function bindPendingTransferVoucher(
+  printJobs: EnqueuePrintJob,
+  printerId: string,
+): void {
+  boundTransferPrinter = { printJobs, printerId };
+}
+
 export class PendingTransferVoucher extends TransferVoucher {
-  override print(_voucher: TransferVoucherDraft): Promise<void> {
-    return Promise.resolve();
+  constructor(private readonly printer?: BoundTransferPrinter) {
+    super();
   }
+
+  override async print(voucher: TransferVoucherDraft): Promise<void> {
+    const printer = this.printer ?? boundTransferPrinter;
+
+    if (printer === undefined) {
+      return;
+    }
+
+    await printer.printJobs.execute({
+      commandId: voucher.transferId,
+      printerId: printer.printerId,
+      kickDrawer: false,
+      document: voucher.document,
+      reference: voucher.transferId,
+      origin: voucher.originLocationId,
+      destination: voucher.destinationLocationId,
+      lines: voucher.lines.map(
+        (line) => `${line.ingredientId} ${line.quantity}`,
+      ),
+      qr: transferVoucherQr(voucher),
+    });
+  }
+}
+
+function transferVoucherQr(voucher: TransferVoucherDraft): string {
+  return JSON.stringify({
+    transferId: voucher.transferId,
+    lines: voucher.lines.map((line) => ({
+      ingredientId: line.ingredientId,
+      quantity: line.quantity,
+    })),
+  });
 }
 
 @Controller("tenants/:tenantId")
@@ -295,6 +346,9 @@ export class TransfersController {
     private readonly audits: AuditRepository,
     @Inject(AuditDigest)
     private readonly digests: AuditDigest,
+    @Optional()
+    @Inject(ProjectAffectedProducts)
+    private readonly affected?: ProjectAffectedProducts,
   ) {}
 
   @Post("transfers")
@@ -459,6 +513,14 @@ export class TransfersController {
         destinationVenueId: place.venueId,
         authorizerId,
         lines: parsed.data.lines,
+      });
+      await this.affected?.afterReceipt({
+        tenantId,
+        venueId: place.venueId,
+        locationId: received.destinationLocationId,
+        ingredientIds: received.lines.map(
+          (line: { ingredientId: string }) => line.ingredientId,
+        ),
       });
 
       return this.present(received, seesCost);

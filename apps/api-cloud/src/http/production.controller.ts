@@ -56,12 +56,13 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Optional,
   Param,
   Post,
   Put,
 } from "@nestjs/common";
-
 import { OrganizationInventoryLocationDirectory } from "#src/composition/inventory-location-directory.js";
+import { ProjectAffectedProducts } from "#src/composition/project-affected-products.js";
 
 const SESSION_HEADER = "x-session-id";
 const RECORD_DENIED = "ProductionRecordDenied";
@@ -137,6 +138,9 @@ export class ProductionController {
     private readonly audits: AuditRepository,
     @Inject(AuditDigest)
     private readonly digests: AuditDigest,
+    @Optional()
+    @Inject(ProjectAffectedProducts)
+    private readonly affected?: ProjectAffectedProducts,
   ) {}
 
   @Post("production-runs")
@@ -191,6 +195,12 @@ export class ProductionController {
         occurredAt: new Date(this.clock.now()).toISOString(),
         actorId: actor.userId,
         deviceId: actor.deviceId,
+      });
+      await this.affected?.afterReceipt({
+        tenantId,
+        venueId: run.venueId,
+        locationId: run.locationId,
+        ingredientIds: run.movements.map((movement) => movement.ingredientId),
       });
 
       return this.present(run, seesCost);

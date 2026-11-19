@@ -140,7 +140,7 @@ function preparationsFor(
 }
 
 export function PurchaseScreen() {
-  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(ADMIN_SCOPE.venueId);
   const [orderId, setOrderId] = useState(ORDER_ID);
   const [ingredientId, setIngredientId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -264,7 +264,7 @@ export function PurchaseScreen() {
 }
 
 export function ProductionScreen() {
-  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(ADMIN_SCOPE.venueId);
   const [recipeId, setRecipeId] = useState("");
   const [expectedQuantity, setExpectedQuantity] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
@@ -837,9 +837,7 @@ async function postLevels(
       headers: {
         accept: "application/json",
         "x-session-id": ADMIN_SCOPE.sessionId,
-        ...(body === undefined
-          ? {}
-          : { "content-type": "application/json" }),
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });

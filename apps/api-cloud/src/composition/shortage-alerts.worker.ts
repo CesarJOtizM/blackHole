@@ -25,10 +25,7 @@ export type ShortageDatabase = ConstructorParameters<
 type ShortageTx = Parameters<EvaluateCoverage["evaluate"]>[0];
 
 export interface ShortageAlertBoss {
-  createQueue(
-    name: string,
-    options?: { retryLimit?: number },
-  ): Promise<void>;
+  createQueue(name: string, options?: { retryLimit?: number }): Promise<void>;
   work(
     name: string,
     handler: (jobs: ReadonlyArray<{ data: object }>) => Promise<void>,
@@ -41,7 +38,19 @@ export interface ShortageAlertBoss {
   ): Promise<void>;
 }
 
+export interface ShortageVenueTick {
+  tenantId: string;
+  venueId: string;
+  brandId?: string;
+  locationId?: string;
+  ingredientId?: string;
+  productId?: string;
+  dailyConsumption?: number;
+  leadTimeDays?: number;
+}
+
 export interface ShortageAlertDependencies {
+  enabledVenues(): Promise<readonly ShortageVenueTick[]>;
   alertsEnabled(tenantId: string, venueId: string): Promise<boolean>;
   inTransaction(
     tenantId: string,
@@ -226,23 +235,127 @@ const runSuggestions = async (
   });
 };
 
+const runExpanded = async (
+  data: object,
+  dependencies: ShortageAlertDependencies,
+  run: (payload: object) => Promise<void>,
+): Promise<void> => {
+  if (textField(data, "tenantId")) {
+    await run(data);
+    return;
+  }
+
+  for (const venue of await dependencies.enabledVenues()) {
+    await run(venue);
+  }
+};
+
 const registerQueue = async (
   boss: ShortageAlertBoss,
   name: string,
+  dependencies: ShortageAlertDependencies,
   run: (data: object) => Promise<void>,
 ): Promise<void> => {
   await boss.createQueue(name, { retryLimit: 0 });
   await boss.work(name, async (jobs) => {
     for (const job of jobs) {
-      await run(job.data);
+      await runExpanded(job.data, dependencies, run);
     }
   });
-  await boss.schedule(name, SHORTAGE_ALERTS_CRON, {}, {
-    tz: SHORTAGE_ALERTS_TIME_ZONE,
-  });
+  await boss.schedule(
+    name,
+    SHORTAGE_ALERTS_CRON,
+    {},
+    {
+      tz: SHORTAGE_ALERTS_TIME_ZONE,
+    },
+  );
+};
+
+interface EnabledVenueRow extends Record<string, unknown> {
+  tenant_id: string;
+  venue_id: string;
+  brand_id: string | null;
+  location_id: string | null;
+  ingredient_id: string | null;
+  product_id: string | null;
+}
+
+const ENABLED_VENUES = `
+SELECT rules.tenant_id,
+       rules.venue_id,
+       templates.brand_id,
+       levels.scope_id AS location_id,
+       levels.ingredient_id,
+       dishes.product_id
+FROM notification_rules AS rules
+LEFT JOIN LATERAL (
+  SELECT brand_id
+  FROM stock_level_templates
+  WHERE tenant_id = rules.tenant_id
+  ORDER BY brand_id
+  LIMIT 1
+) AS templates ON true
+LEFT JOIN LATERAL (
+  SELECT scope_id, ingredient_id
+  FROM stock_levels
+  WHERE tenant_id = rules.tenant_id
+    AND scope = 'location'
+  ORDER BY scope_id, ingredient_id
+  LIMIT 1
+) AS levels ON true
+LEFT JOIN LATERAL (
+  SELECT product_id
+  FROM dish_levels
+  WHERE tenant_id = rules.tenant_id
+    AND venue_id = rules.venue_id
+  ORDER BY product_id
+  LIMIT 1
+) AS dishes ON true
+WHERE rules.shortage_alerts_enabled = true
+ORDER BY rules.tenant_id, rules.venue_id
+`;
+
+const textOrOmit = (value: string | null): string | undefined =>
+  value && value.length > 0 ? value : undefined;
+
+const listEnabledVenues = async (
+  database: ShortageDatabase,
+): Promise<readonly ShortageVenueTick[]> => {
+  try {
+    const selected = await database.query<EnabledVenueRow>(ENABLED_VENUES);
+
+    return selected.rows.map((row) => ({
+      tenantId: row.tenant_id,
+      venueId: row.venue_id,
+      ...(textOrOmit(row.brand_id) === undefined
+        ? {}
+        : { brandId: row.brand_id ?? undefined }),
+      ...(textOrOmit(row.location_id) === undefined
+        ? {}
+        : { locationId: row.location_id ?? undefined }),
+      ...(textOrOmit(row.ingredient_id) === undefined
+        ? {}
+        : { ingredientId: row.ingredient_id ?? undefined }),
+      ...(textOrOmit(row.product_id) === undefined
+        ? {}
+        : { productId: row.product_id ?? undefined }),
+    }));
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("notification_rules") ||
+        error.message.includes("stock_level"))
+    ) {
+      return [];
+    }
+
+    throw error;
+  }
 };
 
 export const disabledShortageAlerts = (): ShortageAlertDependencies => ({
+  enabledVenues: () => Promise.resolve([]),
   alertsEnabled: () => Promise.resolve(false),
   inTransaction: () => Promise.resolve(undefined),
   coverage: {
@@ -265,6 +378,7 @@ export const shortageAlertsFromPostgres = (
   const shortages = new DrizzleShortageRepository(database);
 
   return {
+    enabledVenues: () => listEnabledVenues(database),
     alertsEnabled: (tenantId, venueId) =>
       shortages.alertsEnabled(tenantId, venueId),
     inTransaction: (tenantId, work) => shortages.inTransaction(tenantId, work),
@@ -280,16 +394,16 @@ export const registerShortageAlerts = async (
   dependencies: ShortageAlertDependencies,
   clock: Clock = new SystemUtcClock(),
 ): Promise<void> => {
-  await registerQueue(boss, COVERAGE_QUEUE, (data) =>
+  await registerQueue(boss, COVERAGE_QUEUE, dependencies, (data) =>
     runCoverage(data, dependencies, clock),
   );
-  await registerQueue(boss, DISH_ALERT_QUEUE, (data) =>
+  await registerQueue(boss, DISH_ALERT_QUEUE, dependencies, (data) =>
     runDish(data, dependencies, clock),
   );
-  await registerQueue(boss, ESCALATION_QUEUE, (data) =>
+  await registerQueue(boss, ESCALATION_QUEUE, dependencies, (data) =>
     runEscalation(data, dependencies, clock),
   );
-  await registerQueue(boss, SUGGESTION_QUEUE, (data) =>
+  await registerQueue(boss, SUGGESTION_QUEUE, dependencies, (data) =>
     runSuggestions(data, dependencies),
   );
 };

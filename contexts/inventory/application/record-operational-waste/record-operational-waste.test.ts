@@ -98,6 +98,15 @@ class MemoryLedger extends StockLedgerRepository {
       this.lines.push(movement);
     }
   }
+
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]> {
+    return this.lines.filter(
+      (line) => line.tenantId === tenantId && line.venueId === venueId,
+    );
+  }
 }
 
 class MemoryQueue extends StockMovementQueue {

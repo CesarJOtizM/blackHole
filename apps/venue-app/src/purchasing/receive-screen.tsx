@@ -84,7 +84,7 @@ function averagesFrom(payload: unknown): number[] | null {
 }
 
 export function ReceiveScreen() {
-  const [locationId, setLocationId] = useState(VENUE_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(VENUE_SCOPE.venueId);
   const [orderId, setOrderId] = useState("");
   const [ingredientId, setIngredientId] = useState("");
   const [quantity, setQuantity] = useState("");

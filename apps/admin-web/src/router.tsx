@@ -222,6 +222,16 @@ const routeTree = rootRoute.addChildren([
     "TransferDetailScreen",
   ),
   page(
+    "inventory/production",
+    () => import("#src/inventory/inventory-screen.js"),
+    "ProductionScreen",
+  ),
+  page(
+    "inventory/levels",
+    () => import("#src/inventory/inventory-screen.js"),
+    "StockLevelsScreen",
+  ),
+  page(
     "inventory/scarcity",
     () => import("#src/scarcity/scarcity-screen.js"),
     "ScarcityScreen",

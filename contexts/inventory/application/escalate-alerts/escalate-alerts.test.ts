@@ -189,7 +189,7 @@ class MemoryShortageRepository extends ShortageRepository {
         (row) =>
           row.alert.tenantId === tenantId && row.alert.venueId === venueId,
       )
-      .map((row) => ({ ...row, alert: { ...row.alert } }));
+      .map((row): OpenShortage => ({ ...row }));
   }
 
   override async listRoleNotices(

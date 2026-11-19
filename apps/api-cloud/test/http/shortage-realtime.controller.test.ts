@@ -1,8 +1,20 @@
-import { afterAll, expect, it } from "vitest";
-
+import type { ShortageNotice } from "@blackhole/contracts";
 import {
-  ShortageRealtimeController,
+  type AuthorizationChanged,
+  AuthorizationRepository,
+} from "@blackhole/platform/application/ports/authorization-repository";
+import {
+  SessionReader,
+  type SessionView,
+} from "@blackhole/platform/application/ports/session-reader";
+import type { Authorization } from "@blackhole/platform/domain";
+import type { MessageEvent } from "@nestjs/common";
+import { afterAll, expect, it } from "vitest";
+import { ShortageNoticeHub } from "#src/http/shortage-notice-hub.js";
+import {
   routePermissions,
+  ShortageNoticeFeed,
+  ShortageRealtimeController,
 } from "#src/http/shortage-realtime.controller.js";
 import {
   chiefSession,
@@ -132,4 +144,69 @@ it("given a site administrator notice, when the kitchen reads the stream, then t
   } finally {
     await application.close();
   }
+});
+
+class ChiefSessions extends SessionReader {
+  override find(): Promise<SessionView | null> {
+    return Promise.resolve({
+      sessionId: "session_chief",
+      userId: "user_chief",
+      displayName: "Chief",
+      deviceId: "device_1",
+      venueId: "venue_1",
+      kind: "pin",
+    });
+  }
+}
+
+class ChiefAuthorizations extends AuthorizationRepository {
+  override load() {
+    return Promise.resolve({
+      snapshot: () => ({
+        assignments: [{ userId: "user_chief", roleId: "kitchenChief" }],
+      }),
+    } as unknown as Authorization);
+  }
+
+  override save(
+    _authorization: Authorization,
+    _event: AuthorizationChanged,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+class EmptyNotices extends ShortageNoticeFeed {
+  override list(): Promise<readonly ShortageNotice[]> {
+    return Promise.resolve([]);
+  }
+}
+
+it("given a subscribed shortage stream, when a notice is saved for that venue, then the socket receives it", async () => {
+  const hub = new ShortageNoticeHub();
+  const controller = new ShortageRealtimeController(
+    new EmptyNotices(),
+    new ChiefSessions(),
+    new ChiefAuthorizations(),
+    hub,
+  );
+  const notice: ShortageNotice = {
+    alertId: "alert_later",
+    kind: "level",
+    severity: "red",
+    role: "siteAdministrator",
+    venueId: "venue_1",
+  };
+  const stream = await controller.stream(
+    "tenant_1",
+    "venue_1",
+    "session_chief",
+  );
+  const delivered = new Promise<MessageEvent>((resolve) => {
+    stream.subscribe((event) => resolve(event));
+  });
+
+  hub.publish(notice);
+
+  await expect(delivered).resolves.toEqual({ type: "level", data: notice });
 });

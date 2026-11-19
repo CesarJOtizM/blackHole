@@ -114,12 +114,16 @@ it("given a red level notice, when the kitchen opens, then the notice and one ta
   );
   renderKitchen();
 
-  expect(await screen.findByRole("heading", { name: "Alerta de faltante" })).toBeTruthy();
+  expect(
+    await screen.findByRole("heading", { name: "Alerta de faltante" }),
+  ).toBeTruthy();
   expect(screen.getByText("Alerta roja")).toBeTruthy();
   expect(screen.getByText("Nivel")).toBeTruthy();
   expect(screen.getByText("alert-beef")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Reponer" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Registrar producción" })).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Registrar producción" }),
+  ).toBeTruthy();
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
 });
@@ -154,6 +158,17 @@ it("given a red level notice, when the kitchen taps restock, then the cloud rece
           ok: true,
           status: 200,
           body: streamOf(noticeFrame(redNotice)),
+        };
+      }
+
+      if (url.endsWith("/restock-facts")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            purchaseUnit: 1000,
+            warehouseIds: ["warehouse_general"],
+          }),
         };
       }
 
@@ -194,8 +209,8 @@ it("given a red level notice, when the kitchen taps restock, then the cloud rece
   expect(init.method).toBe("POST");
   expect(init.headers?.["x-session-id"]).toBe("admin-web");
   expect(init.headers?.["content-type"]).toBe("application/json");
-  expect(body.purchaseUnit).toBe(1);
-  expect(body.warehouseId).toBeNull();
+  expect(body.purchaseUnit).toBe(1000);
+  expect(body.warehouseId).toBe("warehouse_general");
   expect(body.supplierId).toBeNull();
   expect(body.documentId).toEqual(expect.any(String));
   expect(String(body.documentId).length).toBeGreaterThan(0);
@@ -244,7 +259,9 @@ it("given a coverage notice without a supplying warehouse, when restock is tappe
   expect(screen.getByText("Alerta amarilla")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Reponer" }));
 
-  expect(await screen.findByText("Se ofreció una orden de compra.")).toBeTruthy();
+  expect(
+    await screen.findByText("Se ofreció una orden de compra."),
+  ).toBeTruthy();
   expect(screen.queryByText("Reposición registrada.")).toBeNull();
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
@@ -261,9 +278,13 @@ it("given the shortage flag is off, when the kitchen opens, then no notice and n
   renderKitchen();
 
   expect(await screen.findByRole("heading", { name: "Cocina" })).toBeTruthy();
-  expect(screen.queryByRole("heading", { name: "Alerta de faltante" })).toBeNull();
+  expect(
+    screen.queryByRole("heading", { name: "Alerta de faltante" }),
+  ).toBeNull();
   expect(screen.queryByRole("button", { name: "Reponer" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Registrar producción" })).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Registrar producción" }),
+  ).toBeTruthy();
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
 });

@@ -7,12 +7,16 @@ import {
 } from "#src/api/admin-api.js";
 import {
   isReportSection,
+  type ReportModel,
   type ReportSection,
 } from "#src/reports/reports-model.js";
 import {
   bogotaToday,
+  type InventoryReportReader,
   isSiteFamily,
+  presentFoodCost,
   type ReportSnapshot,
+  readInventoryReports,
   readSiteReport,
   type SiteReportReader,
 } from "#src/reports/reports-source.js";
@@ -124,6 +128,72 @@ export function SiteReportPanel({
   );
 }
 
+const phaseStatus = {
+  loading: "Cargando",
+  failed: "No se pudo leer",
+  pending: "Pendiente",
+  ready: "",
+} as const;
+
+export function FoodCostReportPanel({
+  now,
+  readReports,
+  onSection,
+}: {
+  now: () => number;
+  readReports: InventoryReportReader;
+  onSection: (section: ReportSection) => void;
+}) {
+  const [period] = useState(() => bogotaToday(now()));
+  const [notice, setNotice] = useState("");
+  const [phase, setPhase] = useState<
+    | { kind: "loading" }
+    | { kind: "failed" }
+    | { kind: "pending"; model: ReportModel }
+    | { kind: "ready"; model: ReportModel }
+  >({ kind: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    void readReports(period)
+      .then((payload) => {
+        if (!active) {
+          return;
+        }
+        setPhase(presentFoodCost(payload));
+      })
+      .catch(() => {
+        if (active) {
+          setPhase({ kind: "failed" });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [period, readReports]);
+
+  const model =
+    phase.kind === "ready" || phase.kind === "pending"
+      ? phase.model
+      : undefined;
+  const status =
+    phase.kind === "ready" && notice.length > 0
+      ? notice
+      : phaseStatus[phase.kind];
+
+  return (
+    <ReportsView
+      section="food-cost"
+      status={status}
+      model={model}
+      onSection={onSection}
+      onExport={() => {
+        setNotice("El reporte queda exportado en esta sesión.");
+      }}
+    />
+  );
+}
+
 export function ReportsScreen() {
   const navigate = useNavigate();
   const pathname = useRouterState({
@@ -135,6 +205,18 @@ export function ReportsScreen() {
   if (isSiteFamily(raw)) {
     return (
       <SiteReportPanel family={raw} now={clock} readReport={readSiteReport} />
+    );
+  }
+
+  if (raw === "food-cost") {
+    return (
+      <FoodCostReportPanel
+        now={clock}
+        readReports={readInventoryReports}
+        onSection={(next) => {
+          void navigate({ to: reportPaths[next] });
+        }}
+      />
     );
   }
 

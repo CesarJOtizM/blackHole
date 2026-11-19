@@ -5,11 +5,12 @@ import {
   COVERAGE_QUEUE,
   DISH_ALERT_QUEUE,
   ESCALATION_QUEUE,
-  type ShortageAlertDependencies,
+  registerShortageAlerts,
   SHORTAGE_ALERTS_CRON,
   SHORTAGE_ALERTS_TIME_ZONE,
+  type ShortageAlertDependencies,
+  type ShortageVenueTick,
   SUGGESTION_QUEUE,
-  registerShortageAlerts,
 } from "#src/composition/shortage-alerts.worker.js";
 
 const COVERAGE_NAME = "inventory.evaluate-coverage";
@@ -95,7 +96,9 @@ const jobs = (
   alertsEnabled: boolean,
   calls: string[],
   coverage?: { input?: EvaluateCoverageInput },
+  venues: readonly ShortageVenueTick[] = [],
 ): ShortageAlertDependencies => ({
+  enabledVenues: () => Promise.resolve(venues),
   alertsEnabled: () => Promise.resolve(alertsEnabled),
   inTransaction: (_tenantId, work) =>
     work({
@@ -182,4 +185,45 @@ it("given shortage alerts are on, when coverage runs, then it calls EvaluateCove
     ...coverageJob,
     occurredAt: UTC,
   });
+});
+
+const enabledVenue: ShortageVenueTick = {
+  tenantId: "tenant-1",
+  brandId: "brand-1",
+  venueId: "venue-1",
+  locationId: "location-1",
+  ingredientId: "beef",
+  productId: "dish-1",
+  dailyConsumption: 4,
+  leadTimeDays: 2,
+};
+
+it("given one venue with shortage alerts enabled, when an empty tick runs, then coverage, dish, escalation, and suggestions run for that venue", async () => {
+  const boss = fakeBoss();
+  const calls: string[] = [];
+
+  await registerShortageAlerts(
+    boss,
+    jobs(true, calls, undefined, [enabledVenue]),
+    utcClock,
+  );
+  await boss.handlers.get(COVERAGE_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(DISH_ALERT_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(ESCALATION_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(SUGGESTION_QUEUE)?.([{ data: {} }]);
+
+  expect(calls).toEqual(["coverage", "dish", "escalation", "suggestions"]);
+});
+
+it("given no venue has shortage alerts enabled, when an empty tick runs, then nothing is written", async () => {
+  const boss = fakeBoss();
+  const calls: string[] = [];
+
+  await registerShortageAlerts(boss, jobs(true, calls), utcClock);
+  await boss.handlers.get(COVERAGE_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(DISH_ALERT_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(ESCALATION_QUEUE)?.([{ data: {} }]);
+  await boss.handlers.get(SUGGESTION_QUEUE)?.([{ data: {} }]);
+
+  expect(calls).toEqual([]);
 });

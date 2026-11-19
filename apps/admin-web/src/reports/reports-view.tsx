@@ -1,5 +1,6 @@
 import { BarChart } from "#src/reports/bar-chart.js";
 import {
+  type ReportModel,
   type ReportSection,
   reportSections,
   reports,
@@ -23,13 +24,14 @@ export function ReportsView({
   status,
   onSection,
   onExport,
+  model = reports[section],
 }: {
   section: ReportSection;
   status?: string;
   onSection: (section: ReportSection) => void;
   onExport: () => void;
+  model?: ReportModel;
 }) {
-  const model = reports[section];
   return (
     <RecordPage
       eyebrow={model.eyebrow}

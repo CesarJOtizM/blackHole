@@ -24,10 +24,14 @@ export {
 } from "#application/configure-station-route/configure-station-route.js";
 export type {
   ConfirmGuestToldInput,
+  GuestToldQuery,
   GuestToldRecord,
   PendingGuestNotice,
 } from "#application/confirm-guest-told/confirm-guest-told.js";
-export { ConfirmGuestTold } from "#application/confirm-guest-told/confirm-guest-told.js";
+export {
+  ConfirmGuestTold,
+  GuestToldStore,
+} from "#application/confirm-guest-told/confirm-guest-told.js";
 export type {
   CheckAccount,
   GetCheckInput,

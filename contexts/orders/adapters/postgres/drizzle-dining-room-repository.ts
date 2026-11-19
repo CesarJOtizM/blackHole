@@ -17,7 +17,13 @@ type DiningTableRow = typeof diningTables.$inferSelect;
 type CheckRow = typeof checks.$inferSelect;
 type OrderRow = typeof orders.$inferSelect;
 type OrderLineRow = typeof orderLines.$inferSelect;
-type LineState = "held" | "sent" | "in_preparation" | "ready" | "delivered";
+type LineState =
+  | "held"
+  | "sent"
+  | "in_preparation"
+  | "ready"
+  | "delivered"
+  | "not_delivered";
 type OrderChannel = "waiter" | "fixed_point" | "qr_table";
 
 interface StoredTable {

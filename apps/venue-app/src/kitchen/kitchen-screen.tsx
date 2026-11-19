@@ -1,5 +1,6 @@
 import { Button, Field } from "@blackhole/ui";
 import { useEffect, useState } from "react";
+import { oneTapRestockBody } from "#src/kitchen/restock-request.js";
 import { useService } from "#src/service/service-session.js";
 import { VENUE_SCOPE } from "#src/service/venue-cloud.js";
 
@@ -91,6 +92,27 @@ interface ShortageNoticeView {
 
 function restockPath(alertId: string): string {
   return `/tenants/${encodeURIComponent(VENUE_SCOPE.tenantId)}/venues/${encodeURIComponent(VENUE_SCOPE.venueId)}/shortage-alerts/${encodeURIComponent(alertId)}/restock`;
+}
+
+function restockFactsPath(alertId: string): string {
+  return `${restockPath(alertId)}-facts`;
+}
+
+function readRestockFacts(value: unknown): {
+  purchaseUnit: number;
+  warehouseIds: string[];
+} {
+  if (!isRecord(value) || typeof value.purchaseUnit !== "number") {
+    return { purchaseUnit: 1, warehouseIds: [] };
+  }
+
+  const warehouseIds = Array.isArray(value.warehouseIds)
+    ? value.warehouseIds.filter(
+        (item): item is string => typeof item === "string",
+      )
+    : [];
+
+  return { purchaseUnit: value.purchaseUnit, warehouseIds };
 }
 
 function isKind(value: string): value is ShortageKind {
@@ -218,6 +240,17 @@ async function restockAlert(
   setStatus: (status: string) => void,
 ): Promise<void> {
   try {
+    const factsResponse = await fetch(restockFactsPath(alertId), {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "x-session-id": VENUE_SCOPE.sessionId,
+      },
+    });
+    const facts = factsResponse.ok
+      ? readRestockFacts(await factsResponse.json())
+      : { purchaseUnit: 1, warehouseIds: [] };
     const response = await fetch(restockPath(alertId), {
       method: "POST",
       cache: "no-store",
@@ -226,13 +259,12 @@ async function restockAlert(
         "content-type": "application/json",
         "x-session-id": VENUE_SCOPE.sessionId,
       },
-      body: JSON.stringify({
-        purchaseUnit: 1,
-        documentId: crypto.randomUUID(),
-        lineId: crypto.randomUUID(),
-        warehouseId: null,
-        supplierId: null,
-      }),
+      body: JSON.stringify(
+        oneTapRestockBody(facts, {
+          documentId: crypto.randomUUID(),
+          lineId: crypto.randomUUID(),
+        }),
+      ),
     });
 
     if (!response.ok) {
@@ -301,7 +333,7 @@ export function KitchenScreen() {
   const service = useService();
   const open = service.tickets.filter((ticket) => !ticket.ready);
   const done = service.tickets.filter((ticket) => ticket.ready);
-  const [locationId, setLocationId] = useState(VENUE_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(VENUE_SCOPE.venueId);
   const [recipeId, setRecipeId] = useState("");
   const [expectedQuantity, setExpectedQuantity] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
