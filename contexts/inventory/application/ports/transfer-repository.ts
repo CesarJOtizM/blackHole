@@ -1,4 +1,5 @@
-import type { Transfer, TransferMovement } from "#domain/transfer.js";
+import type { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
+import type { Transfer } from "#domain/transfer.js";
 
 export interface TransferInMovement {
   id: string;
@@ -8,7 +9,7 @@ export interface TransferInMovement {
   ingredientId: string;
   quantity: number;
   unitCost: number;
-  type: TransferMovement["type"];
+  type: typeof MOVEMENT_TYPE.TRANSFER_IN;
   reference: string;
   occurredAt: string;
   actorId: string;

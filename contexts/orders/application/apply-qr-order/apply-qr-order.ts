@@ -8,7 +8,9 @@ import type {
 import type { TableQrRepository } from "#application/ports/table-qr-repository.js";
 import type { VenueDirectory } from "#application/ports/venue-directory.js";
 import {
+  type NotRestockedProducts,
   ProductNotOrderable,
+  rejectedNotRestockedProducts,
   type TakeOrder,
 } from "#application/take-order/take-order.js";
 import { Check, TableNotOpen } from "#domain/check.js";
@@ -80,6 +82,7 @@ export class ApplyQrOrder {
     private readonly venues: VenueDirectory,
     private readonly ordering: TakeOrder,
     private readonly clock: Clock,
+    private readonly notRestocked?: NotRestockedProducts,
   ) {}
 
   async execute(input: ApplyQrOrderInput): Promise<AppliedQrOrder> {
@@ -114,7 +117,22 @@ export class ApplyQrOrder {
       venueId: intent.venueId,
       minute: bogotaMinute(this.clock.now()),
     });
+    const marked =
+      this.notRestocked === undefined
+        ? new Set<string>()
+        : await rejectedNotRestockedProducts(this.notRestocked, {
+            tenantId: intent.tenantId,
+            venueId: intent.venueId,
+            at: new Date(this.clock.now()),
+            productIds: intent.lines.map((line) => line.productId),
+          });
     const missing = unavailableIds(intent, view);
+
+    for (const line of intent.lines) {
+      if (marked.has(line.productId) && !missing.includes(line.productId)) {
+        missing.push(line.productId);
+      }
+    }
     const table = await this.dining.load(
       intent.tenantId,
       intent.venueId,

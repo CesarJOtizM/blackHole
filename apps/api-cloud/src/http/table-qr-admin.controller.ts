@@ -33,10 +33,12 @@ import {
   HttpStatus,
   Inject,
   NotFoundException,
+  Optional,
   Param,
   Post,
 } from "@nestjs/common";
 import { z } from "zod";
+import { QrNotRestockedProducts } from "#src/composition/qr-not-restocked.js";
 
 export const reprintTableQrPath = "venues/:venueId/tables/:tableId/qr";
 export const reviewQrOrderPath = "venues/:venueId/qr-orders/:intentId";
@@ -108,6 +110,9 @@ export class TableQrAdminController {
     private readonly realtime: RealtimeHub,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Optional()
+    @Inject(QrNotRestockedProducts)
+    private readonly notRestocked?: QrNotRestockedProducts,
   ) {}
 
   @Post(reprintTableQrPath)
@@ -231,8 +236,12 @@ export class TableQrAdminController {
           this.printer,
           this.clock,
           this.realtime,
+          undefined,
+          undefined,
+          this.notRestocked,
         ),
         this.clock,
+        this.notRestocked,
       ),
     );
   }

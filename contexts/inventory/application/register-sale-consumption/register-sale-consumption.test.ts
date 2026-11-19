@@ -1,5 +1,7 @@
 import { StaleGeneration } from "@blackhole/platform/application/entry-port";
 import { expect, it } from "vitest";
+import { InMemoryShortageRepository } from "#adapters/memory/in-memory-shortage-repository.js";
+import { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import type { ExplodeRecipeInput } from "#application/explode-recipe/explode-recipe.js";
 import { ExplodeRecipe } from "#application/explode-recipe/explode-recipe.js";
 import { OperationGeneration } from "#application/ports/operation-generation.js";
@@ -7,6 +9,7 @@ import { PointOfSaleDirectory } from "#application/ports/point-of-sale-directory
 import type { RecipeCatalogRepository } from "#application/ports/recipe-catalog-repository.js";
 import { RecipeVersionReader } from "#application/ports/recipe-version.js";
 import { ReferenceCostList } from "#application/ports/reference-cost.js";
+import { ShortageAudit } from "#application/ports/shortage-audit.js";
 import type { NegativeStockOpenedEvent } from "#application/ports/stock-alert-publisher.js";
 import { StockAlertPublisher } from "#application/ports/stock-alert-publisher.js";
 import {
@@ -24,6 +27,7 @@ import {
   QUANTITY_SCALE,
   UnknownRecipe,
 } from "#domain/recipe-catalog.js";
+import { LEVEL_SEVERITY, SHORTAGE_KIND } from "#domain/shortage-alert.js";
 import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
 
 const TENANT_ID = "organization_tenant_1";
@@ -135,6 +139,35 @@ class MemoryLedger extends StockLedgerRepository {
 
     this.alerts.push(...input.alerts);
   }
+
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]> {
+    return this.lines.filter(
+      (line) => line.tenantId === tenantId && line.venueId === venueId,
+    );
+  }
+
+  override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
+    const lines = this.lines.map((line) => ({ ...line }));
+    const alerts = this.alerts.map((alert) => ({ ...alert }));
+    const balances = new Map(this.balances);
+
+    try {
+      return await super.inTransaction(work);
+    } catch (error) {
+      this.lines.splice(0, this.lines.length, ...lines);
+      this.alerts.splice(0, this.alerts.length, ...alerts);
+      this.balances.clear();
+
+      for (const [key, quantity] of balances) {
+        this.balances.set(key, quantity);
+      }
+
+      throw error;
+    }
+  }
 }
 
 class MemoryQueue extends StockMovementQueue {
@@ -142,6 +175,16 @@ class MemoryQueue extends StockMovementQueue {
 
   override async enqueue(envelope: StockMovementEnvelope): Promise<void> {
     this.envelopes.push(envelope);
+  }
+}
+
+class SilentShortageAudit extends ShortageAudit {
+  override async record(): Promise<void> {}
+}
+
+class ThrowingShortage extends InMemoryShortageRepository {
+  override async saveLevelAlert(): Promise<void> {
+    throw new Error("alert insert failed");
   }
 }
 
@@ -291,7 +334,11 @@ const command = (
   ...overrides,
 });
 
-const build = (versions: ReadonlyMap<string, number>, products = catalog()) => {
+const build = (
+  versions: ReadonlyMap<string, number>,
+  products = catalog(),
+  levels: EvaluateStockLevels | null = null,
+) => {
   const explosion = new ScriptedExplosion(products);
   const ledger = new MemoryLedger();
   const queue = new MemoryQueue();
@@ -306,6 +353,7 @@ const build = (versions: ReadonlyMap<string, number>, products = catalog()) => {
     ledger,
     alerts,
     queue,
+    levels,
   );
 
   return { explosion, ledger, queue, alerts, register };
@@ -525,4 +573,70 @@ it("given the current generation, when a send arrives with another generation, t
   expect(ledger.lines).toHaveLength(0);
   expect(queue.envelopes).toHaveLength(0);
   expect(explosion.calls).toHaveLength(0);
+});
+
+const beefLevels = {
+  tenantId: TENANT_ID,
+  brandId: BRAND_ID,
+  ingredientId: BEEF_ID,
+  maximum: grams(20),
+  reorderPoint: grams(15),
+  minimum: grams(8),
+};
+
+it("given beef at zero and alerts on, when the sale is registered, then one critical alert opens in that ledger transaction and the negative stock notice stays", async () => {
+  const shortages = new InMemoryShortageRepository();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, alerts, register } = build(
+    currentVersions,
+    catalog(),
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+  );
+  ledger.seedBalance(TENANT_ID, LOCATION_ID, BEEF_ID, 0);
+  ledger.seedBalance(TENANT_ID, LOCATION_ID, CHEESE_ID, grams(1000));
+
+  await register.execute(command());
+
+  const open = await shortages.listOpenShortages(TENANT_ID, VENUE_ID);
+  expect(open).toHaveLength(1);
+  expect(open[0]).toMatchObject({
+    kind: SHORTAGE_KIND.LEVEL,
+    alert: {
+      ingredientId: BEEF_ID,
+      severity: LEVEL_SEVERITY.CRITICAL,
+      soldOut: true,
+      status: "open",
+    },
+  });
+  expect(alerts.notices).toEqual([
+    expect.objectContaining({
+      type: "NegativeStockOpened",
+      ingredientId: BEEF_ID,
+    }),
+  ]);
+  expect(ledger.lines).toHaveLength(2);
+});
+
+it("given alerts on, when saving the level alert fails, then the sale movement rolls back with the alert", async () => {
+  const shortages = new ThrowingShortage();
+  await shortages.saveBrandLevel(beefLevels);
+  await shortages.saveAlertsEnabled(TENANT_ID, VENUE_ID, true);
+  const { ledger, alerts, register } = build(
+    currentVersions,
+    catalog(),
+    new EvaluateStockLevels(shortages, new SilentShortageAudit()),
+  );
+  ledger.seedBalance(TENANT_ID, LOCATION_ID, BEEF_ID, 0);
+  ledger.seedBalance(TENANT_ID, LOCATION_ID, CHEESE_ID, grams(1000));
+
+  await expect(register.execute(command())).rejects.toThrow(
+    "alert insert failed",
+  );
+
+  expect(ledger.lines).toHaveLength(0);
+  expect(ledger.alerts).toHaveLength(0);
+  expect(alerts.notices).toHaveLength(0);
+  expect(await shortages.listOpenShortages(TENANT_ID, VENUE_ID)).toEqual([]);
+  expect(await ledger.balance(TENANT_ID, LOCATION_ID, BEEF_ID)).toBe(0);
 });

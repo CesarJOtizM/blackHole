@@ -40,15 +40,21 @@ import {
   TipRuleStore,
   TipSettlementStore,
 } from "@blackhole/cash-register/application/entry-port";
-import type { NumberingRangeAssignment } from "@blackhole/contracts";
+import {
+  type NumberingRangeAssignment,
+  shortageNotice,
+} from "@blackhole/contracts";
+import { InMemoryProducibleQuantityRepository } from "@blackhole/inventory/adapters/memory/in-memory-producible-quantity-repository";
 import { InMemoryRecipeCatalogRepository } from "@blackhole/inventory/adapters/memory/in-memory-recipe-catalog-repository";
 import {
   InMemoryPointOfSaleDirectory,
   InMemoryStockLedgerRepository,
   InMemoryStockMovementQueue,
 } from "@blackhole/inventory/adapters/memory/in-memory-stock-ledger-repository";
+import { DrizzleProducibleQuantityRepository } from "@blackhole/inventory/adapters/postgres/drizzle-producible-quantity-repository";
 import { DrizzleProductionRepository } from "@blackhole/inventory/adapters/postgres/drizzle-production-repository";
 import { DrizzlePurchasingRepository } from "@blackhole/inventory/adapters/postgres/drizzle-purchasing-repository";
+import type { DrizzleShortageRepository } from "@blackhole/inventory/adapters/postgres/drizzle-shortage-repository";
 import {
   DrizzleIngredientClassification,
   DrizzleStockCountRepository,
@@ -58,9 +64,6 @@ import {
   DrizzleStockLedgerRepository,
   DrizzleStockMovementQueue,
 } from "@blackhole/inventory/adapters/postgres/drizzle-stock-ledger-repository";
-import { InMemoryProducibleQuantityRepository } from "@blackhole/inventory/adapters/memory/in-memory-producible-quantity-repository";
-import { DrizzleProducibleQuantityRepository } from "@blackhole/inventory/adapters/postgres/drizzle-producible-quantity-repository";
-import { DrizzleShortageRepository } from "@blackhole/inventory/adapters/postgres/drizzle-shortage-repository";
 import { DrizzleTransferRepository } from "@blackhole/inventory/adapters/postgres/drizzle-transfer-repository";
 import {
   AcceptStockLevels,
@@ -75,14 +78,17 @@ import {
   RecordStockCount,
   RecordWaste,
   RegisterSaleConsumption,
+  RemoveNoRestockToday,
+  ResolveAlert,
+  RestockFromAlert,
   ReturnStock,
   SetIngredientCategory,
   SetStockLevels,
   TransferStock,
 } from "@blackhole/inventory/application/entry-port";
 import {
-  AvailabilityPublisher,
   type AvailabilityChanged,
+  AvailabilityPublisher,
 } from "@blackhole/inventory/application/ports/availability-publisher";
 import { InventoryLocationDirectory } from "@blackhole/inventory/application/ports/inventory-location-directory";
 import { LowUnitsThreshold } from "@blackhole/inventory/application/ports/low-units-threshold";
@@ -100,12 +106,9 @@ import { RecipeWorkbook } from "@blackhole/inventory/application/ports/recipe-wo
 import { ReferenceCostList } from "@blackhole/inventory/application/ports/reference-cost";
 import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
 import { StockAlertPublisher } from "@blackhole/inventory/application/ports/stock-alert-publisher";
-import {
-  CONSUMPTION_ROLE,
-  StockLedgerRepository,
-} from "@blackhole/inventory/application/ports/stock-ledger-repository";
-import { SupplyingLocations } from "@blackhole/inventory/application/ports/supplying-locations";
+import { StockLedgerRepository } from "@blackhole/inventory/application/ports/stock-ledger-repository";
 import { StockMovementQueue } from "@blackhole/inventory/application/ports/stock-movement-queue";
+import { SupplyingLocations } from "@blackhole/inventory/application/ports/supplying-locations";
 import { TransferRepository } from "@blackhole/inventory/application/ports/transfer-repository";
 import { TransferVoucher } from "@blackhole/inventory/application/ports/transfer-voucher";
 import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
@@ -145,14 +148,17 @@ import { InMemoryQrOrderIntentRepository } from "@blackhole/orders/adapters/memo
 import { InMemoryRealtimeHub } from "@blackhole/orders/adapters/memory/in-memory-realtime-hub";
 import { InMemoryStationRouteRepository } from "@blackhole/orders/adapters/memory/in-memory-station-route-repository";
 import { InMemoryTableQrRepository } from "@blackhole/orders/adapters/memory/in-memory-table-qr-repository";
+import { ApplyMenuAvailability } from "@blackhole/orders/application/apply-menu-availability/apply-menu-availability";
 import {
   ApplyCourtesy,
   ApplyDiscount,
   ChangeLineState,
   ChangePrice,
   ConfigureStationRoute,
+  ConfirmGuestTold,
   GetCheck,
   MarkAccountPaid,
+  MarkLineUndeliverable,
   MarkTableReady,
   OpenShiftReader,
   OpenTable,
@@ -168,10 +174,10 @@ import {
   ViewVenueMenu,
   VoidAccount,
   VoidLine,
+  WithdrawUnstartedLines,
 } from "@blackhole/orders/application/entry-port";
 import { Clock as OrdersClock } from "@blackhole/orders/application/ports/clock";
 import { DiningRoomRepository } from "@blackhole/orders/application/ports/dining-room-repository";
-import { ApplyMenuAvailability } from "@blackhole/orders/application/apply-menu-availability/apply-menu-availability";
 import { MenuRepository } from "@blackhole/orders/application/ports/menu-repository";
 import { Printer } from "@blackhole/orders/application/ports/printer";
 import { QrOrderIntentRepository } from "@blackhole/orders/application/ports/qr-order-intent-repository";
@@ -192,7 +198,10 @@ import {
   RecordAuditEvent,
 } from "@blackhole/platform/application/entry-port";
 import { AuditDigest } from "@blackhole/platform/application/ports/audit-digest";
-import { AuditRepository } from "@blackhole/platform/application/ports/audit-repository";
+import {
+  type AuditEvent,
+  AuditRepository,
+} from "@blackhole/platform/application/ports/audit-repository";
 import { AuthorizationClock } from "@blackhole/platform/application/ports/authorization-clock";
 import { AuthorizationRepository } from "@blackhole/platform/application/ports/authorization-repository";
 import { Clock } from "@blackhole/platform/application/ports/clock";
@@ -224,11 +233,14 @@ import {
   type PrintJob,
   PrintJobRepository,
   PrintTransport,
+  savePrinter,
 } from "@blackhole/printing/application/entry-port";
 import {
   ReadCashReport,
+  ReadFoodCostReport,
   ReadSalesReport,
   ReadStaffReport,
+  ReadStockGapReport,
   ReadTimeReport,
 } from "@blackhole/reporting/application/entry-port";
 import {
@@ -244,15 +256,21 @@ import {
 } from "#src/composition/attendance-memory.js";
 import { AttendanceTipParticipants } from "#src/composition/attendance-tip-participants.js";
 import { ClosedShiftReader } from "#src/composition/closed-shift-reader.js";
+import { proposeUncoveredProducts } from "#src/composition/cloud-no-restock-proposal.js";
 import { CloudPreBillLink } from "#src/composition/cloud-pre-bill-link.js";
 import { ExcelRecipeWorkbook } from "#src/composition/excel-recipe-workbook.js";
 import { FactusSimulator } from "#src/composition/factus-simulator.js";
+import { PostgresInboundTransfers } from "#src/composition/inbound-transfers.js";
 import {
   CatalogPublishedPurchaseFactor,
   OrganizationInventoryLocationDirectory,
   PostgresPurchaseAverageCost,
   PurchaseAverageCost,
 } from "#src/composition/inventory-location-directory.js";
+import {
+  createInventoryReportFacts,
+  InventoryReportFacts,
+} from "#src/composition/inventory-report-facts.js";
 import { MenuSitePrice } from "#src/composition/menu-site-price.js";
 import {
   MissingOriginalPaymentReader,
@@ -261,9 +279,21 @@ import {
 import { OrdersAccount } from "#src/composition/orders-account.js";
 import { OrganizationVenueDirectory } from "#src/composition/organization-venue-directory.js";
 import {
+  type GuestToldDatabase,
+  PostgresGuestTold,
+} from "#src/composition/postgres-guest-told.js";
+import {
   postgresQrTable,
   type QrTableDatabase,
 } from "#src/composition/postgres-qr-table.js";
+import { ProjectAffectedProducts } from "#src/composition/project-affected-products.js";
+import {
+  ProjectingRecordWaste,
+  ProjectingReturnStock,
+  ProjectingSaleConsumption,
+} from "#src/composition/projecting-stock.js";
+import { PublishingShortageRepository } from "#src/composition/publishing-shortage-repository.js";
+import { QrNotRestockedProducts } from "#src/composition/qr-not-restocked.js";
 import {
   applyQrPaymentFor,
   ClosedQrTableAccess,
@@ -280,6 +310,7 @@ import {
   ReportingFacts,
   VenueOpenShift,
 } from "#src/composition/reporting-facts.js";
+import { RestockFacts } from "#src/composition/restock-facts.js";
 import {
   CatalogRecipeVersionReader,
   CatalogReferenceCostList,
@@ -292,6 +323,8 @@ import {
   RecordedDrawerAudit,
 } from "#src/composition/sale-receipt.js";
 import { StationRouteDirectory } from "#src/composition/station-route-directory.js";
+import { levelsForCloud } from "#src/composition/stock-level-gate.js";
+import { WarehouseSupplyLocations } from "#src/composition/warehouse-supply-locations.js";
 import { AcceptCloudWriteController } from "#src/http/accept-cloud-write.controller.js";
 import { AdjustTipSettlementController } from "#src/http/adjust-tip-settlement.controller.js";
 import { ApplyCourtesyController } from "#src/http/apply-courtesy.controller.js";
@@ -313,6 +346,11 @@ import {
   InvoicingController,
   NumberingRangeStore,
 } from "#src/http/invoicing.controller.js";
+import {
+  ConfirmNoRestockFlow,
+  NoRestockCatalog,
+  NoRestockController,
+} from "#src/http/no-restock.controller.js";
 import { OpenDrawerController } from "#src/http/open-drawer.controller.js";
 import { OpenTableController } from "#src/http/open-table.controller.js";
 import { OperateDevicesController } from "#src/http/operate-devices.controller.js";
@@ -337,6 +375,7 @@ import {
 } from "#src/http/qr-payment.controller.js";
 import { ReadAuditController } from "#src/http/read-audit.controller.js";
 import { ReadControlReportController } from "#src/http/read-control-report.controller.js";
+import { ReadInventoryReportController } from "#src/http/read-inventory-report.controller.js";
 import { ReadSiteReportController } from "#src/http/read-site-report.controller.js";
 import { ReassignCheckController } from "#src/http/reassign-check.controller.js";
 import { RecipeCatalogController } from "#src/http/recipe-catalog.controller.js";
@@ -345,6 +384,15 @@ import { ReleaseTableController } from "#src/http/release-table.controller.js";
 import { ReopenPaidAccountController } from "#src/http/reopen-paid-account.controller.js";
 import { RequestCheckController } from "#src/http/request-check.controller.js";
 import { SettleTipsController } from "#src/http/settle-tips.controller.js";
+import {
+  ShortageAlertsController,
+  ShortageTransactions,
+} from "#src/http/shortage-alerts.controller.js";
+import { ShortageNoticeHub } from "#src/http/shortage-notice-hub.js";
+import {
+  ShortageNoticeFeed,
+  ShortageRealtimeController,
+} from "#src/http/shortage-realtime.controller.js";
 import {
   CountSessionReader,
   StockOperationsController,
@@ -355,6 +403,7 @@ import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
 import {
+  bindPendingTransferVoucher,
   OrganizationWarehouseSupply,
   PendingTransferVoucher,
   PostgresDestinationStock,
@@ -436,7 +485,9 @@ export interface CloudApplicationDependencies {
   purchasingEnabled?: boolean;
   productionEnabled?: boolean;
   transfersEnabled?: boolean;
+  noRestockTodayEnabled?: boolean;
   wasteAndCountsEnabled?: boolean;
+  shortageAlertsEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -566,6 +617,146 @@ const openTransfers = (
       },
       { provide: TransferVoucher, useValue: new PendingTransferVoucher() },
     ],
+  };
+};
+
+const openNoRestock = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  ordersDatabase: GuestToldDatabase | undefined,
+  enabled: boolean,
+): {
+  controllers: (typeof NoRestockController)[];
+  providers: Provider[];
+  marks: PostgresNoRestockMarks | null;
+} => {
+  if (!enabled) {
+    const reader = new NotRestockedProductReader(null);
+
+    return {
+      controllers: [],
+      providers: [
+        { provide: NotRestockedProductReader, useValue: reader },
+        { provide: QrNotRestockedProducts, useValue: reader },
+      ],
+      marks: null,
+    };
+  }
+
+  if (!database) {
+    throw new Error("Not restocked today requires PostgreSQL.");
+  }
+
+  const marks = new PostgresNoRestockMarks(database as NoRestockDatabase);
+  const told = ordersDatabase
+    ? new PostgresGuestTold(ordersDatabase)
+    : new MemoryGuestTold();
+  const reader = new NotRestockedProductReader(marks);
+
+  return {
+    controllers: [NoRestockController],
+    providers: [
+      { provide: NotRestockedProductReader, useValue: reader },
+      { provide: QrNotRestockedProducts, useValue: reader },
+      { provide: NoRestockCatalog, useValue: marks },
+      {
+        provide: ConfirmGuestTold,
+        useFactory: (
+          dining: DiningRoomRepository,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new ConfirmGuestTold(
+            dining,
+            told,
+            new RecordAuditEvent(audits, digests, clock),
+          ),
+        inject: [DiningRoomRepository, AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: RemoveNoRestockToday,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new RemoveNoRestockToday(
+            marks,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            new RecordAuditEvent(audits, digests, clock),
+            true,
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+      {
+        provide: MarkLineUndeliverable,
+        useFactory: (
+          dining: DiningRoomRepository,
+          ordersClock: OrdersClock,
+          hub: RealtimeHub,
+        ) => new MarkLineUndeliverable(dining, ordersClock, hub),
+        inject: [DiningRoomRepository, OrdersClock, RealtimeHub],
+      },
+      {
+        provide: ConfirmNoRestockFlow,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+          dining: DiningRoomRepository,
+          hub: RealtimeHub,
+        ) =>
+          new CloudConfirmNoRestockFlow(
+            marks,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            audits,
+            digests,
+            clock,
+            dining,
+            hub,
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+          DiningRoomRepository,
+          RealtimeHub,
+        ],
+      },
+    ],
+    marks,
   };
 };
 
@@ -711,6 +902,236 @@ const openWasteAndCounts = (
   };
 };
 
+class PostgresShortageNoticeFeed extends ShortageNoticeFeed {
+  constructor(private readonly shortages: DrizzleShortageRepository) {
+    super();
+  }
+
+  override async list(tenantId: string, venueId: string) {
+    const open = await this.shortages.listOpenShortages(tenantId, venueId);
+    const notices = [];
+
+    for (const row of open) {
+      const stored = await this.shortages.listRoleNotices(
+        tenantId,
+        row.alert.id,
+      );
+
+      for (const notice of stored) {
+        if (notice.venueId !== venueId) {
+          continue;
+        }
+
+        const parsed = shortageNotice.safeParse({
+          alertId: notice.alertId,
+          kind: notice.kind,
+          severity: notice.severity,
+          role: notice.role,
+          venueId: notice.venueId,
+        });
+
+        if (parsed.success) {
+          notices.push(parsed.data);
+        }
+      }
+    }
+
+    return notices;
+  }
+}
+
+class PostgresShortageTransactions extends ShortageTransactions {
+  override run<T>(
+    _tenantId: string,
+    work: (tx: Parameters<RestockFromAlert["execute"]>[0]) => Promise<T>,
+  ): Promise<T> {
+    return work({
+      balance: () => Promise.resolve(0),
+    });
+  }
+}
+
+const openShortageAlerts = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+  supplying: SupplyingLocations,
+): {
+  controllers: (
+    | typeof ShortageAlertsController
+    | typeof ShortageRealtimeController
+  )[];
+  providers: Provider[];
+  shortages: DrizzleShortageRepository | null;
+} => {
+  if (!enabled) {
+    return { controllers: [], providers: [], shortages: null };
+  }
+
+  if (!database) {
+    throw new Error("Shortage alerts require PostgreSQL.");
+  }
+
+  const noticeHub = new ShortageNoticeHub();
+  const shortages = new PublishingShortageRepository(database, noticeHub);
+  const orders = new CreatePurchaseOrder(
+    new DrizzlePurchasingRepository(database),
+  );
+
+  return {
+    controllers: [ShortageAlertsController, ShortageRealtimeController],
+    providers: [
+      {
+        provide: ShortageTransactions,
+        useValue: new PostgresShortageTransactions(),
+      },
+      {
+        provide: ShortageNoticeFeed,
+        useValue: new PostgresShortageNoticeFeed(shortages),
+      },
+      { provide: ShortageNoticeHub, useValue: noticeHub },
+      {
+        provide: RestockFacts,
+        useFactory: (
+          catalogs: RecipeCatalogRepository,
+          organizations: OrganizationRepository,
+        ) =>
+          new RestockFacts(
+            shortages,
+            new CatalogPublishedPurchaseFactor(catalogs, organizations),
+            supplying,
+          ),
+        inject: [RecipeCatalogRepository, OrganizationRepository],
+      },
+      {
+        provide: SetStockLevels,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+        ) =>
+          new SetStockLevels(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: AcceptStockLevels,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+        ) =>
+          new AcceptStockLevels(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+        ],
+      },
+      {
+        provide: MarkAlertSeen,
+        useFactory: (
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new MarkAlertSeen(shortages, {
+            record: async (command) => {
+              await new RecordAuditEvent(audits, digests, clock).execute(
+                command,
+              );
+            },
+          }),
+        inject: [AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: ResolveAlert,
+        useFactory: (
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new ResolveAlert(shortages, {
+            record: async (command) => {
+              await new RecordAuditEvent(audits, digests, clock).execute(
+                command,
+              );
+            },
+          }),
+        inject: [AuditRepository, AuditDigest, Clock],
+      },
+      {
+        provide: RestockFromAlert,
+        useFactory: (
+          authorizations: AuthorizationRepository,
+          sessions: SessionReader,
+          identities: IdentityReader,
+          authorizationClock: AuthorizationClock,
+          audits: AuditRepository,
+          digests: AuditDigest,
+          clock: Clock,
+        ) =>
+          new RestockFromAlert(
+            shortages,
+            new EvaluatePermission(
+              authorizations,
+              sessions,
+              identities,
+              authorizationClock,
+            ),
+            supplying,
+            {
+              request: (command) =>
+                Promise.resolve(`transfer_${command.alertId}`),
+            },
+            orders,
+            {
+              record: async (command) => {
+                await new RecordAuditEvent(audits, digests, clock).execute(
+                  command,
+                );
+              },
+            },
+          ),
+        inject: [
+          AuthorizationRepository,
+          SessionReader,
+          IdentityReader,
+          AuthorizationClock,
+          AuditRepository,
+          AuditDigest,
+          Clock,
+        ],
+      },
+    ],
+    shortages,
+  };
+};
+
 class OrdersClockAdapter extends OrdersClock {
   constructor(private readonly source: Clock) {
     super();
@@ -736,7 +1157,7 @@ export class ApplicationModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(RealtimeSocketMiddleware)
-      .forRoutes(OrdersRealtimeController);
+      .forRoutes(OrdersRealtimeController, ShortageRealtimeController);
   }
 
   static register(dependencies: CloudApplicationDependencies): DynamicModule {
@@ -795,29 +1216,64 @@ export class ApplicationModule implements NestModule {
     const projections = dependencies.inventoryDatabase
       ? new DrizzleProducibleQuantityRepository(dependencies.inventoryDatabase)
       : new InMemoryProducibleQuantityRepository();
+    const supplyingLocations = dependencies.inventoryDatabase
+      ? new WarehouseSupplyLocations(dependencies.inventoryDatabase)
+      : emptySupplyingLocations;
+    const inboundTransfers = dependencies.inventoryDatabase
+      ? new PostgresInboundTransfers(
+          dependencies.inventoryDatabase,
+          async (tenantId, venueId) => {
+            const organization =
+              await dependencies.organizations.load(tenantId);
+
+            if (organization === null) {
+              return [];
+            }
+
+            return organization.locations
+              .filter((location) => location.venueId === venueId)
+              .map((location) => location.id);
+          },
+        )
+      : undefined;
+    let noRestockMarks: PostgresNoRestockMarks | null = null;
+    let noRestockEnabled = false;
     const recipeCatalogs =
       dependencies.recipeCatalogs ?? new InMemoryRecipeCatalogRepository();
     let explodeRecipe: ExplodeRecipe | undefined;
-    const projectProducible = (
-      tenantId: string,
-    ): ProjectProducibleQuantity => {
+    const projectProducible = (tenantId: string) => {
       if (explodeRecipe === undefined) {
         throw new Error("The recipe explosion is not ready.");
       }
 
-      return new ProjectProducibleQuantity(
+      const projector = new ProjectProducibleQuantity(
         explodeRecipe,
         recipeVenues,
         stock.pointsOfSale,
         stock.ledger,
         projections,
-        emptySupplyingLocations,
+        supplyingLocations,
         new MenuLowUnitsThreshold(menus, ordersVenues),
         new MenuAvailabilityPublisher(
           tenantId,
           new ApplyMenuAvailability(menus, ordersVenues, realtimeHub),
         ),
       );
+
+      return {
+        execute: async (
+          input: Parameters<ProjectProducibleQuantity["execute"]>[0],
+        ) => {
+          await projector.execute(input);
+          await proposeUncoveredProducts(
+            noRestockEnabled,
+            noRestockMarks,
+            projections,
+            inboundTransfers,
+            input,
+          );
+        },
+      };
     };
     const projectingCatalogs = new ProjectingRecipeCatalog(
       recipeCatalogs,
@@ -871,9 +1327,25 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.transfersEnabled === true,
     );
+    const noRestock = openNoRestock(
+      dependencies.inventoryDatabase,
+      dependencies.ordersDatabase,
+      dependencies.noRestockTodayEnabled === true,
+    );
+    noRestockMarks = noRestock.marks;
+    noRestockEnabled = dependencies.noRestockTodayEnabled === true;
     const wasteAndCounts = openWasteAndCounts(
       dependencies.inventoryDatabase,
       dependencies.wasteAndCountsEnabled === true,
+    );
+    const shortageAlerts = openShortageAlerts(
+      dependencies.inventoryDatabase,
+      dependencies.shortageAlertsEnabled === true,
+      supplyingLocations,
+    );
+    const stockLevels = levelsForCloud(
+      dependencies.shortageAlertsEnabled === true,
+      shortageAlerts.shortages,
     );
 
     return {
@@ -887,6 +1359,7 @@ export class ApplicationModule implements NestModule {
         AuthorizationController,
         ReadAuditController,
         ReadControlReportController,
+        ReadInventoryReportController,
         ReadSiteReportController,
         DetectUnusualBehaviorController,
         UpdateMenuController,
@@ -932,13 +1405,17 @@ export class ApplicationModule implements NestModule {
         ...purchasing.controllers,
         ...production.controllers,
         ...transfers.controllers,
+        ...noRestock.controllers,
         ...wasteAndCounts.controllers,
+        ...shortageAlerts.controllers,
       ],
       providers: [
         ...purchasing.providers,
         ...production.providers,
         ...transfers.providers,
+        ...noRestock.providers,
         ...wasteAndCounts.providers,
+        ...shortageAlerts.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,
@@ -1283,6 +1760,7 @@ export class ApplicationModule implements NestModule {
             identities: IdentityReader,
             authorizationClock: AuthorizationClock,
             registerSaleConsumption: RegisterSaleConsumption,
+            notRestocked: NotRestockedProductReader,
           ) =>
             new TakeOrder(
               diningRoom,
@@ -1312,6 +1790,7 @@ export class ApplicationModule implements NestModule {
                 generationOf: (_tenantId, venueId) =>
                   currentGeneration(dependencies.venueOperations, venueId),
               },
+              notRestocked,
             ),
           inject: [
             DiningRoomRepository,
@@ -1329,6 +1808,7 @@ export class ApplicationModule implements NestModule {
             IdentityReader,
             AuthorizationClock,
             RegisterSaleConsumption,
+            NotRestockedProductReader,
           ],
         },
         {
@@ -1701,8 +2181,18 @@ export class ApplicationModule implements NestModule {
         { provide: DispatchPrinterRepository, useValue: tipDispatchPrinters },
         {
           provide: EnqueuePrintJob,
-          useFactory: (printers: PrinterRepository, jobs: PrintJobRepository) =>
-            new EnqueuePrintJob(printers, jobs),
+          useFactory: async (
+            printers: PrinterRepository,
+            jobs: PrintJobRepository,
+          ) => {
+            const printJobs = new EnqueuePrintJob(printers, jobs);
+            await savePrinter(printers, {
+              id: "printer_transfer",
+              paper: "80",
+            });
+            bindPendingTransferVoucher(printJobs, "printer_transfer");
+            return printJobs;
+          },
           inject: [PrinterRepository, PrintJobRepository],
         },
         {
@@ -2077,6 +2567,33 @@ export class ApplicationModule implements NestModule {
           inject: [PermissionReportAccess, VenueOpenShift, ReportingFacts],
         },
         {
+          provide: InventoryReportFacts,
+          useFactory: (ledger: StockLedgerRepository) =>
+            createInventoryReportFacts(dependencies.inventoryDatabase, ledger),
+          inject: [StockLedgerRepository],
+        },
+        {
+          provide: ReadFoodCostReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            sales: ReportingFacts,
+            inventory: InventoryReportFacts,
+          ) => new ReadFoodCostReport(access, sales, inventory),
+          inject: [
+            PermissionReportAccess,
+            ReportingFacts,
+            InventoryReportFacts,
+          ],
+        },
+        {
+          provide: ReadStockGapReport,
+          useFactory: (
+            access: PermissionReportAccess,
+            inventory: InventoryReportFacts,
+          ) => new ReadStockGapReport(access, inventory),
+          inject: [PermissionReportAccess, InventoryReportFacts],
+        },
+        {
           provide: DetectUnusualBehavior,
           useFactory: (audits: AuditRepository) =>
             new DetectUnusualBehavior(audits),
@@ -2150,6 +2667,20 @@ export class ApplicationModule implements NestModule {
           },
         },
         {
+          provide: SupplyingLocations,
+          useValue: supplyingLocations,
+        },
+        {
+          provide: ProjectAffectedProducts,
+          useValue: new ProjectAffectedProducts(
+            projectProducible,
+            (tenantId, warehouseLocationId) =>
+              supplyingLocations instanceof WarehouseSupplyLocations
+                ? supplyingLocations.venueIdsFor(tenantId, warehouseLocationId)
+                : Promise.resolve([]),
+          ),
+        },
+        {
           provide: RegisterSaleConsumption,
           useFactory: (
             recipes: ExplodeRecipe,
@@ -2173,6 +2704,7 @@ export class ApplicationModule implements NestModule {
               alerts,
               queue,
               projectProducible,
+              stockLevels,
             ),
           inject: [
             ExplodeRecipe,
@@ -2198,6 +2730,8 @@ export class ApplicationModule implements NestModule {
               ledger,
               queue,
               projectProducible,
+              stockLevels,
+              recipeVenues,
             ),
           inject: [
             OperationGeneration,
@@ -2221,6 +2755,8 @@ export class ApplicationModule implements NestModule {
               queue,
               new RecordAuditEvent(audits, digests, clock),
               projectProducible,
+              stockLevels,
+              recipeVenues,
             ),
           inject: [
             OperationGeneration,
@@ -2846,6 +3382,341 @@ export class MemoryNumberingRanges extends NumberingRangeStore {
     return stored;
   }
 }
+
+type NoRestockSql = {
+  exec(statement: string): Promise<unknown>;
+  query<Row extends Record<string, unknown>>(
+    statement: string,
+    params?: readonly unknown[],
+  ): Promise<{ rows: Row[] }>;
+};
+
+type NoRestockDatabase = {
+  transaction<T>(work: (tx: NoRestockSql) => Promise<T>): Promise<T>;
+};
+
+interface NoRestockRow extends Record<string, unknown> {
+  tenant_id: string;
+  venue_id: string;
+  product_id: string;
+  status: string;
+  actor_id: string | null;
+  service_date: string | null;
+}
+
+interface GuestToldKey {
+  tenantId: string;
+  venueId: string;
+  checkId: string;
+  lineId: string;
+}
+
+interface GuestToldRow {
+  checkId: string;
+  lineId: string;
+  actorId: string;
+}
+
+const UNCOVERED_PORTIONS = {
+  pointPortions: 0,
+  supplyingWarehousePortions: 0,
+  inboundTransfers: [],
+} as const;
+
+const instantOnServiceDate = (serviceDate: string): Date =>
+  new Date(`${serviceDate}T17:00:00.000Z`);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const restoreNoRestock = (row: NoRestockRow): NoRestockToday => {
+  const mark = NoRestockToday.propose({
+    tenantId: row.tenant_id,
+    venueId: row.venue_id,
+    productId: row.product_id,
+    coverage: UNCOVERED_PORTIONS,
+  });
+
+  if (mark === null) {
+    throw new Error("A stored not-restocked mark could not be restored.");
+  }
+
+  if (row.status === "proposed") {
+    return mark;
+  }
+
+  if (row.actor_id === null || row.service_date === null) {
+    throw new Error("A confirmed not-restocked mark is missing its stamp.");
+  }
+
+  mark.confirm({
+    actorId: row.actor_id,
+    at: instantOnServiceDate(row.service_date),
+  });
+
+  if (row.status === "removed") {
+    mark.remove({ actorId: row.actor_id });
+  }
+
+  return mark;
+};
+
+const snapshotNoRestock = (
+  mark: NoRestockToday,
+): {
+  status: string;
+  actorId: string | null;
+  serviceDate: string | null;
+} => {
+  if (mark.serviceDate === null) {
+    return { status: "proposed", actorId: null, serviceDate: null };
+  }
+
+  const status = mark.statusAt(instantOnServiceDate(mark.serviceDate));
+
+  return {
+    status,
+    actorId: mark.actorId,
+    serviceDate: mark.serviceDate,
+  };
+};
+
+export class PostgresNoRestockMarks extends NoRestockCatalog {
+  constructor(private readonly client: NoRestockDatabase) {
+    super();
+  }
+
+  override async list(
+    tenantId: string,
+    venueId: string,
+    at: Date,
+  ): Promise<
+    readonly {
+      productId: string;
+      status: string;
+      serviceDate: string | null;
+      actorId: string | null;
+    }[]
+  > {
+    const rows = await this.inTenant(tenantId, (tx) =>
+      tx.query<NoRestockRow>(
+        `SELECT tenant_id, venue_id, product_id, status, actor_id, service_date
+         FROM no_restock_today
+         WHERE tenant_id = $1 AND venue_id = $2
+         ORDER BY product_id`,
+        [tenantId, venueId],
+      ),
+    );
+
+    return rows.map((row) => {
+      const mark = restoreNoRestock(row);
+
+      return {
+        productId: mark.productId,
+        status: mark.statusAt(at),
+        serviceDate: mark.serviceDate,
+        actorId: mark.actorId,
+      };
+    });
+  }
+
+  async find(query: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+  }): Promise<NoRestockToday | null> {
+    const rows = await this.inTenant(query.tenantId, (tx) =>
+      tx.query<NoRestockRow>(
+        `SELECT tenant_id, venue_id, product_id, status, actor_id, service_date
+         FROM no_restock_today
+         WHERE tenant_id = $1 AND venue_id = $2 AND product_id = $3
+         LIMIT 1`,
+        [query.tenantId, query.venueId, query.productId],
+      ),
+    );
+    const row = rows[0];
+
+    return row === undefined ? null : restoreNoRestock(row);
+  }
+
+  async save(mark: NoRestockToday): Promise<void> {
+    const stored = snapshotNoRestock(mark);
+
+    await this.inTenant(mark.tenantId, (tx) =>
+      tx.query(
+        `INSERT INTO no_restock_today (
+           tenant_id, venue_id, product_id, status, actor_id, service_date
+         ) VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (tenant_id, venue_id, product_id)
+         DO UPDATE SET
+           status = excluded.status,
+           actor_id = excluded.actor_id,
+           service_date = excluded.service_date`,
+        [
+          mark.tenantId,
+          mark.venueId,
+          mark.productId,
+          stored.status,
+          stored.actorId,
+          stored.serviceDate,
+        ],
+      ),
+    );
+  }
+
+  private async inTenant<T>(
+    tenantId: string,
+    work: (tx: NoRestockSql) => Promise<{ rows: T[] }>,
+  ): Promise<T[]> {
+    return this.client.transaction(async (tx) => {
+      await tx.exec("SET LOCAL ROLE inventory_app");
+      await tx.query("SELECT set_config('app.tenant_id', $1, true)", [
+        tenantId,
+      ]);
+      const selected = await work(tx);
+
+      return selected.rows;
+    });
+  }
+}
+
+class NotRestockedProductReader extends QrNotRestockedProducts {
+  constructor(private readonly marks: PostgresNoRestockMarks | null) {
+    super();
+  }
+
+  override async execute(input: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+    at: Date;
+  }): Promise<boolean> {
+    if (this.marks === null) {
+      return false;
+    }
+
+    const mark = await this.marks.find(input);
+
+    return mark !== null && mark.statusAt(input.at) === "confirmed";
+  }
+}
+
+class MemoryGuestTold {
+  private readonly rows = new Map<string, GuestToldRow>();
+
+  async find(query: GuestToldKey): Promise<GuestToldRow | null> {
+    return this.rows.get(this.key(query)) ?? null;
+  }
+
+  async save(record: GuestToldKey & GuestToldRow): Promise<void> {
+    this.rows.set(this.key(record), {
+      checkId: record.checkId,
+      lineId: record.lineId,
+      actorId: record.actorId,
+    });
+  }
+
+  private key(query: GuestToldKey): string {
+    return `${query.tenantId}\u0000${query.venueId}\u0000${query.checkId}\u0000${query.lineId}`;
+  }
+}
+
+type RecordAuditCommand = Parameters<RecordAuditEvent["execute"]>[0];
+
+class DeferredConfirmAudit extends RecordAuditEvent {
+  private held: RecordAuditCommand | null = null;
+
+  override async execute(command: RecordAuditCommand): Promise<AuditEvent> {
+    if (command.action !== "inventory.confirm-no-restock") {
+      return super.execute(command);
+    }
+
+    this.held = command;
+
+    return {
+      tenantId: command.tenantId,
+      actorId: command.actorId,
+      authorizerId: command.authorizerId,
+      deviceId: command.deviceId,
+      siteId: command.siteId,
+      action: command.action,
+      entity: command.entity,
+      before: command.before,
+      after: command.after,
+      reason: command.reason,
+      occurredAt: 0,
+      sequence: 0,
+      previousHash: "",
+      digest: "",
+      kind: "event",
+    };
+  }
+
+  async flush(tables: readonly string[]): Promise<void> {
+    const command = this.held;
+
+    if (command === null) {
+      return;
+    }
+
+    this.held = null;
+    const after = isRecord(command.after) ? { ...command.after } : {};
+    after.tables = [...tables];
+    await super.execute({ ...command, after });
+  }
+}
+
+class CloudConfirmNoRestockFlow extends ConfirmNoRestockFlow {
+  constructor(
+    private readonly marks: PostgresNoRestockMarks,
+    private readonly permissions: EvaluatePermission,
+    private readonly audits: AuditRepository,
+    private readonly digests: AuditDigest,
+    private readonly clock: Clock,
+    private readonly dining: DiningRoomRepository,
+    private readonly hub: RealtimeHub,
+  ) {
+    super();
+  }
+
+  override async execute(
+    input: Parameters<ConfirmNoRestockFlow["execute"]>[0],
+  ): Promise<Awaited<ReturnType<ConfirmNoRestockFlow["execute"]>>> {
+    const deferred = new DeferredConfirmAudit(
+      this.audits,
+      this.digests,
+      this.clock,
+    );
+    const confirmed = await new ConfirmNoRestockToday(
+      this.marks,
+      this.permissions,
+      deferred,
+      true,
+    ).execute(input);
+    const withdrawn = await new WithdrawUnstartedLines(
+      this.dining,
+      this.hub,
+    ).execute({
+      tenantId: input.tenantId,
+      venueId: input.venueId,
+      productId: input.productId,
+      uncoveredPortions: Number.MAX_SAFE_INTEGER,
+      at: input.at,
+    });
+    const tables = [
+      ...new Set(withdrawn.withdrawn.map((item) => item.tableId)),
+    ];
+    await deferred.flush(tables);
+
+    return {
+      productId: confirmed.mark.productId,
+      status: confirmed.mark.statusAt(input.at),
+      serviceDate: confirmed.mark.serviceDate,
+      tables,
+    };
+  }
+}
+
 const isMissingPointOfSale = (error: unknown): boolean =>
   error instanceof Error &&
   error.message === "The venue has no point-of-sale location.";
@@ -2932,130 +3803,3 @@ class ProjectingRecipeCatalog extends RecipeCatalogRepository {
     }
   }
 }
-
-class ProjectingSaleConsumption extends RegisterSaleConsumption {
-  constructor(
-    recipes: ExplodeRecipe,
-    versions: RecipeVersionReader,
-    costs: ReferenceCostList,
-    venues: RecipeVenueDirectory,
-    pointsOfSale: PointOfSaleDirectory,
-    generations: OperationGeneration,
-    ledger: StockLedgerRepository,
-    alerts: StockAlertPublisher,
-    queue: StockMovementQueue,
-    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
-  ) {
-    super(
-      recipes,
-      versions,
-      costs,
-      venues,
-      pointsOfSale,
-      generations,
-      ledger,
-      alerts,
-      queue,
-    );
-    this.movedLedger = ledger;
-  }
-
-  private readonly movedLedger: StockLedgerRepository;
-
-  override async execute(
-    input: Parameters<RegisterSaleConsumption["execute"]>[0],
-  ) {
-    const result = await super.execute(input);
-
-    if (!result.missingRecipe) {
-      await projectMovedStock(
-        this.movedLedger,
-        this.project,
-        input.tenantId,
-        input.venueId,
-        input.orderLineId,
-        CONSUMPTION_ROLE.CONSUMPTION,
-      );
-    }
-
-    return result;
-  }
-}
-
-class ProjectingReturnStock extends ReturnStock {
-  constructor(
-    generations: OperationGeneration,
-    ledger: StockLedgerRepository,
-    queue: StockMovementQueue,
-    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
-  ) {
-    super(generations, ledger, queue);
-    this.movedLedger = ledger;
-  }
-
-  private readonly movedLedger: StockLedgerRepository;
-
-  override async execute(input: Parameters<ReturnStock["execute"]>[0]) {
-    const result = await super.execute(input);
-    await projectMovedStock(
-      this.movedLedger,
-      this.project,
-      input.tenantId,
-      input.venueId,
-      input.orderLineId,
-      CONSUMPTION_ROLE.REVERSAL,
-    );
-
-    return result;
-  }
-}
-
-class ProjectingRecordWaste extends RecordWaste {
-  constructor(
-    generations: OperationGeneration,
-    ledger: StockLedgerRepository,
-    queue: StockMovementQueue,
-    audits: RecordAuditEvent,
-    private readonly project: (tenantId: string) => ProjectProducibleQuantity,
-  ) {
-    super(generations, ledger, queue, audits);
-    this.movedLedger = ledger;
-  }
-
-  private readonly movedLedger: StockLedgerRepository;
-
-  override async execute(input: Parameters<RecordWaste["execute"]>[0]) {
-    const result = await super.execute(input);
-    await projectMovedStock(
-      this.movedLedger,
-      this.project,
-      input.tenantId,
-      input.venueId,
-      input.orderLineId,
-      CONSUMPTION_ROLE.REVERSAL,
-    );
-
-    return result;
-  }
-}
-
-const projectMovedStock = async (
-  ledger: StockLedgerRepository,
-  project: (tenantId: string) => ProjectProducibleQuantity,
-  tenantId: string,
-  venueId: string,
-  orderLineId: string,
-  role: (typeof CONSUMPTION_ROLE)[keyof typeof CONSUMPTION_ROLE],
-): Promise<void> => {
-  const lines = await ledger.findLine(tenantId, orderLineId, role);
-
-  for (const line of lines) {
-    await project(tenantId).execute({
-      kind: "stock",
-      tenantId,
-      siteId: venueId,
-      locationId: line.locationId,
-      ingredientId: line.ingredientId,
-    });
-  }
-};

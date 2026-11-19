@@ -23,6 +23,16 @@ export {
   StationOffVenue,
 } from "#application/configure-station-route/configure-station-route.js";
 export type {
+  ConfirmGuestToldInput,
+  GuestToldQuery,
+  GuestToldRecord,
+  PendingGuestNotice,
+} from "#application/confirm-guest-told/confirm-guest-told.js";
+export {
+  ConfirmGuestTold,
+  GuestToldStore,
+} from "#application/confirm-guest-told/confirm-guest-told.js";
+export type {
   CheckAccount,
   GetCheckInput,
 } from "#application/get-check/get-check.js";
@@ -50,6 +60,8 @@ export {
 } from "#application/list-stale-qr-intents/list-stale-qr-intents.js";
 export type { MarkAccountPaidInput } from "#application/mark-account-paid/mark-account-paid.js";
 export { MarkAccountPaid } from "#application/mark-account-paid/mark-account-paid.js";
+export type { MarkLineUndeliverableInput } from "#application/mark-line-undeliverable/mark-line-undeliverable.js";
+export { MarkLineUndeliverable } from "#application/mark-line-undeliverable/mark-line-undeliverable.js";
 export type {
   OpenedTable,
   OpenTableInput,
@@ -126,6 +138,11 @@ export type { VoidAccountInput } from "#application/void-account/void-account.js
 export { VoidAccount } from "#application/void-account/void-account.js";
 export type { VoidLineInput } from "#application/void-line/void-line.js";
 export { VoidLine } from "#application/void-line/void-line.js";
+export type {
+  WithdrawUnstartedLinesInput,
+  WithdrawUnstartedLinesResult,
+} from "#application/withdraw-unstarted-lines/withdraw-unstarted-lines.js";
+export { WithdrawUnstartedLines } from "#application/withdraw-unstarted-lines/withdraw-unstarted-lines.js";
 export {
   ComboNotSent,
   EmptyOrder,

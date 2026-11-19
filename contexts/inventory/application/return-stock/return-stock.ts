@@ -1,3 +1,4 @@
+import type { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import type { OperationGeneration } from "#application/ports/operation-generation.js";
 import {
   CONSUMPTION_ROLE,
@@ -9,6 +10,7 @@ import {
   type StockMovementQueue,
   stockMovedEvent,
 } from "#application/ports/stock-movement-queue.js";
+import type { VenueDirectory } from "#application/ports/venue-directory.js";
 import type { SaleStockResult } from "#application/register-sale-consumption/register-sale-consumption.js";
 import { MOVEMENT_TYPE, StockLedger } from "#domain/stock-ledger.js";
 
@@ -42,6 +44,8 @@ export class ReturnStock {
     private readonly generations: OperationGeneration,
     private readonly ledger: StockLedgerRepository,
     private readonly queue: StockMovementQueue,
+    private readonly levels: EvaluateStockLevels | null = null,
+    private readonly venues: VenueDirectory | null = null,
   ) {}
 
   async execute(input: ReturnStockInput): Promise<SaleStockResult> {
@@ -85,7 +89,10 @@ export class ReturnStock {
     }
 
     const movements = reversedLines(input, consumption, locationId);
-    await this.ledger.append({ movements, alerts: [] });
+    await this.ledger.inTransaction(async (tx) => {
+      await tx.append({ movements, alerts: [] });
+      await this.evaluateMoved(tx, input, locationId, movements);
+    });
 
     for (const movement of movements) {
       await this.queue.enqueue({
@@ -96,6 +103,38 @@ export class ReturnStock {
     }
 
     return { missingRecipe: false };
+  }
+
+  private async evaluateMoved(
+    tx: StockLedgerRepository,
+    input: ReturnStockInput,
+    locationId: string,
+    movements: readonly LedgerLine[],
+  ): Promise<void> {
+    if (!this.levels || !this.venues) {
+      return;
+    }
+
+    const brandId = await this.venues.brandOf(input.tenantId, input.venueId);
+
+    if (brandId === null) {
+      return;
+    }
+
+    const ingredientIds = [
+      ...new Set(movements.map((movement) => movement.ingredientId)),
+    ];
+
+    for (const ingredientId of ingredientIds) {
+      await this.levels.evaluate(tx, {
+        tenantId: input.tenantId,
+        brandId,
+        venueId: input.venueId,
+        locationId,
+        ingredientId,
+        occurredAt: input.occurredAt,
+      });
+    }
   }
 }
 

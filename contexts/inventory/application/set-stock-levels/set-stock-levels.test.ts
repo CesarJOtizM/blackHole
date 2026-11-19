@@ -5,9 +5,15 @@ import {
 import { expect, it } from "vitest";
 import {
   type BrandStockLevel,
+  type LevelAlert,
+  type LocationStockLevel,
   ShortageRepository,
   type SiteStockLevel,
 } from "#application/ports/shortage-repository.js";
+import {
+  type StockLevel,
+  StockLevelRepository,
+} from "#application/ports/stock-level-repository.js";
 import {
   SetStockLevels,
   type SetStockLevelsInput,
@@ -23,6 +29,7 @@ const TENANT_ID = "organization_tenant_1";
 const BRAND_ID = "organization_brand_1";
 const SITE_A = "organization_venue_a";
 const SITE_B = "organization_venue_b";
+const POINT_ID = "location_point_a";
 const BEEF_ID = "ingredient_beef";
 const SESSION_ID = "session_site_admin";
 
@@ -91,6 +98,8 @@ class ScriptedPermission extends EvaluatePermission {
 class MemoryShortageRepository extends ShortageRepository {
   private readonly brands = new Map<string, BrandStockLevel>();
   private readonly sites = new Map<string, SiteStockLevel>();
+  readonly levelAlerts: LevelAlert[] = [];
+  readonly locationLevelWrites: LocationStockLevel[] = [];
 
   async saveBrandLevel(level: BrandStockLevel): Promise<void> {
     this.brands.set(this.brandKey(level), { ...level });
@@ -98,6 +107,14 @@ class MemoryShortageRepository extends ShortageRepository {
 
   async saveSiteLevel(level: SiteStockLevel): Promise<void> {
     this.sites.set(this.siteKey(level), { ...level });
+  }
+
+  override async saveLocationLevel(level: LocationStockLevel): Promise<void> {
+    this.locationLevelWrites.push({ ...level });
+  }
+
+  override async saveLevelAlert(alert: LevelAlert): Promise<void> {
+    this.levelAlerts.push({ ...alert });
   }
 
   async findBrandLevel(
@@ -227,4 +244,93 @@ it("given a session without inventory.configure-levels, when stock levels are se
     PERMISSION.INVENTORY_CONFIGURE_LEVELS,
   ]);
   expect(await shortages.findSiteLevel(TENANT_ID, SITE_A, BEEF_ID)).toBeNull();
+});
+
+class MemoryLocationLevels extends StockLevelRepository {
+  private readonly levels = new Map<string, StockLevel>();
+
+  async find(
+    tenantId: string,
+    locationId: string,
+    ingredientId: string,
+  ): Promise<StockLevel | null> {
+    return this.levels.get(`${tenantId}:${locationId}:${ingredientId}`) ?? null;
+  }
+
+  async save(tenantId: string, level: StockLevel): Promise<void> {
+    this.levels.set(`${tenantId}:${level.locationId}:${level.ingredientId}`, {
+      ...level,
+    });
+  }
+}
+
+const scaledBeef = (): StockLevel => ({
+  locationId: POINT_ID,
+  ingredientId: BEEF_ID,
+  minimum: kilograms(5),
+  maximum: kilograms(20),
+});
+
+it("given 5 kg minimum and 20 kg maximum at a point of sale, when location stock levels are set, then the scaled base units are stored and no alert is opened", async () => {
+  const shortages = new MemoryShortageRepository();
+  const permissions = new ScriptedPermission(allowed());
+  const locations = new MemoryLocationLevels();
+  const setLevels = new SetStockLevels(shortages, permissions, locations);
+
+  const stored = await setLevels.execute({
+    tenantId: TENANT_ID,
+    locationId: POINT_ID,
+    ingredientId: BEEF_ID,
+    minimum: kilograms(5),
+    maximum: kilograms(20),
+  });
+
+  expect(stored).toEqual(scaledBeef());
+  expect(await locations.find(TENANT_ID, POINT_ID, BEEF_ID)).toEqual(
+    scaledBeef(),
+  );
+  expect(shortages.levelAlerts).toEqual([]);
+  expect(shortages.locationLevelWrites).toEqual([]);
+  expect(await shortages.findSiteLevel(TENANT_ID, SITE_A, BEEF_ID)).toBeNull();
+  expect(permissions.inputs).toEqual([]);
+});
+
+it("given a minimum that is not a whole scaled unit, when location stock levels are set, then the change is rejected and no alert is opened", async () => {
+  const shortages = new MemoryShortageRepository();
+  const permissions = new ScriptedPermission(allowed());
+  const locations = new MemoryLocationLevels();
+  const setLevels = new SetStockLevels(shortages, permissions, locations);
+
+  const attempt = setLevels.execute({
+    tenantId: TENANT_ID,
+    locationId: POINT_ID,
+    ingredientId: BEEF_ID,
+    minimum: 5.5,
+    maximum: kilograms(20),
+  });
+
+  await expect(attempt).rejects.toThrow(InvalidStockLevels);
+  expect(await locations.find(TENANT_ID, POINT_ID, BEEF_ID)).toBeNull();
+  expect(shortages.levelAlerts).toEqual([]);
+  expect(shortages.locationLevelWrites).toEqual([]);
+});
+
+it("given a maximum below the minimum, when location stock levels are set, then the change is rejected and no alert is opened", async () => {
+  const shortages = new MemoryShortageRepository();
+  const permissions = new ScriptedPermission(allowed());
+  const locations = new MemoryLocationLevels();
+  const setLevels = new SetStockLevels(shortages, permissions, locations);
+
+  const attempt = setLevels.execute({
+    tenantId: TENANT_ID,
+    locationId: POINT_ID,
+    ingredientId: BEEF_ID,
+    minimum: kilograms(5),
+    maximum: kilograms(4),
+  });
+
+  await expect(attempt).rejects.toThrow(InvalidStockLevels);
+  expect(await locations.find(TENANT_ID, POINT_ID, BEEF_ID)).toBeNull();
+  expect(shortages.levelAlerts).toEqual([]);
+  expect(shortages.locationLevelWrites).toEqual([]);
 });

@@ -76,7 +76,7 @@ const readSse = async (
   return { response, events: parseSse(payload) };
 };
 
-it("given a send, when SSE is read, then the event carries ids only and printer_failed and line_ready ride the same stream", async () => {
+it("given a send, when SSE is read, then ids, printer_failed, line_ready, billing_data_received, and not_restocked ride the same stream", async () => {
   const { application, audits } = await openDiningCloud();
 
   try {
@@ -123,6 +123,16 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
       tableId,
     });
     await hub.publish({
+      kind: "not_restocked",
+      tenantId,
+      venueId,
+      checkId,
+      tableId,
+      productId: "menu_product_ribs",
+      lineIds: [lineId],
+      at: readyAt,
+    });
+    await hub.publish({
       kind: "ids",
       tenantId: "organization_other",
       venueId,
@@ -134,7 +144,7 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
     const { response, events } = await readSse(
       application,
       "session_kitchen",
-      4,
+      5,
     );
 
     expect(response.statusCode).toBe(200);
@@ -183,6 +193,19 @@ it("given a send, when SSE is read, then the event carries ids only and printer_
           venueId,
           checkId,
           tableId,
+        },
+      },
+      {
+        type: "not_restocked",
+        data: {
+          kind: "not_restocked",
+          tenantId,
+          venueId,
+          checkId,
+          tableId,
+          productId: "menu_product_ribs",
+          lineIds: [lineId],
+          at: readyAt,
         },
       },
     ]);

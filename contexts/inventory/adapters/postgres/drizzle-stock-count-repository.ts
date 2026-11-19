@@ -24,9 +24,7 @@ import {
   type CountSessionStatus,
   StockCountRepository,
 } from "#application/ports/stock-count-repository.js";
-import {
-  STOCK_MOVEMENT_LANE,
-} from "#application/ports/stock-movement-queue.js";
+import { STOCK_MOVEMENT_LANE } from "#application/ports/stock-movement-queue.js";
 import { type MovementType, onHandDelta } from "#domain/stock-ledger.js";
 
 type Database = PgliteDatabase;

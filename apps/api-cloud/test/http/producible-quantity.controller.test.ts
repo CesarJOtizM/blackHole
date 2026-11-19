@@ -48,7 +48,6 @@ import {
   ownerId,
   postDining,
   seatOccupiedCheck,
-  sessionHeader,
   tenantId,
   venueId,
 } from "#test/http/dining-room-session.js";

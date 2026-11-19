@@ -140,7 +140,7 @@ function preparationsFor(
 }
 
 export function PurchaseScreen() {
-  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(ADMIN_SCOPE.venueId);
   const [orderId, setOrderId] = useState(ORDER_ID);
   const [ingredientId, setIngredientId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -264,7 +264,7 @@ export function PurchaseScreen() {
 }
 
 export function ProductionScreen() {
-  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(ADMIN_SCOPE.venueId);
   const [recipeId, setRecipeId] = useState("");
   const [expectedQuantity, setExpectedQuantity] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
@@ -777,4 +777,237 @@ export function TransfersScreen() {
 
 export function TransferDetailScreen() {
   return <TransferScreen transferId="t-0112" />;
+}
+
+const LEVELS_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/venues/${encodeURIComponent(ADMIN_SCOPE.venueId)}/stock-levels`;
+
+interface ActiveLevels {
+  ingredientId: string;
+  maximum: number;
+  reorderPoint: number;
+  minimum: number;
+}
+
+function acceptancePath(suggestionId: string): string {
+  return `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/venues/${encodeURIComponent(ADMIN_SCOPE.venueId)}/stock-level-suggestions/${encodeURIComponent(suggestionId)}/acceptance`;
+}
+
+function wholeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function activeLevelsFrom(payload: unknown): ActiveLevels | null {
+  if (!isRecord(payload) || typeof payload.ingredientId !== "string") {
+    return null;
+  }
+
+  if (payload.ingredientId.length === 0) {
+    return null;
+  }
+
+  if (
+    !wholeNumber(payload.maximum) ||
+    !wholeNumber(payload.reorderPoint) ||
+    !wholeNumber(payload.minimum)
+  ) {
+    return null;
+  }
+
+  return {
+    ingredientId: payload.ingredientId,
+    maximum: payload.maximum,
+    reorderPoint: payload.reorderPoint,
+    minimum: payload.minimum,
+  };
+}
+
+async function postLevels(
+  path: string,
+  body: unknown,
+): Promise<
+  | { readonly outcome: "saved"; readonly levels: ActiveLevels }
+  | { readonly outcome: "absent" }
+  | { readonly outcome: "rejected" }
+  | { readonly outcome: "offline" }
+> {
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "x-session-id": ADMIN_SCOPE.sessionId,
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+
+    if (response.status === 404) {
+      return { outcome: "absent" };
+    }
+
+    if (!response.ok) {
+      return { outcome: "rejected" };
+    }
+
+    const levels = activeLevelsFrom(await response.json());
+
+    if (levels === null) {
+      return { outcome: "rejected" };
+    }
+
+    return { outcome: "saved", levels };
+  } catch {
+    return { outcome: "offline" };
+  }
+}
+
+function levelStatus(
+  result: Awaited<ReturnType<typeof postLevels>>,
+  saved: string,
+): { status: string; levels: ActiveLevels | null } {
+  if (result.outcome === "saved") {
+    return { status: saved, levels: result.levels };
+  }
+
+  if (result.outcome === "absent") {
+    return {
+      status: "La ruta de niveles no está disponible.",
+      levels: null,
+    };
+  }
+
+  if (result.outcome === "offline") {
+    return {
+      status: "No se puede registrar hasta que vuelva la conexión.",
+      levels: null,
+    };
+  }
+
+  return { status: "Los niveles no quedaron guardados.", levels: null };
+}
+
+export function StockLevelsScreen() {
+  const [ingredientId, setIngredientId] = useState("");
+  const [maximum, setMaximum] = useState("");
+  const [reorderPoint, setReorderPoint] = useState("");
+  const [minimum, setMinimum] = useState("");
+  const [suggestionId, setSuggestionId] = useState("");
+  const [active, setActive] = useState<ActiveLevels | null>(null);
+  const [status, setStatus] = useState("");
+
+  async function save() {
+    const ingredient = ingredientId.trim();
+    const nextMaximum = counted(maximum, true);
+    const nextReorder = counted(reorderPoint, true);
+    const nextMinimum = counted(minimum, true);
+
+    if (
+      ingredient.length === 0 ||
+      nextMaximum === null ||
+      nextReorder === null ||
+      nextMinimum === null
+    ) {
+      setStatus("Revisa los niveles.");
+      return;
+    }
+
+    const shown = levelStatus(
+      await postLevels(LEVELS_PATH, {
+        ingredientId: ingredient,
+        maximum: nextMaximum,
+        reorderPoint: nextReorder,
+        minimum: nextMinimum,
+      }),
+      "Niveles guardados.",
+    );
+
+    if (shown.levels) {
+      setActive(shown.levels);
+    }
+
+    setStatus(shown.status);
+  }
+
+  async function accept() {
+    const suggestion = suggestionId.trim();
+
+    if (suggestion.length === 0) {
+      setStatus("Revisa la propuesta.");
+      return;
+    }
+
+    const shown = levelStatus(
+      await postLevels(acceptancePath(suggestion), undefined),
+      "Propuesta aceptada.",
+    );
+
+    if (shown.levels) {
+      setActive(shown.levels);
+    }
+
+    setStatus(shown.status);
+  }
+
+  return (
+    <RecordPage
+      eyebrow="Inventario"
+      title="Niveles"
+      actions={[
+        {
+          label: "Guardar niveles",
+          tone: "solid",
+          onPress: () => {
+            void save();
+          },
+        },
+        {
+          label: "Aceptar propuesta",
+          tone: "ghost",
+          onPress: () => {
+            void accept();
+          },
+        },
+      ]}
+      status={status}
+      note="Los niveles activos cambian en la nube."
+    >
+      <TextField
+        label="Insumo"
+        value={ingredientId}
+        onChange={(event) => setIngredientId(event.target.value)}
+      />
+      <TextField
+        label="Máximo"
+        inputMode="numeric"
+        value={maximum}
+        onChange={(event) => setMaximum(event.target.value)}
+      />
+      <TextField
+        label="Punto de reorden"
+        inputMode="numeric"
+        value={reorderPoint}
+        onChange={(event) => setReorderPoint(event.target.value)}
+      />
+      <TextField
+        label="Mínimo"
+        inputMode="numeric"
+        value={minimum}
+        onChange={(event) => setMinimum(event.target.value)}
+      />
+      <TextField
+        label="Propuesta"
+        value={suggestionId}
+        onChange={(event) => setSuggestionId(event.target.value)}
+      />
+      {active ? (
+        <>
+          <p>Insumo activo {active.ingredientId}</p>
+          <p>Máximo activo {active.maximum}</p>
+          <p>Punto de reorden activo {active.reorderPoint}</p>
+          <p>Mínimo activo {active.minimum}</p>
+        </>
+      ) : null}
+    </RecordPage>
+  );
 }

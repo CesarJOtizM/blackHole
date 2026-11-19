@@ -23,6 +23,12 @@ import {
 } from "#src/composition/issue-document.worker.js";
 import { infrastructureFromEnv } from "#src/composition/main.js";
 import {
+  disabledShortageAlerts,
+  registerShortageAlerts,
+  type ShortageDatabase,
+  shortageAlertsFromPostgres,
+} from "#src/composition/shortage-alerts.worker.js";
+import {
   continuedTraceFromEnv,
   startTelemetry,
 } from "#src/composition/telemetry.js";
@@ -164,6 +170,7 @@ export const issuePending = async (
 
 export const startWorker = async (
   env: NodeJS.ProcessEnv = process.env,
+  shortageDatabase?: ShortageDatabase,
 ): Promise<void> => {
   const runtime = infrastructureFromEnv(env);
   startTelemetry(env, {}, continuedTraceFromEnv(env));
@@ -172,6 +179,27 @@ export const startWorker = async (
   await boss.start();
   await registerCloseOpenShifts(boss);
   await registerIssueDocument(boss, openIssueDocument(runtime.secrets));
+  await registerShortageAlerts(
+    {
+      createQueue: (name, options) => boss.createQueue(name, options),
+      work: (name, handler) =>
+        boss.work(name, async (jobs) => {
+          await handler(
+            jobs.map((job) => ({
+              data:
+                typeof job.data === "object" && job.data !== null
+                  ? job.data
+                  : {},
+            })),
+          );
+        }),
+      schedule: (name, cron, data, options) =>
+        boss.schedule(name, cron, data, options),
+    },
+    shortageDatabase
+      ? shortageAlertsFromPostgres(shortageDatabase)
+      : disabledShortageAlerts(),
+  );
 
   const publish = async (): Promise<void> => {
     await runtime.metrics.publishQueue(queueDepth(await boss.getQueues()));

@@ -135,6 +135,17 @@ export class InMemoryStockLedgerRepository extends StockLedgerRepository {
       .map(copyLine);
   }
 
+  override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
+    const snapshot = this.capture();
+
+    try {
+      return await super.inTransaction(work);
+    } catch (error) {
+      this.restore(snapshot);
+      throw error;
+    }
+  }
+
   override async append(input: AppendStock): Promise<void> {
     const snapshot = this.capture();
     const failAt = this.failAt;

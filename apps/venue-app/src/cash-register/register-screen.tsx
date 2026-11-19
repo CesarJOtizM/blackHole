@@ -1,5 +1,6 @@
 import { Button, Field } from "@blackhole/ui";
 import { useState } from "react";
+import { ShortageNoticePanel } from "#src/kitchen/kitchen-screen.js";
 import { tableTotal, useService } from "#src/service/service-session.js";
 
 const denominations = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500];
@@ -57,6 +58,7 @@ export function RegisterScreen({
         </p>
         <h1 className="font-display text-title">Turno de caja</h1>
       </header>
+      <ShortageNoticePanel />
       <article className="grid gap-3">
         <h2 className="text-title">Apertura</h2>
         <p className="text-ink-muted">Base contada: {cop(200000)}</p>

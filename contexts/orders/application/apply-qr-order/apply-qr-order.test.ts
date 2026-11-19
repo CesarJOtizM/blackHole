@@ -23,6 +23,7 @@ const TABLE_ID = "table_3";
 const MENU_ID = "menu_brand_1";
 const SOUP_ID = "menu_product_soup";
 const STEAK_ID = "menu_product_steak";
+const RIBS_ID = "menu_product_ribs";
 const INTENT_ID = "intent_1";
 const NOW = Date.parse("2026-10-28T17:03:10.000Z");
 
@@ -77,6 +78,18 @@ const soupMenu = (): Menu => {
     price: 45_000,
     available: false,
   });
+  menu.publishProduct({
+    id: RIBS_ID,
+    name: "Ribs",
+    price: 32_000,
+    taxClassification: "restaurant service",
+  });
+  menu.setVenuePrice({
+    venueId: VENUE_ID,
+    itemId: RIBS_ID,
+    price: 32_000,
+    available: true,
+  });
 
   return menu;
 };
@@ -102,7 +115,14 @@ const intent = (): StoredQrOrderIntent => ({
   createdAt: new Date(NOW).toISOString(),
 });
 
-const harness = async () => {
+const harness = async (notRestocked?: {
+  execute(input: {
+    tenantId: string;
+    venueId: string;
+    productId: string;
+    at: Date;
+  }): Promise<boolean>;
+}) => {
   const dining = new InMemoryDiningRoomRepository();
   const table = DiningTable.place({
     id: TABLE_ID,
@@ -122,6 +142,12 @@ const harness = async () => {
     stationId: "station_grill",
     stationName: "Grill",
     productId: SOUP_ID,
+    output: "both",
+  });
+  router.assign({
+    stationId: "station_grill",
+    stationName: "Grill",
+    productId: RIBS_ID,
     output: "both",
   });
   stations.remember(router);
@@ -153,6 +179,7 @@ const harness = async () => {
     venues,
     takeOrder,
     clock,
+    notRestocked,
   );
 
   return { dining, printer, apply, intents };
@@ -302,4 +329,49 @@ it("given a sold-out dish beside an available one, when the order is applied twi
   expect(second).toEqual(first);
   expect(check?.orders.flatMap((order) => order.lines)).toHaveLength(1);
   expect(printer.jobs).toHaveLength(1);
+});
+
+it("given ribs marked beside an available soup, when a QR order is applied, then ribs are rejected and soup is sent", async () => {
+  const { dining, apply, intents } = await harness({
+    execute: (input) => Promise.resolve(input.productId === RIBS_ID),
+  });
+  const stored = intent();
+  stored.id = "intent_ribs";
+  stored.lines = [
+    {
+      productId: SOUP_ID,
+      name: "Soup",
+      variantIds: [],
+      modifierIds: [],
+      unitPrice: 22_000,
+    },
+    {
+      productId: RIBS_ID,
+      name: "Ribs",
+      variantIds: [],
+      modifierIds: [],
+      unitPrice: 32_000,
+    },
+  ];
+  await intents.insert(stored);
+
+  const applied = await apply.execute({
+    tenantId: TENANT_ID,
+    intentId: "intent_ribs",
+  });
+  const check =
+    applied.checkId === null
+      ? null
+      : await dining.loadCheck(TENANT_ID, VENUE_ID, applied.checkId);
+
+  expect(applied.status).toBe("applied");
+  expect(applied.unavailableProductIds).toEqual([RIBS_ID]);
+  expect(applied.lineIds).toEqual(["line_intent_ribs_0"]);
+  expect(check?.orders.flatMap((order) => order.lines)).toEqual([
+    expect.objectContaining({
+      id: "line_intent_ribs_0",
+      productId: SOUP_ID,
+      state: "sent",
+    }),
+  ]);
 });

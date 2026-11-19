@@ -38,6 +38,7 @@ export default defineConfig({
             "contexts/inventory/**/*.test.ts",
             "contexts/inventory/application/ports/producible-quantity-repository.contract.ts",
             "contexts/inventory/application/ports/stock-count-repository.contract.ts",
+            "contexts/inventory/application/ports/shortage-repository.contract.ts",
           ],
         },
       },

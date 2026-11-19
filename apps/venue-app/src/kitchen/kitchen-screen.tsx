@@ -1,5 +1,6 @@
 import { Button, Field } from "@blackhole/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { oneTapRestockBody } from "#src/kitchen/restock-request.js";
 import { useService } from "#src/service/service-session.js";
 import { VENUE_SCOPE } from "#src/service/venue-cloud.js";
 
@@ -64,11 +65,275 @@ function shownVariance(payload: unknown): number | null | undefined {
   return payload.variance;
 }
 
+const REALTIME_PATH = `/tenants/${encodeURIComponent(VENUE_SCOPE.tenantId)}/venues/${encodeURIComponent(VENUE_SCOPE.venueId)}/shortage-realtime`;
+
+const SEVERITY_LABEL = {
+  yellow: "Alerta amarilla",
+  red: "Alerta roja",
+  critical: "Alerta crítica",
+} as const;
+
+const KIND_LABEL = {
+  level: "Nivel",
+  coverage: "Cobertura",
+  dish: "Plato",
+} as const;
+
+type ShortageKind = keyof typeof KIND_LABEL;
+type ShortageSeverity = keyof typeof SEVERITY_LABEL;
+
+interface ShortageNoticeView {
+  alertId: string;
+  kind: ShortageKind;
+  severity: ShortageSeverity;
+  role: string;
+  venueId: string;
+}
+
+function restockPath(alertId: string): string {
+  return `/tenants/${encodeURIComponent(VENUE_SCOPE.tenantId)}/venues/${encodeURIComponent(VENUE_SCOPE.venueId)}/shortage-alerts/${encodeURIComponent(alertId)}/restock`;
+}
+
+function restockFactsPath(alertId: string): string {
+  return `${restockPath(alertId)}-facts`;
+}
+
+function readRestockFacts(value: unknown): {
+  purchaseUnit: number;
+  warehouseIds: string[];
+} {
+  if (!isRecord(value) || typeof value.purchaseUnit !== "number") {
+    return { purchaseUnit: 1, warehouseIds: [] };
+  }
+
+  const warehouseIds = Array.isArray(value.warehouseIds)
+    ? value.warehouseIds.filter(
+        (item): item is string => typeof item === "string",
+      )
+    : [];
+
+  return { purchaseUnit: value.purchaseUnit, warehouseIds };
+}
+
+function isKind(value: string): value is ShortageKind {
+  return value === "level" || value === "coverage" || value === "dish";
+}
+
+function isSeverity(value: string): value is ShortageSeverity {
+  return value === "yellow" || value === "red" || value === "critical";
+}
+
+function isRole(value: string): boolean {
+  return value === "siteAdministrator" || value === "generalManager";
+}
+
+function readJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function shownNotice(value: unknown): ShortageNoticeView | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const alertId = value.alertId;
+  const kind = value.kind;
+  const severity = value.severity;
+  const role = value.role;
+
+  if (
+    typeof alertId !== "string" ||
+    alertId.length === 0 ||
+    typeof kind !== "string" ||
+    !isKind(kind) ||
+    typeof severity !== "string" ||
+    !isSeverity(severity) ||
+    typeof role !== "string" ||
+    !isRole(role) ||
+    value.venueId !== VENUE_SCOPE.venueId
+  ) {
+    return null;
+  }
+
+  return {
+    alertId,
+    kind,
+    severity,
+    role,
+    venueId: VENUE_SCOPE.venueId,
+  };
+}
+
+function noticeFromFrame(frame: string): ShortageNoticeView | null {
+  const data = frame
+    .split("\n")
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice("data:".length).trim())
+    .join("");
+
+  if (data.length === 0) {
+    return null;
+  }
+
+  return shownNotice(readJson(data));
+}
+
+async function readShortageNotices(
+  signal: AbortSignal,
+  onNotice: (notice: ShortageNoticeView) => void,
+): Promise<void> {
+  try {
+    const response = await fetch(REALTIME_PATH, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        accept: "text/event-stream",
+        "x-session-id": VENUE_SCOPE.sessionId,
+      },
+      signal,
+    });
+
+    if (!response.ok || response.body === null) {
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = "";
+
+    while (!signal.aborted) {
+      const chunk = await reader.read();
+
+      if (chunk.done) {
+        const notice = noticeFromFrame(pending);
+
+        if (notice && !signal.aborted) {
+          onNotice(notice);
+        }
+
+        return;
+      }
+
+      pending += decoder.decode(chunk.value, { stream: true });
+      const frames = pending.split("\n\n");
+      pending = frames.pop() ?? "";
+
+      for (const frame of frames) {
+        const notice = noticeFromFrame(frame);
+
+        if (notice && !signal.aborted) {
+          onNotice(notice);
+        }
+      }
+    }
+  } catch {
+    return;
+  }
+}
+
+async function restockAlert(
+  alertId: string,
+  setStatus: (status: string) => void,
+): Promise<void> {
+  try {
+    const factsResponse = await fetch(restockFactsPath(alertId), {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "x-session-id": VENUE_SCOPE.sessionId,
+      },
+    });
+    const facts = factsResponse.ok
+      ? readRestockFacts(await factsResponse.json())
+      : { purchaseUnit: 1, warehouseIds: [] };
+    const response = await fetch(restockPath(alertId), {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "x-session-id": VENUE_SCOPE.sessionId,
+      },
+      body: JSON.stringify(
+        oneTapRestockBody(facts, {
+          documentId: crypto.randomUUID(),
+          lineId: crypto.randomUUID(),
+        }),
+      ),
+    });
+
+    if (!response.ok) {
+      setStatus("La reposición no quedó registrada.");
+      return;
+    }
+
+    const payload: unknown = await response.json();
+
+    setStatus(
+      isRecord(payload) && payload.outcome === "purchase-order"
+        ? "Se ofreció una orden de compra."
+        : "Reposición registrada.",
+    );
+  } catch {
+    setStatus("No se puede registrar hasta que vuelva la conexión.");
+  }
+}
+
+export function ShortageNoticePanel() {
+  const [notices, setNotices] = useState<readonly ShortageNoticeView[]>([]);
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void readShortageNotices(controller.signal, (notice) => {
+      setNotices((current) => [
+        ...current.filter((item) => item.alertId !== notice.alertId),
+        notice,
+      ]);
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  if (notices.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="grid gap-3">
+      {notices.map((notice) => (
+        <article key={notice.alertId} className="grid gap-2">
+          <h2 className="font-display text-title">Alerta de faltante</h2>
+          <p>{SEVERITY_LABEL[notice.severity]}</p>
+          <p>{KIND_LABEL[notice.kind]}</p>
+          <p>{notice.alertId}</p>
+          <Button
+            onClick={() => {
+              void restockAlert(notice.alertId, setStatus);
+            }}
+          >
+            Reponer
+          </Button>
+        </article>
+      ))}
+      {status.length > 0 ? <p role="status">{status}</p> : null}
+    </section>
+  );
+}
+
 export function KitchenScreen() {
   const service = useService();
   const open = service.tickets.filter((ticket) => !ticket.ready);
   const done = service.tickets.filter((ticket) => ticket.ready);
-  const [locationId, setLocationId] = useState(VENUE_SCOPE.venueId);
+  const [locationId, setLocationId] = useState<string>(VENUE_SCOPE.venueId);
   const [recipeId, setRecipeId] = useState("");
   const [expectedQuantity, setExpectedQuantity] = useState("");
   const [actualQuantity, setActualQuantity] = useState("");
@@ -144,6 +409,7 @@ export function KitchenScreen() {
         </div>
         <p className="font-mono text-numeral">{open.length}</p>
       </header>
+      <ShortageNoticePanel />
       <div className="grid gap-3 md:grid-cols-2">
         {open.map((ticket) => {
           const late = ticket.minutes >= 12;

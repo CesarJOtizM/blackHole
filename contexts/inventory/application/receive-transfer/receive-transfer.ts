@@ -4,6 +4,7 @@ import type {
   TransferInMovement,
   TransferRepository,
 } from "#application/ports/transfer-repository.js";
+import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
 import {
   TRANSFER_STATUS,
   type Transfer,
@@ -179,7 +180,7 @@ const inMovements = (
     ingredientId: movement.ingredientId,
     quantity: movement.quantity,
     unitCost: movement.unitCost,
-    type: movement.type,
+    type: MOVEMENT_TYPE.TRANSFER_IN,
     reference: transfer.id,
     occurredAt: input.occurredAt,
     actorId: input.actorId,

@@ -1,3 +1,4 @@
+import type { EvaluateStockLevels } from "#application/evaluate-stock-levels/evaluate-stock-levels.js";
 import type { ExplodeRecipe } from "#application/explode-recipe/explode-recipe.js";
 import type { OperationGeneration } from "#application/ports/operation-generation.js";
 import type { PointOfSaleDirectory } from "#application/ports/point-of-sale-directory.js";
@@ -55,6 +56,7 @@ export class RegisterSaleConsumption {
     private readonly ledger: StockLedgerRepository,
     private readonly alerts: StockAlertPublisher,
     private readonly queue: StockMovementQueue,
+    private readonly levels: EvaluateStockLevels | null = null,
   ) {}
 
   async execute(input: RegisterSaleConsumptionInput): Promise<SaleStockResult> {
@@ -172,7 +174,28 @@ export class RegisterSaleConsumption {
       });
     }
 
-    await this.ledger.append({ movements, alerts: opened });
+    await this.ledger.inTransaction(async (tx) => {
+      await tx.append({ movements, alerts: opened });
+
+      if (!this.levels) {
+        return;
+      }
+
+      const ingredientIds = [
+        ...new Set(movements.map((movement) => movement.ingredientId)),
+      ];
+
+      for (const ingredientId of ingredientIds) {
+        await this.levels.evaluate(tx, {
+          tenantId: input.tenantId,
+          brandId,
+          venueId: input.venueId,
+          locationId,
+          ingredientId,
+          occurredAt: input.occurredAt,
+        });
+      }
+    });
 
     for (const alert of opened) {
       await this.alerts.publish(alert);

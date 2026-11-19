@@ -1,8 +1,31 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { FloorScreen } from "#src/orders/floor-screen.js";
-import { ServiceProvider } from "#src/service/service-session.js";
+import { ServiceProvider, useService } from "#src/service/service-session.js";
 import { readStationQueue, readTableMap } from "#src/service/venue-cloud.js";
+
+const GUEST_NOTICE = "Mesa table_4: el plato no sale hoy. Avisa al cliente.";
+
+function GuestNoticeProbe() {
+  const service = useService();
+
+  return (
+    <>
+      <p>{service.notice}</p>
+      <button type="button" onClick={() => service.clockIn()}>
+        Marcar entrada
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void service.tellGuest("check_4", "line_4");
+        }}
+      >
+        Cliente avisado
+      </button>
+    </>
+  );
+}
 
 it("given a cloud table in check, when the map is read, then the floor state is check", () => {
   expect(
@@ -75,5 +98,62 @@ it("given a cloud table map, when the floor opens, then the sample tables are re
 
   expect(await screen.findByText("table_12")).toBeTruthy();
   expect(screen.queryByText("01")).toBeNull();
+  vi.unstubAllGlobals();
+});
+
+it("given a withdrawn line, when another action runs before the guest is told, then the notice stays", async () => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          `event: not_restocked\ndata: ${JSON.stringify({
+            kind: "not_restocked",
+            tenantId: "pilot",
+            venueId: "chapinero",
+            checkId: "check_4",
+            tableId: "table_4",
+            productId: "menu_product_ribs",
+            lineIds: ["line_4"],
+            at: "2026-10-28T17:00:00.000Z",
+          })}\n\n`,
+        ),
+      );
+      controller.close();
+    },
+  });
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+
+      if (path.endsWith("/orders-realtime")) {
+        return new Response(stream, {
+          headers: { "content-type": "text/event-stream" },
+        });
+      }
+
+      if (path.endsWith("/guest-told")) {
+        return new Response(null, { status: 204 });
+      }
+
+      return new Response(null, { status: 404 });
+    }),
+  );
+
+  render(
+    <ServiceProvider>
+      <GuestNoticeProbe />
+    </ServiceProvider>,
+  );
+
+  expect(await screen.findByText(GUEST_NOTICE)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Marcar entrada" }));
+  expect(screen.getByText(GUEST_NOTICE)).toBeTruthy();
+  expect(screen.queryByText(/Entrada marcada/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Cliente avisado" }));
+  expect(await screen.findByText(/Entrada marcada/)).toBeTruthy();
+  expect(screen.queryByText(GUEST_NOTICE)).toBeNull();
   vi.unstubAllGlobals();
 });

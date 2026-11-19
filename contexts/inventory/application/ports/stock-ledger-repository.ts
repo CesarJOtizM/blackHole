@@ -36,6 +36,29 @@ export interface AppendStock {
 }
 
 export abstract class StockLedgerRepository {
+  private rollbackUndos: Array<() => void> = [];
+
+  onRollback(undo: () => void): void {
+    this.rollbackUndos.push(undo);
+  }
+
+  async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
+    const prior = this.rollbackUndos.splice(0);
+
+    try {
+      const result = await work(this);
+      this.rollbackUndos = prior;
+      return result;
+    } catch (error) {
+      for (const undo of this.rollbackUndos.reverse()) {
+        undo();
+      }
+
+      this.rollbackUndos = prior;
+      throw error;
+    }
+  }
+
   abstract findLine(
     tenantId: string,
     orderLineId: string,

@@ -3,17 +3,15 @@ import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, expect, it } from "vitest";
 import {
-  DrizzleStockLedgerRepository,
-} from "#adapters/postgres/drizzle-stock-ledger-repository.js";
-import {
   DrizzleIngredientClassification,
   DrizzleStockCountRepository,
 } from "#adapters/postgres/drizzle-stock-count-repository.js";
+import { DrizzleStockLedgerRepository } from "#adapters/postgres/drizzle-stock-ledger-repository.js";
+import { stockCountRepositoryContract } from "#application/ports/stock-count-repository.contract.js";
 import {
   COUNT_LINE_ROLE,
   type CountLedgerLine,
 } from "#application/ports/stock-count-repository.js";
-import { stockCountRepositoryContract } from "#application/ports/stock-count-repository.contract.js";
 import { QUANTITY_SCALE } from "#domain/recipe-catalog.js";
 import { MOVEMENT_TYPE } from "#domain/stock-ledger.js";
 

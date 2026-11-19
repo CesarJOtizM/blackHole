@@ -766,12 +766,7 @@ it("given sale consumption off, when a sent line or a started line is voided, th
     permission: PERMISSION.SALE_VOID_AFTER_KITCHEN,
     value: 12_000,
   });
-  expect(startedHarness.steps).toEqual([
-    "count",
-    "evaluate",
-    "save",
-    "audit",
-  ]);
+  expect(startedHarness.steps).toEqual(["count", "evaluate", "save", "audit"]);
   expect(startedHarness.audits.commands[0]).toMatchObject({
     action: PERMISSION.SALE_VOID_AFTER_KITCHEN,
     reason: REASON,

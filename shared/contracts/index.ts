@@ -230,6 +230,12 @@ export {
 export {
   type CashReportResult,
   cashReportResult,
+  type FoodCostReportResult,
+  foodCostReportResult,
+  type InventoryReportFamily,
+  type InventoryReportResponse,
+  inventoryReportFamily,
+  inventoryReportResponse,
   type ReportFamily,
   type ReportPeriodQuery,
   reportFamily,
@@ -237,9 +243,11 @@ export {
   type SalesReportResult,
   type SiteReportResponse,
   type StaffReportResult,
+  type StockGapReportResult,
   salesReportResult,
   siteReportResponse,
   staffReportResult,
+  stockGapReportResult,
   type TimeReportResult,
   timeReportResult,
 } from "#contracts/reporting.js";
@@ -247,6 +255,10 @@ export {
   type SensitiveActionEnvelope,
   sensitiveActionEnvelope,
 } from "#contracts/sensitive-actions.js";
+export {
+  type ShortageNotice,
+  shortageNotice,
+} from "#contracts/shortage-alerts.js";
 export {
   type NegativeStockOpened,
   negativeStockOpened,

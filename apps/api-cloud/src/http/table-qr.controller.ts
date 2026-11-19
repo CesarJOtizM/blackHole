@@ -36,9 +36,11 @@ import {
   Get,
   Inject,
   NotFoundException,
+  Optional,
   Param,
   Post,
 } from "@nestjs/common";
+import { QrNotRestockedProducts } from "#src/composition/qr-not-restocked.js";
 
 export const tableQrMenuPath = "m/:token";
 export const tableQrOrderPath = "m/:token/orders";
@@ -83,6 +85,9 @@ export class TableQrController {
     private readonly printer?: Printer,
     @Inject(RealtimeHub)
     private readonly realtime?: RealtimeHub,
+    @Optional()
+    @Inject(QrNotRestockedProducts)
+    private readonly notRestocked?: QrNotRestockedProducts,
   ) {}
 
   @Get(tableQrMenuPath)
@@ -156,8 +161,12 @@ export class TableQrController {
         this.kitchenPrinter(),
         this.clock,
         this.realtimeHub(),
+        undefined,
+        undefined,
+        this.notRestocked,
       ),
       this.clock,
+      this.notRestocked,
     ).execute({
       tenantId: resolved.tenantId,
       intentId: recorded.id,
