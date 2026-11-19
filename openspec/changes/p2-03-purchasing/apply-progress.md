@@ -237,3 +237,43 @@ Work unit 5 of 6: HTTP (tasks 4.1, 4.2, and 4.3). Intended PR 5 on PR 4. Screens
 - 5.1–5.2 Screens. Not started.
 
 `state.yaml` stays `status: applying` and `apply: partial`.
+
+## Work unit 6 evidence
+
+Work unit 6 of 6: Screens (tasks 5.1 and 5.2). Intended PR 6 on PR 5. Not created. Not committed. Not pushed. No pull request. `strict_tdd: false`. `strict-tdd.md` was not loaded. The screen behavior checks were written before the production screen changes.
+
+### RED (before the screens posted)
+
+| Task | RED (command and result) | GREEN |
+|---|---|---|
+| 5.1 | `pnpm exec vitest run --project admin-web test/inventory/purchase-screen.test.tsx` exit 1. `Test Files  1 failed (1)`. `Tests  5 failed (5)`. The purchase screen still rendered `Enviar por WhatsApp`, `Precio factura`, and the invoice photo note. There was no location field and no receipt POST. | The same command after `PurchaseScreen` posted the receipt and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. |
+| 5.2 | `pnpm exec vitest run --config apps/venue-app/vitest.config.ts test/purchasing/receive-screen.test.tsx` exit 1. `FAIL test/purchasing/receive-screen.test.tsx`. `Failed to resolve import "#src/purchasing/receive-screen.js"`. `Test Files  1 failed (1)`. `Tests  no tests`. | The same command after the route, `ReceiveScreen`, and Biome: exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. |
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | Admin: `pnpm exec vitest run --project admin-web test/inventory/purchase-screen.test.tsx` — exit 0. `Test Files  1 passed (1)`. `Tests  5 passed (5)`. Venue: `pnpm exec vitest run --config apps/venue-app/vitest.config.ts test/purchasing/receive-screen.test.tsx` — exit 0. `Test Files  1 passed (1)`. `Tests  6 passed (6)`. Both ran after `pnpm exec biome check --write` on the five screen and test files. |
+| Runtime harness command/scenario and exact result | jsdom screen tests above. Each confirmation calls `fetch` `POST /tenants/pilot/purchase-receipts` with `x-session-id: admin-web` and a strict receipt body (`receiptId`, `locationId`, lines of `ingredientId`, `purchaseQuantity`, `purchaseUnitCost`). Admin also sends `purchaseOrderId` `oc-0418`. Venue omits `purchaseOrderId`. A response line with `averageCost` 4 shows `Costo promedio 4`. A response without that field does not. A rejected `fetch` shows the reconnect message. `localStorage` and `sessionStorage` stay empty. Live api-cloud was not contacted; `fetch` is stubbed. |
+| Rollback boundary | `apps/admin-web/src/inventory/inventory-screen.tsx`, `apps/admin-web/test/inventory/purchase-screen.test.tsx`, `apps/venue-app/src/router.tsx`, `apps/venue-app/src/purchasing/receive-screen.tsx`, and `apps/venue-app/test/purchasing/receive-screen.test.tsx`. Reverting those removes this slice. Units 1–5 stay. `inventory-view.tsx`, contracts, api-cloud, and `venue-cloud.ts` were not edited. |
+
+### Receipt screens
+
+- `PurchaseScreen` posts to `/tenants/pilot/purchase-receipts`. The body is the purchasing command. It does not send a photo, an invoice price, WhatsApp, `supportDocument`, or `vat`. The order field starts as `oc-0418` because that route is the OC-0418 screen. Clearing it omits `purchaseOrderId`.
+- The rendered admin screen no longer uses `PurchaseView`, so WhatsApp, the invoice photo note, and the invoice price columns are not on the page. `PurchaseView` remains in `inventory-view.tsx` and is unused by this screen.
+- Average cost is rendered only when the parsed receipt line includes `averageCost`. Admin parses with `purchaseReceipt` from `@blackhole/contracts`. A keeper response that omits the field shows `Recepción registrada.` and no average.
+- `ReceiveScreen` is the `/purchasing` route, linked as `Recepción`. It posts the same path and session header. An empty order field omits `purchaseOrderId`. The screen does not write `localStorage` or `sessionStorage`, and it does not keep a receipt on the service session.
+- A failed `fetch` does not record a local receipt. The status is `No se puede registrar hasta que vuelva la conexión.`
+
+### Deviations (unit 6)
+
+`venue-app` does not depend on `@blackhole/contracts`, and `package.json` was outside this slice. `ReceiveScreen` checks the receipt shape in the screen instead of importing the Zod schema. The accepted body is the same command: `receiptId`, `locationId`, optional `purchaseOrderId`, and purchase lines.
+
+`PurchaseScreen` stopped rendering `PurchaseView`. That view still contains the WhatsApp action, the invoice photo note, and the invoice price columns. They are not part of the screen the route renders.
+
+### Completed tasks
+
+Tasks 1.1–4.3 stay complete from units 1–5. Their evidence above was not removed.
+
+- [x] 5.1 `PurchaseScreen` posts the receipt. No invoice photo, invoice price, or WhatsApp. Average only when the response includes it.
+- [x] 5.2 `/purchasing` renders `ReceiveScreen` and posts the same receipt. No local receipt.
+
+`state.yaml` is `status: applied` and `apply: done`. Verify and archive stay pending.

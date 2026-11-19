@@ -1,14 +1,19 @@
+import {
+  purchaseReceipt,
+} from "@blackhole/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { ADMIN_SCOPE } from "#src/api/admin-api.js";
+import { TextField } from "#src/catalog/text-field.js";
 import {
   ConsolidatedView,
-  PurchaseView,
   RecipeView,
   SuppliesView,
   TransferDetailView,
   TransfersView,
 } from "#src/inventory/inventory-view.js";
 import { NoticeToast } from "#src/shell/notice-toast.js";
+import { RecordPage } from "#src/shell/record-page.js";
 
 export function SuppliesScreen() {
   const navigate = useNavigate();
@@ -63,20 +68,158 @@ export function RecipeScreen() {
   );
 }
 
+const RECEIPT_PATH = `/tenants/${encodeURIComponent(ADMIN_SCOPE.tenantId)}/purchase-receipts`;
+const ORDER_ID = "oc-0418";
+
+function counted(value: string, allowZero: boolean): number | null {
+  const trimmed = value.trim();
+
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+
+  if (!Number.isSafeInteger(parsed) || (!allowZero && parsed === 0)) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function averagesFrom(payload: unknown): number[] | null {
+  const parsed = purchaseReceipt.safeParse(payload);
+
+  if (!parsed.success) {
+    return null;
+  }
+
+  return parsed.data.lines.flatMap((line) =>
+    line.averageCost === undefined ? [] : [line.averageCost],
+  );
+}
+
 export function PurchaseScreen() {
+  const [locationId, setLocationId] = useState(ADMIN_SCOPE.venueId);
+  const [orderId, setOrderId] = useState(ORDER_ID);
+  const [ingredientId, setIngredientId] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [receiptId] = useState(() => crypto.randomUUID());
   const [status, setStatus] = useState("");
+  const [averages, setAverages] = useState<readonly number[]>([]);
+
+  async function receive() {
+    const purchaseQuantity = counted(quantity, false);
+    const purchaseUnitCost = counted(unitCost, true);
+    const ingredient = ingredientId.trim();
+    const location = locationId.trim();
+
+    if (
+      ingredient.length === 0 ||
+      location.length === 0 ||
+      purchaseQuantity === null ||
+      purchaseUnitCost === null
+    ) {
+      setAverages([]);
+      setStatus("Revisa la cantidad y el costo.");
+      return;
+    }
+
+    const order = orderId.trim();
+
+    try {
+      const response = await fetch(RECEIPT_PATH, {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "x-session-id": ADMIN_SCOPE.sessionId,
+        },
+        body: JSON.stringify({
+          receiptId,
+          locationId: location,
+          ...(order.length === 0 ? {} : { purchaseOrderId: order }),
+          lines: [
+            {
+              ingredientId: ingredient,
+              purchaseQuantity,
+              purchaseUnitCost,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        setAverages([]);
+        setStatus("La recepción no quedó registrada.");
+        return;
+      }
+
+      const shown = averagesFrom(await response.json());
+
+      if (shown === null) {
+        setAverages([]);
+        setStatus("La recepción no quedó registrada.");
+        return;
+      }
+
+      setAverages(shown);
+      setStatus("Recepción registrada.");
+    } catch {
+      setAverages([]);
+      setStatus("No se puede registrar hasta que vuelva la conexión.");
+    }
+  }
+
   return (
-    <PurchaseView
+    <RecordPage
+      eyebrow="Compra"
+      title="Recepción"
+      actions={[
+        {
+          label: "Registrar recepción",
+          tone: "solid",
+          onPress: () => {
+            void receive();
+          },
+        },
+      ]}
       status={status}
-      onSend={() =>
-        setStatus("La orden queda lista para WhatsApp del proveedor.")
-      }
-      onReceive={() =>
-        setStatus(
-          "Recepción confirmada. Suben existencias y el costo promedio.",
-        )
-      }
-    />
+      note="La recepción se registra en la nube."
+    >
+      <TextField
+        label="Ubicación"
+        value={locationId}
+        onChange={(event) => setLocationId(event.target.value)}
+      />
+      <TextField
+        label="Orden"
+        value={orderId}
+        onChange={(event) => setOrderId(event.target.value)}
+      />
+      <TextField
+        label="Insumo"
+        value={ingredientId}
+        onChange={(event) => setIngredientId(event.target.value)}
+      />
+      <TextField
+        label="Cantidad"
+        inputMode="numeric"
+        value={quantity}
+        onChange={(event) => setQuantity(event.target.value)}
+      />
+      <TextField
+        label="Costo unitario"
+        inputMode="numeric"
+        value={unitCost}
+        onChange={(event) => setUnitCost(event.target.value)}
+      />
+      {averages.map((cost, index) => (
+        <p key={`${index}-${cost}`}>Costo promedio {cost}</p>
+      ))}
+    </RecordPage>
   );
 }
 

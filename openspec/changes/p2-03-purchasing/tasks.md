@@ -54,5 +54,5 @@ Chain strategy: feature-branch-chain
 
 ## 5. Screens
 
-- [ ] 5.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: POST the receipt. No invoice photo, price, or WhatsApp. Average only when present.
-- [ ] 5.2 `apps/venue-app/src/router.tsx` and `apps/venue-app/src/purchasing/receive-screen.tsx`: same POST. No local receipt.
+- [x] 5.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: POST the receipt. No invoice photo, price, or WhatsApp. Average only when present.
+- [x] 5.2 `apps/venue-app/src/router.tsx` and `apps/venue-app/src/purchasing/receive-screen.tsx`: same POST. No local receipt.
