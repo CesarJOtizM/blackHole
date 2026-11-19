@@ -1,6 +1,6 @@
 # Documentación del producto
 
-Software SaaS para restaurantes: punto de venta mobile first, cocina, caja, inventario con recetas, facturación electrónica DIAN, domicilios y plataformas, reservas, asistencia del personal, roles y auditoría. Se vende por suscripción mensual. El primer cliente piloto es un grupo de 6 restaurantes.
+Software SaaS para restaurantes: punto de venta mobile first, cocina, caja, inventario con recetas, facturación electrónica DIAN, domicilios y plataformas, reservas, asistencia del personal, roles y auditoría. Se vende por suscripción mensual. El primer cliente piloto era un grupo de 6 restaurantes; ese piloto se canceló. El software de inventario en la nube está cerrado desde el 2026-11-19. El nodo y la bodega híbrida siguen pendientes.
 
 > Nombre de trabajo: **blackHole**. El nombre comercial está por definir (PA-46).
 
@@ -41,9 +41,9 @@ La estructura del sistema (diagramas C4 de contexto, contenedores y componentes 
 | M1 | Pedidos y salón: mesas, pedidos del mesero y por QR, comandas, pantalla de cocina | 1 | [PRD-M1](prd/PRD-M1-pedidos-y-salon.md) | [TRD-M1](trd/TRD-M1-pedidos-y-salon.md) |
 | M2 | Caja: turnos, pagos, pago QR en la mesa, arqueos, propinas | 1 | [PRD-M2](prd/PRD-M2-caja.md) | [TRD-M2](trd/TRD-M2-caja.md) |
 | M3 | Facturación electrónica DIAN (Factus) e impresión | 1 | [PRD-M3](prd/PRD-M3-facturacion.md) | [TRD-M3](trd/TRD-M3-facturacion.md) |
-| M4 | Inventario, bodegas y recetas | 2 | [PRD-M4](prd/PRD-M4-inventario.md) | [TRD-M4](trd/TRD-M4-inventario.md) |
+| M4 | Inventario, bodegas y recetas | 2, cerrada en la nube el 2026-11-19. El nodo sigue en la fase híbrida | [PRD-M4](prd/PRD-M4-inventario.md) | [TRD-M4](trd/TRD-M4-inventario.md) |
 | M5 | Domicilios propios y plataformas (Rappi, DiDi Food, otras) | 3 | [PRD-M5](prd/PRD-M5-domicilios.md) | [TRD-M5](trd/TRD-M5-domicilios.md) |
-| M6 | Reportes y analítica | 1 a 4 (incremental) | [PRD-M6](prd/PRD-M6-reportes.md) | [TRD-M6](trd/TRD-M6-reportes.md) |
+| M6 | Reportes y analítica | 1 a 4. El costo de alimentos de la fase 2 ya está en la nube | [PRD-M6](prd/PRD-M6-reportes.md) | [TRD-M6](trd/TRD-M6-reportes.md) |
 | M7 | SaaS comercial: planes, suscripciones, onboarding | 4 | [PRD-M7](prd/PRD-M7-saas.md) | [TRD-M7](trd/TRD-M7-saas.md) |
 | M8 | Asistencia del personal (entrada, salida, horas trabajadas) | 1 | [PRD-M8](prd/PRD-M8-asistencia.md) | [TRD-M8](trd/TRD-M8-asistencia.md) |
 | M9 | Reservas con cobro | 3 | [PRD-M9](prd/PRD-M9-reservas.md) | [TRD-M9](trd/TRD-M9-reservas.md) |

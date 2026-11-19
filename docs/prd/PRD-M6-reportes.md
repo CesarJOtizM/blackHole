@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.3 |
-| Fecha | 2026-10-17 |
+| Versión | 0.4 |
+| Fecha | 2026-11-19 |
 | Fase | 1 a 4 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M6](../trd/TRD-M6-reportes.md) |
@@ -19,7 +19,7 @@ M6 lee lo que los demás módulos ya registraron. No crea ventas ni corrige caja
 **Incluye**, por fase:
 
 - Fase 1: ventas, medios de pago, tiempos de mesa, caja, horas trabajadas y control del día. En el nodo, el día; en la nube, el histórico de la sede.
-- Fase 2: costos, teórico contra real, mermas, inventario y alertas de escasez.
+- Fase 2, cerrada en la nube el 2026-11-19: costo de alimentos y diferencia entre stock teórico y real, en la administración web. El día de stock en el nodo espera la fase híbrida. La ingeniería de menú sigue en la Fase 4.
 - Fase 3: domicilios, plataformas y reservas.
 - Fase 4: las 6 sedes consolidadas, ingeniería de menú, percentiles y exportaciones para el contador.
 
@@ -117,7 +117,7 @@ Este módulo es el destino. Familias:
 |---------|-------|-------------------|
 | Tiempos 8.1 | M1 y M5 | Día en Fase 1; domicilio en Fase 3 |
 | Ventas 8.2 | M2 y M3 | Día e histórico en Fase 1; canal en Fase 3; resumen del contador en Fase 4 |
-| Costos 8.3 | M4 | Fase 2; ingeniería de menú en Fase 4 |
+| Costos 8.3 | M4 | Costo de alimentos y diferencia de stock en la nube, fase 2 cerrada. Ingeniería de menú en Fase 4. El día en el nodo, fase híbrida |
 | Control 8.4 | M0, M1, M2, M4 | Día en Fase 1; detectores en la nube |
 | Personal y propinas 8.5 | M8 y M2 | Fase 1 |
 | Reservas 8.6 | M9 | Fase 3 |

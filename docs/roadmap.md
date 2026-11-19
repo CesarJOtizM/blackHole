@@ -3,7 +3,7 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.16 |
+| Versión | 0.17 |
 | Fecha | 2026-11-19 |
 | Hereda de | [PRD-00](prd/PRD-00-vision-producto.md), sección 11 · [TRD-00](trd/TRD-00-arquitectura-base.md) |
 | Preguntas abiertas | [Registro](preguntas-abiertas.md) |
@@ -96,6 +96,18 @@ Todas estas preguntas viven en el [registro](preguntas-abiertas.md).
 | **2.9 No se repone hoy** | Propuesta del sistema, confirmación de cocina o administración, aviso al mesero, salida de la cola, confirmación de cliente avisado | Un plato marcado sale del menú y los meseros afectados reciben el aviso al instante | Cerrada |
 | **2.10 Reportes de inventario** | Reportes de costos e inventario de la sección 8.3 | El administrador ve el costo de alimentos y la diferencia entre teórico y real por sede | Cerrada |
 | **2.11 Despliegue en 6 sedes** | Visita técnica, hardware, carga de datos y capacitación en las 5 sedes restantes. El piloto se canceló: no hay visita ni kit. La carga y la capacitación reutilizan comandos que ya existen | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes. No aplica sin sede piloto | Cerrada |
+
+El software de las entregas 2.1 a 2.11 quedó archivado el 2026-11-19 y está en `master`. La verificación pasó sin hallazgos críticos. Los interruptores de inventario nacen apagados.
+
+Ese cierre es el producto en la nube. Sigue fuera, y no se quitó del alcance:
+
+- El corte híbrido: sincronización, nodo sin conexión, drenaje de movimientos y el nodo de la bodega general (D-37, D-04).
+- El documento soporte y el XML de las facturas de proveedores (D-14).
+- La visita, el hardware y la medición de un mes en seis sedes. El piloto se canceló, así que el criterio de la 2.11 no se mide en un local.
+
+En este corte, un traslado guardado está en solicitado, en tránsito, recibido o recibido con diferencias. El despacho lo deja en tránsito. No se guarda un estado distinto llamado despachado.
+
+El criterio de software de cada entrega está cumplido. La semana de compras, el conteo en sede y el caso real de alerta no se miden: no hay piloto.
 
 ## 5. Fase 3 · Domicilios y reservas
 

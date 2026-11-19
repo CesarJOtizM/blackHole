@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.3 |
-| Fecha | 2026-10-17 |
+| Versión | 0.4 |
+| Fecha | 2026-11-19 |
 | Fuentes | [Flujos M3](../../flujos/m3-facturacion.md), [TRD-M3](../../trd/TRD-M3-facturacion.md), [TRD-00 §7 y §8](../../trd/TRD-00-arquitectura-base.md), [Glosario de código](../../glosario-codigo.md) |
 
 M3 (`contexts/invoicing`) se parte en dos lados. En la sede (el nodo, o la nube en modo nube) se crea el documento, se calculan los impuestos y se dispara la impresión de la factura o del comprobante. En la nube se emite ante Factus, se atiende el portal del cliente y se refactura. El token de Factus nunca sale de la nube. Los nombres son los de [TRD-M3](../../trd/TRD-M3-facturacion.md).
@@ -170,5 +170,5 @@ La cola de emisión siempre va antes que las consultas de adquirente: las dos co
 | M2 → M3 | Llamada en proceso a `CreateSalesDocument` | Ítems con su `TaxClassification`, pagos, propina, anticipos y adquirente. M3 calcula los impuestos |
 | M3 → M2 | Respuesta, o evento `IssuanceResolved` al emitir un pendiente | Número, CUFE y QR, o comprobante. M3 dispara la impresión |
 | M7 | Evento `DocumentConsumed` | Consumo de la bolsa por empresa, NIT y sede |
-| M4 | Llamada en proceso (Fase 2) | Documento soporte de compras |
+| M4 | Ninguna | El documento soporte de compras no se emite (D-14). La fase 2 cerró la compra como orden y recepción |
 | M6 | Eventos | Emisiones, rechazos, pendientes y refacturaciones |

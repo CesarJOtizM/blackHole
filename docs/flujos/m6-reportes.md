@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.1 |
-| Fecha | 2026-10-14 |
+| Versión | 0.2 |
+| Fecha | 2026-11-19 |
 | Fuentes | [PRD-00 §8](../prd/PRD-00-vision-producto.md), [TRD-00 §11](../trd/TRD-00-arquitectura-base.md) |
 
 Los reportes no tienen un recorrido propio de caja o de salón. Leen los eventos que los otros módulos ya guardan. Si un cambio de estado no guarda su hora desde la Fase 1, esa historia no se puede reconstruir después.
@@ -15,7 +15,7 @@ Los reportes no tienen un recorrido propio de caja o de salón. Leen los eventos
 |---------|--------------|--------------------------|--------------------|
 | Tiempos | M1 y M5, en cada cambio de estado | Nodo | Nube |
 | Ventas y medios de pago | M2 y M3 | Nodo, cierre y turno | Nube |
-| Costos e inventario | M4, con el costo de lo vendido en M1 | Nodo, stock y alertas | Nube |
+| Costos e inventario | M4, con el costo de lo vendido en M1 | Nodo, stock y alertas. En el corte cerrado solo se consulta en la nube: costo de alimentos y diferencia de stock | Nube |
 | Control | M0, M1, M2 y M4, en cada acción sensible | Nodo, lo del día | Nube, con detectores |
 | Personal y propinas | M8 y la liquidación de M2 | Nodo | Nube |
 | Reservas | M9 | Nodo, las del día | Nube |

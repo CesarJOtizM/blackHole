@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.5 |
-| Fecha | 2026-10-17 |
+| Versión | 0.6 |
+| Fecha | 2026-11-19 |
 | Fuentes | [TRD-00](../trd/TRD-00-arquitectura-base.md), [TRD-01](../trd/TRD-01-infraestructura-y-operacion.md), [Flujos](../flujos/README.md) |
 | Nombres en código | [Glosario de código](../glosario-codigo.md) |
 
@@ -29,7 +29,7 @@ El nivel 4 (código) no se dibuja: lo da la estructura del monorepo (TRD-00, sec
 | M1 Pedidos y salón | [c4-m1-pedidos-y-salon.md](componentes/c4-m1-pedidos-y-salon.md) | Nodo (o nube en modo nube); pedido QR en la nube |
 | M2 Caja | [c4-m2-caja.md](componentes/c4-m2-caja.md) | Nodo (o nube); pago QR en la nube |
 | M3 Facturación e impresión | [c4-m3-facturacion.md](componentes/c4-m3-facturacion.md) | Documento e impresión en el nodo; emisión y portal en la nube |
-| M4 Inventario | [c4-m4-inventario.md](componentes/c4-m4-inventario.md) | Nodo de sede, nodo de bodega y nube |
+| M4 Inventario | [c4-m4-inventario.md](componentes/c4-m4-inventario.md) | Nube en el corte cerrado el 2026-11-19. Nodo de sede y nodo de bodega en la fase híbrida |
 | M5 Domicilios | [c4-m5-domicilios.md](componentes/c4-m5-domicilios.md) | Hub en la nube; pedido interno en el nodo |
 | M6 Reportes | [c4-m6-reportes.md](componentes/c4-m6-reportes.md) | Día en el nodo; consolidado en la nube |
 | M7 SaaS | [c4-m7-saas.md](componentes/c4-m7-saas.md) | Nube |

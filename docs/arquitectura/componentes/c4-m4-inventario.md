@@ -3,11 +3,13 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.4 |
-| Fecha | 2026-10-17 |
+| Versión | 0.5 |
+| Fecha | 2026-11-19 |
 | Fuentes | [Flujos M4](../../flujos/m4-inventario.md), [TRD-M4](../../trd/TRD-M4-inventario.md), [TRD-00 §5.1, §5.5 y §9](../../trd/TRD-00-arquitectura-base.md), [Glosario de código](../../glosario-codigo.md) |
 
 M4 (`contexts/inventory`) corre con los mismos casos de uso en el nodo de cada sede híbrida (punto y bodegas de la sede), en el nodo de la bodega general (perfil bodega) y en la nube. La bodega general del piloto tiene su propio nodo en modo bodega (D-04). En la nube vive siempre lo que es de la empresa: insumos, recetas, consolidado y niveles sugeridos. Operar una bodega sin nodo desde la web queda abierto para clientes pequeños (PA-44). En una sede en modo nube, la parte local también corre en la API central. Cada movimiento lo registra el dueño de esa ubicación. Los nombres son los de [TRD-M4](../../trd/TRD-M4-inventario.md).
+
+El corte cerrado el 2026-11-19 es el de la nube: los casos de uso de esta página corren en la API central, con PostgreSQL. El nodo de sede, el nodo de bodega y el libro SQLite siguen dibujados porque son el producto híbrido, y todavía no están construidos.
 
 ## En el nodo de sede o de bodega
 

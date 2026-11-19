@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.14 |
-| Fecha | 2026-10-17 |
+| Versión | 0.15 |
+| Fecha | 2026-11-19 |
 | Documento técnico asociado | [TRD-00 Arquitectura base](../trd/TRD-00-arquitectura-base.md) |
 | Preguntas abiertas | [Registro](../preguntas-abiertas.md) |
 
@@ -292,7 +292,7 @@ Este es el alcance de alto nivel. El detalle va en el PRD de cada módulo.
 - Compras y recepción contra pedido, con proveedor y costo real. El costo se guarda al valor registrado, sin separar el IVA de la compra (D-15). El costo promedio sale de esas recepciones.
 - Factus no recibe facturas de proveedores ni emite documento soporte. La compra queda registrada en el local; el documento del proveedor lo lleva el contador por fuera (D-14).
 - **Reabastecimiento** de bodega a punto, con solicitud del punto o sugerencia automática por stock mínimo.
-- Traslados con estados: solicitado, despachado, en tránsito, recibido y recibido con diferencias. El traslado mueve el costo del origen tal cual, sin sumarle nada (D-27).
+- Traslados con estados guardados: solicitado, en tránsito, recibido y recibido con diferencias. El despacho deja el traslado en tránsito; no queda un estado aparte llamado despachado. El traslado mueve el costo del origen tal cual, sin sumarle nada (D-27).
 - Producción de preparaciones intermedias. El costo de lo producido es configurable por empresa: promedio de los insumos consumidos, o costo estándar (D-26).
 - Mermas y bajas con motivo (vencido, dañado, error de preparación…).
 - Conteos físicos totales o por categoría, y ajuste contra el inventario teórico. Un ajuste por encima del tope pide aprobación. El tope es configurable y, por defecto, $1.000 (D-28).
@@ -630,7 +630,7 @@ Todo lo que describe este documento es el **alcance mínimo**: nada se recorta. 
 |------|-------------------|------------|--------------------|
 | **0 · Fundación** | 5 a 7 semanas | Organización, contribuyentes, usuarios, roles, PIN, dispositivos, auditoría y operación en la nube, con impresión por el puente. Infraestructura como código con despliegue continuo, y monitoreo y errores de la nube y las PWA ([TRD-01](../trd/TRD-01-infraestructura-y-operacion.md)). El nodo y la sincronización quedan en la fase híbrida (D-37) | Una sede en modo nube opera sin nodo. Un cambio en la rama principal llega a staging sin pasos a mano, y las alarmas básicas (facturas pendientes, error en una PWA) avisan |
 | **1 · Operación de salón (piloto en 1 sede)** | 10 a 13 semanas | M1, M2, M3 con Factus, el motor de impuestos, el portal del cliente (datos de facturación, **pedido por QR en la mesa** y **pago por QR en la mesa**), impresión térmica, M8 asistencia, reportes de ventas, caja, tiempos y horas trabajadas | Una sede opera 2 semanas seguidas solo con el sistema, con documentos DIAN aceptados, pedidos y pagos QR de mesa en un servicio real, y el personal marcando asistencia |
-| **2 · Inventario (6 sedes)** | 7 a 9 semanas | M4 completo con bodegas y reabastecimiento, productos que se pueden producir, costo de alimentos; despliegue en las 6 sedes | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes |
+| **2 · Inventario (6 sedes)** | 7 a 9 semanas. El software en la nube se cerró el 2026-11-19 | M4 en la nube: recetas, consumo al enviar a cocina, compras sin documento soporte (D-14), producción, bodegas y traslados en la nube, mermas, conteos, unidades posibles, alertas y costo de alimentos. Sin visita ni kit de seis sedes | El software está archivado. La medición de un mes en tres sedes no aplica: el piloto se canceló. El nodo de la bodega y la operación sin internet siguen en la fase híbrida |
 | **3 · Domicilios y reservas** | 9 a 12 semanas, más el tiempo de aprobación de cada plataforma | M5: domicilio propio, captura manual de plataformas, conectores de Rappi y DiDi Food, menú por canal, conciliación. M9: reservas con cobro por transferencia (Nequi, Daviplata, Bre-B) verificado, efectivo solo si se reserva en persona (D-01), y política de cancelación | Los domicilios propios y de plataformas de al menos 1 sede entran al sistema sin digitarlos dos veces, con tiempos y comisiones medidos. Las reservas con anticipo se cobran y se abonan a la cuenta. |
 | **4 · Comercial** | 5 a 7 semanas | M6 avanzado (consolidado, ingeniería de menú, alertas), M7 | Un restaurante que no es del piloto se configura sin desarrollo a la medida |
 | **5 · Integraciones y canales** | Por estimar | Notificaciones por WhatsApp, SMS y correo (D-03), integración directa con datáfonos (ADR-007), pasarela de pagos para reservas (ADR-012), foto al marcar asistencia | Cada integración opera en al menos 1 sede |

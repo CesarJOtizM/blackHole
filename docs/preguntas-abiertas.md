@@ -3,13 +3,15 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Vivo |
-| Versión | 0.14 |
-| Fecha | 2026-11-05 |
+| Versión | 0.15 |
+| Fecha | 2026-11-19 |
 | Relación | [Roadmap](roadmap.md), [PRD-00, sección 14](prd/PRD-00-vision-producto.md), [TRD-00, secciones 8.4 y 18](trd/TRD-00-arquitectura-base.md) |
 
 Este es el único lugar donde vive una pregunta sin respuesta. Cada documento que dependa de una la cita por su código (`PA-10`) y no la repite. Cuando llega la respuesta, se anota aquí, se pasa a la sección 2 y se corrigen primero los maestros y después los módulos (roadmap, sección 1).
 
 Una entrega no empieza su diseño con una pregunta abierta que la bloquee.
+
+Las entregas 2.1 a 2.11 están archivadas. La 2.1 está en `openspec/changes/archive/2026-11-13-p2-01-ingredients-and-recipes/`. El resto está en `openspec/changes/archive/2026-11-19-p2-*`. Las citas `p2-*` de este registro apuntan a esas carpetas.
 
 ## 1. Abiertas
 

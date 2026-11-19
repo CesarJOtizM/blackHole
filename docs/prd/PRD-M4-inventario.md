@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.4 |
-| Fecha | 2026-10-17 |
+| Versión | 0.5 |
+| Fecha | 2026-11-19 |
 | Fase | 2 |
 | Hereda de | [PRD-00](PRD-00-vision-producto.md) |
 | TRD asociado | [TRD-M4](../trd/TRD-M4-inventario.md) |
@@ -14,16 +14,17 @@
 
 M4 sabe qué se gastó, qué hay y qué se puede volver a preparar. El stock vive en el punto de la sede y en las bodegas. Las recetas son de la marca. Una venta no se frena porque el conteo quede negativo; sí se frena un plato cuando alguien confirma que hoy no se repone.
 
+El corte en la nube de las entregas 2.1 a 2.11 está cerrado desde el 2026-11-19: el software está archivado y en `master`. Corre en la API central, con los interruptores de inventario apagados hasta que se enciendan. El nodo de la sede, el nodo de la bodega general y la recepción sin internet siguen en la [fase híbrida](../roadmap.md#8-fase-híbrida).
+
 ## 2. Alcance
 
 **Incluye**
 
 - Insumos con unidad de compra, de inventario y de receta.
 - Recetas por producto y variante, sub-recetas, rendimiento, modificadores y versiones. Importación desde Excel.
-- Compras, recepción a costo real, costo promedio, proveedores.
-- Documento soporte y carga de facturas de proveedores, por Factus.
+- Compras, recepción a costo real, costo promedio, proveedores. El documento soporte y el XML de la factura del proveedor no entran: los lleva el contador por fuera (D-14).
 - Producción de preparaciones intermedias. El costo es configurable: promedio de los insumos consumidos, o costo estándar (D-26).
-- Traslados: solicitado, despachado, en tránsito, recibido, recibido con diferencias. Incluye bodega general y traslados entre sedes. El costo del origen viaja tal cual (D-27). M4 dispara la impresión del comprobante de traslado; las plantillas y el controlador son compartidos (`shared/printing`).
+- Traslados: solicitado, en tránsito, recibido, recibido con diferencias. El despacho lo deja en tránsito. Incluye bodega general y traslados entre sedes. El costo del origen viaja tal cual (D-27). M4 dispara la impresión del comprobante de traslado; las plantillas y el controlador son compartidos (`shared/printing`).
 - Bodega general del piloto con su propio nodo en modo bodega, con internet y personal propio (D-04).
 - Mermas, conteos y ajustes contra el teórico. Un ajuste por encima del tope pide aprobación; el tope es configurable y parte de $1.000 (D-28).
 - Unidades posibles, ingrediente limitante y disponibilidad en el menú del mesero.
@@ -83,7 +84,7 @@ Criterios de aceptación:
 
 Criterios de aceptación:
 
-- [ ] Dado un traslado, cuando la bodega despacha y el punto recibe, entonces pasa por solicitado, despachado, en tránsito y recibido. El comprobante lleva QR.
+- [ ] Dado un traslado, cuando la bodega despacha y el punto recibe, entonces pasa por solicitado, en tránsito y recibido. El comprobante lleva QR.
 - [ ] Si lo recibido no coincide, queda "recibido con diferencias" y hace falta permiso para aceptarlo.
 - [ ] Durante un corte: bodega de la sede y punto, en el mismo nodo, siguen. Entre dos nodos, cada uno registra su mitad y se reconcilian al reconectar.
 - [ ] Queda auditado: quién despachó, quién recibió y la diferencia.
@@ -153,7 +154,7 @@ M6 calcula [PRD-00, 8.3](PRD-00-vision-producto.md): costo de alimentos, teóric
 | Conteo físico | Diferencia contra el teórico registrada |
 | Ciclo bodega general → punto | Completo, incluso si la sede recibe sin internet |
 | Alertas | Al menos un caso real avisado antes del quiebre |
-| Teórico contra real | Medido en al menos 3 sedes durante 1 mes |
+| Teórico contra real | El reporte existe en la nube. La medición de un mes en tres sedes no aplica: el piloto se canceló |
 
 ## 9. Preguntas abiertas
 

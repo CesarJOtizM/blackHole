@@ -81,6 +81,8 @@ All other capabilities are created and owned by a single change.
 | 2.10 | `p2-10-inventory-reports` | reporting Δ | 1.11, 2.1–2.3, 2.5–2.8 |
 | 2.11 | `p2-11-six-site-rollout` | site-rollout Δ | 0.3, 1.14, 2.5, 2.6, 2.10 |
 
+Deliveries 2.1–2.11 are archived. `p2-01` is under `openspec/changes/archive/2026-11-13-p2-01-ingredients-and-recipes/`. The rest are under `openspec/changes/archive/2026-11-19-p2-*`. Those archives record the cloud software. Hybrid sync, the warehouse node, supplier support documents, and the cancelled six-site visit stay outside them.
+
 ## Phase 3 · Delivery and reservations
 
 | Delivery | Change | Capabilities | Depends on |

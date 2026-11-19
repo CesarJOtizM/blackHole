@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.5 |
-| Fecha | 2026-10-17 |
+| Versión | 0.6 |
+| Fecha | 2026-11-19 |
 | Fase | 1 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | PRD asociado | [PRD-M3](../prd/PRD-M3-facturacion.md) |
@@ -63,7 +63,8 @@ El trabajo de impresión (`PrintJob`: plantilla, ancho 80 o 58, reintentos, impr
 | `RecordBillingData`, `ValidateOtp` | Token de cuenta, consentimiento | Datos por empresa. El OTP no revela datos a quien solo sabe el documento | `BillingDataReceived` hacia el nodo | Nube |
 | `Reinvoice` | Factura aceptada a consumidor final | Dentro del plazo. Nota primero. Aprobación si la empresa la pide | `Reinvoiced` | Nube |
 | `PrintInvoice`, `PrintReceipt`, `Reprint` | Plantilla de factura o comprobante | Tope de reimpresión. Respaldo si la principal falla (lo resuelve `shared/printing`) | Auditoría de reimpresión | Nodo o puente |
-| Documento soporte y XML de proveedor | Compra de M4 | Fase 2. Mismo puerto de Factus | `DocumentConsumed` | Nube |
+
+La compra de M4 no llama a Factus. El documento soporte y el XML del proveedor no se emiten (D-14). El cierre de la fase 2 dejó esa compra como orden y recepción.
 
 ## 5. Contratos
 

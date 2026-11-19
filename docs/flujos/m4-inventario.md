@@ -3,11 +3,13 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.3 |
-| Fecha | 2026-10-17 |
+| Versión | 0.4 |
+| Fecha | 2026-11-19 |
 | Fuentes | [PRD-00 §6.6 y M4](../prd/PRD-00-vision-producto.md), [PRD-M4](../prd/PRD-M4-inventario.md), [TRD-M4](../trd/TRD-M4-inventario.md), [TRD-00 §9](../trd/TRD-00-arquitectura-base.md) |
 
 Cada sede tiene un inventario de punto. Las bodegas lo reabastecen. Las ventas descuentan ingredientes al enviar a cocina, según la receta. El stock puede quedar negativo: la venta no se detiene. Los nombres de casos de uso y eventos son los de [TRD-M4](../trd/TRD-M4-inventario.md).
+
+Desde el 2026-11-19 estos recorridos están cerrados en la nube: compras, producción, traslado, recepción, conteo, merma, consumo de la venta, unidades posibles y alertas. El documento soporte del proveedor no forma parte (D-14). El despacho de un traslado lo deja en tránsito; no hay un estado guardado distinto llamado despachado. Recibir sin internet y el nodo de la bodega general siguen en la fase híbrida.
 
 ## Cómo se conecta
 
@@ -74,7 +76,7 @@ La bodega general del piloto opera con su propio nodo en modo bodega (D-04), as�
 
 Si el destino todavía no tiene internet, el comprobante impreso del despacho lleva un QR. El punto lo escanea y registra la recepción sin esperar la sincronización. M4 dispara ese comprobante; la plantilla y el controlador viven en `shared/printing`.
 
-Estados del traslado: solicitado, despachado, en tránsito, recibido, recibido con diferencias. El costo que viaja es el del origen en el despacho, sin sumarle nada (D-27).
+Estados guardados del traslado: solicitado, en tránsito, recibido, recibido con diferencias. El despacho lo deja en tránsito. El costo que viaja es el del origen en el despacho, sin sumarle nada (D-27).
 
 ## Producción
 

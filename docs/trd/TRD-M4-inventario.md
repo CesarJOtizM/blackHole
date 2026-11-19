@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.3 |
-| Fecha | 2026-10-17 |
+| Versión | 0.4 |
+| Fecha | 2026-11-19 |
 | Fase | 2 |
 | Hereda de | [TRD-00](TRD-00-arquitectura-base.md) |
 | PRD asociado | [PRD-M4](../prd/PRD-M4-inventario.md) |
@@ -28,6 +28,7 @@
 | "Hoy no se repone" | Lo propone el sistema y lo confirma una persona. Hasta entonces no se retiran líneas |
 | Impresión | M4 dispara el comprobante de traslado por el puerto `Printer`, con las plantillas de `shared/printing` |
 | Código | `contexts/inventory/domain`, `contexts/inventory/application`, `contexts/inventory/adapters` |
+| Corte cerrado | Desde el 2026-11-19 el inventario de la nube corre en `apps/api-cloud`, sobre PostgreSQL. Los interruptores nacen apagados. El libro SQLite, la outbox del nodo y el drenaje al reconectar no se construyeron: esperan la fase híbrida. Un traslado guardado usa `requested`, `in_transit`, `received` o `received_with_differences`. El despacho escribe `in_transit` |
 
 ## 2. Modelo de dominio
 
@@ -37,7 +38,7 @@
 | Entidad | `Ingredient` | Tres unidades (compra, inventario, receta) y sus factores de conversión. El factor no es cero |
 | Agregado | `Recipe` | Por producto y variante. Sub-recetas sin ciclo. Versión inmutable una vez usada en un consumo |
 | Regla | `RecipeExplosion` | Aplica rendimiento y modificadores. Devuelve cantidades en unidad de inventario |
-| Agregado | `Transfer` | Estados en orden: `requested`, `dispatched`, `in_transit`, `received`, `received_with_differences`. Las dos mitades comparten el identificador. La diferencia no se pierde |
+| Agregado | `Transfer` | Estados guardados, en orden: `requested`, `in_transit`, `received`, `received_with_differences`. El despacho escribe `in_transit` y emite `TransferDispatched`. Las dos mitades comparten el identificador. La diferencia no se pierde |
 | Regla | `PossibleUnits` | Mínimo entre ingredientes del punto. Identifica el limitante. La bodega se informa aparte, no habilita el menú |
 | Agregado | `ShortageAlert` | `open`, `seen`, `resolved`. Histéresis: no reabre hasta volver a cruzar el umbral. Se resuelve sola al superar el punto de reposición |
 | Entidad | `NoRestockToday` | La crea una persona. Vale hasta el fin del servicio o hasta quitarla |
@@ -68,7 +69,7 @@ El costo promedio cambia solo con una entrada a costo real. Una merma no modific
 | `DispatchTransfer` | Traslado solicitado | Registra la salida en el origen al costo de esa ubicación, sin sumar nada (D-27), e imprime el comprobante con QR | `TransferDispatched` | Dueño del origen |
 | `ReceiveTransfer`, `ReceiveTransferWithDifferences` | Traslado despachado, o QR del comprobante | Misma id que la salida. Entra al costo del despacho (D-27). La diferencia exige permiso | `TransferReceived` | Dueño del destino |
 | `RecordStockCount`, `ApproveAdjustment` | Cantidad contada | El ajuste es un movimiento, no un saldo editado. Por encima de $1.000, o del tope de la sede, pide aprobación (D-28) | `StockMoved` | Dueño de la ubicación |
-| `EvaluateLevels`, `EvaluateCoverage`, `CalculatePossibleUnits` | Saldo o reloj de 15 min | Cobertura por día de la semana | `ShortageAlertOpened` o `ShortageAlertResolved` | Nodo de la sede, y la nube para el consolidado |
+| `EvaluateLevels`, `EvaluateCoverage`, `CalculatePossibleUnits` | Saldo o reloj de 15 min | Cobertura por día de la semana | `ShortageAlertOpened` o `ShortageAlertResolved` | Nube en el corte cerrado. En híbrido, el nodo de la sede; la nube sigue con el consolidado |
 | `ConfirmNoRestockToday` | Plato y servicio | Solo una persona. Propone si no hay stock ni traslado en camino | `AvailabilityChanged` | Dueño del punto |
 | `ProposeLevels` | Histórico | No activa solo | Propuesta | Nube |
 
@@ -139,7 +140,7 @@ Hereda el ciclo de [TRD-00, sección 16](TRD-00-arquitectura-base.md).
 - [ ] Cada caso de uso de la sección 4 tiene prueba con adaptadores en memoria
 - [ ] Cada puerto de salida tiene una suite de contrato corrida por todos sus adaptadores
 - [ ] Rutas que modifican datos declaran permiso
-- [ ] Sincronización del traslado entre nodos: duplicado, desorden y corte
+- [ ] Sincronización del traslado entre nodos: duplicado, desorden y corte. Queda en la fase híbrida; el corte cerrado no la incluye
 - [ ] Un recorrido Playwright: recibir un traslado por QR y ver la diferencia
 
 ## 10. Riesgos y ADRs
