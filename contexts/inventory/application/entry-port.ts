@@ -128,3 +128,40 @@ export {
   UnknownRecipeVersion,
   ZeroUnitFactor,
 } from "#domain/recipe-catalog.js";
+export type {
+  RequestTransferInput,
+  RequestTransferLine,
+} from "#application/request-transfer/request-transfer.js";
+export {
+  RequestTransfer,
+  UnlinkedWarehouse,
+} from "#application/request-transfer/request-transfer.js";
+export type {
+  DispatchTransferInput,
+  OriginStock,
+  TransferOutRecord,
+} from "#application/dispatch-transfer/dispatch-transfer.js";
+export {
+  DispatchTransfer,
+  TransferStock,
+  UnknownTransfer as UnknownTransferDispatch,
+} from "#application/dispatch-transfer/dispatch-transfer.js";
+export type {
+  DestinationBalance,
+  ReceiveTransferInput,
+  ReceiveTransferLine,
+} from "#application/receive-transfer/receive-transfer.js";
+export {
+  DestinationStock,
+  ReceiveTransfer,
+  UnauthorizedTransferDifference,
+  UnknownTransfer as UnknownTransferReceipt,
+} from "#application/receive-transfer/receive-transfer.js";
+export type {
+  OnHandReading,
+  SuggestReplenishmentInput,
+} from "#application/suggest-replenishment/suggest-replenishment.js";
+export {
+  OnHandStock,
+  SuggestReplenishment,
+} from "#application/suggest-replenishment/suggest-replenishment.js";

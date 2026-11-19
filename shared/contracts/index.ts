@@ -182,6 +182,20 @@ export {
   reprintDocumentCommand,
 } from "#contracts/printing.js";
 export {
+  type ConfigureProductionCostCommand,
+  type CorrectProductionCommand,
+  configureProductionCostCommand,
+  correctProductionCommand,
+  type ProductionCorrection,
+  type ProductionCostPolicy,
+  type ProductionRun,
+  productionCorrection,
+  productionCostPolicy,
+  productionRun,
+  type RecordProductionCommand,
+  recordProductionCommand,
+} from "#contracts/production.js";
+export {
   type PurchaseReceipt,
   purchaseReceipt,
   type ReceivePurchaseCommand,
@@ -255,6 +269,18 @@ export {
   type SettleTipsCommand,
   settleTipsCommand,
 } from "#contracts/tips.js";
+export {
+  type DispatchTransferCommand,
+  dispatchTransferCommand,
+  type ReceiveTransferCommand,
+  type RecordedTransfer,
+  type RequestTransferCommand,
+  receiveTransferCommand,
+  recordedTransfer,
+  requestTransferCommand,
+  type StockLevelsCommand,
+  stockLevelsCommand,
+} from "#contracts/transfer.js";
 export {
   type OrganizationChanged,
   organizationChanged,

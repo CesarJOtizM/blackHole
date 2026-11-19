@@ -5,9 +5,13 @@ phase: 2
 modules: [M4, M0, M3]
 bounded_contexts: [inventory, platform, contracts, sync, printing]
 apps: [api-cloud, local-node, admin-web]
-status: applying
-artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: partial, verify: pending, archive: pending}
+status: applied
+artifacts: {proposal: done, specs: done, design: done, tasks: done, apply: done, verify: pass, archive: pending}
 depends_on: [p2-02-sale-consumption, p2-03-purchasing, p0-03-organization, p0-04-identity-and-devices, p0-05-roles-and-permissions, p0-07-hybrid-resilience, p1-06-printing]
+dependency_verification:
+  p2-02-sale-consumption: {status: applied, verify: fail, archive: pending}
+  p2-03-purchasing: {status: applied, verify: pass, archive: pending}
+archive_blocked: true
 source_docs:
   - docs/roadmap.md
   - docs/prd/PRD-00-vision-producto.md

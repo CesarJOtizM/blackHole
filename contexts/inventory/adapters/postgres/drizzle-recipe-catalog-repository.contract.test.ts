@@ -9,6 +9,10 @@ const migration = readFileSync(
   fileURLToPath(new URL("./0001_recipe_catalog.sql", import.meta.url)),
   "utf8",
 );
+const productionMigration = readFileSync(
+  fileURLToPath(new URL("./0006_production.sql", import.meta.url)),
+  "utf8",
+);
 
 const clients: PGlite[] = [];
 
@@ -21,6 +25,7 @@ recipeCatalogRepositoryContract(async () => {
   clients.push(client);
 
   await client.exec(migration);
+  await client.exec(productionMigration);
 
   return new DrizzleRecipeCatalogRepository(client);
 });

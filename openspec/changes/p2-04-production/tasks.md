@@ -41,19 +41,19 @@ Cloud-only `api-cloud`. No `local-node`, `shared/sync`, `after_sales`, or sale e
 
 ## 3. Persistence
 
-- [ ] 3.1 RED `contexts/inventory/application/ports/production-repository.contract.ts` on memory: balances match, other tenant hidden, failed output rolls back. No Drizzle mock.
-- [ ] 3.2 GREEN `contexts/inventory/adapters/memory/in-memory-production-repository.ts`. Skip `after_sales`.
-- [ ] 3.3 RED that contract on PGlite with `SET LOCAL` `app.tenant_id`.
-- [ ] 3.4 GREEN `contexts/inventory/adapters/postgres/schema.ts` and `drizzle-production-repository.ts`: three production tables plus `output_quantity`, one transaction, next SQL after purchasing. No backfill.
-- [ ] 3.5 `contexts/inventory/adapters/sqlite/schema.ts`: parity only. No wiring.
+- [x] 3.1 RED `contexts/inventory/application/ports/production-repository.contract.ts` on memory: balances match, other tenant hidden, failed output rolls back. No Drizzle mock.
+- [x] 3.2 GREEN `contexts/inventory/adapters/memory/in-memory-production-repository.ts`. Skip `after_sales`.
+- [x] 3.3 RED that contract on PGlite with `SET LOCAL` `app.tenant_id`.
+- [x] 3.4 GREEN `contexts/inventory/adapters/postgres/schema.ts` and `drizzle-production-repository.ts`: three production tables plus `output_quantity`, one transaction, next SQL after purchasing. No backfill.
+- [x] 3.5 `contexts/inventory/adapters/sqlite/schema.ts`: parity only. No wiring.
 
 ## 4. Cloud HTTP
 
-- [ ] 4.1 `shared/contracts/production.ts` and `shared/contracts/index.ts`: strict Zod command, policy, and run. Add `inventory.record-production` in `contexts/platform/domain/permission-catalog.ts`.
-- [ ] 4.2 RED `apps/api-cloud/test/http/production.controller.test.ts`: Fastify `inject`, no listen. Flag off, waiter denied, variance hidden without `inventory.view-cost`, Zod 400. No queue.
-- [ ] 4.3 GREEN `apps/api-cloud/src/http/production.controller.ts` and `apps/api-cloud/src/composition/application-module.ts`: `productionEnabled`, record and correct permissions, cost redaction. Postgres only.
+- [x] 4.1 `shared/contracts/production.ts` and `shared/contracts/index.ts`: strict Zod command, policy, and run. Add `inventory.record-production` in `contexts/platform/domain/permission-catalog.ts`.
+- [x] 4.2 RED `apps/api-cloud/test/http/production.controller.test.ts`: Fastify `inject`, no listen. Flag off, waiter denied, variance hidden without `inventory.view-cost`, Zod 400. No queue.
+- [x] 4.3 GREEN `apps/api-cloud/src/http/production.controller.ts` and `apps/api-cloud/src/composition/application-module.ts`: `productionEnabled`, record and correct permissions, cost redaction. Postgres only.
 
 ## 5. Screens
 
-- [ ] 5.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: policy, run, variance when present.
-- [ ] 5.2 `apps/venue-app/src/kitchen/kitchen-screen.tsx`: same POST. No local run.
+- [x] 5.1 `apps/admin-web/src/inventory/inventory-screen.tsx`: policy, run, variance when present.
+- [x] 5.2 `apps/venue-app/src/kitchen/kitchen-screen.tsx`: same POST. No local run.

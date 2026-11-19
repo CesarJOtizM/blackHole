@@ -47,6 +47,7 @@ import {
   InMemoryStockLedgerRepository,
   InMemoryStockMovementQueue,
 } from "@blackhole/inventory/adapters/memory/in-memory-stock-ledger-repository";
+import { DrizzleProductionRepository } from "@blackhole/inventory/adapters/postgres/drizzle-production-repository";
 import { DrizzlePurchasingRepository } from "@blackhole/inventory/adapters/postgres/drizzle-purchasing-repository";
 import {
   DrizzlePointOfSaleDirectory,
@@ -54,14 +55,23 @@ import {
   DrizzleStockMovementQueue,
 } from "@blackhole/inventory/adapters/postgres/drizzle-stock-ledger-repository";
 import {
+  AcceptStockLevels,
+  ApproveAdjustment,
+  ConfirmNoRestockToday,
+  CreatePurchaseOrder,
+  DestinationStock,
   ExplodeRecipe,
   RecordWaste,
   RegisterSaleConsumption,
   ReturnStock,
+  SetIngredientCategory,
+  SetStockLevels,
+  TransferStock,
 } from "@blackhole/inventory/application/entry-port";
 import { InventoryLocationDirectory } from "@blackhole/inventory/application/ports/inventory-location-directory";
 import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
 import { PointOfSaleDirectory } from "@blackhole/inventory/application/ports/point-of-sale-directory";
+import { ProductionRepository } from "@blackhole/inventory/application/ports/production-repository";
 import { PublishedPurchaseFactor } from "@blackhole/inventory/application/ports/published-purchase-factor";
 import { PurchasingRepository } from "@blackhole/inventory/application/ports/purchasing-repository";
 import { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
@@ -72,7 +82,11 @@ import { SitePrice } from "@blackhole/inventory/application/ports/site-price";
 import { StockAlertPublisher } from "@blackhole/inventory/application/ports/stock-alert-publisher";
 import { StockLedgerRepository } from "@blackhole/inventory/application/ports/stock-ledger-repository";
 import { StockMovementQueue } from "@blackhole/inventory/application/ports/stock-movement-queue";
+import { TransferRepository } from "@blackhole/inventory/application/ports/transfer-repository";
+import { TransferVoucher } from "@blackhole/inventory/application/ports/transfer-voucher";
 import { VenueDirectory as RecipeVenueDirectory } from "@blackhole/inventory/application/ports/venue-directory";
+import { WarehouseSupply } from "@blackhole/inventory/application/ports/warehouse-supply";
+import { NoRestockToday } from "@blackhole/inventory/domain";
 import { InMemoryFiscalProfileRepository } from "@blackhole/invoicing/adapters/memory/in-memory-fiscal-profile-repository";
 import { InMemoryTaxRuleRepository } from "@blackhole/invoicing/adapters/memory/in-memory-tax-rule-repository";
 import {
@@ -290,6 +304,7 @@ import {
   PrintingController,
   ReprintCap,
 } from "#src/http/printing.controller.js";
+import { ProductionController } from "#src/http/production.controller.js";
 import { PurchasingController } from "#src/http/purchasing.controller.js";
 import {
   QrPaymentController,
@@ -310,6 +325,13 @@ import { TableQrAdminController } from "#src/http/table-qr-admin.controller.js";
 import { TakeOrderController } from "#src/http/take-order.controller.js";
 import { TaxConfigurationController } from "#src/http/tax-configuration.controller.js";
 import { TaxQuoteController } from "#src/http/tax-quote.controller.js";
+import {
+  OrganizationWarehouseSupply,
+  PendingTransferVoucher,
+  PostgresDestinationStock,
+  PostgresTransferStock,
+  TransfersController,
+} from "#src/http/transfers.controller.js";
 import { UpdateMenuController } from "#src/http/update-menu.controller.js";
 import {
   StructurePrinters,
@@ -383,6 +405,8 @@ export interface CloudApplicationDependencies {
   >[0];
   saleConsumptionEnabled?: boolean;
   purchasingEnabled?: boolean;
+  productionEnabled?: boolean;
+  transfersEnabled?: boolean;
 }
 
 const openStockLedger = (
@@ -447,6 +471,70 @@ const openPurchasing = (
         provide: PurchaseAverageCost,
         useValue: new PostgresPurchaseAverageCost(purchasing),
       },
+    ],
+  };
+};
+
+const openProduction = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): { controllers: (typeof ProductionController)[]; providers: Provider[] } => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Production requires PostgreSQL.");
+  }
+
+  return {
+    controllers: [ProductionController],
+    providers: [
+      {
+        provide: ProductionRepository,
+        useValue: new DrizzleProductionRepository(database),
+      },
+    ],
+  };
+};
+
+const openTransfers = (
+  database:
+    | ConstructorParameters<typeof DrizzleStockLedgerRepository>[0]
+    | undefined,
+  enabled: boolean,
+): { controllers: (typeof TransfersController)[]; providers: Provider[] } => {
+  if (!enabled) {
+    return { controllers: [], providers: [] };
+  }
+
+  if (!database) {
+    throw new Error("Transfers require PostgreSQL.");
+  }
+
+  const transfers = new DrizzleTransferRepository(database);
+
+  return {
+    controllers: [TransfersController],
+    providers: [
+      { provide: TransferRepository, useValue: transfers },
+      {
+        provide: TransferStock,
+        useValue: new PostgresTransferStock(database, transfers),
+      },
+      {
+        provide: DestinationStock,
+        useValue: new PostgresDestinationStock(transfers),
+      },
+      {
+        provide: WarehouseSupply,
+        useFactory: (organizations: OrganizationRepository) =>
+          new OrganizationWarehouseSupply(organizations),
+        inject: [OrganizationRepository],
+      },
+      { provide: TransferVoucher, useValue: new PendingTransferVoucher() },
     ],
   };
 };
@@ -531,6 +619,14 @@ export class ApplicationModule implements NestModule {
       dependencies.inventoryDatabase,
       dependencies.purchasingEnabled === true,
     );
+    const production = openProduction(
+      dependencies.inventoryDatabase,
+      dependencies.productionEnabled === true,
+    );
+    const transfers = openTransfers(
+      dependencies.inventoryDatabase,
+      dependencies.transfersEnabled === true,
+    );
 
     return {
       module: ApplicationModule,
@@ -586,9 +682,13 @@ export class ApplicationModule implements NestModule {
         QrPaymentController,
         HealthController,
         ...purchasing.controllers,
+        ...production.controllers,
+        ...transfers.controllers,
       ],
       providers: [
         ...purchasing.providers,
+        ...production.providers,
+        ...transfers.providers,
         {
           provide: VenueOperationRepository,
           useValue: dependencies.venueOperations,

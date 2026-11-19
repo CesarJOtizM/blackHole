@@ -55,11 +55,21 @@ export function prepareRecipeCopyDatabase(client: DatabaseSync): void {
     )
     .get();
 
-  if (existing !== undefined) {
-    return;
+  if (existing === undefined) {
+    client.exec(migrationSql);
   }
 
-  client.exec(migrationSql);
+  const outputQuantity = client
+    .prepare(
+      "SELECT name FROM pragma_table_info('recipe_copy_recipes') WHERE name = 'output_quantity'",
+    )
+    .get();
+
+  if (outputQuantity === undefined) {
+    client.exec(
+      "ALTER TABLE recipe_copy_recipes ADD COLUMN output_quantity integer",
+    );
+  }
 }
 
 interface CopyRows {

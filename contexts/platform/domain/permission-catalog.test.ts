@@ -93,6 +93,7 @@ const expectedMatrix: Record<PermissionCode, Record<MatrixRole, Grant>> = {
   [PERMISSION.AUDIT_VIEW]: cells(Y, Y, L, N, N, N, N, N),
   [PERMISSION.TAX_CONFIGURE]: cells(Y, N, N, N, N, N, N, N),
   [PERMISSION.ORGANIZATION_STRUCTURE]: cells(Y, N, N, N, N, N, N, N),
+  [PERMISSION.INVENTORY_RECORD_PRODUCTION]: cells(Y, Y, Y, N, N, N, Y, Y),
 };
 
 const matrixChecked: Record<
