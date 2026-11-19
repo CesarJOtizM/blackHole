@@ -3,8 +3,8 @@
 | Campo | Valor |
 |-------|-------|
 | Estado | Borrador |
-| Versión | 0.15 |
-| Fecha | 2026-11-05 |
+| Versión | 0.16 |
+| Fecha | 2026-11-19 |
 | Hereda de | [PRD-00](prd/PRD-00-vision-producto.md), sección 11 · [TRD-00](trd/TRD-00-arquitectura-base.md) |
 | Preguntas abiertas | [Registro](preguntas-abiertas.md) |
 
@@ -38,7 +38,7 @@ En el MVP:
 
 `Pendiente` → `En definición` → `En construcción` → `En validación` → `Cerrada`
 
-`Cerrada` quiere decir que el software de esa entrega está archivado y su verificación pasó. El ensayo con el personal y el hardware del piloto sigue en la entrega 1.14. La 0.1 espera la visita a la sede. La 0.4, la 0.5 y la 0.8 siguen en validación: su verificación quedó parcial o en fallo.
+`Cerrada` quiere decir que el software de esa entrega está archivado y su verificación pasó. El piloto se canceló, así que no hay ensayo en sede: la 1.14 y el despliegue de la 2.11 quedan cerrados sin visita ni medición en local. La 0.1 espera la visita a la sede. La 0.4, la 0.5 y la 0.8 siguen en validación: su verificación quedó parcial o en fallo. El corte híbrido (D-37) sigue fuera de la fase 2.
 
 ## 2. Fase 0 · Fundación
 
@@ -86,16 +86,16 @@ Todas estas preguntas viven en el [registro](preguntas-abiertas.md).
 | Entrega | Alcance | Criterio de salida | Estado |
 |---------|---------|--------------------|--------|
 | **2.1 Insumos y recetas** | Insumos con unidades de compra, inventario y receta. Recetas por producto y variante, sub-recetas, rendimiento, ajuste por modificadores, versionado, importación desde Excel | Las recetas de la sede piloto cargadas, con su costo teórico y margen por plato | Cerrada |
-| **2.2 Descuento por venta** | Consumo al enviar a cocina, devolución si se anula antes de empezar, merma si se anula después, inventario negativo con alerta | El consumo teórico de un servicio coincide con las recetas de lo vendido | En validación |
-| **2.3 Compras** | Proveedores, órdenes de compra, recepción a costo real y costo promedio. El costo es el valor registrado, sin separar el IVA (D-15). Sin documento soporte ni recepción de facturas de proveedores (D-14) | Una semana de compras reales registradas a ese costo | En construcción |
-| **2.4 Producción** | Preparaciones intermedias que consumen ingredientes y generan stock propio. El costo de lo producido es configurable: promedio de los insumos consumidos, o costo estándar (D-26) | Las preparaciones de la sede piloto se registran y descuentan bien | En definición |
-| **2.5 Bodegas y traslados** | Bodega de la sede y bodega general en la nube (D-37). El nodo en modo bodega (ADR-010, D-04) y operarla desde la web para clientes pequeños (PA-44) quedan en la [fase híbrida](#8-fase-híbrida). Traslados con todos sus estados, QR en el comprobante de despacho, traslados entre sedes, reabastecimiento con sugerencia por stock mínimo. El traslado mueve el costo del origen tal cual (D-27) | Un ciclo completo de reabastecimiento desde la bodega general hasta una sede, las dos en la nube | En definición |
-| **2.6 Mermas y conteos** | Mermas y bajas con motivo, conteos totales o por categoría, ajuste contra el inventario teórico. Un ajuste por encima del tope pide aprobación; el tope es configurable y parte de $1.000 (D-28). El conteo es a ciegas (D-49) | Un conteo físico completo con su diferencia contra el teórico | En definición |
-| **2.7 Cuánto se puede producir** | Unidades posibles con el punto y con reabastecimiento, ingrediente limitante, disponibilidad automática en el menú del mesero | El menú del mesero marca agotado y pocas unidades en tiempo real | En definición |
-| **2.8 Alerta temprana de escasez** | Niveles por insumo y ubicación, alerta por cobertura, alerta de platos, niveles sugeridos, notificación por rol, escalamiento, reabastecimiento u orden de compra con un toque | Las alertas se disparan antes de quedarse sin producto en al menos un caso real | En definición |
-| **2.9 No se repone hoy** | Propuesta del sistema, confirmación de cocina o administración, aviso al mesero, salida de la cola, confirmación de cliente avisado | Un plato marcado sale del menú y los meseros afectados reciben el aviso al instante | En definición |
-| **2.10 Reportes de inventario** | Reportes de costos e inventario de la sección 8.3 | El administrador ve el costo de alimentos y la diferencia entre teórico y real por sede | En definición |
-| **2.11 Despliegue en 6 sedes** | Visita técnica, hardware, carga de datos y capacitación en las 5 sedes restantes. El piloto se canceló: no hay visita ni kit. La carga y la capacitación reutilizan comandos que ya existen | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes. No aplica sin sede piloto | En definición |
+| **2.2 Descuento por venta** | Consumo al enviar a cocina, devolución si se anula antes de empezar, merma si se anula después, inventario negativo con alerta | El consumo teórico de un servicio coincide con las recetas de lo vendido | Cerrada |
+| **2.3 Compras** | Proveedores, órdenes de compra, recepción a costo real y costo promedio. El costo es el valor registrado, sin separar el IVA (D-15). Sin documento soporte ni recepción de facturas de proveedores (D-14) | Una semana de compras reales registradas a ese costo. El software quedó archivado; la semana real no aplica sin sede piloto | Cerrada |
+| **2.4 Producción** | Preparaciones intermedias que consumen ingredientes y generan stock propio. El costo de lo producido es configurable: promedio de los insumos consumidos, o costo estándar (D-26) | Las preparaciones de la sede piloto se registran y descuentan bien | Cerrada |
+| **2.5 Bodegas y traslados** | Bodega de la sede y bodega general en la nube (D-37). El nodo en modo bodega (ADR-010, D-04) y operarla desde la web para clientes pequeños (PA-44) quedan en la [fase híbrida](#8-fase-híbrida). Traslados con todos sus estados, QR en el comprobante de despacho, traslados entre sedes, reabastecimiento con sugerencia por stock mínimo. El traslado mueve el costo del origen tal cual (D-27) | Un ciclo completo de reabastecimiento desde la bodega general hasta una sede, las dos en la nube | Cerrada |
+| **2.6 Mermas y conteos** | Mermas y bajas con motivo, conteos totales o por categoría, ajuste contra el inventario teórico. Un ajuste por encima del tope pide aprobación; el tope es configurable y parte de $1.000 (D-28). El conteo es a ciegas (D-49) | Un conteo físico completo con su diferencia contra el teórico. El software quedó archivado; el conteo en sede no aplica sin piloto | Cerrada |
+| **2.7 Cuánto se puede producir** | Unidades posibles con el punto y con reabastecimiento, ingrediente limitante, disponibilidad automática en el menú del mesero | El menú del mesero marca agotado y pocas unidades en tiempo real | Cerrada |
+| **2.8 Alerta temprana de escasez** | Niveles por insumo y ubicación, alerta por cobertura, alerta de platos, niveles sugeridos, notificación por rol, escalamiento, reabastecimiento u orden de compra con un toque | Las alertas se disparan antes de quedarse sin producto en al menos un caso real. El software quedó archivado; el caso en sede no aplica sin piloto | Cerrada |
+| **2.9 No se repone hoy** | Propuesta del sistema, confirmación de cocina o administración, aviso al mesero, salida de la cola, confirmación de cliente avisado | Un plato marcado sale del menú y los meseros afectados reciben el aviso al instante | Cerrada |
+| **2.10 Reportes de inventario** | Reportes de costos e inventario de la sección 8.3 | El administrador ve el costo de alimentos y la diferencia entre teórico y real por sede | Cerrada |
+| **2.11 Despliegue en 6 sedes** | Visita técnica, hardware, carga de datos y capacitación en las 5 sedes restantes. El piloto se canceló: no hay visita ni kit. La carga y la capacitación reutilizan comandos que ya existen | Diferencia entre inventario teórico y real medida en al menos 3 sedes durante 1 mes. No aplica sin sede piloto | Cerrada |
 
 ## 5. Fase 3 · Domicilios y reservas
 
