@@ -70,6 +70,23 @@ export interface StockCountDenied {
   outcome: "denied";
 }
 
+export interface StockCountSheetInput {
+  tenantId: string;
+  venueId: string;
+  locationId: string;
+  cutOff: string;
+  scope: CountScope;
+  category?: string;
+  sessionId: string;
+}
+
+export interface ReadyStockCountSheet {
+  outcome: "ready";
+  ingredientIds: readonly string[];
+}
+
+export type StockCountSheet = ReadyStockCountSheet | { outcome: "denied" };
+
 export type RecordStockCountResult =
   | PostedStockCount
   | StockCountNeedsAuthorizer
@@ -89,6 +106,27 @@ export class RecordStockCount {
     private readonly factors: PublishedPurchaseFactor,
     private readonly audits: RecordAuditEvent,
   ) {}
+
+  async sheet(input: StockCountSheetInput): Promise<StockCountSheet> {
+    const decision = await this.permissions.execute({
+      tenantId: input.tenantId,
+      sessionId: input.sessionId,
+      permission: PERMISSION.INVENTORY_COUNT,
+      target: { kind: "site", id: input.venueId, brandId: null },
+      value: null,
+      supportGrantId: null,
+      shiftTotals: { waiterVoidsBeforeKitchen: 0 },
+    });
+
+    if (decision.outcome !== "allowed") {
+      return { outcome: "denied" };
+    }
+
+    return {
+      outcome: "ready",
+      ingredientIds: await this.ingredientIds(input),
+    };
+  }
 
   async execute(input: RecordStockCountInput): Promise<RecordStockCountResult> {
     const cap = siteCap(input.siteCap);
@@ -187,6 +225,63 @@ export class RecordStockCount {
     };
   }
 
+  private async ingredientIds(
+    input: StockCountSheetInput,
+    chronological?: readonly CountLedgerLine[],
+  ): Promise<string[]> {
+    if (
+      input.scope === COUNT_SCOPE.CATEGORY &&
+      (input.category === undefined || input.category.length === 0)
+    ) {
+      throw new InvalidCount();
+    }
+
+    const lines =
+      chronological ??
+      (await this.counts.movementsAt(
+        input.tenantId,
+        input.venueId,
+        input.locationId,
+      ));
+    const ordered = chronological
+      ? lines
+      : lines.toSorted((left, right) => {
+          const byTime = left.occurredAt.localeCompare(right.occurredAt);
+
+          if (byTime !== 0) {
+            return byTime;
+          }
+
+          return left.id.localeCompare(right.id);
+        });
+    const cutOff = instant(input.cutOff);
+    const candidates: string[] = [];
+    const seen = new Set<string>();
+
+    for (const line of ordered) {
+      if (instant(line.occurredAt) > cutOff || seen.has(line.ingredientId)) {
+        continue;
+      }
+
+      seen.add(line.ingredientId);
+      candidates.push(line.ingredientId);
+    }
+
+    const categories = await Promise.all(
+      candidates.map((ingredientId) =>
+        this.classifications.find(input.tenantId, ingredientId),
+      ),
+    );
+
+    return candidates.filter((_ingredientId, index) => {
+      if (input.scope !== COUNT_SCOPE.CATEGORY) {
+        return true;
+      }
+
+      return categories[index]?.category === input.category;
+    });
+  }
+
   private async freeze(input: RecordStockCountInput): Promise<FrozenCount> {
     if (
       input.scope === COUNT_SCOPE.CATEGORY &&
@@ -229,31 +324,7 @@ export class RecordStockCount {
       });
     }
 
-    const cutOff = instant(input.cutOff);
-    const candidates: string[] = [];
-    const seen = new Set<string>();
-
-    for (const line of chronological) {
-      if (instant(line.occurredAt) > cutOff || seen.has(line.ingredientId)) {
-        continue;
-      }
-
-      seen.add(line.ingredientId);
-      candidates.push(line.ingredientId);
-    }
-
-    const categories = await Promise.all(
-      candidates.map((ingredientId) =>
-        this.classifications.find(input.tenantId, ingredientId),
-      ),
-    );
-    const expected = candidates.filter((_ingredientId, index) => {
-      if (input.scope !== COUNT_SCOPE.CATEGORY) {
-        return true;
-      }
-
-      return categories[index]?.category === input.category;
-    });
+    const expected = await this.ingredientIds(input, chronological);
     const counted = await Promise.all(
       input.lines.map(async (line) => ({
         ingredientId: line.ingredientId,

@@ -105,7 +105,7 @@ sequenceDiagram
   end
 ```
 
-Si el conteo es a ciegas, como el arqueo, está en el registro (PA-42). Un ajuste por encima del tope pide aprobación. El tope es configurable y, por defecto, $1.000 (D-28).
+El conteo es a ciegas, como el arqueo (D-49): quien cuenta ve los insumos y la unidad, y la diferencia aparece al enviar y al aprobar. Un ajuste por encima del tope pide aprobación. El tope es configurable y, por defecto, $1.000 (D-28).
 
 ## Alerta de escasez
 

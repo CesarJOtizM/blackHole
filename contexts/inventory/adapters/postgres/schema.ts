@@ -369,3 +369,45 @@ export const preparationStandardCosts = pgTable(
   (table) => [primaryKey({ columns: [table.tenantId, table.recipeId] })],
 );
 
+export const countSessions = pgTable(
+  "count_sessions",
+  {
+    tenantId: text("tenant_id").notNull(),
+    documentId: text("document_id").notNull(),
+    venueId: text("venue_id").notNull(),
+    locationId: text("location_id").notNull(),
+    cutOff: text("cut_off").notNull(),
+    status: text("status").notNull(),
+    valueCop: integer("value_cop").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.documentId] })],
+);
+
+export const countSessionLines = pgTable(
+  "count_session_lines",
+  {
+    tenantId: text("tenant_id").notNull(),
+    documentId: text("document_id").notNull(),
+    position: integer("position").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    quantity: integer("quantity").notNull(),
+    averageCost: integer("average_cost").notNull(),
+    valueCop: integer("value_cop").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.tenantId, table.documentId, table.ingredientId],
+    }),
+  ],
+);
+
+export const ingredientClassifications = pgTable(
+  "ingredient_classifications",
+  {
+    tenantId: text("tenant_id").notNull(),
+    ingredientId: text("ingredient_id").notNull(),
+    category: text("category").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.tenantId, table.ingredientId] })],
+);
+

@@ -157,5 +157,5 @@ M6 calcula [PRD-00, 8.3](PRD-00-vision-producto.md): costo de alimentos, teóric
 
 ## 9. Preguntas abiertas
 
-- PA-42: ¿el conteo de inventario es a ciegas, como el arqueo? Ver [registro](../preguntas-abiertas.md).
+- D-49: el conteo de inventario es a ciegas, como el arqueo. Ver [registro](../preguntas-abiertas.md).
 - PA-44: bodega general operada desde la web para clientes pequeños, después del piloto. Ver [registro](../preguntas-abiertas.md).

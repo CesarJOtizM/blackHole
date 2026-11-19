@@ -401,6 +401,16 @@ export const ordersRealtimeEvent = z.discriminatedUnion("kind", [
       ...realtimeIds,
     })
     .strict(),
+  z
+    .object({
+      kind: z.enum(["availability_changed"]),
+      tenantId: z.string().min(1),
+      venueId: z.string().min(1),
+      productId: z.string().min(1),
+      variantId: z.string().min(1).nullable(),
+      state: z.enum(["available", "low_units", "sold_out"]),
+    })
+    .strict(),
 ]);
 
 export type OrdersRealtimeEvent = z.infer<typeof ordersRealtimeEvent>;

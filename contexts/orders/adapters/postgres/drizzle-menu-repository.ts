@@ -4,6 +4,7 @@ import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import {
   comboComponents,
   combos,
+  menuInventoryStates,
   menus,
   modifiers,
   products,
@@ -101,6 +102,14 @@ async function deleteTree(
   await tx
     .delete(products)
     .where(and(eq(products.tenantId, tenantId), eq(products.menuId, menuId)));
+  await tx
+    .delete(menuInventoryStates)
+    .where(
+      and(
+        eq(menuInventoryStates.tenantId, tenantId),
+        eq(menuInventoryStates.menuId, menuId),
+      ),
+    );
   await tx
     .delete(venuePrices)
     .where(
@@ -202,10 +211,23 @@ async function insertTree(tx: Transaction, menu: Menu): Promise<void> {
     available: venuePrice.available,
     windowStart: venuePrice.window?.start ?? null,
     windowEnd: venuePrice.window?.end ?? null,
+    lowUnitsThreshold: venuePrice.lowUnitsThreshold ?? null,
   }));
 
   if (priceRows.length > 0) {
     await tx.insert(venuePrices).values(priceRows);
+  }
+
+  const inventoryRows = menu.inventoryStates.map((entry) => ({
+    tenantId,
+    menuId,
+    venueId: entry.venueId,
+    productId: entry.productId,
+    state: entry.state,
+  }));
+
+  if (inventoryRows.length > 0) {
+    await tx.insert(menuInventoryStates).values(inventoryRows);
   }
 }
 
@@ -240,6 +262,14 @@ async function restoreMenu(tx: Transaction, menuRow: MenuRow): Promise<Menu> {
     .from(venuePrices)
     .where(eq(venuePrices.menuId, menuRow.id))
     .orderBy(asc(venuePrices.venueId), asc(venuePrices.itemId));
+  const inventoryRows = await tx
+    .select()
+    .from(menuInventoryStates)
+    .where(eq(menuInventoryStates.menuId, menuRow.id))
+    .orderBy(
+      asc(menuInventoryStates.venueId),
+      asc(menuInventoryStates.productId),
+    );
   const menu = Menu.open({
     id: menuRow.id,
     tenantId: menuRow.tenantId,
@@ -268,6 +298,14 @@ async function restoreMenu(tx: Transaction, menuRow: MenuRow): Promise<Menu> {
 
   for (const price of priceRows) {
     menu.setVenuePrice(venuePriceOf(price));
+  }
+
+  for (const entry of inventoryRows) {
+    menu.setInventoryState({
+      venueId: entry.venueId,
+      productId: entry.productId,
+      state: inventoryStateOf(entry.state),
+    });
   }
 
   return menu;
@@ -309,5 +347,16 @@ function venuePriceOf(row: VenuePriceRow) {
     ...(row.windowStart !== null && row.windowEnd !== null
       ? { window: { start: row.windowStart, end: row.windowEnd } }
       : {}),
+    ...(row.lowUnitsThreshold === null
+      ? {}
+      : { lowUnitsThreshold: row.lowUnitsThreshold }),
   };
+}
+
+function inventoryStateOf(state: string) {
+  if (state === "available" || state === "low_units" || state === "sold_out") {
+    return state;
+  }
+
+  throw new Error("The stored menu inventory state is unknown.");
 }

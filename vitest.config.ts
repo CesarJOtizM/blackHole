@@ -37,6 +37,7 @@ export default defineConfig({
           include: [
             "contexts/inventory/**/*.test.ts",
             "contexts/inventory/application/ports/producible-quantity-repository.contract.ts",
+            "contexts/inventory/application/ports/stock-count-repository.contract.ts",
           ],
         },
       },

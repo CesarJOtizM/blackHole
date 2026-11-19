@@ -46,7 +46,7 @@ Use cases run on the location owner (`local-node` offline-capable for hybrid sit
 |------|------------|------------|
 | Count-approval cap not defined in PRD-01 sec. 7 | High | Configurable cap, default 1,000 COP, lowerable per site (D-28) |
 | Sales during a count distort variance | Med | Variance computed at cut-off; later movements untouched |
-| Counters bias to the theoretical | Med | Blind count open: PA-42 |
+| Counters bias to the theoretical | Med | Blind count (D-49): the sheet lists ingredient ids and the unit, and the difference appears after submit |
 
 ## Rollback Plan
 

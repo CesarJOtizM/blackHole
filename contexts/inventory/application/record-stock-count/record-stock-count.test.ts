@@ -336,6 +336,26 @@ const command = (documentId: string, milkUnits = 74, siteCap?: number) => ({
   ...(siteCap === undefined ? {} : { siteCap }),
 });
 
+it("given stock before the cut-off, when the count sheet opens, then it lists the ingredient ids and omits the theoretical quantity", async () => {
+  const { useCase } = await harness();
+  const sheet = await useCase.sheet({
+    tenantId: TENANT_A,
+    venueId: VENUE_ID,
+    locationId: LOCATION_ID,
+    cutOff: CUT_OFF,
+    scope: COUNT_SCOPE.FULL,
+    sessionId: "session_kitchen",
+  });
+
+  expect(sheet).toEqual({
+    outcome: "ready",
+    ingredientIds: [BEEF_ID, CHEESE_ID, MILK_ID],
+  });
+  expect(JSON.stringify(sheet)).not.toContain(String(grams(8000)));
+  expect(JSON.stringify(sheet)).not.toContain("averageCost");
+  expect(JSON.stringify(sheet)).not.toContain("quantity");
+});
+
 it("given a dairy count, when milk is short 600 g at 900 COP under the 1000 COP cap, then one count_adjustment posts at the cut-off snapshot and a later sale is ignored", async () => {
   const documentId = "count_milk_within_cap";
   const { counts, audits, useCase } = await harness();

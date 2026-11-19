@@ -75,6 +75,7 @@ const venueMenuProduct = z.object({
   variants: z.array(menuVariant),
   modifiers: z.array(menuModifier),
   orderable: z.boolean(),
+  inventoryState: z.enum(["available", "low_units", "sold_out"]).optional(),
 });
 
 const venueMenuCombo = z.object({

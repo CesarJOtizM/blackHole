@@ -1,3 +1,5 @@
+import type { InventoryState } from "#domain/menu.js";
+
 export interface OrderIds {
   kind: "ids";
   tenantId: string;
@@ -47,12 +49,22 @@ export interface NotRestocked {
   at: string;
 }
 
+export interface AvailabilityChanged {
+  kind: "availability_changed";
+  tenantId: string;
+  venueId: string;
+  productId: string;
+  variantId: string | null;
+  state: InventoryState;
+}
+
 export type RealtimeNotice =
   | OrderIds
   | PrinterFailed
   | LineReady
   | BillingDataReceived
-  | NotRestocked;
+  | NotRestocked
+  | AvailabilityChanged;
 
 export abstract class RealtimeHub {
   abstract publish(notice: RealtimeNotice): Promise<void>;

@@ -48,7 +48,6 @@ No frenan la fundación ni el salón. Se responden cuando arranque la entrega qu
 | Código | Pregunta | Origen | Bloquea |
 |--------|----------|--------|---------|
 | PA-41 | Retención y archivo de la auditoría a largo plazo | openspec `p0-06` | Ninguna entrega |
-| PA-42 | ¿El conteo de inventario es a ciegas, como el arqueo? | openspec `p2-06` | 2.6 |
 | PA-48 | Si una reserva pagada en efectivo termina en conflicto, ¿la devolución se hace en efectivo o por transferencia? | PRD-M9, TRD-M9 | 3.7 |
 | PA-38 | Pasarela de la suscripción | PRD-M7 §9, TRD-M7 | 4.3 |
 | PA-39 | Precio por sede, y si la bolsa va incluida o aparte | PRD-M7 §9 | 4.3 |
@@ -116,3 +115,4 @@ No frenan la fundación ni el salón. Se responden cuando arranque la entrega qu
 | D-46 | El pago QR admite varias pasarelas detrás de `PaymentGateway`. Bold es una de ellas. La sede activa la que contrató. La comisión es la de ese contrato y se ve en la conciliación. Los medios son los que ofrezca ese adaptador, dentro de Nequi, Daviplata, Bre-B y tarjeta | 2026-10-17 | PRD-00, PRD-M2, TRD-00, TRD-M2, openspec `p1-13` |
 | D-47 | El correo, el SMS y WhatsApp no salen del servicio nativo de AWS, GCP ni Azure. GCP no tiene correo ni SMS propios, y WhatsApp no lo da ninguna de las tres. El proveedor concreto es Twilio (D-48) | 2026-10-17 | TRD-00, PRD-M3, C4 |
 | D-48 | El correo, el SMS y WhatsApp salen por Twilio. El correo usa SendGrid. El código de un solo uso lo genera el sistema y Twilio solo lo entrega; no se usa Twilio Verify. Bird queda como alternativa si el registro del remitente SMS en Colombia no sale. No es el servicio nativo de la nube (D-47). El mismo proveedor cubre el portal (1.8) y los avisos (5.1) | 2026-11-05 | PRD-M3, C4, roadmap 1.8 y 5.1, openspec `p1-08` y `p5-01` |
+| D-49 | El conteo de inventario es a ciegas, como el arqueo (PA-42). Quien cuenta ve los insumos y la unidad. El saldo teórico no aparece antes de enviar. La diferencia queda en la respuesta del conteo y en la aprobación. Un conteo total usa los insumos movidos en esa ubicación hasta el corte; uno por categoría, la intersección con la clasificación | 2026-11-15 | PRD-M4, roadmap 2.6, openspec `p2-06` |

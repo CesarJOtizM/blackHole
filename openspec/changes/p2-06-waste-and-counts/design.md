@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-Delivery 2.6 is cloud-only (D-37, [ADR-018](../../docs/adr/ADR-018-screaming-y-bounded-context.md)): `api-cloud` and PostgreSQL. Operational waste and counts append to `StockLedger`. `RecordWaste` stays the sale-void path. Movements are never edited or deleted (PRD-M4 rule 4). Caps and the supervisor PIN stay in `EvaluatePermission` (`wasteCop` 30,000 COP, `countAdjustmentCop` 1,000 COP). No `shared/sync`, no `local-node`, no VAT split. PA-42 is not decided.
+Delivery 2.6 is cloud-only (D-37, [ADR-018](../../docs/adr/ADR-018-screaming-y-bounded-context.md)): `api-cloud` and PostgreSQL. Operational waste and counts append to `StockLedger`. `RecordWaste` stays the sale-void path. Movements are never edited or deleted (PRD-M4 rule 4). Caps and the supervisor PIN stay in `EvaluatePermission` (`wasteCop` 30,000 COP, `countAdjustmentCop` 1,000 COP). No `shared/sync`, no `local-node`, no VAT split. The count is blind (D-49, decided after this change was verified).
 
 ## Architecture Decisions
 
@@ -16,7 +16,7 @@ Delivery 2.6 is cloud-only (D-37, [ADR-018](../../docs/adr/ADR-018-screaming-y-b
 | Authorization | `inventory.record-waste`, `inventory.count`, `inventory.approve-count`. Waste over the cap stores nothing until someone else authorizes. Auto-post at or under the site cap; a site may only lower it (`LimitRaised`). Count self-approval needs the shift flag. | Inventory cap table | p0-05 already stores both limits. |
 | Rows | Same `stock_movements` table. `orderLineId` is the document id. `recipeVersion` is 0. No reversal id. | Second ledger | Unique (tenant, document, role, ingredient) retries. Sale rows stay valid. |
 | Runtime | HTTP and Postgres on `api-cloud`. Flag `wasteAndCountsEnabled`. | Node, SQLite, sync | D-37. The proposal's offline path is deferred. |
-| Blind count | No choice. Variance is still computed after submit. | Show or hide theory | PA-42. |
+| Blind count | Hide theoretical quantity until submit. The sheet returns ingredient ids only. Variance stays on the submit and approval responses (D-49). | Show theory while counting | PA-42, decided after verify. |
 
 ## Data Flow
 
@@ -87,4 +87,4 @@ New Postgres tables only. No backfill. The flag defaults off. Stored movements s
 
 ## Open Questions
 
-- [ ] PA-42: whether a count hides the theoretical quantity. This design does not choose.
+- [x] PA-42: the count hides the theoretical quantity until submit (D-49, 2026-11-15).

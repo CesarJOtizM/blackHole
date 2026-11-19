@@ -182,3 +182,228 @@ Slice of work unit 3 (counts): tasks 2.7 and 2.8 only. Intended later PR on the 
 | Rollback boundary | `contexts/inventory/application/record-stock-count/record-stock-count.ts`, `contexts/inventory/application/record-stock-count/record-stock-count.test.ts`, `contexts/inventory/application/ports/stock-count-repository.ts`, and the `#application/record-stock-count/*` import in `contexts/inventory/package.json`. Reverting those removes this slice. Classification, waste, the ledger repository, and `entry-port.ts` stay. |
 
 `state.yaml` stays `status: applying` and `apply: partial`. Tasks 2.1–2.6 and 2.9–2.10 were not changed by this slice.
+
+## Tasks 3.1 and 3.2
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing contract was written and run before `in-memory-stock-count-repository.ts` existed.
+
+### RED 3.1
+
+`pnpm exec vitest run --project inventory contexts/inventory/application/ports/stock-count-repository.contract.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  no tests`.
+
+`FAIL contexts/inventory/application/ports/stock-count-repository.contract.ts` — `Cannot find module '#adapters/memory/in-memory-stock-count-repository.js'`.
+
+### GREEN 3.2
+
+Same command after `in-memory-stock-count-repository.ts`, `COUNT_ADJUSTMENT` on `CONSUMPTION_ROLE`, the inventory Vitest include for the contract, and `pnpm exec biome check --write` on the touched files. Exit 0. `Test Files  1 passed (1)`. `Tests  3 passed (3)`.
+
+The memory contract stores a posted freeze of −600 g at 1,500 COP. After a later sale, the session still has that location, ingredient, quantity, and average cost, and the stored `count_adjustment` line matches it. Tenant B does not see tenant A's session, line, dairy classification, or milk stock. Tenant A's beef classification stays null. A pending count that is rejected keeps the freeze, writes no `count_adjustment`, and leaves 8,000 g on hand. Tenant B's reject does not open tenant A's session. No Drizzle client is mocked. `nextAverageCost` is not called. PA-42 is not decided.
+
+`StockMovedEvent.role` is `ConsumptionRole`. Adding `count_adjustment` on `stock-ledger-repository.ts` is the queue role. `stock-movement-queue.ts` was not edited. No read methods were added. `append`, `listByVenue`, and purchase behavior were not changed. Postgres and SQLite ledger repositories were not edited. `package.json`, `entry-port.ts`, `schema.ts`, and domain files were not edited.
+
+## Work unit evidence
+
+Slice of work unit 4 (persistence): tasks 3.1 and 3.2 only. Intended later PR on the feature-branch chain. Not committed. Tasks 3.3–3.6 stay open.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/application/ports/stock-count-repository.contract.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  no tests`, missing `#adapters/memory/in-memory-stock-count-repository.js`). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  3 passed (3)`), including after Biome. |
+| Runtime harness command/scenario and exact result | N/A. The contract runs the in-memory adapter. It does not open a socket, listen, or touch PostgreSQL. Drizzle is not mocked. |
+| Rollback boundary | `contexts/inventory/application/ports/stock-count-repository.contract.ts`, `contexts/inventory/adapters/memory/in-memory-stock-count-repository.ts`, the `COUNT_ADJUSTMENT` role in `contexts/inventory/application/ports/stock-ledger-repository.ts`, and the inventory include for that contract in `vitest.config.ts`. Reverting those removes this slice. Ledger append, purchase, Postgres, SQLite, `entry-port.ts`, and `package.json` stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. Tasks 2.9, 2.10, 3.3–3.6, and phase 4 were not changed by this slice.
+
+## Tasks 3.3 and 3.4
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The PGlite contract was written and run before `drizzle-stock-count-repository.ts` and `0008_waste_and_counts.sql` existed. The memory scenarios in `stock-count-repository.contract.ts` were not rewritten.
+
+### RED 3.3
+
+`pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  no tests`.
+
+`FAIL contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts` — `Cannot find module '#adapters/postgres/drizzle-stock-count-repository.js'`.
+
+### GREEN 3.4
+
+Same command after `0008_waste_and_counts.sql`, the session, line, and classification tables in `schema.ts`, and `drizzle-stock-count-repository.ts`. Exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`.
+
+After `pnpm exec biome check --write` on those TypeScript files, the same PGlite file plus the memory contract:
+
+`pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts contexts/inventory/application/ports/stock-count-repository.contract.ts`
+
+Exit 0. `Test Files  2 passed (2)`. `Tests  7 passed (7)`.
+
+PGlite applies `0001_recipe_catalog.sql`, `0002_stock_ledger.sql`, `0006_production.sql`, and `0008_waste_and_counts.sql`. Each repository call runs `SET LOCAL ROLE inventory_app` and `SELECT set_config('app.tenant_id', tenantId, true)`, the local form of `SET LOCAL app.tenant_id`. No Drizzle mock. No SQLite. No HTTP listener.
+
+The shared contract still freezes −600 g at 1,500 COP. After a later sale, the session keeps that location, ingredient, quantity, and average cost, and the stored `count_adjustment` line matches it. Tenant B does not see tenant A's session, line, dairy classification, or milk stock. A pending count that is rejected keeps the freeze, writes no `count_adjustment`, and leaves 8,000 g on hand. An empty database has `count_sessions`, `count_session_lines`, and `ingredient_classifications`, still has the production tables and `output_quantity`, and has zero `stock_movements`. `nextAverageCost` is not called. PA-42 is not decided.
+
+`0008` reuses `stock_movements`. It widens `stock_movements_role` so `consumption` and `reversal` stay valid and `operational_waste` and `count_adjustment` are allowed. It widens `stock_movements_recipe_version` from `>= 1` to `>= 0` so a count line can store `recipeVersion` 0. No rows are backfilled. `0004`, `0005`, `0006`, and `0007` were not edited.
+
+`drizzle-stock-ledger-repository.ts` was not edited. This repository inserts the count line itself. It does not update `stock_balances` and does not write `stock_movement_outbox`. `stockOf` replays `onHandDelta` over `stock_movements`, which is what the contract reads. The outbox role check still allows only `consumption` and `reversal`. Unique-conflict retry stays on task 3.5. `package.json`, `entry-port.ts`, `application-module.ts`, and `shared/contracts` were not edited.
+
+## Work unit evidence
+
+Slice of work unit 4 (persistence): tasks 3.3 and 3.4 only. Intended later PR on the feature-branch chain. Not committed. Tasks 2.9, 2.10, 3.5, 3.6, and phase 4 stay open.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  no tests`, missing `#adapters/postgres/drizzle-stock-count-repository.js`). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  4 passed (4)`). After Biome, that file plus the memory contract: exit code **0** (`Test Files  2 passed (2)`, `Tests  7 passed (7)`). |
+| Runtime harness command/scenario and exact result | PGlite applies `0001`, `0002`, `0006`, and `0008`, then `SET LOCAL ROLE inventory_app` and `set_config('app.tenant_id', tenantId, true)`. The four PGlite tests pass, including the empty-database check that no movement was backfilled. No HTTP listener. |
+| Rollback boundary | `contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`, `contexts/inventory/adapters/postgres/drizzle-stock-count-repository.ts`, `contexts/inventory/adapters/postgres/0008_waste_and_counts.sql`, and the `countSessions`, `countSessionLines`, and `ingredientClassifications` tables in `contexts/inventory/adapters/postgres/schema.ts`. Reverting those removes this slice. `0006`, the ledger repository, SQLite, `package.json`, `entry-port.ts`, and the memory contract stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. Tasks 2.9, 2.10, 3.5, 3.6, and phase 4 were not changed by this slice.
+
+## Tasks 2.9 and 2.10
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing test was written and run before `approve-adjustment.ts` and the `#application/approve-adjustment/*` import existed.
+
+### RED 2.9
+
+`pnpm exec vitest run --project inventory contexts/inventory/application/approve-adjustment/approve-adjustment.test.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  no tests`.
+
+`FAIL contexts/inventory/application/approve-adjustment/approve-adjustment.test.ts` — `Missing "#application/approve-adjustment/approve-adjustment.js" specifier in "@blackhole/inventory" package`.
+
+### GREEN 2.10
+
+Same command after `approve-adjustment.ts`, the `#application/approve-adjustment/*` import, and the four use-case exports appended to `entry-port.ts`. Exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`.
+
+Same command after `pnpm exec biome check --write contexts/inventory/application/approve-adjustment`. Exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`. Biome was not run on `entry-port.ts`, so the existing export list stayed in place.
+
+Approval of a pending freeze posts those lines as `count_adjustment` with `recipeVersion` 0, the document id as `orderLineId`, and no reversal id. Milk −600 g and cheese −400 g stay at the frozen average of 1,500 COP. `movementsAt` is not called. `nextAverageCost` is not called. The session becomes `posted`. The audit action is `inventory.approve-count`.
+
+Rejection stores that audit, appends no movement, and leaves the original pending freeze. Another tenant still cannot see it. A recount may open: the same frozen lines are saved as a new pending session and no stock line is written.
+
+Self-approval sets `selfAuthorizationAttempt` when the actor is the counter. The site administrator is the only approver and the 1,500 COP freeze is over the 1,000 COP cap. Without the shift flag the decision is `denied` and nothing is written. With the shift flag the same frozen lines post and `authorizerId` stays null. No blind-count switch. PA-42 is not decided.
+
+`entry-port.ts` appends `ApproveAdjustment`, `RecordOperationalWaste`, `RecordStockCount`, and `SetIngredientCategory`. `package.json` gains only `#application/approve-adjustment/*`. `StockMoved` is not enqueued. The outbox role check still belongs to task 3.6.
+
+## Work unit evidence
+
+Slice of work unit 3 (counts): tasks 2.9 and 2.10 only. Intended later PR on the feature-branch chain. Not committed. Tasks 3.5, 3.6, and phase 4 stay open.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/application/approve-adjustment/approve-adjustment.test.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  no tests`, missing `#application/approve-adjustment/approve-adjustment.js` specifier). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  4 passed (4)`), including after Biome on the new folder. |
+| Runtime harness command/scenario and exact result | N/A. The use case talks only to in-memory ports. It does not open a socket, listen, or touch PostgreSQL. |
+| Rollback boundary | `contexts/inventory/application/approve-adjustment/approve-adjustment.ts`, `contexts/inventory/application/approve-adjustment/approve-adjustment.test.ts`, the `#application/approve-adjustment/*` import in `contexts/inventory/package.json`, and the four use-case exports appended at the end of `contexts/inventory/application/entry-port.ts`. Reverting those removes this slice. Record stock count, the count repository, Postgres, and the earlier entry-port exports stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. Tasks 3.3 and 3.4 were left as found. Tasks 3.5, 3.6, and phase 4 were not changed by this slice.
+
+## Task 3.5
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing assertions were written and run before balances, the outbox insert, and the unique retry existed.
+
+### RED 3.5
+
+`pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  3 failed | 4 passed (7)`.
+
+A count adjustment of −600 g left `stock_balances` empty (`expected null to be -600000`). Appending the same tenant, document, role, and ingredient again threw `23505` on `stock_movements_line`. An operational waste append wrote the movement and the balance, then rolled back because `stock_movement_outbox_role` still allowed only `consumption` and `reversal`. The four existing cases still passed.
+
+### GREEN 3.5
+
+Same command after `0010_waste_count_outbox.sql`, the count repository posting balance and outbox, the ledger retry for those two roles, and the package export. Exit 0. `Test Files  1 passed (1)`. `Tests  7 passed (7)`.
+
+The ledger contract, run after that file and not in parallel:
+
+`pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-ledger-repository.contract.test.ts`
+
+Exit 0. `Test Files  1 passed (1)`. `Tests  8 passed (8)`.
+
+A count adjustment and an operational waste each insert the movement, update `stock_balances`, and insert `stock_movement_outbox` inside one `inTenant` transaction. A failed outbox insert rolls the balance back with the movement. The outbox lane is `after_sales`. `recipeVersion` is 0. The document id is `orderLineId`.
+
+A second append of the same tenant, document, role, and ingredient is a unique-violation retry. The stored movement, balance, and outbox row stay. The sale consumption row stays, including its quantity and `consumption` role. The sale seed still does not write a balance or an outbox row. Sale, reversal, purchase, transfer, and production appends still throw on that unique key. `schema.ts` was re-read and left unchanged: `stock_movements_line` is already declared, and the outbox role check lives in SQL. `0001` through `0009` were not edited. Task 3.6 still owns `shared/contracts`. No commit and no branch.
+
+## Work unit evidence
+
+Slice of work unit 4 (persistence): task 3.5 only. Intended later PR on the feature-branch chain. Not committed. Tasks 3.6, 4.1, and 4.2 stay open.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  3 failed \| 4 passed (7)`). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  7 passed (7)`). Ledger contract after the ledger edit: `pnpm exec vitest run --project inventory contexts/inventory/adapters/postgres/drizzle-stock-ledger-repository.contract.test.ts`. Exit code **0** (`Test Files  1 passed (1)`, `Tests  8 passed (8)`). |
+| Runtime harness command/scenario and exact result | PGlite applies `0001`, `0002`, `0006`, `0008`, and `0010`, then `SET LOCAL ROLE inventory_app` and `set_config('app.tenant_id', tenantId, true)`. The count adjustment and the operational waste commit the movement, the balance, and the outbox row in that same transaction. The unique retry leaves the sale consumption row in place. No HTTP listener. |
+| Rollback boundary | `contexts/inventory/adapters/postgres/drizzle-stock-count-repository.ts`, `contexts/inventory/adapters/postgres/drizzle-stock-count-repository.contract.test.ts`, the unique-retry branch in `contexts/inventory/adapters/postgres/drizzle-stock-ledger-repository.ts`, `contexts/inventory/adapters/postgres/0010_waste_count_outbox.sql`, and the appended `./adapters/postgres/drizzle-stock-count-repository` export in `contexts/inventory/package.json`. Reverting those removes this slice. `0001`–`0009`, `schema.ts`, sale consumption, reversal, purchase, transfer, production, `entry-port.ts`, and `shared/contracts` stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. Tasks 3.6, 4.1, and 4.2 were not changed by this slice.
+
+## Task 3.6
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing assertion was written and run before `operational_waste` and `count_adjustment` were added to `CONSUMPTION_ROLE` in `shared/contracts/stock-movement.ts`.
+
+### RED 3.6
+
+`pnpm exec vitest run --project inventory contexts/inventory/application/record-waste/stock-movement-contract.test.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  1 failed | 1 passed (2)`.
+
+`ZodError` on `role`: expected one of `"consumption"|"reversal"`. Consumption and reversal with `recipeVersion` 0 had already parsed. The failure was at `operational_waste`.
+
+### GREEN 3.6
+
+Same command after those two roles were added beside `consumption` and `reversal`. Exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`.
+
+Same command after `pnpm exec biome check --write` on `shared/contracts/stock-movement.ts` and `contexts/inventory/application/record-waste/stock-movement-contract.test.ts`. Exit 0. `Test Files  1 passed (1)`. `Tests  2 passed (2)`.
+
+`StockMoved.role` accepts `consumption`, `reversal`, `operational_waste`, and `count_adjustment`. Those four strings match `CONSUMPTION_ROLE` in `contexts/inventory/application/ports/stock-ledger-repository.ts`. `recipeVersion` stays `z.number().int()`, so 0 remains valid. `orderLineId` stays the document id. The object stays `.strict()`: an extra key is rejected, and an unknown role is rejected. `shared/contracts/index.ts` already exports `stockMoved` and `StockMoved`, so it was not edited. Domain files were not edited and still import no Zod.
+
+## Work unit evidence
+
+Slice of work unit 4 (persistence): task 3.6 only. Intended later PR on the feature-branch chain. Not committed. Task 3.5 was already checked by the parallel slice. Tasks 4.1 and 4.2 stay open.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project inventory contexts/inventory/application/record-waste/stock-movement-contract.test.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  1 failed \| 1 passed (2)`, `operational_waste` rejected as not `consumption` or `reversal`). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  2 passed (2)`), including after Biome on the contract and the test. |
+| Runtime harness command/scenario and exact result | N/A. The change is a Zod object parsed in process. It does not open a socket, listen, or touch PostgreSQL. |
+| Rollback boundary | The `CONSUMPTION_ROLE` values in `shared/contracts/stock-movement.ts` and the second test in `contexts/inventory/application/record-waste/stock-movement-contract.test.ts`. Reverting those removes this slice. `shared/contracts/index.ts`, the ledger port, repositories, SQL, and domain stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. Tasks 4.1 and 4.2 were not changed by this slice.
+
+## Tasks 4.1 and 4.2
+
+Mode stays Standard (`strict_tdd: false`). `strict-tdd.md` was not loaded. The failing HTTP test was written and run before `stock-operations.controller.ts` existed.
+
+### RED 4.1
+
+`pnpm exec vitest run --project api-cloud test/http/stock-operations.controller.test.ts`
+
+Exit 1. `Test Files  1 failed (1)`. `Tests  no tests`.
+
+`Cannot find module '#src/http/stock-operations.controller.js'`.
+
+### GREEN 4.2
+
+Same command after the controller and the `wasteAndCountsEnabled` wiring. Exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`.
+
+Same command after `pnpm exec biome check --write` on the controller, the test, and `application-module.ts`. Exit 0. `Test Files  1 passed (1)`. `Tests  4 passed (4)`.
+
+`wasteAndCountsEnabled` defaults off: the flag is on only when it is exactly `true`, the same check as `transfersEnabled` and `noRestockTodayEnabled`. Off skips the controller, so Fastify `inject` returns 404 and `server.listening` stays false.
+
+Routes, all under `/tenants/:tenantId/venues/:venueId`:
+
+- `POST operational-waste`
+- `POST stock-counts`
+- `POST stock-counts/:documentId/approval`
+- `PUT ingredients/:ingredientId/category`
+
+Reasons stay `expired`, `damaged`, `preparation_error`, and `other` with a note. A reason outside that set is 400 and writes no movement. 11250 ml at 4 COP is 45000 COP. The kitchen chief cap is 30000 COP, so the response is `requires_authorization` with `wasteCop` and nothing is inserted. Approval of a count above the 1000 COP company cap returns the frozen location, ingredient, quantity, and average cost. A sale after the cut-off stays in the ledger and does not change that freeze. Reject and self-approval go through `ApproveAdjustment`: reject writes no movement and leaves the audit; self-approval sets `selfAuthorizationAttempt` when the actor is the counter. There is no blind-count field. PA-42 is not decided.
+
+Postgres only. The module constructs `DrizzleStockCountRepository` and `DrizzleIngredientClassification`. api-cloud does not import sqlite. `package.json` already exported `./adapters/postgres/drizzle-stock-count-repository`, so it was not edited. `entry-port.ts`, `schema.ts`, and SQL were not edited. Purchasing, `productionEnabled`, `transfersEnabled`, inventory reports, and `noRestockTodayEnabled`, including `NotRestockedProductReader`, stay.
+
+## Work unit evidence
+
+Slice of work unit 5 (HTTP): tasks 4.1 and 4.2. Intended later PR on the feature-branch chain. Not committed. No branch. Tasks 1.1–3.6 were already complete.
+
+| Evidence | Required value |
+|---|---|
+| Focused test command and exact result | `pnpm exec vitest run --project api-cloud test/http/stock-operations.controller.test.ts`. RED exit code **1** (`Test Files  1 failed (1)`, `Tests  no tests`, missing `#src/http/stock-operations.controller.js`). GREEN exit code **0** (`Test Files  1 passed (1)`, `Tests  4 passed (4)`), including after Biome on the controller, the test, and `application-module.ts`. |
+| Runtime harness command/scenario and exact result | Fastify `inject` on the Nest app from `createApplication`. `server.listening` is false. PGlite applies `0001_recipe_catalog.sql`, `0002_stock_ledger.sql`, `0008_waste_and_counts.sql`, and `0010_waste_count_outbox.sql`. The repository sets `SET LOCAL ROLE inventory_app` and `app.tenant_id`. Flag off returns 404. Over-cap waste inserts no `operational_waste` row. Approval returns the frozen lines and inserts that `count_adjustment`. |
+| Rollback boundary | `apps/api-cloud/src/http/stock-operations.controller.ts`, `apps/api-cloud/test/http/stock-operations.controller.test.ts`, and the `wasteAndCountsEnabled` append in `apps/api-cloud/src/composition/application-module.ts` (`openWasteAndCounts`, the flag, and the controller/provider spreads). Reverting those removes this slice. Purchasing, production, transfers, inventory reports, no-restock, `NotRestockedProductReader`, `entry-port.ts`, `package.json`, `schema.ts`, and SQL stay. |
+
+`state.yaml` stays `status: applying` and `apply: partial`. No task after 4.2 exists in `tasks.md`. Screens were not added. This slice does not archive.
