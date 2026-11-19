@@ -38,14 +38,15 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Optional,
   Param,
   Post,
 } from "@nestjs/common";
-
 import {
   PurchaseAverageCost,
   UnpublishedPurchaseFactor,
 } from "#src/composition/inventory-location-directory.js";
+import { ProjectAffectedProducts } from "#src/composition/project-affected-products.js";
 
 const SESSION_HEADER = "x-session-id";
 const RECEIVE_DENIED = "PurchaseReceiveDenied";
@@ -99,6 +100,9 @@ export class PurchasingController {
     private readonly authorizationClock: AuthorizationClock,
     @Inject(Clock)
     private readonly clock: Clock,
+    @Optional()
+    @Inject(ProjectAffectedProducts)
+    private readonly affected?: ProjectAffectedProducts,
   ) {}
 
   @Post("purchase-receipts")
@@ -144,6 +148,12 @@ export class PurchasingController {
           ? {}
           : { purchaseOrderId: parsed.data.purchaseOrderId }),
         lines: parsed.data.lines,
+      });
+      await this.affected?.afterReceipt({
+        tenantId,
+        venueId: target.kind === "site" ? target.id : null,
+        locationId: parsed.data.locationId,
+        ingredientIds: receipt.lines.map((line) => line.ingredientId),
       });
 
       return await this.present(receipt, seesAverage);

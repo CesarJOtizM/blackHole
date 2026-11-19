@@ -15,6 +15,7 @@ import {
 } from "@blackhole/orders/domain";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { expect, it } from "vitest";
+import { QrNotRestockedProducts } from "#src/composition/qr-not-restocked.js";
 import {
   TableQrController,
   tableQrMenuPath,
@@ -121,7 +122,7 @@ const orderBody = {
   ],
 };
 
-const orderingController = async () => {
+const orderingController = async (notRestocked?: QrNotRestockedProducts) => {
   const tokens = new InMemoryTableQrRepository();
   const issued = TableQrToken.issue({
     tenantId: TENANT_ID,
@@ -192,6 +193,7 @@ const orderingController = async () => {
     stations,
     printer,
     new InMemoryRealtimeHub(),
+    notRestocked,
   );
 
   return { controller, intents, printer };
@@ -232,6 +234,23 @@ it("given a direct table QR, when the customer submits the same order twice, the
     id: "intent_1",
   });
   expect(printer.jobs).toHaveLength(1);
+});
+
+class MarkedToday extends QrNotRestockedProducts {
+  override execute(): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+}
+
+it("given a product marked not-restocked today, when a direct QR order is applied, then the line is not sent", async () => {
+  const { controller, printer } = await orderingController(new MarkedToday());
+
+  const applied = await controller.submit(NONCE, orderBody);
+
+  expect(applied.status).toBe("rejected");
+  expect(applied.lineIds).toEqual([]);
+  expect(applied.unavailableProductIds).toContain(SOUP_ID);
+  expect(printer.jobs).toHaveLength(0);
 });
 
 it("given an empty cart, when the customer submits it, then no intent is stored", async () => {

@@ -25,8 +25,8 @@ import { infrastructureFromEnv } from "#src/composition/main.js";
 import {
   disabledShortageAlerts,
   registerShortageAlerts,
-  shortageAlertsFromPostgres,
   type ShortageDatabase,
+  shortageAlertsFromPostgres,
 } from "#src/composition/shortage-alerts.worker.js";
 import {
   continuedTraceFromEnv,
@@ -184,7 +184,14 @@ export const startWorker = async (
       createQueue: (name, options) => boss.createQueue(name, options),
       work: (name, handler) =>
         boss.work(name, async (jobs) => {
-          await handler(jobs);
+          await handler(
+            jobs.map((job) => ({
+              data:
+                typeof job.data === "object" && job.data !== null
+                  ? job.data
+                  : {},
+            })),
+          );
         }),
       schedule: (name, cron, data, options) =>
         boss.schedule(name, cron, data, options),

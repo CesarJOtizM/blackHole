@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SiteReportPanel } from "#src/reports/reports-screen.js";
+import {
+  FoodCostReportPanel,
+  SiteReportPanel,
+} from "#src/reports/reports-screen.js";
 
 const bogotaNow = () => Date.parse("2026-11-11T18:00:00.000Z");
 
@@ -95,5 +98,58 @@ describe("site reports screen", () => {
 
     expect(await screen.findByText("No se pudo leer")).toBeTruthy();
     expect(screen.queryByText("0")).toBeNull();
+  });
+});
+
+const readyFoodCost = {
+  foodCost: {
+    outcome: "ready" as const,
+    report: {
+      ratio: 0.3,
+      theoreticalCop: 8100,
+      netSalesCop: 27000,
+      uncostedProductIds: [],
+      products: [],
+    },
+  },
+  stockGap: {
+    outcome: "ready" as const,
+    report: {
+      status: "ready" as const,
+      rows: [
+        {
+          locationId: "cooler",
+          ingredientId: "beef",
+          theoreticalQuantity: 512,
+          actualQuantity: 487,
+          differenceQuantity: -25,
+          wasteQuantity: 4,
+          averageCostCop: 1000,
+          differenceCop: 6400,
+        },
+      ],
+    },
+  },
+};
+
+describe("food cost report", () => {
+  it("Given a ready food-cost and stock-gap payload, When the food-cost report renders, Then the theoretical and actual figures are visible and the demo rows are not", async () => {
+    const readReports = vi.fn(async () => readyFoodCost);
+
+    render(
+      <FoodCostReportPanel
+        now={bogotaNow}
+        readReports={readReports}
+        onSection={() => undefined}
+      />,
+    );
+
+    expect(await screen.findByText("8100")).toBeTruthy();
+    expect(screen.getAllByText("512").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("487").length).toBeGreaterThan(0);
+    expect(screen.getByText("-25")).toBeTruthy();
+    expect(screen.queryByText("Entraña")).toBeNull();
+    expect(screen.queryByText("34,2%")).toBeNull();
+    expect(screen.queryByText("212 KG")).toBeNull();
   });
 });

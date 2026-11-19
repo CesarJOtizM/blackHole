@@ -1,10 +1,15 @@
 import {
+  type FoodCostReportResult,
+  foodCostReportResult,
   type ReportFamily,
   reportFamily,
   reportPeriodQuery,
+  type StockGapReportResult,
   siteReportResponse,
+  stockGapReportResult,
 } from "@blackhole/contracts";
 import { ADMIN_SCOPE } from "#src/api/admin-api.js";
+import { type ReportModel, reports } from "#src/reports/reports-model.js";
 
 const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -143,5 +148,148 @@ export async function readSiteReport(query: {
         report.tips.length === 0 &&
         report.productivity.length === 0,
     },
+  };
+}
+
+export interface InventoryReportPayload {
+  foodCost: FoodCostReportResult;
+  stockGap: StockGapReportResult;
+}
+
+export type InventoryReportReader = (query: {
+  from: string;
+  to: string;
+}) => Promise<InventoryReportPayload>;
+
+export type FoodCostPresentation =
+  | { kind: "failed" }
+  | { kind: "pending"; model: ReportModel }
+  | { kind: "ready"; model: ReportModel };
+
+async function readInventoryFamily(
+  family: "food-cost",
+  query: { from: string; to: string },
+): Promise<FoodCostReportResult>;
+async function readInventoryFamily(
+  family: "stock-gap",
+  query: { from: string; to: string },
+): Promise<StockGapReportResult>;
+async function readInventoryFamily(
+  family: "food-cost" | "stock-gap",
+  query: { from: string; to: string },
+): Promise<FoodCostReportResult | StockGapReportResult> {
+  if (!reportPeriodQuery.safeParse(query).success) {
+    return failRead();
+  }
+
+  const response = await fetch(
+    `/tenants/${ADMIN_SCOPE.tenantId}/venues/${ADMIN_SCOPE.venueId}/inventory-reports/${family}?from=${encodeURIComponent(query.from)}&to=${encodeURIComponent(query.to)}`,
+    { headers: { "x-session-id": ADMIN_SCOPE.sessionId } },
+  );
+  if (!response.ok) {
+    return failRead();
+  }
+
+  const body: unknown = await response.json();
+  const parsed = (
+    family === "food-cost" ? foodCostReportResult : stockGapReportResult
+  ).safeParse(body);
+  if (!parsed.success) {
+    return failRead();
+  }
+
+  return parsed.data;
+}
+
+export async function readInventoryReports(query: {
+  from: string;
+  to: string;
+}): Promise<InventoryReportPayload> {
+  const [foodCost, stockGap] = await Promise.all([
+    readInventoryFamily("food-cost", query),
+    readInventoryFamily("stock-gap", query),
+  ]);
+
+  return { foodCost, stockGap };
+}
+
+const foodCostFrame = (
+  food: {
+    theoreticalCop: number;
+    netSalesCop: number;
+    ratio: number | null;
+    uncostedProductIds: readonly string[];
+  },
+  real: string,
+  gap: string,
+  rows: ReportModel["rows"],
+): ReportModel => ({
+  ...reports["food-cost"],
+  metrics: [
+    {
+      label: "Teórico",
+      value: String(food.theoreticalCop),
+      detail: food.ratio === null ? "Sin porcentaje" : String(food.ratio),
+    },
+    { label: "Real", value: real, detail: "Conteo" },
+    { label: "Brecha", value: gap, detail: "Teórico contra real" },
+    {
+      label: "Venta neta",
+      value: String(food.netSalesCop),
+      detail: "Con receta",
+    },
+  ],
+  rows,
+  note:
+    food.uncostedProductIds.length === 0
+      ? undefined
+      : `Sin receta: ${food.uncostedProductIds.join(", ")}`,
+});
+
+const countedGap = (rows: readonly { differenceCop: number }[]): string => {
+  const total = rows.reduce((sum, row) => sum + row.differenceCop, 0);
+  return String(total);
+};
+
+const actualFigures = (rows: readonly { actualQuantity: number }[]): string =>
+  rows.length === 0
+    ? "—"
+    : rows.map((row) => String(row.actualQuantity)).join(" · ");
+
+export function presentFoodCost(
+  payload: InventoryReportPayload,
+): FoodCostPresentation {
+  if (
+    payload.foodCost.outcome !== "ready" ||
+    payload.stockGap.outcome !== "ready"
+  ) {
+    return { kind: "failed" };
+  }
+
+  const food = payload.foodCost.report;
+  const stock = payload.stockGap.report;
+
+  if (stock.status === "pending") {
+    return {
+      kind: "pending",
+      model: foodCostFrame(food, "Pendiente", "Pendiente", []),
+    };
+  }
+
+  return {
+    kind: "ready",
+    model: foodCostFrame(
+      food,
+      actualFigures(stock.rows),
+      countedGap(stock.rows),
+      stock.rows.map((row) => [
+        row.ingredientId,
+        String(row.theoreticalQuantity),
+        String(row.actualQuantity),
+        String(row.differenceQuantity),
+        String(row.differenceCop),
+        row.locationId,
+      ]),
+    ),
   };
 }

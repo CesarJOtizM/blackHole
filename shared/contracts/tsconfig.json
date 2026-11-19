@@ -20,12 +20,16 @@
     "invoicing-portal.ts",
     "menu.ts",
     "printing.ts",
+    "production.ts",
+    "purchasing.ts",
     "qr-table-ordering.ts",
     "qr-table-payment.ts",
     "recipe-catalog.ts",
+    "shortage-alerts.ts",
     "reporting.ts",
     "sensitive-actions.ts",
     "stock-movement.ts",
+    "transfer.ts",
     "tips.ts",
     "update-structure.ts"
   ]

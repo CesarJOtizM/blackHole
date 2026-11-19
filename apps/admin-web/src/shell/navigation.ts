@@ -68,6 +68,16 @@ export const navigation: NavSection[] = [
           },
           { to: "/recipes", label: "Recetas", match: exact("/recipes") },
           { to: "/import", label: "Importar", match: exact("/import") },
+          {
+            to: "/inventory/production",
+            label: "Producción",
+            match: exact("/inventory/production"),
+          },
+          {
+            to: "/inventory/levels",
+            label: "Niveles",
+            match: exact("/inventory/levels"),
+          },
         ],
       },
       {

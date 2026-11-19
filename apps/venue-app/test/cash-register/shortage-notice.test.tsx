@@ -86,7 +86,9 @@ it("given a red level notice, when the cash register opens, then the notice and 
   );
   renderRegister();
 
-  expect(await screen.findByRole("heading", { name: "Alerta de faltante" })).toBeTruthy();
+  expect(
+    await screen.findByRole("heading", { name: "Alerta de faltante" }),
+  ).toBeTruthy();
   expect(screen.getByText("Alerta roja")).toBeTruthy();
   expect(screen.getByText("alert-beef")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Reponer" })).toBeTruthy();
@@ -104,6 +106,17 @@ it("given a dish notice, when the cashier taps restock, then the cloud receives 
         ok: true,
         status: 200,
         body: streamOf(noticeFrame(dishNotice)),
+      };
+    }
+
+    if (url.endsWith("/restock-facts")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          purchaseUnit: 1000,
+          warehouseIds: ["warehouse_general"],
+        }),
       };
     }
 
@@ -143,8 +156,8 @@ it("given a dish notice, when the cashier taps restock, then the cloud receives 
   );
   expect(init.method).toBe("POST");
   expect(init.headers?.["x-session-id"]).toBe("admin-web");
-  expect(body.purchaseUnit).toBe(1);
-  expect(body.warehouseId).toBeNull();
+  expect(body.purchaseUnit).toBe(1000);
+  expect(body.warehouseId).toBe("warehouse_general");
   expect(body.supplierId).toBeNull();
   expect(body).not.toHaveProperty("quantity");
   expect(localStorage.length).toBe(0);
@@ -163,8 +176,12 @@ it("given the shortage flag is off, when the cash register opens, then no notice
   );
   renderRegister();
 
-  expect(await screen.findByRole("heading", { name: "Turno de caja" })).toBeTruthy();
-  expect(screen.queryByRole("heading", { name: "Alerta de faltante" })).toBeNull();
+  expect(
+    await screen.findByRole("heading", { name: "Turno de caja" }),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("heading", { name: "Alerta de faltante" }),
+  ).toBeNull();
   expect(screen.queryByRole("button", { name: "Reponer" })).toBeNull();
   expect(screen.getByRole("button", { name: "Abrir turno" })).toBeTruthy();
   expect(localStorage.length).toBe(0);

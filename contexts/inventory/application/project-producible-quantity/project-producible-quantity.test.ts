@@ -154,6 +154,10 @@ class MemoryLedger extends StockLedgerRepository {
   override async append(_input: AppendStock): Promise<void> {
     this.appendCalls += 1;
   }
+
+  override async listByVenue(): Promise<readonly LedgerLine[]> {
+    return [];
+  }
 }
 
 class MemoryProjections extends ProducibleQuantityRepository {

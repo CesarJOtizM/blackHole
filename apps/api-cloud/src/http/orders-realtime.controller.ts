@@ -167,10 +167,6 @@ const idsOnly = (notice: RealtimeNotice): unknown => {
     };
   }
 
-  if (notice.kind !== "ids") {
-    return { kind: notice.kind };
-  }
-
   return {
     kind: notice.kind,
     tenantId: notice.tenantId,

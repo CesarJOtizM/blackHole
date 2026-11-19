@@ -80,6 +80,15 @@ class MemoryLedger extends StockLedgerRepository {
     }
   }
 
+  override async listByVenue(
+    tenantId: string,
+    venueId: string,
+  ): Promise<readonly LedgerLine[]> {
+    return this.lines.filter(
+      (line) => line.tenantId === tenantId && line.venueId === venueId,
+    );
+  }
+
   override async inTransaction<T>(work: (tx: this) => Promise<T>): Promise<T> {
     const lines = this.lines.map((line) => ({ ...line }));
     const balances = new Map(this.balances);

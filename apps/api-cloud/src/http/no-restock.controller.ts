@@ -69,7 +69,9 @@ export abstract class NoRestockCatalog {
 }
 
 export abstract class ConfirmNoRestockFlow {
-  abstract execute(input: ConfirmNoRestockTodayInput): Promise<ConfirmedNoRestock>;
+  abstract execute(
+    input: ConfirmNoRestockTodayInput,
+  ): Promise<ConfirmedNoRestock>;
 }
 
 interface SavedLine {
@@ -162,7 +164,11 @@ export class NoRestockController {
     @Param("productId") productId: string,
     @Headers(SESSION_HEADER) sessionHeader: unknown,
     @Body() body: unknown,
-  ) {
+  ): Promise<{
+    productId: string;
+    status: string;
+    serviceDate: string | null;
+  }> {
     const actor = await this.commandActor(tenantId, sessionHeader, body);
     const at = new Date(this.clock.now());
 

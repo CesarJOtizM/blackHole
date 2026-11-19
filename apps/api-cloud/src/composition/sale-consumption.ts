@@ -1,3 +1,4 @@
+import type { ShortageNotice } from "@blackhole/contracts";
 import { UnknownRecipeVersion } from "@blackhole/inventory/application/entry-port";
 import { OperationGeneration } from "@blackhole/inventory/application/ports/operation-generation";
 import type { RecipeCatalogRepository } from "@blackhole/inventory/application/ports/recipe-catalog-repository";
@@ -110,9 +111,81 @@ export class VenueOperationGeneration extends OperationGeneration {
   }
 }
 
+export interface RecordedNegativeStockNotice {
+  alertId: string;
+  kind: "level";
+  severity: "critical";
+  role: "siteAdministrator";
+  venueId: string;
+  tenantId: string;
+  locationId: string;
+  ingredientId: string;
+}
+
+const screenNotice = (notice: RecordedNegativeStockNotice): ShortageNotice => ({
+  alertId: notice.alertId,
+  kind: notice.kind,
+  severity: notice.severity,
+  role: notice.role,
+  venueId: notice.venueId,
+});
+
+const negativeStockAlertId = (event: NegativeStockOpenedEvent): string =>
+  `negative-stock:${event.locationId}:${event.ingredientId}`;
+
+const sameOpenAlert = (
+  stored: RecordedNegativeStockNotice,
+  event: NegativeStockOpenedEvent,
+): boolean =>
+  stored.tenantId === event.tenantId &&
+  stored.locationId === event.locationId &&
+  stored.ingredientId === event.ingredientId;
+
+export class NegativeStockNoticeLog {
+  readonly notices: RecordedNegativeStockNotice[] = [];
+
+  record(event: NegativeStockOpenedEvent): void {
+    if (this.notices.some((stored) => sameOpenAlert(stored, event))) {
+      return;
+    }
+
+    this.notices.push({
+      alertId: negativeStockAlertId(event),
+      kind: "level",
+      severity: "critical",
+      role: "siteAdministrator",
+      venueId: event.venueId,
+      tenantId: event.tenantId,
+      locationId: event.locationId,
+      ingredientId: event.ingredientId,
+    });
+  }
+
+  screenNotices(tenantId: string, venueId: string): ShortageNotice[] {
+    return this.notices
+      .filter(
+        (notice) => notice.tenantId === tenantId && notice.venueId === venueId,
+      )
+      .map(screenNotice);
+  }
+}
+
+export const negativeStockNotices = new NegativeStockNoticeLog();
+
+export const negativeStockScreenNotices = (
+  tenantId: string,
+  venueId: string,
+): ShortageNotice[] => negativeStockNotices.screenNotices(tenantId, venueId);
+
 export class StoredStockAlertPublisher extends StockAlertPublisher {
-  override async publish(_event: NegativeStockOpenedEvent): Promise<void> {
-    // The ledger stores the open alert. Kitchen and cash screens are a later notice.
+  constructor(
+    private readonly notices: NegativeStockNoticeLog = negativeStockNotices,
+  ) {
+    super();
+  }
+
+  override async publish(event: NegativeStockOpenedEvent): Promise<void> {
+    this.notices.record(event);
   }
 }
 

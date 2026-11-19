@@ -96,7 +96,7 @@ export const postJson = (
   url: string,
   sessionId: string,
   payload: unknown,
-) =>
+): Promise<{ statusCode: number; body: string; json: () => unknown }> =>
   application.inject({
     method: "POST",
     url,
@@ -133,7 +133,12 @@ export const seedKitchenNotice = async (client: PGlite): Promise<void> => {
   );
 };
 
-export const openShortageCloud = async (shortageAlertsEnabled: boolean) => {
+export const openShortageCloud = async (
+  shortageAlertsEnabled: boolean,
+): Promise<{
+  application: NestFastifyApplication;
+  inventoryDatabase: PGlite | undefined;
+}> => {
   const identities = new InMemoryIdentityRepository();
   const organizations = new InMemoryOrganizationRepository();
   const authorizations = new InMemoryAuthorizationRepository();
